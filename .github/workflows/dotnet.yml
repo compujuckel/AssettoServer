@@ -20,6 +20,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore --runtime linux-x64 --configuration Debug
     - name: Test
       run: dotnet test --no-build --verbosity normal
+    - uses: actions/upload-artifact@v2
+      with:
+        name: assetto-server-linux-x64
+        path: AssettoServer/bin/

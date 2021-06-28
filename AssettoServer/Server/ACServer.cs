@@ -128,11 +128,15 @@ namespace AssettoServer.Server
             _ = Task.Factory.StartNew(AcceptTcpConnectionsAsync, TaskCreationOptions.LongRunning);
             UdpServer.Start();
 
-#if !DEBUG
-            await RegisterToLobbyAsync();
-#else
-            await Task.Yield();
-#endif
+            if (Configuration.RegisterToLobby)
+            {
+                await RegisterToLobbyAsync();
+            }
+            else
+            {
+                await Task.Yield();
+            }
+
 
             _ = Task.Factory.StartNew(UpdateAsync, TaskCreationOptions.LongRunning);
             HttpServer.Start();
@@ -431,9 +435,10 @@ namespace AssettoServer.Server
                     if (Environment.TickCount64 - lastLobbyUpdate > 60000)
                     {
                         lastLobbyUpdate = Environment.TickCount64;
-#if !DEBUG
-                        _ = PingLobbyAsync();
-#endif
+                        if (Configuration.RegisterToLobby)
+                        {
+                            _ = PingLobbyAsync();
+                        }
                     }
 
                     if (Environment.TickCount64 - lastTimeUpdate > 1000)

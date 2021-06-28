@@ -45,6 +45,7 @@ namespace AssettoServer.Server.Configuration
         public short InvertedGridPositions { get; internal set; }
         public bool IsGasPenaltyDisabled { get; internal set; }
         public bool IsVirtualMirrorForced { get; internal set; }
+        public bool RegisterToLobby { get; internal set; }
         public byte JumpStartPenaltyMode { get; internal set; }
         public float MechanicalDamageRate { get; internal set; }
         public short PitWindowStart { get; internal set; }
@@ -88,6 +89,7 @@ namespace AssettoServer.Server.Configuration
             InvertedGridPositions = short.Parse(server["REVERSED_GRID_RACE_POSITIONS"]);
             IsGasPenaltyDisabled = server["RACE_GAS_PENALTY_DISABLED"] != "0";
             IsVirtualMirrorForced = server["FORCE_VIRTUAL_MIRROR"] != "0";
+            RegisterToLobby = server["REGISTER_TO_LOBBY"] != "0";
             JumpStartPenaltyMode = byte.Parse(server["START_RULE"]);
             MechanicalDamageRate = float.Parse(server["DAMAGE_MULTIPLIER"]) / 100;
             PitWindowStart = short.Parse(server["RACE_PIT_WINDOW_START"] ?? "0");

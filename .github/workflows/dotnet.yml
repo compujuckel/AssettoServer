@@ -17,16 +17,10 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore --configuration Debug
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
     - name: Publish (Linux)
-      run: dotnet publish --no-build --output out-linux-x64 --runtime linux-x64 --no-self-contained
+      run: dotnet publish --output out-linux-x64 --runtime linux-x64 --no-self-contained
     - name: Publish (Windows)
-      run: dotnet publish --no-build --output out-win-x64 --runtime win-x64 --no-self-contained
+      run: dotnet publish --output out-win-x64 --runtime win-x64 --no-self-contained
     - uses: actions/upload-artifact@v2
       with:
         name: assetto-server-linux-x64

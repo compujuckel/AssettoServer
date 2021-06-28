@@ -23,9 +23,15 @@ jobs:
       run: dotnet build --no-restore --configuration Debug
     - name: Test
       run: dotnet test --no-build --verbosity normal
-    - name: Publish
-      run: dotnet publish --no-build --output publish-out
+    - name: Publish (Linux)
+      run: dotnet publish --no-build --output out-linux-x64 --runtime linux-x64 --no-self-contained
+    - name: Publish (Windows)
+      run: dotnet publish --no-build --output out-win-x64 --runtime win-x64 --no-self-contained
     - uses: actions/upload-artifact@v2
       with:
         name: assetto-server-linux-x64
-        path: publish-out/
+        path: out-linux-x64
+    - uses: actions/upload-artifact@v2
+      with:
+        name: assetto-server-win-x64
+        path: out-win-x64

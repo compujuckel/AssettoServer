@@ -1,5 +1,4 @@
 ﻿using AssettoServer.Network;
-using AssettoServer.Network.Extensions;
 using AssettoServer.Network.Packets;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
@@ -134,9 +133,10 @@ namespace AssettoServer.Network.Tcp
             {
                 while (!DisconnectTokenSource.IsCancellationRequested)
                 {
-                    PacketReader reader = await stream.CreatePacketReaderAsync(buffer);
-                    byte id = reader.Read<byte>();
+                    PacketReader reader = new PacketReader(stream, buffer);
+                    reader.SliceBuffer(await reader.ReadPacketAsync());
 
+                    byte id = reader.Read<byte>();
                     if (id != 0x82)
                         Server.Log.Debug("Received TCP packet with ID {0:X}", id);
 

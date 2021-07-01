@@ -129,13 +129,7 @@ namespace AssettoServer.Server
             UdpServer.Start();
 
             if (Configuration.RegisterToLobby)
-            {
                 await RegisterToLobbyAsync();
-            }
-            else
-            {
-                await Task.Yield();
-            }
 
 
             _ = Task.Factory.StartNew(UpdateAsync, TaskCreationOptions.LongRunning);

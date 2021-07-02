@@ -60,6 +60,8 @@ namespace AssettoServer.Server.Configuration
         public string WelcomeMessage { get; internal set; }
         public float TimeOfDayMultiplier { get; internal set; }
         public ACExtraConfiguration Extra { get; internal set; }
+        public CMWrapperParams WrapperParams { get; internal set; }
+        public CMContentConfiguration ContentConfiguration { get; internal set; }
         public DynamicTrackConfiguration DynamicTrack { get; internal set; } = new DynamicTrackConfiguration();
 
         public ACServerConfiguration FromFiles()
@@ -121,6 +123,32 @@ namespace AssettoServer.Server.Configuration
             File.WriteAllText(extraCfgPath, JsonConvert.SerializeObject(extraCfg, Formatting.Indented));
 
             Extra = extraCfg;
+
+            string cmWrapperParamsPath = "cfg/cm_wrapper_params.json";
+            CMWrapperParams cmWrapperParams = new CMWrapperParams();
+            if (File.Exists(cmWrapperParamsPath))
+                cmWrapperParams = JsonConvert.DeserializeObject<CMWrapperParams>(File.ReadAllText(cmWrapperParamsPath));
+
+            File.WriteAllText(cmWrapperParamsPath, JsonConvert.SerializeObject(cmWrapperParams, Formatting.Indented));
+
+            WrapperParams = cmWrapperParams;
+
+            if(WrapperParams.Enabled)
+            {
+                Name = Name + " ℹ" + HttpPort;
+
+                string cmContentPath = "cfg/cm_content/content.json";
+                CMContentConfiguration cmContent = new CMContentConfiguration();
+                // Only load if the file already exists, otherwise this will fail if the content directory does not exist
+                if (File.Exists(cmContentPath))
+                {
+                    cmContent = JsonConvert.DeserializeObject<CMContentConfiguration>(File.ReadAllText(cmContentPath));
+
+                    File.WriteAllText(cmContentPath, JsonConvert.SerializeObject(cmContent, Formatting.Indented));
+
+                    ContentConfiguration = cmContent;
+                }
+            }
 
             string welcomeMessagePath = server["WELCOME_MESSAGE"];
             if (File.Exists(welcomeMessagePath))

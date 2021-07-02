@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace AssettoServer.Network.Http
 {
+    [JsonObject(NamingStrategyType = typeof(DefaultNamingStrategy))]
     public class EntryListResponseCar
     {
         public string Model { get; internal set; }

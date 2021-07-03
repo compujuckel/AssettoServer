@@ -20,37 +20,6 @@ namespace AssettoServer.Network.Http
             ACServer = acServer;
         }
 
-        private InfoResponse CreateInfoResponse()
-        {
-            InfoResponse responseObj = new InfoResponse()
-            {
-                Cars = ACServer.Configuration.EntryCars.Select(c => c.Model).Distinct(),
-                Clients = ACServer.ConnectedCars.Count,
-                Country = new string[] { ACServer.GeoParams.Country, ACServer.GeoParams.CountryCode },
-                CPort = ACServer.Configuration.HttpPort,
-                Durations = ACServer.Configuration.Sessions.Select(c => c.Type == 3 ? c.Laps : c.Time),
-                Extra = ACServer.Configuration.HasExtraLap,
-                Inverted = ACServer.Configuration.InvertedGridPositions,
-                Ip = ACServer.GeoParams.Ip,
-                MaxClients = ACServer.Configuration.MaxClients,
-                Name = ACServer.Configuration.Name,
-                Pass = !string.IsNullOrEmpty(ACServer.Configuration.Password),
-                Pickup = true,
-                Pit = false,
-                Session = ACServer.CurrentSession.Id,
-                Port = ACServer.Configuration.UdpPort,
-                SessionTypes = ACServer.Configuration.Sessions.Select(s => s.Id + 1),
-                Timed = false,
-                TimeLeft = (int)ACServer.CurrentSession.TimeLeft.TotalSeconds,
-                TimeOfDay = (int)ACServer.Configuration.SunAngle,
-                Timestamp = ACServer.CurrentTime,
-                TPort = ACServer.Configuration.TcpPort,
-                Track = ACServer.Configuration.Track + (string.IsNullOrEmpty(ACServer.Configuration.TrackConfig) ? null : "-" + ACServer.Configuration.TrackConfig)
-            };
-
-            return responseObj;
-        }
-
         private string IdFromGuid(string guid)
         {
             if (guid != null)
@@ -79,7 +48,31 @@ namespace AssettoServer.Network.Http
 
                 if (requestUrl.Equals("/INFO", StringComparison.OrdinalIgnoreCase))
                 {
-                    InfoResponse responseObj = CreateInfoResponse();
+                    InfoResponse responseObj = new InfoResponse()
+                    {
+                        Cars = ACServer.Configuration.EntryCars.Select(c => c.Model).Distinct(),
+                        Clients = ACServer.ConnectedCars.Count,
+                        Country = new string[] { ACServer.GeoParams.Country, ACServer.GeoParams.CountryCode },
+                        CPort = ACServer.Configuration.HttpPort,
+                        Durations = ACServer.Configuration.Sessions.Select(c => c.Type == 3 ? c.Laps : c.Time),
+                        Extra = ACServer.Configuration.HasExtraLap,
+                        Inverted = ACServer.Configuration.InvertedGridPositions,
+                        Ip = ACServer.GeoParams.Ip,
+                        MaxClients = ACServer.Configuration.MaxClients,
+                        Name = ACServer.Configuration.Name,
+                        Pass = !string.IsNullOrEmpty(ACServer.Configuration.Password),
+                        Pickup = true,
+                        Pit = false,
+                        Session = ACServer.CurrentSession.Id,
+                        Port = ACServer.Configuration.UdpPort,
+                        SessionTypes = ACServer.Configuration.Sessions.Select(s => s.Id + 1),
+                        Timed = false,
+                        TimeLeft = (int)ACServer.CurrentSession.TimeLeft.TotalSeconds,
+                        TimeOfDay = (int)ACServer.Configuration.SunAngle,
+                        Timestamp = ACServer.CurrentTime,
+                        TPort = ACServer.Configuration.TcpPort,
+                        Track = ACServer.Configuration.Track + (string.IsNullOrEmpty(ACServer.Configuration.TrackConfig) ? null : "-" + ACServer.Configuration.TrackConfig)
+                    };
 
                     responseString = JsonConvert.SerializeObject(responseObj, Formatting.None, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
                 }
@@ -112,7 +105,7 @@ namespace AssettoServer.Network.Http
                         Clients = ACServer.ConnectedCars.Count,
                         Country = new string[] { ACServer.GeoParams.Country, ACServer.GeoParams.CountryCode },
                         CPort = ACServer.Configuration.HttpPort,
-                        Durations = ACServer.Configuration.Sessions.Select(c => c.Type == 3 ? c.Laps : c.Time),
+                        Durations = ACServer.Configuration.Sessions.Select(c => c.Type == 3 ? c.Laps : c.Time * 60),
                         Extra = ACServer.Configuration.HasExtraLap,
                         Inverted = ACServer.Configuration.InvertedGridPositions,
                         Ip = ACServer.GeoParams.Ip,

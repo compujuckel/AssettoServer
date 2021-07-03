@@ -25,6 +25,7 @@ using Serilog;
 using Serilog.Core;
 using Qmmands;
 using Steamworks;
+using Newtonsoft.Json;
 
 namespace AssettoServer.Server
 {
@@ -34,6 +35,7 @@ namespace AssettoServer.Server
         public SessionConfiguration CurrentSession { get; private set; }
         public WeatherConfiguration CurrentWeather { get; private set; }
         public float CurrentDayTime { get; private set; }
+        public GeoParams GeoParams { get; private set; }
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
         internal ConcurrentDictionary<IPEndPoint, EntryCar> EndpointCars { get; }
@@ -124,6 +126,8 @@ namespace AssettoServer.Server
 
             CurrentWeather = Configuration.Weathers[0];
 
+            await InitializeGeoParams();
+
             InitializeSteam();
             _ = Task.Factory.StartNew(AcceptTcpConnectionsAsync, TaskCreationOptions.LongRunning);
             UdpServer.Start();
@@ -134,6 +138,27 @@ namespace AssettoServer.Server
 
             _ = Task.Factory.StartNew(UpdateAsync, TaskCreationOptions.LongRunning);
             HttpServer.Start();
+        }
+
+        private async Task InitializeGeoParams()
+        {
+            HttpResponseMessage response = await HttpClient.GetAsync("http://ip-api.com/json");
+            if (response.IsSuccessStatusCode)
+            {
+                string jsonString = await response.Content.ReadAsStringAsync();
+                Dictionary<string, string> json = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
+                GeoParams = new GeoParams
+                {
+                    Ip = json["query"],
+                    City = json["city"],
+                    Country = json["country"],
+                    CountryCode = json["countryCode"]
+                };
+            }
+            else
+            {
+                Log.Information("Failed to get IP geolocation parameters.");
+            }
         }
 
         private void InitializeChecksums()

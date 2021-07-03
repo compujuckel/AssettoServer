@@ -26,12 +26,12 @@ namespace AssettoServer.Network.Http
             {
                 Cars = ACServer.Configuration.EntryCars.Select(c => c.Model).Distinct(),
                 Clients = ACServer.ConnectedCars.Count,
-                Country = new string[] { "na", "na" },
+                Country = new string[] { ACServer.GeoParams.Country, ACServer.GeoParams.CountryCode },
                 CPort = ACServer.Configuration.HttpPort,
                 Durations = ACServer.Configuration.Sessions.Select(c => c.Type == 3 ? c.Laps : c.Time),
                 Extra = ACServer.Configuration.HasExtraLap,
                 Inverted = ACServer.Configuration.InvertedGridPositions,
-                Ip = "",
+                Ip = ACServer.GeoParams.Ip,
                 MaxClients = ACServer.Configuration.MaxClients,
                 Name = ACServer.Configuration.Name,
                 Pass = !string.IsNullOrEmpty(ACServer.Configuration.Password),
@@ -110,12 +110,12 @@ namespace AssettoServer.Network.Http
                     {
                         Cars = ACServer.Configuration.EntryCars.Select(c => c.Model).Distinct(),
                         Clients = ACServer.ConnectedCars.Count,
-                        Country = new string[] { "na", "na" },
+                        Country = new string[] { ACServer.GeoParams.Country, ACServer.GeoParams.CountryCode },
                         CPort = ACServer.Configuration.HttpPort,
                         Durations = ACServer.Configuration.Sessions.Select(c => c.Type == 3 ? c.Laps : c.Time),
                         Extra = ACServer.Configuration.HasExtraLap,
                         Inverted = ACServer.Configuration.InvertedGridPositions,
-                        Ip = "",
+                        Ip = ACServer.GeoParams.Ip,
                         MaxClients = ACServer.Configuration.MaxClients,
                         Name = ACServer.Configuration.Name,
                         Pass = !string.IsNullOrEmpty(ACServer.Configuration.Password),
@@ -146,7 +146,7 @@ namespace AssettoServer.Network.Http
                         Until = DateTimeOffset.Now.ToUnixTimeSeconds() + (long)ACServer.CurrentSession.TimeLeft.TotalSeconds * 1000,
                         Content = ACServer.Configuration.ContentConfiguration,
                         TrackBase = ACServer.Configuration.Track,
-                        // City
+                        City = ACServer.GeoParams.City,
                         Frequency = ACServer.Configuration.RefreshRateHz,
                         Assists = new DetailResponseAssists
                         {

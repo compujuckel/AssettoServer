@@ -148,6 +148,19 @@ namespace AssettoServer.Network.Http
                         TrackBase = ACServer.Configuration.Track,
                         // City
                         Frequency = ACServer.Configuration.RefreshRateHz,
+                        Assists = new DetailResponseAssists
+                        {
+                            AbsState = ACServer.Configuration.ABSAllowed,
+                            TcState = ACServer.Configuration.TractionControlAllowed,
+                            FuelRate = (int)(ACServer.Configuration.FuelConsumptionRate * 100),
+                            DamageMultiplier = (int)(ACServer.Configuration.MechanicalDamageRate * 100),
+                            TyreWearRate = (int)(ACServer.Configuration.TyreConsumptionRate * 100),
+                            AllowedTyresOut = ACServer.Configuration.AllowedTyresOutCount,
+                            StabilityAllowed = ACServer.Configuration.StabilityAllowed,
+                            AutoclutchAllowed = ACServer.Configuration.AutoClutchAllowed,
+                            TyreBlanketsAllowed = ACServer.Configuration.AllowTyreBlankets,
+                            ForceVirtualMirror = ACServer.Configuration.IsVirtualMirrorForced
+                        },
                         WrappedPort = ACServer.Configuration.HttpPort,
                         AmbientTemperature = ACServer.CurrentWeather.BaseTemperatureAmbient,
                         RoadTemperature = ACServer.CurrentWeather.BaseTemperatureRoad,

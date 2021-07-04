@@ -21,7 +21,7 @@ namespace AssettoServer.Commands.Modules
 
         [Command("time")]
         public void Time()
-            => Reply($"It is currently {new DateTime().AddHours(Context.Server.CurrentDayTime):h:mm tt}.");
+            => Reply($"It is currently {new DateTime().AddSeconds(Context.Server.CurrentDayTime):H:mm}.");
 
 #if DEBUG
         [Command("test")]

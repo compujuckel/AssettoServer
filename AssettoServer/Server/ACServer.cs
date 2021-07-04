@@ -77,7 +77,7 @@ namespace AssettoServer.Server
                 EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Count];
             }
                                 
-            CurrentDayTime = (Configuration.SunAngle + 180) / 360 * 24;
+            CurrentDayTime = (float)(Configuration.SunAngle * (50400.0 - 46800.0) / 16.0 + 46800.0);
             ConnectSempahore = new SemaphoreSlim(1, 1);
             ConnectedCars = new ConcurrentDictionary<int, EntryCar>();
             EndpointCars = new ConcurrentDictionary<IPEndPoint, EntryCar>();
@@ -314,8 +314,8 @@ namespace AssettoServer.Server
 
         public void SetTime(float time)
         {
-            CurrentDayTime = Math.Clamp(time, 0, 24);
-            Configuration.SunAngle = (float)(((time - 8) / 0.0625) - 80);
+            CurrentDayTime = Math.Clamp(time, 0, 86400);
+            Configuration.SunAngle = (float)(16.0 * (time - 46800.0) / (50400.0 - 46800.0));
 
             BroadcastPacket(new SunAngleUpdate { SunAngle = Configuration.SunAngle });
         }
@@ -335,7 +335,7 @@ namespace AssettoServer.Server
             long nextTick = Environment.TickCount64;
             byte[] buffer = new byte[2048];
             long lastLobbyUpdate = 0;
-            long lastTimeUpdate = 0;
+            long lastTimeUpdate = Environment.TickCount64;
             float networkDistanceSquared = (float)Math.Pow(Configuration.Extra.NetworkBubbleDistance, 2);
             int outsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
 
@@ -437,10 +437,10 @@ namespace AssettoServer.Server
 
                     if (Environment.TickCount64 - lastTimeUpdate > 1000)
                     {
-                        CurrentDayTime += (Environment.TickCount64 - lastTimeUpdate) / 1000 * Configuration.TimeOfDayMultiplier / 3600;
+                        CurrentDayTime += (Environment.TickCount64 - lastTimeUpdate) / 1000 * Configuration.TimeOfDayMultiplier;
                         if (CurrentDayTime <= 0)
                             CurrentDayTime = 0;
-                        else if (CurrentDayTime >= 24)
+                        else if (CurrentDayTime >= 86400)
                             CurrentDayTime = 0;
 
                         SetTime(CurrentDayTime);

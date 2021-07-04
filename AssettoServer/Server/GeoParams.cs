@@ -8,9 +8,9 @@ namespace AssettoServer.Server
 {
     public class GeoParams
     {
-        public string Ip { get; set; }
-        public string City { get; set; }
-        public string Country { get; set; }
-        public string CountryCode { get; set; }
+        public string Ip { get; set; } = "";
+        public string City { get; set; } = "";
+        public string Country { get; set; } = "na";
+        public string CountryCode { get; set; } = "na";
     }
 }

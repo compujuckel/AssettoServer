@@ -78,7 +78,7 @@ namespace AssettoServer.Server
                 EntryCars[i].Server = this;
                 EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Count];
             }
-                                
+
             CurrentDayTime = (Configuration.SunAngle + 180) / 360 * 24;
             ConnectSempahore = new SemaphoreSlim(1, 1);
             ConnectedCars = new ConcurrentDictionary<int, EntryCar>();
@@ -158,6 +158,7 @@ namespace AssettoServer.Server
             else
             {
                 Log.Information("Failed to get IP geolocation parameters.");
+                GeoParams = new GeoParams();
             }
         }
 

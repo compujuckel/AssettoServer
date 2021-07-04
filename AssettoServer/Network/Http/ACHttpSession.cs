@@ -97,7 +97,7 @@ namespace AssettoServer.Network.Http
 
                     responseString = JsonConvert.SerializeObject(responseObj);
                 }
-                else if (requestUrl.StartsWith("/api/details", StringComparison.OrdinalIgnoreCase))
+                else if (ACServer.Configuration.Extra.EnableServerDetails && requestUrl.StartsWith("/api/details", StringComparison.OrdinalIgnoreCase))
                 {
                     DetailResponse responseObj = new DetailResponse()
                     {
@@ -159,9 +159,9 @@ namespace AssettoServer.Network.Http
                         RoadTemperature = ACServer.CurrentWeather.BaseTemperatureRoad,
                         CurrentWeatherId = ACServer.CurrentWeather.Graphics,
                         // TODO change these when dynamic weather is implemented
-                        WindSpeed = ACServer.CurrentWeather.WindBaseSpeedMax,
+                        WindSpeed = ACServer.CurrentWeather.WindBaseSpeedMin,
                         WindDirection = ACServer.CurrentWeather.WindBaseDirection,
-                        Description = ACServer.Configuration.WrapperParams.Description
+                        Description = ACServer.Configuration.Extra.ServerDescription
                     };
 
                     responseString = JsonConvert.SerializeObject(responseObj, Formatting.None, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });

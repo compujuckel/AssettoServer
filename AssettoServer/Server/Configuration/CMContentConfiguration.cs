@@ -8,15 +8,23 @@ namespace AssettoServer.Server.Configuration
 {
     public class CMContentConfiguration
     {
-        public Dictionary<string, CMContentEntry> Cars { get; set; }
-        public CMContentEntry Track { get; set; }
+        public Dictionary<string, CMContentEntryCar> Cars { get; set; }
+        public CMContentEntryVersionized Track { get; set; }
+    }
+
+    public class CMContentEntryCar : CMContentEntryVersionized
+    {
+        public Dictionary<string, CMContentEntry> Skins { get; set; }
+    }
+
+    public class CMContentEntryVersionized : CMContentEntry
+    {
+        public string Version { get; set; }
     }
 
     public class CMContentEntry
     {
-        public string Version { get; set; }
         public string Url { get; set; }
-
     }
 
 }

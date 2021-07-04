@@ -60,7 +60,6 @@ namespace AssettoServer.Server.Configuration
         public string WelcomeMessage { get; internal set; }
         public float TimeOfDayMultiplier { get; internal set; }
         public ACExtraConfiguration Extra { get; internal set; }
-        public CMWrapperParams WrapperParams { get; internal set; }
         public CMContentConfiguration ContentConfiguration { get; internal set; }
         public DynamicTrackConfiguration DynamicTrack { get; internal set; } = new DynamicTrackConfiguration();
 
@@ -124,16 +123,7 @@ namespace AssettoServer.Server.Configuration
 
             Extra = extraCfg;
 
-            string cmWrapperParamsPath = "cfg/cm_wrapper_params.json";
-            CMWrapperParams cmWrapperParams = new CMWrapperParams();
-            if (File.Exists(cmWrapperParamsPath))
-                cmWrapperParams = JsonConvert.DeserializeObject<CMWrapperParams>(File.ReadAllText(cmWrapperParamsPath));
-
-            File.WriteAllText(cmWrapperParamsPath, JsonConvert.SerializeObject(cmWrapperParams, Formatting.Indented));
-
-            WrapperParams = cmWrapperParams;
-
-            if(WrapperParams.Enabled)
+            if(Extra.EnableServerDetails)
             {
                 Name = Name + " ℹ" + HttpPort;
 

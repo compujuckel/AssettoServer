@@ -9,7 +9,7 @@ namespace AssettoServer.Server.Configuration
 {
     public class ACExtraConfiguration
     {
-        public bool UseSteamAuth { get; set; } = true;
+        public bool UseSteamAuth { get; set; } = false;
         public bool EnableAntiAfk { get; set; } = true;
         public int MaxAfkTimeMinutes { get; set; } = 10;
         public int MaxPing { get; set; } = 500;
@@ -17,6 +17,8 @@ namespace AssettoServer.Server.Configuration
         public bool ForceLights { get; set; }
         public float NetworkBubbleDistance { get; set; } = 500;
         public int OutsideNetworkBubbleRefreshRateHz { get; set; } = 4;
+        public bool EnableServerDetails { get; set; } = true;
+        public string ServerDescription { get; set; } = "";
 
         [JsonIgnore]
         public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60000;

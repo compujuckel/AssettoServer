@@ -25,6 +25,7 @@ using Serilog;
 using Serilog.Core;
 using Qmmands;
 using Steamworks;
+using Prometheus;
 
 namespace AssettoServer.Server
 {
@@ -55,6 +56,8 @@ namespace AssettoServer.Server
 
         private SemaphoreSlim ConnectSempahore { get; }
         private HttpClient HttpClient { get; }
+
+        private readonly Gauge metricConnectedClients = Metrics.CreateGauge("acs_connected_clients", "Connected clients");
 
         public ACServer(ACServerConfiguration configuration)
         {
@@ -243,6 +246,7 @@ namespace AssettoServer.Server
 
                         ConnectedCars[client.SessionId] = entryCar;
 
+                        metricConnectedClients.Set(ConnectedCars.Count);
                         return true;
                     }
                 }
@@ -513,6 +517,8 @@ namespace AssettoServer.Server
 
                     client.EntryCar.Client = null;
                     client.IsConnected = false;
+
+                    metricConnectedClients.Set(ConnectedCars.Count);
 
                     if (client.HasPassedChecksum)
                         BroadcastPacket(new CarDisconnected { SessionId = client.SessionId });

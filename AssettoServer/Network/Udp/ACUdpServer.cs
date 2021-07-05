@@ -3,6 +3,7 @@ using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
 using NetCoreServer;
+using Prometheus;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -32,6 +33,11 @@ namespace AssettoServer.Network.Udp
         private long LastDatagramsReceived { get; set; }
 
         private long LastStatsUpdateTime { get; set; }
+
+        private readonly Counter metricUdpBytesSent = Metrics.CreateCounter("acs_udp_bytes_sent_total", "UDP Bytes sent");
+        private readonly Counter metricUdpBytesReceived = Metrics.CreateCounter("acs_udp_bytes_received_total", "UDP Bytes received");
+        private readonly Counter metricUdpDatagramsSent = Metrics.CreateCounter("acs_udp_datagrams_sent_total", "UDP Datagrams sent");
+        private readonly Counter metricUdpDatagramsReceived = Metrics.CreateCounter("acs_udp_datagrams_received_total", "UDP Datagrams received");
 
         public ACUdpServer(ACServer server, int port) : base(IPAddress.Any, port)
         {
@@ -134,6 +140,11 @@ namespace AssettoServer.Network.Udp
                 LastBytesReceived = BytesReceived;
                 LastDatagramsSent = DatagramsSent;
                 LastDatagramsReceived = DatagramsReceived;
+
+                metricUdpBytesSent.IncTo(BytesSent);
+                metricUdpBytesReceived.IncTo(BytesReceived);
+                metricUdpDatagramsSent.IncTo(DatagramsSent);
+                metricUdpDatagramsReceived.IncTo(DatagramsReceived);
             }
         }
     }

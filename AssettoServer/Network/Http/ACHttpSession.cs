@@ -2,8 +2,10 @@
 using NetCoreServer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Prometheus;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -77,6 +79,15 @@ namespace AssettoServer.Network.Http
 
                     responseString = JsonConvert.SerializeObject(responseObj);
                 }
+                else if (requestUrl.Equals("/metrics"))
+                {
+                    MemoryStream stream = new MemoryStream();
+                    Metrics.DefaultRegistry.CollectAndExportAsTextAsync(stream).Wait();
+                    stream.Close();
+                    SendResponse(Response.MakeGetResponse(stream.ToArray()));
+                    return;
+                }
+
 
                 if (responseString != null)
                 {

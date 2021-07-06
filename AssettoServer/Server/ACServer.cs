@@ -26,6 +26,7 @@ using Serilog.Core;
 using Qmmands;
 using Steamworks;
 using Newtonsoft.Json;
+using TimeZoneConverter;
 
 namespace AssettoServer.Server
 {
@@ -59,6 +60,7 @@ namespace AssettoServer.Server
         private SemaphoreSlim ConnectSempahore { get; }
         private HttpClient HttpClient { get; }
         private IWeatherProvider WeatherProvider { get; }
+        private TimeZoneInfo RealTimeZone { get; }
 
         public ACServer(ACServerConfiguration configuration)
         {
@@ -105,6 +107,13 @@ namespace AssettoServer.Server
                 {
                     WeatherProvider = new OpenWeatherMapWeatherProvider(Configuration.Extra.OwmApiKey);
                 }
+            }
+
+            if (Configuration.Extra.EnableRealTime)
+            {
+                RealTimeZone = TZConvert.GetTimeZoneInfo(Configuration.Extra.RealTimeZone);
+                DateTime realTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, RealTimeZone);
+                Log.Information("Enabled real time with time zone {0}: {1}", RealTimeZone.DisplayName, realTime, realTime.TimeOfDay.TotalSeconds);
             }
 
             string blacklistPath = "blacklist.txt";
@@ -183,7 +192,7 @@ namespace AssettoServer.Server
             if (WeatherProvider != null && Configuration.Extra.Lat != 0 && Configuration.Extra.Lon != 0)
             {
                 Weather weather = await WeatherProvider.GetWeatherAsync(Configuration.Extra.Lat, Configuration.Extra.Lon);
-                Log.Information("Live weather update: {0}°C, {1}% graphics={2}", weather.TemperatureAmbient, weather.Humidity, weather.Graphics);
+                Log.Information("Live weather update: {0}°C, {1}%, {2}hPa, {3}km/h {4}°, graphics={5}", weather.TemperatureAmbient, weather.Humidity, weather.Pressure, weather.WindSpeed, weather.WindDirection, weather.Graphics);
                 SetWeather(weather);
             }
         }
@@ -493,7 +502,7 @@ namespace AssettoServer.Server
                         }
                     }
 
-                    if (Environment.TickCount64 - lastWeatherUpdate > 60000)
+                    if (Environment.TickCount64 - lastWeatherUpdate > 600000)
                     {
                         lastWeatherUpdate = Environment.TickCount64;
                         if(Configuration.Extra.EnableLiveWeather)
@@ -513,12 +522,18 @@ namespace AssettoServer.Server
 
                     if (Environment.TickCount64 - lastTimeUpdate > 1000)
                     {
-                        CurrentDayTime += (Environment.TickCount64 - lastTimeUpdate) / 1000 * Configuration.TimeOfDayMultiplier;
-                        if (CurrentDayTime <= 0)
-                            CurrentDayTime = 0;
-                        else if (CurrentDayTime >= 86400)
-                            CurrentDayTime = 0;
-
+                        if (Configuration.Extra.EnableRealTime)
+                        {
+                            CurrentDayTime = (float)TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, RealTimeZone).TimeOfDay.TotalSeconds;
+                        }
+                        else
+                        {
+                            CurrentDayTime += (Environment.TickCount64 - lastTimeUpdate) / 1000 * Configuration.TimeOfDayMultiplier;
+                            if (CurrentDayTime <= 0)
+                                CurrentDayTime = 0;
+                            else if (CurrentDayTime >= 86400)
+                                CurrentDayTime = 0;
+                        }
                         SetTime(CurrentDayTime);
                         lastTimeUpdate = Environment.TickCount64;
                     }

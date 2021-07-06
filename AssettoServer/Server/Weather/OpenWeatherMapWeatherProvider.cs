@@ -108,7 +108,7 @@ namespace AssettoServer.Server
                     TemperatureRoad = (float)json.SelectToken("main.temp"),
                     Pressure = (int)json.SelectToken("main.pressure"),
                     Humidity = (int)json.SelectToken("main.humidity"),
-                    WindSpeed = (float)json.SelectToken("wind.speed"),
+                    WindSpeed = (float)json.SelectToken("wind.speed") * 3.6f,
                     WindDirection = (int)json.SelectToken("wind.deg")
                 };
 

@@ -482,11 +482,11 @@ namespace AssettoServer.Network.Tcp
             SendPacket(new DriverInfoUpdate { ConnectedCars = connectedCars });
             SendPacket(new WeatherUpdate
             {
-                Ambient = (byte)Server.CurrentWeather.BaseTemperatureAmbient,
+                Ambient = (byte)Server.CurrentWeather.TemperatureAmbient,
                 Graphics = Server.CurrentWeather.Graphics,
-                Road = (byte)Server.CurrentWeather.BaseTemperatureRoad,
-                WindDirection = (short)Server.CurrentWeather.WindBaseDirection,
-                WindSpeed = (short)Server.CurrentWeather.WindBaseSpeedMin
+                Road = (byte)Server.CurrentWeather.TemperatureRoad,
+                WindDirection = (short)Server.CurrentWeather.WindDirection,
+                WindSpeed = (short)Server.CurrentWeather.WindSpeed
             });
 
             foreach (EntryCar car in connectedCars)

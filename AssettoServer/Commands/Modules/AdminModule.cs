@@ -92,7 +92,7 @@ namespace AssettoServer.Commands.Modules
             if (weatherId >= 0 && weatherId < allWeathers.Count)
             {
                 WeatherConfiguration newWeather = allWeathers[weatherId];
-                Context.Server.SetWeather(newWeather);
+                Context.Server.SetWeatherConfiguration(newWeather);
                 Reply("Weather has been set.");
             }
             else Reply("There is no weather with this ID.");

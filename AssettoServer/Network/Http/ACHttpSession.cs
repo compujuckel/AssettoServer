@@ -155,12 +155,11 @@ namespace AssettoServer.Network.Http
                             ForceVirtualMirror = ACServer.Configuration.IsVirtualMirrorForced
                         },
                         WrappedPort = ACServer.Configuration.HttpPort,
-                        AmbientTemperature = ACServer.CurrentWeather.BaseTemperatureAmbient,
-                        RoadTemperature = ACServer.CurrentWeather.BaseTemperatureRoad,
+                        AmbientTemperature = ACServer.CurrentWeather.TemperatureAmbient,
+                        RoadTemperature = ACServer.CurrentWeather.TemperatureRoad,
                         CurrentWeatherId = ACServer.CurrentWeather.Graphics,
-                        // TODO change these when dynamic weather is implemented
-                        WindSpeed = ACServer.CurrentWeather.WindBaseSpeedMin,
-                        WindDirection = ACServer.CurrentWeather.WindBaseDirection,
+                        WindSpeed = (int)ACServer.CurrentWeather.WindSpeed,
+                        WindDirection = ACServer.CurrentWeather.WindDirection,
                         Description = ACServer.Configuration.Extra.ServerDescription
                     };
 

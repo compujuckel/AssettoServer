@@ -33,7 +33,8 @@ namespace AssettoServer.Server
     {
         public ACServerConfiguration Configuration { get; }
         public SessionConfiguration CurrentSession { get; private set; }
-        public WeatherConfiguration CurrentWeather { get; private set; }
+        public WeatherConfiguration WeatherConfiguration { get; private set; }
+        public Weather CurrentWeather { get; private set; }
         public float CurrentDayTime { get; private set; }
         public GeoParams GeoParams { get; private set; }
 
@@ -57,6 +58,7 @@ namespace AssettoServer.Server
 
         private SemaphoreSlim ConnectSempahore { get; }
         private HttpClient HttpClient { get; }
+        private IWeatherProvider WeatherProvider { get; }
 
         public ACServer(ACServerConfiguration configuration)
         {
@@ -97,6 +99,14 @@ namespace AssettoServer.Server
             CommandService.AddTypeParser(new ACClientTypeParser());
             CommandService.CommandExecutionFailed += OnCommandExecutionFailed;
 
+            if (Configuration.Extra.EnableLiveWeather)
+            {
+                if (!string.IsNullOrEmpty(Configuration.Extra.OwmApiKey))
+                {
+                    WeatherProvider = new OpenWeatherMapWeatherProvider(Configuration.Extra.OwmApiKey);
+                }
+            }
+
             string blacklistPath = "blacklist.txt";
             if (File.Exists(blacklistPath))
             {
@@ -124,9 +134,15 @@ namespace AssettoServer.Server
             CurrentSession.StartTime = DateTime.Now;
             CurrentSession.StartTimeTicks = CurrentTime;
 
-            CurrentWeather = Configuration.Weathers[0];
-
             await InitializeGeoParams();
+
+            if (Configuration.Extra.EnableLiveWeather)
+            {
+                await UpdateWeatherAsync();
+            } else
+            {
+                SetWeatherConfiguration(Configuration.Weathers[0]);
+            }
 
             InitializeSteam();
             _ = Task.Factory.StartNew(AcceptTcpConnectionsAsync, TaskCreationOptions.LongRunning);
@@ -159,6 +175,16 @@ namespace AssettoServer.Server
             {
                 Log.Information("Failed to get IP geolocation parameters.");
                 GeoParams = new GeoParams();
+            }
+        }
+
+        private async Task UpdateWeatherAsync()
+        {
+            if (WeatherProvider != null && Configuration.Extra.Lat != 0 && Configuration.Extra.Lon != 0)
+            {
+                Weather weather = await WeatherProvider.GetWeatherAsync(Configuration.Extra.Lat, Configuration.Extra.Lon);
+                Log.Information("Live weather update: {0}°C, {1}% graphics={2}", weather.TemperatureAmbient, weather.Humidity, weather.Graphics);
+                SetWeather(weather);
             }
         }
 
@@ -323,18 +349,32 @@ namespace AssettoServer.Server
                 await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => !p.Value).Select(p => p.Key));
         }
 
-        public void SetWeather(WeatherConfiguration weather)
+        public void SetWeatherConfiguration(WeatherConfiguration weather)
+        {
+            WeatherConfiguration = weather;
+
+            SetWeather(new Weather
+            {
+                    Graphics = weather.Graphics,
+                    TemperatureAmbient = weather.BaseTemperatureAmbient,
+                    TemperatureRoad = weather.BaseTemperatureRoad,
+                    WindSpeed = weather.WindBaseSpeedMin,
+                    WindDirection = weather.WindBaseDirection
+        });
+        }
+
+        public void SetWeather(Weather weather)
         {
             Log.Information("Weather has been set to {0}.", weather.Graphics);
             CurrentWeather = weather;
 
             BroadcastPacket(new WeatherUpdate
             {
-                Ambient = (byte)weather.BaseTemperatureAmbient,
+                Ambient = (byte)weather.TemperatureAmbient,
                 Graphics = weather.Graphics,
-                Road = (byte)weather.BaseTemperatureRoad,
-                WindDirection = (short)weather.WindBaseDirection,
-                WindSpeed = (short)weather.WindBaseSpeedMin
+                Road = (byte)weather.TemperatureRoad,
+                WindDirection = (short)weather.WindDirection,
+                WindSpeed = (short)weather.WindSpeed
             });
         }
 
@@ -362,6 +402,7 @@ namespace AssettoServer.Server
             byte[] buffer = new byte[2048];
             long lastLobbyUpdate = 0;
             long lastTimeUpdate = Environment.TickCount64;
+            long lastWeatherUpdate = Environment.TickCount64;
             float networkDistanceSquared = (float)Math.Pow(Configuration.Extra.NetworkBubbleDistance, 2);
             int outsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
 
@@ -449,6 +490,15 @@ namespace AssettoServer.Server
                                     _ = fromCar.Client?.DisconnectAsync();
                                 }
                             }
+                        }
+                    }
+
+                    if (Environment.TickCount64 - lastWeatherUpdate > 60000)
+                    {
+                        lastWeatherUpdate = Environment.TickCount64;
+                        if(Configuration.Extra.EnableLiveWeather)
+                        {
+                            _ = UpdateWeatherAsync();
                         }
                     }
 

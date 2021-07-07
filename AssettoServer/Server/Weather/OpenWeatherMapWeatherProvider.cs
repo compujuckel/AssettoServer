@@ -6,9 +6,9 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AssettoServer.Server
+namespace AssettoServer.Server.Weather
 {
-    class OpenWeatherMapWeatherProvider : IWeatherProvider
+    public class OpenWeatherMapWeatherProvider : IWeatherProvider
     {
         public enum OpenWeatherType
         {
@@ -87,25 +87,24 @@ namespace AssettoServer.Server
             HurricaneAdditional = 962,
         }
 
-        private string ApiKey { get; }
-        private HttpClient HttpClient { get; }
+        private readonly string _apiKey;
+        private readonly HttpClient _httpClient;
 
         public OpenWeatherMapWeatherProvider(string apiKey)
         {
-            ApiKey = apiKey;
-            HttpClient = new HttpClient();
+            _apiKey = apiKey;
+            _httpClient = new HttpClient();
         }
-        public async Task<Weather> GetWeatherAsync(float lat, float lon)
+        public async Task<WeatherProviderResponse> GetWeatherAsync(float lat, float lon)
         {
-            HttpResponseMessage response = await HttpClient.GetAsync($"https://api.openweathermap.org/data/2.5/weather?appid={ApiKey}&units=metric&lat={lat}&lon={lon}");
+            HttpResponseMessage response = await _httpClient.GetAsync($"https://api.openweathermap.org/data/2.5/weather?appid={_apiKey}&units=metric&lat={lat}&lon={lon}");
             if(response.IsSuccessStatusCode)
             {
                 JObject json = JObject.Parse(await response.Content.ReadAsStringAsync());
-                Weather weather = new Weather
+                WeatherProviderResponse weather = new WeatherProviderResponse
                 {
-                    Graphics = TranslateIdToGraphics((OpenWeatherType)(int)json.SelectToken("weather[0].id")),
+                    WeatherType = TranslateIdToWeatherType((OpenWeatherType)(int)json.SelectToken("weather[0].id")),
                     TemperatureAmbient = (float)json.SelectToken("main.temp"),
-                    TemperatureRoad = (float)json.SelectToken("main.temp"),
                     Pressure = (int)json.SelectToken("main.pressure"),
                     Humidity = (int)json.SelectToken("main.humidity"),
                     WindSpeed = (float)json.SelectToken("wind.speed") * 3.6f,
@@ -119,7 +118,7 @@ namespace AssettoServer.Server
         }
 
         // Adapted from https://github.com/gro-ove/actools/blob/master/AcManager.Tools/Helpers/Api/OpenWeatherApiProvider.cs
-        private string TranslateIdToGraphics(OpenWeatherType id)
+        private CMWeatherType TranslateIdToWeatherType(OpenWeatherType id)
         {
             switch (id)
             {
@@ -131,113 +130,113 @@ namespace AssettoServer.Server
                 case OpenWeatherType.ThunderstormWithLightDrizzle:
                 case OpenWeatherType.ThunderstormWithDrizzle:
                 case OpenWeatherType.ThunderstormWithHeavyDrizzle:
-                    return "sol_42_thunderstorm";
+                    return CMWeatherType.Thunderstorm;
 
                 case OpenWeatherType.LightThunderstorm:
-                    return "sol_41_light_thunderstorm";
+                    return CMWeatherType.LightThunderstorm;
 
                 case OpenWeatherType.HeavyThunderstorm:
                 case OpenWeatherType.TropicalStorm:
-                    return "sol_43_heavy_thunderstorm";
+                    return CMWeatherType.HeavyThunderstorm;
 
                 case OpenWeatherType.LightIntensityDrizzle:
                 case OpenWeatherType.LightIntensityDrizzleRain:
-                    return "sol_31_light_drizzle";
+                    return CMWeatherType.LightDrizzle;
 
                 case OpenWeatherType.Drizzle:
                 case OpenWeatherType.DrizzleRain:
                 case OpenWeatherType.ShowerDrizzle:
-                    return "sol_32_drizzle";
+                    return CMWeatherType.Drizzle;
 
                 case OpenWeatherType.HeavyIntensityDrizzle:
                 case OpenWeatherType.HeavyIntensityDrizzleRain:
-                    return "sol_33_heavy_drizzle";
+                    return CMWeatherType.HeavyDrizzle;
 
                 case OpenWeatherType.LightRain:
                 case OpenWeatherType.LightIntensityShowerRain:
-                    return "sol_34_light_rain";
+                    return CMWeatherType.LightRain;
 
                 case OpenWeatherType.ModerateRain:
                 case OpenWeatherType.FreezingRain:
                 case OpenWeatherType.ShowerRainAndDrizzle:
                 case OpenWeatherType.ShowerRain:
                 case OpenWeatherType.RaggedShowerRain:
-                    return "sol_35_rain";
+                    return CMWeatherType.Rain;
 
                 case OpenWeatherType.HeavyIntensityRain:
                 case OpenWeatherType.VeryHeavyRain:
                 case OpenWeatherType.ExtremeRain:
                 case OpenWeatherType.HeavyShowerRainAndDrizzle:
                 case OpenWeatherType.HeavyIntensityShowerRain:
-                    return "sol_36_heavy_rain";
+                    return CMWeatherType.HeavyRain;
 
                 case OpenWeatherType.LightSnow:
                 case OpenWeatherType.LightShowerSnow:
-                    return "sol_51_light_snow";
+                    return CMWeatherType.LightSnow;
 
                 case OpenWeatherType.Snow:
                 case OpenWeatherType.ShowerSnow:
-                    return "sol_52_snow";
+                    return CMWeatherType.Snow;
 
                 case OpenWeatherType.HeavySnow:
                 case OpenWeatherType.HeavyShowerSnow:
-                    return "sol_53_heavy_snow";
+                    return CMWeatherType.HeavySnow;
 
                 case OpenWeatherType.LightRainAndSnow:
-                    return "sol_54_light_sleet";
+                    return CMWeatherType.LightSleet;
 
                 case OpenWeatherType.RainAndSnow:
                 case OpenWeatherType.Sleet:
-                    return "sol_55_sleet";
+                    return CMWeatherType.Sleet;
 
                 case OpenWeatherType.ShowerSleet:
-                    return "sol_56_heavy_sleet";
+                    return CMWeatherType.HeavySleet;
 
                 case OpenWeatherType.Mist:
-                    return "sol_11_mist";
+                    return CMWeatherType.Mist;
 
                 case OpenWeatherType.Smoke:
-                    return "sol_24_smoke";
+                    return CMWeatherType.Smoke;
 
                 case OpenWeatherType.Haze:
-                    return "sol_21_haze";
+                    return CMWeatherType.Haze;
 
                 case OpenWeatherType.Sand:
                 case OpenWeatherType.SandAndDustWhirls:
-                    return "sol_23_sand";
+                    return CMWeatherType.Sand;
 
                 case OpenWeatherType.Dust:
                 case OpenWeatherType.VolcanicAsh:
-                    return "sol_22_dust";
+                    return CMWeatherType.Dust;
 
                 case OpenWeatherType.Fog:
-                    return "sol_12_fog";
+                    return CMWeatherType.Fog;
 
                 case OpenWeatherType.Squalls:
-                    return "sol_44_squalls";
+                    return CMWeatherType.Squalls;
 
                 case OpenWeatherType.Tornado:
                 case OpenWeatherType.TornadoExtreme:
-                    return "sol_45_tornado";
+                    return CMWeatherType.Tornado;
 
                 case OpenWeatherType.ClearSky:
                 case OpenWeatherType.Calm:
                 case OpenWeatherType.LightBreeze:
-                    return "sol_01_clear";
+                    return CMWeatherType.Clear;
 
                 case OpenWeatherType.FewClouds:
                 case OpenWeatherType.GentleBreeze:
                 case OpenWeatherType.ModerateBreeze:
-                    return "sol_02_few_clouds";
+                    return CMWeatherType.FewClouds;
 
                 case OpenWeatherType.ScatteredClouds:
-                    return "sol_03_scattered_clouds";
+                    return CMWeatherType.ScatteredClouds;
 
                 case OpenWeatherType.BrokenClouds:
-                    return "sol_05_broken_clouds";
+                    return CMWeatherType.BrokenClouds;
 
                 case OpenWeatherType.OvercastClouds:
-                    return "sol_06_overcast";
+                    return CMWeatherType.OvercastClouds;
 
                 case OpenWeatherType.Hurricane:
                 case OpenWeatherType.Gale:
@@ -245,27 +244,26 @@ namespace AssettoServer.Server
                 case OpenWeatherType.Storm:
                 case OpenWeatherType.ViolentStorm:
                 case OpenWeatherType.HurricaneAdditional:
-                    return "sol_46_hurricane";
+                    return CMWeatherType.Hurricane;
 
                 case OpenWeatherType.Cold:
-                    return "sol_01_clear";
+                    return CMWeatherType.Cold;
 
                 case OpenWeatherType.Hot:
-                    return "sol_01_clear";
+                    return CMWeatherType.Hot;
 
                 case OpenWeatherType.Windy:
                 case OpenWeatherType.FreshBreeze:
                 case OpenWeatherType.StrongBreeze:
                 case OpenWeatherType.HighWind:
-                    return "sol_04_windy";
+                    return CMWeatherType.Windy;
 
                 case OpenWeatherType.Hail:
-                    return "sol_57_hail";
+                    return CMWeatherType.Hail;
+
+                default:
+                    return CMWeatherType.Clear;
             }
-
-            // TODO log
-            return "sol_00_no_clouds";
-
         }
     }
 }

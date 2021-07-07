@@ -18,6 +18,7 @@ using AssettoServer.Network.Http;
 using AssettoServer.Network.Packets;
 using AssettoServer.Commands.TypeParsers;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Weather;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
@@ -35,7 +36,7 @@ namespace AssettoServer.Server
         public ACServerConfiguration Configuration { get; }
         public SessionConfiguration CurrentSession { get; private set; }
         public WeatherConfiguration WeatherConfiguration { get; private set; }
-        public Weather CurrentWeather { get; private set; }
+        public WeatherData CurrentWeather { get; private set; }
         public float CurrentDayTime { get; private set; }
         public GeoParams GeoParams { get; private set; }
 
@@ -60,6 +61,8 @@ namespace AssettoServer.Server
         private SemaphoreSlim ConnectSempahore { get; }
         private HttpClient HttpClient { get; }
         private IWeatherProvider WeatherProvider { get; }
+        private IWeatherTypeProvider WeatherTypeProvider { get; }
+        private LiveWeatherHelper LiveWeatherHelper { get; }
         private TimeZoneInfo RealTimeZone { get; }
 
         public ACServer(ACServerConfiguration configuration)
@@ -105,7 +108,9 @@ namespace AssettoServer.Server
             {
                 if (!string.IsNullOrEmpty(Configuration.Extra.OwmApiKey))
                 {
+                    WeatherTypeProvider = new IniWeatherTypeProvider(Log);
                     WeatherProvider = new OpenWeatherMapWeatherProvider(Configuration.Extra.OwmApiKey);
+                    LiveWeatherHelper = new LiveWeatherHelper(WeatherTypeProvider, WeatherProvider, Configuration.Extra.Lat, Configuration.Extra.Lon);
                 }
             }
 
@@ -189,10 +194,17 @@ namespace AssettoServer.Server
 
         private async Task UpdateWeatherAsync()
         {
-            if (WeatherProvider != null && Configuration.Extra.Lat != 0 && Configuration.Extra.Lon != 0)
+            if (LiveWeatherHelper != null)
             {
-                Weather weather = await WeatherProvider.GetWeatherAsync(Configuration.Extra.Lat, Configuration.Extra.Lon);
-                Log.Information("Live weather update: {0}°C, {1}%, {2}hPa, {3}km/h {4}°, graphics={5}", weather.TemperatureAmbient, weather.Humidity, weather.Pressure, weather.WindSpeed, weather.WindDirection, weather.Graphics);
+                WeatherData weather = await LiveWeatherHelper.UpdateAsync((int)CurrentDayTime);
+                Log.Information("Live weather update: A:{0}°C R:{1}°C, {2}%, {3}hPa, {4}km/h {5}°, gfx={6}",
+                    Math.Round(weather.TemperatureAmbient, 1),
+                    Math.Round(weather.TemperatureRoad, 1),
+                    weather.Humidity,
+                    weather.Pressure,
+                    Math.Round(weather.WindSpeed),
+                    weather.WindDirection,
+                    weather.Graphics);
                 SetWeather(weather);
             }
         }
@@ -362,7 +374,7 @@ namespace AssettoServer.Server
         {
             WeatherConfiguration = weather;
 
-            SetWeather(new Weather
+            SetWeather(new WeatherData
             {
                     Graphics = weather.Graphics,
                     TemperatureAmbient = weather.BaseTemperatureAmbient,
@@ -372,7 +384,7 @@ namespace AssettoServer.Server
         });
         }
 
-        public void SetWeather(Weather weather)
+        public void SetWeather(WeatherData weather)
         {
             Log.Information("Weather has been set to {0}.", weather.Graphics);
             CurrentWeather = weather;

@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace AssettoServer.Server.Weather
 {
-    public interface IWeatherProvider
+    public interface IWeatherTypeProvider
     {
-        public Task<WeatherProviderResponse> GetWeatherAsync(float lat, float lon);
+        public WeatherType GetWeatherType(CMWeatherType id);
     }
 }

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AssettoServer.Server
+namespace AssettoServer.Server.Weather
 {
-    public class Weather
+    public class WeatherData
     {
         public string Graphics;
         public float TemperatureAmbient;

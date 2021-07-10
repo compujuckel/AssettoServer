@@ -26,11 +26,14 @@
             {
                 Features = reader.ReadASCIIString(true);
 
-                short ticketLength = reader.Read<short>();
-                if(ticketLength == reader.Buffer.Length - reader.ReadPosition)
+                if (reader.Buffer.Length > reader.ReadPosition + 2)
                 {
-                    SessionTicket = new byte[ticketLength];
-                    reader.ReadBytes(SessionTicket);
+                    short ticketLength = reader.Read<short>();
+                    if (ticketLength == reader.Buffer.Length - reader.ReadPosition)
+                    {
+                        SessionTicket = new byte[ticketLength];
+                        reader.ReadBytes(SessionTicket);
+                    }
                 }
             }
         }

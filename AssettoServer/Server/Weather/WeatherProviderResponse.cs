@@ -8,11 +8,11 @@ namespace AssettoServer.Server.Weather
 {
     public class WeatherProviderResponse
     {
-        public CMWeatherType WeatherType;
-        public float TemperatureAmbient;
-        public int Pressure;
-        public int Humidity;
-        public float WindSpeed;
-        public int WindDirection;
+        public WeatherFxType WeatherType { get; init; }
+        public float TemperatureAmbient { get; init; }
+        public int Pressure { get; init; }
+        public int Humidity { get; init; }
+        public float WindSpeed { get; init; }
+        public int WindDirection { get; init; }
     }
 }

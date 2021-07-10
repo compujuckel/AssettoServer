@@ -98,27 +98,25 @@ namespace AssettoServer.Server.Weather
         public async Task<WeatherProviderResponse> GetWeatherAsync(float lat, float lon)
         {
             HttpResponseMessage response = await _httpClient.GetAsync($"https://api.openweathermap.org/data/2.5/weather?appid={_apiKey}&units=metric&lat={lat}&lon={lon}");
-            if(response.IsSuccessStatusCode)
+            
+            if (!response.IsSuccessStatusCode) return null;
+            
+            JObject json = JObject.Parse(await response.Content.ReadAsStringAsync());
+            WeatherProviderResponse weather = new WeatherProviderResponse
             {
-                JObject json = JObject.Parse(await response.Content.ReadAsStringAsync());
-                WeatherProviderResponse weather = new WeatherProviderResponse
-                {
-                    WeatherType = TranslateIdToWeatherType((OpenWeatherType)(int)json.SelectToken("weather[0].id")),
-                    TemperatureAmbient = (float)json.SelectToken("main.temp"),
-                    Pressure = (int)json.SelectToken("main.pressure"),
-                    Humidity = (int)json.SelectToken("main.humidity"),
-                    WindSpeed = (float)json.SelectToken("wind.speed") * 3.6f,
-                    WindDirection = (int)json.SelectToken("wind.deg")
-                };
+                WeatherType = TranslateIdToWeatherType((OpenWeatherType)(int)json.SelectToken("weather[0].id")),
+                TemperatureAmbient = (float)json.SelectToken("main.temp"),
+                Pressure = (int)json.SelectToken("main.pressure"),
+                Humidity = (int)json.SelectToken("main.humidity"),
+                WindSpeed = (float)json.SelectToken("wind.speed") * 3.6f,
+                WindDirection = (int)json.SelectToken("wind.deg")
+            };
 
-                return weather;
-            }
-
-            return null;
+            return weather;
         }
 
         // Adapted from https://github.com/gro-ove/actools/blob/master/AcManager.Tools/Helpers/Api/OpenWeatherApiProvider.cs
-        private CMWeatherType TranslateIdToWeatherType(OpenWeatherType id)
+        private static WeatherFxType TranslateIdToWeatherType(OpenWeatherType id)
         {
             switch (id)
             {
@@ -130,113 +128,113 @@ namespace AssettoServer.Server.Weather
                 case OpenWeatherType.ThunderstormWithLightDrizzle:
                 case OpenWeatherType.ThunderstormWithDrizzle:
                 case OpenWeatherType.ThunderstormWithHeavyDrizzle:
-                    return CMWeatherType.Thunderstorm;
+                    return WeatherFxType.Thunderstorm;
 
                 case OpenWeatherType.LightThunderstorm:
-                    return CMWeatherType.LightThunderstorm;
+                    return WeatherFxType.LightThunderstorm;
 
                 case OpenWeatherType.HeavyThunderstorm:
                 case OpenWeatherType.TropicalStorm:
-                    return CMWeatherType.HeavyThunderstorm;
+                    return WeatherFxType.HeavyThunderstorm;
 
                 case OpenWeatherType.LightIntensityDrizzle:
                 case OpenWeatherType.LightIntensityDrizzleRain:
-                    return CMWeatherType.LightDrizzle;
+                    return WeatherFxType.LightDrizzle;
 
                 case OpenWeatherType.Drizzle:
                 case OpenWeatherType.DrizzleRain:
                 case OpenWeatherType.ShowerDrizzle:
-                    return CMWeatherType.Drizzle;
+                    return WeatherFxType.Drizzle;
 
                 case OpenWeatherType.HeavyIntensityDrizzle:
                 case OpenWeatherType.HeavyIntensityDrizzleRain:
-                    return CMWeatherType.HeavyDrizzle;
+                    return WeatherFxType.HeavyDrizzle;
 
                 case OpenWeatherType.LightRain:
                 case OpenWeatherType.LightIntensityShowerRain:
-                    return CMWeatherType.LightRain;
+                    return WeatherFxType.LightRain;
 
                 case OpenWeatherType.ModerateRain:
                 case OpenWeatherType.FreezingRain:
                 case OpenWeatherType.ShowerRainAndDrizzle:
                 case OpenWeatherType.ShowerRain:
                 case OpenWeatherType.RaggedShowerRain:
-                    return CMWeatherType.Rain;
+                    return WeatherFxType.Rain;
 
                 case OpenWeatherType.HeavyIntensityRain:
                 case OpenWeatherType.VeryHeavyRain:
                 case OpenWeatherType.ExtremeRain:
                 case OpenWeatherType.HeavyShowerRainAndDrizzle:
                 case OpenWeatherType.HeavyIntensityShowerRain:
-                    return CMWeatherType.HeavyRain;
+                    return WeatherFxType.HeavyRain;
 
                 case OpenWeatherType.LightSnow:
                 case OpenWeatherType.LightShowerSnow:
-                    return CMWeatherType.LightSnow;
+                    return WeatherFxType.LightSnow;
 
                 case OpenWeatherType.Snow:
                 case OpenWeatherType.ShowerSnow:
-                    return CMWeatherType.Snow;
+                    return WeatherFxType.Snow;
 
                 case OpenWeatherType.HeavySnow:
                 case OpenWeatherType.HeavyShowerSnow:
-                    return CMWeatherType.HeavySnow;
+                    return WeatherFxType.HeavySnow;
 
                 case OpenWeatherType.LightRainAndSnow:
-                    return CMWeatherType.LightSleet;
+                    return WeatherFxType.LightSleet;
 
                 case OpenWeatherType.RainAndSnow:
                 case OpenWeatherType.Sleet:
-                    return CMWeatherType.Sleet;
+                    return WeatherFxType.Sleet;
 
                 case OpenWeatherType.ShowerSleet:
-                    return CMWeatherType.HeavySleet;
+                    return WeatherFxType.HeavySleet;
 
                 case OpenWeatherType.Mist:
-                    return CMWeatherType.Mist;
+                    return WeatherFxType.Mist;
 
                 case OpenWeatherType.Smoke:
-                    return CMWeatherType.Smoke;
+                    return WeatherFxType.Smoke;
 
                 case OpenWeatherType.Haze:
-                    return CMWeatherType.Haze;
+                    return WeatherFxType.Haze;
 
                 case OpenWeatherType.Sand:
                 case OpenWeatherType.SandAndDustWhirls:
-                    return CMWeatherType.Sand;
+                    return WeatherFxType.Sand;
 
                 case OpenWeatherType.Dust:
                 case OpenWeatherType.VolcanicAsh:
-                    return CMWeatherType.Dust;
+                    return WeatherFxType.Dust;
 
                 case OpenWeatherType.Fog:
-                    return CMWeatherType.Fog;
+                    return WeatherFxType.Fog;
 
                 case OpenWeatherType.Squalls:
-                    return CMWeatherType.Squalls;
+                    return WeatherFxType.Squalls;
 
                 case OpenWeatherType.Tornado:
                 case OpenWeatherType.TornadoExtreme:
-                    return CMWeatherType.Tornado;
+                    return WeatherFxType.Tornado;
 
                 case OpenWeatherType.ClearSky:
                 case OpenWeatherType.Calm:
                 case OpenWeatherType.LightBreeze:
-                    return CMWeatherType.Clear;
+                    return WeatherFxType.Clear;
 
                 case OpenWeatherType.FewClouds:
                 case OpenWeatherType.GentleBreeze:
                 case OpenWeatherType.ModerateBreeze:
-                    return CMWeatherType.FewClouds;
+                    return WeatherFxType.FewClouds;
 
                 case OpenWeatherType.ScatteredClouds:
-                    return CMWeatherType.ScatteredClouds;
+                    return WeatherFxType.ScatteredClouds;
 
                 case OpenWeatherType.BrokenClouds:
-                    return CMWeatherType.BrokenClouds;
+                    return WeatherFxType.BrokenClouds;
 
                 case OpenWeatherType.OvercastClouds:
-                    return CMWeatherType.OvercastClouds;
+                    return WeatherFxType.OvercastClouds;
 
                 case OpenWeatherType.Hurricane:
                 case OpenWeatherType.Gale:
@@ -244,25 +242,25 @@ namespace AssettoServer.Server.Weather
                 case OpenWeatherType.Storm:
                 case OpenWeatherType.ViolentStorm:
                 case OpenWeatherType.HurricaneAdditional:
-                    return CMWeatherType.Hurricane;
+                    return WeatherFxType.Hurricane;
 
                 case OpenWeatherType.Cold:
-                    return CMWeatherType.Cold;
+                    return WeatherFxType.Cold;
 
                 case OpenWeatherType.Hot:
-                    return CMWeatherType.Hot;
+                    return WeatherFxType.Hot;
 
                 case OpenWeatherType.Windy:
                 case OpenWeatherType.FreshBreeze:
                 case OpenWeatherType.StrongBreeze:
                 case OpenWeatherType.HighWind:
-                    return CMWeatherType.Windy;
+                    return WeatherFxType.Windy;
 
                 case OpenWeatherType.Hail:
-                    return CMWeatherType.Hail;
+                    return WeatherFxType.Hail;
 
                 default:
-                    return CMWeatherType.Clear;
+                    return WeatherFxType.Clear;
             }
         }
     }

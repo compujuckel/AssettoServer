@@ -37,6 +37,7 @@ namespace AssettoServer.Server
         public SessionConfiguration CurrentSession { get; private set; }
         public WeatherConfiguration WeatherConfiguration { get; private set; }
         public WeatherData CurrentWeather { get; private set; }
+        public long? WeatherFxStartDate { get; private set; }
         public float CurrentDayTime { get; private set; }
         public GeoParams GeoParams { get; private set; }
 
@@ -117,8 +118,9 @@ namespace AssettoServer.Server
             if (Configuration.Extra.EnableRealTime)
             {
                 RealTimeZone = TZConvert.GetTimeZoneInfo(Configuration.Extra.RealTimeZone);
-                DateTime realTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, RealTimeZone);
-                Log.Information("Enabled real time with time zone {0}: {1}", RealTimeZone.DisplayName, realTime, realTime.TimeOfDay.TotalSeconds);
+                UpdateRealTime();
+
+                Log.Information("Enabled real time with time zone {0}", RealTimeZone.DisplayName);
             }
 
             string blacklistPath = "blacklist.txt";
@@ -196,7 +198,7 @@ namespace AssettoServer.Server
         {
             if (LiveWeatherHelper != null)
             {
-                WeatherData weather = await LiveWeatherHelper.UpdateAsync((int)CurrentDayTime);
+                WeatherData weather = await LiveWeatherHelper.UpdateAsync((int)CurrentDayTime, WeatherFxStartDate);
                 Log.Information("Live weather update: A:{0}°C R:{1}°C, {2}%, {3}hPa, {4}km/h {5}°, gfx={6}",
                     Math.Round(weather.TemperatureAmbient, 1),
                     Math.Round(weather.TemperatureRoad, 1),
@@ -204,9 +206,16 @@ namespace AssettoServer.Server
                     weather.Pressure,
                     Math.Round(weather.WindSpeed),
                     weather.WindDirection,
-                    weather.Graphics);
+                    weather.Type.Graphics);
                 SetWeather(weather);
             }
+        }
+
+        private void UpdateRealTime()
+        {
+            var realTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, RealTimeZone);
+            CurrentDayTime = (float)realTime.TimeOfDay.TotalSeconds;
+            WeatherFxStartDate = new DateTimeOffset(DateTime.SpecifyKind(realTime.Date, DateTimeKind.Utc)).ToUnixTimeSeconds();
         }
 
         private void InitializeChecksums()
@@ -376,7 +385,13 @@ namespace AssettoServer.Server
 
             SetWeather(new WeatherData
             {
-                    Graphics = weather.Graphics,
+                    Type = new WeatherType
+                    {
+                        WeatherFxType = WeatherFxType.None,
+                        Name = weather.Graphics,
+                        Graphics = weather.Graphics,
+                        TemperatureCoefficient = 0
+                    },
                     TemperatureAmbient = weather.BaseTemperatureAmbient,
                     TemperatureRoad = weather.BaseTemperatureRoad,
                     WindSpeed = weather.WindBaseSpeedMin,
@@ -386,16 +401,41 @@ namespace AssettoServer.Server
 
         public void SetWeather(WeatherData weather)
         {
-            Log.Information("Weather has been set to {0}.", weather.Graphics);
+            Log.Information("Weather has been set to {0}.", weather.Type.Name);
             CurrentWeather = weather;
 
             BroadcastPacket(new WeatherUpdate
             {
                 Ambient = (byte)weather.TemperatureAmbient,
-                Graphics = weather.Graphics,
+                Graphics = weather.Type.Graphics,
                 Road = (byte)weather.TemperatureRoad,
                 WindDirection = (short)weather.WindDirection,
                 WindSpeed = (short)weather.WindSpeed
+            });
+        }
+
+        // TODO for testing purposes only
+        public void SetCspWeather(WeatherFxType type)
+        {
+            Log.Information("CSP weather set to {0}", type);
+
+            CurrentWeather.Type = WeatherTypeProvider.GetWeatherType(type);
+
+            BroadcastPacket(new CSPWeatherUpdate
+            {
+                WeatherType = (byte)type,
+                UpcomingWeatherType = (byte)type,
+                TransitionValue = 0,
+                TemperatureAmbient = (Half)30,
+                TemperatureRoad = (Half)40,
+                TrackGrip = (Half)100,
+                WindDirectionDeg = (Half)CurrentWeather.WindDirection,
+                WindSpeed = (Half)CurrentWeather.WindSpeed,
+                Humidity = (Half)CurrentWeather.Humidity,
+                Pressure = (Half)CurrentWeather.Pressure,
+                RainIntensity = (Half)50,
+                RainWetness = (Half)50,
+                RainWater = (Half)50
             });
         }
 
@@ -536,7 +576,7 @@ namespace AssettoServer.Server
                     {
                         if (Configuration.Extra.EnableRealTime)
                         {
-                            CurrentDayTime = (float)TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, RealTimeZone).TimeOfDay.TotalSeconds;
+                            UpdateRealTime();
                         }
                         else
                         {

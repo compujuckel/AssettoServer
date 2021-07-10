@@ -152,6 +152,10 @@ namespace AssettoServer.Network.Tcp
                         Name = handshakeRequest.Name?.Trim();
 
                         Server.Log.Information("{0} ({1}) is attempting to connect ({2}).", handshakeRequest.Name, handshakeRequest.Guid, handshakeRequest.RequestedCar);
+                        if(!string.IsNullOrEmpty(handshakeRequest.Features))
+                        {
+                            Server.Log.Debug("{0} supports extra CSP features: {1}", handshakeRequest.Name, handshakeRequest.Features);
+                        }
 
                         if (id != 0x3D || handshakeRequest.ClientVersion != 202)
                             SendPacket(new UnsupportedProtocolResponse());
@@ -483,7 +487,7 @@ namespace AssettoServer.Network.Tcp
             SendPacket(new WeatherUpdate
             {
                 Ambient = (byte)Server.CurrentWeather.TemperatureAmbient,
-                Graphics = Server.CurrentWeather.Graphics,
+                Graphics = Server.CurrentWeather.Type.Graphics,
                 Road = (byte)Server.CurrentWeather.TemperatureRoad,
                 WindDirection = (short)Server.CurrentWeather.WindDirection,
                 WindSpeed = (short)Server.CurrentWeather.WindSpeed

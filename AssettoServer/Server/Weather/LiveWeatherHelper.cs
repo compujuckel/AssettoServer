@@ -14,8 +14,8 @@ namespace AssettoServer.Server.Weather
         private readonly float _lat;
         private readonly float _lon;
 
-        public static readonly int TimeMinimum = 8 * 60 * 60;
-        public static readonly int TimeMaximum = 18 * 60 * 60;
+        public const int TimeMinimum = 8 * 60 * 60;
+        public const int TimeMaximum = 18 * 60 * 60;
 
         public LiveWeatherHelper(IWeatherTypeProvider weatherTypeProvider, IWeatherProvider weatherProvider, float lat, float lon)
         {
@@ -26,15 +26,23 @@ namespace AssettoServer.Server.Weather
             _lon = lon;
         }
 
-        public async Task<WeatherData> UpdateAsync(int seconds)
+        public async Task<WeatherData> UpdateAsync(int seconds, long? wfxStartDate)
         {
             var response = await _weatherProvider.GetWeatherAsync(_lat, _lon);
 
             var weatherType = _weatherTypeProvider.GetWeatherType(response.WeatherType);
 
+            if (wfxStartDate.HasValue)
+            {
+                weatherType = weatherType with
+                {
+                    Graphics = $"wfx_type={(int) weatherType.WeatherFxType}_start={wfxStartDate.Value}"
+                };
+            }
+            
             return new WeatherData
             {
-                Graphics = weatherType.Graphics,
+                Type = weatherType,
                 TemperatureAmbient = response.TemperatureAmbient,
                 TemperatureRoad = (float)GetRoadTemperature(seconds, response.TemperatureAmbient, weatherType.TemperatureCoefficient),
                 Pressure = response.Pressure,
@@ -45,7 +53,7 @@ namespace AssettoServer.Server.Weather
         }
 
         // From https://github.com/gro-ove/actools/blob/master/AcTools/Processes/Game.Properties.cs#L481
-        public static double GetRoadTemperature(double seconds, double ambientTemperature, double weatherCoefficient = 1.0)
+        private static double GetRoadTemperature(double seconds, double ambientTemperature, double weatherCoefficient = 1.0)
         {
             if (seconds < TimeMinimum || seconds > TimeMaximum)
             {

@@ -8,12 +8,12 @@ namespace AssettoServer.Server.Weather
 {
     public class WeatherData
     {
-        public string Graphics;
-        public float TemperatureAmbient;
-        public float TemperatureRoad;
-        public int Pressure;
-        public int Humidity;
-        public float WindSpeed;
-        public int WindDirection;
+        public WeatherType Type { get; set; }
+        public float TemperatureAmbient { get; set; }
+        public float TemperatureRoad { get; set; }
+        public int Pressure { get; set; }
+        public int Humidity { get; set; }
+        public float WindSpeed { get; set; }
+        public int WindDirection { get; set; }
     }
 }

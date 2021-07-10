@@ -157,7 +157,7 @@ namespace AssettoServer.Network.Http
                         WrappedPort = ACServer.Configuration.HttpPort,
                         AmbientTemperature = ACServer.CurrentWeather.TemperatureAmbient,
                         RoadTemperature = ACServer.CurrentWeather.TemperatureRoad,
-                        CurrentWeatherId = ACServer.CurrentWeather.Graphics,
+                        CurrentWeatherId = ACServer.CurrentWeather.Type.Graphics,
                         WindSpeed = (int)ACServer.CurrentWeather.WindSpeed,
                         WindDirection = ACServer.CurrentWeather.WindDirection,
                         Description = ACServer.Configuration.Extra.ServerDescription

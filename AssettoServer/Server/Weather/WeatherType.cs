@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 
 namespace AssettoServer.Server.Weather
 {
-    public class WeatherType
+    public record WeatherType
     {
-        public CMWeatherType WeatherTypeId { get; set; }
-        public string Name { get; set; }
-        public string Graphics { get; set; }
-        public float TemperatureCoefficient { get; set; }
+        public WeatherFxType WeatherFxType { get; init; }
+        public string Name { get; init; }
+        public string Graphics { get; init; }
+        public float TemperatureCoefficient { get; init; }
     }
 
-    public enum CMWeatherType
+    public enum WeatherFxType
     {
         None = -1,
         LightThunderstorm = 0,

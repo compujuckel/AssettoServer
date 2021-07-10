@@ -8,6 +8,6 @@ namespace AssettoServer.Server.Weather
 {
     public interface IWeatherTypeProvider
     {
-        public WeatherType GetWeatherType(CMWeatherType id);
+        public WeatherType GetWeatherType(WeatherFxType id);
     }
 }

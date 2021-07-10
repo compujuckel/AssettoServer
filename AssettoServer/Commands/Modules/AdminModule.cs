@@ -5,6 +5,7 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Weather;
 using Humanizer;
 using Humanizer.Bytes;
 using Qmmands;
@@ -96,6 +97,13 @@ namespace AssettoServer.Commands.Modules
                 Reply("Weather has been set.");
             }
             else Reply("There is no weather with this ID.");
+        }
+
+        [Command("setcspweather")]
+        public void SetCspWeather(int weatherFxId)
+        {
+            Context.Server.SetCspWeather((WeatherFxType)weatherFxId);
+            Reply("Weather has been set.");
         }
 
         [Command("setafktime")]

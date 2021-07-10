@@ -12,18 +12,18 @@ namespace AssettoServer.Server.Weather
 {
     public class IniWeatherTypeProvider : IWeatherTypeProvider
     {
-        private const string _weatherPath = "content/weather/";
+        private const string WeatherPath = "content/weather/";
         private Logger Log { get; }
-        private Dictionary<CMWeatherType, WeatherType> _weatherTypes;
+        private readonly Dictionary<WeatherFxType, WeatherType> _weatherTypes;
         public IniWeatherTypeProvider(Logger log)
         {
             Log = log;
 
-            _weatherTypes = new Dictionary<CMWeatherType, WeatherType>();
+            _weatherTypes = new Dictionary<WeatherFxType, WeatherType>();
 
             try
             {
-                foreach (string path in Directory.GetDirectories(_weatherPath))
+                foreach (string path in Directory.GetDirectories(WeatherPath))
                 {
                     var parser = new FileIniDataParser();
                     IniData data = parser.ReadFile(Path.Combine(path, "weather.ini"));
@@ -32,10 +32,10 @@ namespace AssettoServer.Server.Weather
 
                     if (weatherTypeIdStr != null)
                     {
-                        CMWeatherType cmWeatherType = (CMWeatherType)int.Parse(weatherTypeIdStr);
+                        WeatherFxType cmWeatherType = (WeatherFxType)int.Parse(weatherTypeIdStr);
                         var weather = new WeatherType
                         {
-                            WeatherTypeId = cmWeatherType,
+                            WeatherFxType = cmWeatherType,
                             Name = data["LAUNCHER"]["NAME"],
                             Graphics = new DirectoryInfo(path).Name,
                             TemperatureCoefficient = float.Parse(data["LAUNCHER"]["TEMPERATURE_COEFF"] ?? "0")
@@ -43,7 +43,7 @@ namespace AssettoServer.Server.Weather
 
                         if (!_weatherTypes.ContainsKey(cmWeatherType))
                         {
-                            Log.Debug("Loaded weather {0} ({1}), coeff {2}", weather.Name, weather.WeatherTypeId, weather.TemperatureCoefficient);
+                            Log.Debug("Loaded weather {0} ({1}), coeff {2}", weather.Name, weather.WeatherFxType, weather.TemperatureCoefficient);
                             _weatherTypes.Add(cmWeatherType, weather);
 
                         }
@@ -66,18 +66,17 @@ namespace AssettoServer.Server.Weather
             }
         }
 
-        public WeatherType GetWeatherType(CMWeatherType id)
+        public WeatherType GetWeatherType(WeatherFxType id)
         {
-            WeatherType ret;
-            if(_weatherTypes.TryGetValue(id, out ret))
+            if(_weatherTypes.TryGetValue(id, out var ret))
             {
                 return ret;
             }
 
-            Log.Warning("No weather found for id {0}, falling back to default");
+            Log.Warning("No weather found for id {0}, falling back to default", id);
             return new WeatherType
             {
-                WeatherTypeId = CMWeatherType.Clear,
+                WeatherFxType = WeatherFxType.Clear,
                 Name = "Clear",
                 Graphics = "3_clear",
                 TemperatureCoefficient = 0

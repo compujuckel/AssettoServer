@@ -11,13 +11,13 @@ namespace AssettoServer.Server.Weather
         private readonly IWeatherTypeProvider _weatherTypeProvider;
         private readonly IWeatherProvider _weatherProvider;
 
-        private readonly float _lat;
-        private readonly float _lon;
+        private readonly double _lat;
+        private readonly double _lon;
 
         public const int TimeMinimum = 8 * 60 * 60;
         public const int TimeMaximum = 18 * 60 * 60;
 
-        public LiveWeatherHelper(IWeatherTypeProvider weatherTypeProvider, IWeatherProvider weatherProvider, float lat, float lon)
+        public LiveWeatherHelper(IWeatherTypeProvider weatherTypeProvider, IWeatherProvider weatherProvider, double lat, double lon)
         {
             _weatherTypeProvider = weatherTypeProvider;
             _weatherProvider = weatherProvider;

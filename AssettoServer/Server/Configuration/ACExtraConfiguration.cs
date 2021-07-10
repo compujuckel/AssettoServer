@@ -20,10 +20,7 @@ namespace AssettoServer.Server.Configuration
         public bool EnableServerDetails { get; set; } = true;
         public string ServerDescription { get; set; } = "";
         public string OwmApiKey { get; set; } = "";
-        public float Lat { get; set; } = 0;
-        public float Lon { get; set; } = 0;
         public bool EnableLiveWeather { get; set; } = false;
-        public string RealTimeZone { get; set; } = "";
         public bool EnableRealTime { get; set; } = false;
 
         [JsonIgnore]

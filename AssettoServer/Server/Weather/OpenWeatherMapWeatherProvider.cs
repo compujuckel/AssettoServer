@@ -95,7 +95,7 @@ namespace AssettoServer.Server.Weather
             _apiKey = apiKey;
             _httpClient = new HttpClient();
         }
-        public async Task<WeatherProviderResponse> GetWeatherAsync(float lat, float lon)
+        public async Task<WeatherProviderResponse> GetWeatherAsync(double lat, double lon)
         {
             HttpResponseMessage response = await _httpClient.GetAsync($"https://api.openweathermap.org/data/2.5/weather?appid={_apiKey}&units=metric&lat={lat}&lon={lon}");
             

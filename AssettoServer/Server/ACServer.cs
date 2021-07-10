@@ -22,6 +22,7 @@ using AssettoServer.Server.Weather;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Server.TrackParams;
 using Serilog;
 using Serilog.Core;
 using Qmmands;
@@ -65,6 +66,8 @@ namespace AssettoServer.Server
         private IWeatherTypeProvider WeatherTypeProvider { get; }
         private LiveWeatherHelper LiveWeatherHelper { get; }
         private TimeZoneInfo RealTimeZone { get; }
+        private ITrackParamsProvider TrackParamsProvider { get; }
+        public TrackParams.TrackParams TrackParams { get; private set; }
 
         public ACServer(ACServerConfiguration configuration)
         {
@@ -105,19 +108,35 @@ namespace AssettoServer.Server
             CommandService.AddTypeParser(new ACClientTypeParser());
             CommandService.CommandExecutionFailed += OnCommandExecutionFailed;
 
+            TrackParamsProvider = new IniTrackParamsProvider(Log);
+            TrackParamsProvider.Initialize().Wait();
+            TrackParams = TrackParamsProvider.GetParamsForTrack(Configuration.Track);
+
+            if (TrackParams == null)
+            {
+                Log.Error("No track params found for {0}. Live weather and realtime will be disabled.", Configuration.Track);
+
+                Configuration.Extra.EnableRealTime = false;
+                Configuration.Extra.EnableLiveWeather = false;
+            }
+            else if (string.IsNullOrWhiteSpace(TrackParams.Timezone))
+            {
+                Configuration.Extra.EnableRealTime = false;
+            }
+
             if (Configuration.Extra.EnableLiveWeather)
             {
-                if (!string.IsNullOrEmpty(Configuration.Extra.OwmApiKey))
+                if (!string.IsNullOrWhiteSpace(Configuration.Extra.OwmApiKey))
                 {
                     WeatherTypeProvider = new IniWeatherTypeProvider(Log);
                     WeatherProvider = new OpenWeatherMapWeatherProvider(Configuration.Extra.OwmApiKey);
-                    LiveWeatherHelper = new LiveWeatherHelper(WeatherTypeProvider, WeatherProvider, Configuration.Extra.Lat, Configuration.Extra.Lon);
+                    LiveWeatherHelper = new LiveWeatherHelper(WeatherTypeProvider, WeatherProvider, TrackParams.Latitude, TrackParams.Longitude);
                 }
             }
 
             if (Configuration.Extra.EnableRealTime)
             {
-                RealTimeZone = TZConvert.GetTimeZoneInfo(Configuration.Extra.RealTimeZone);
+                RealTimeZone = TZConvert.GetTimeZoneInfo(TrackParams.Timezone);
                 UpdateRealTime();
 
                 Log.Information("Enabled real time with time zone {0}", RealTimeZone.DisplayName);

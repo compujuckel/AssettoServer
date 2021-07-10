@@ -8,6 +8,6 @@ namespace AssettoServer.Server.Weather
 {
     public interface IWeatherProvider
     {
-        public Task<WeatherProviderResponse> GetWeatherAsync(float lat, float lon);
+        public Task<WeatherProviderResponse> GetWeatherAsync(double lat, double lon);
     }
 }

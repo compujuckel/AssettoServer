@@ -27,6 +27,7 @@ namespace AssettoServer.Network.Packets.Outgoing
         {
             writer.Write<byte>(0xAB);
             writer.Write<byte>(0x1);
+            writer.Write(UnixTimestamp);
             writer.Write(WeatherType);
             writer.Write(UpcomingWeatherType);
             writer.Write(TransitionValue);
@@ -40,6 +41,11 @@ namespace AssettoServer.Network.Packets.Outgoing
             writer.Write(RainIntensity);
             writer.Write(RainWetness);
             writer.Write(RainWater);
+        }
+
+        public override string ToString()
+        {
+            return $"{nameof(UnixTimestamp)}: {UnixTimestamp}, {nameof(WeatherType)}: {WeatherType}, {nameof(UpcomingWeatherType)}: {UpcomingWeatherType}, {nameof(TransitionValue)}: {TransitionValue}, {nameof(TemperatureAmbient)}: {TemperatureAmbient}, {nameof(TemperatureRoad)}: {TemperatureRoad}, {nameof(TrackGrip)}: {TrackGrip}, {nameof(WindDirectionDeg)}: {WindDirectionDeg}, {nameof(WindSpeed)}: {WindSpeed}, {nameof(Humidity)}: {Humidity}, {nameof(Pressure)}: {Pressure}, {nameof(RainIntensity)}: {RainIntensity}, {nameof(RainWetness)}: {RainWetness}, {nameof(RainWater)}: {RainWater}";
         }
     }
 }

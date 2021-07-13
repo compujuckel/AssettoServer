@@ -423,14 +423,7 @@ namespace AssettoServer.Server
             Log.Information("Weather has been set to {0}.", weather.Type.Name);
             CurrentWeather = weather;
 
-            BroadcastPacket(new WeatherUpdate
-            {
-                Ambient = (byte)weather.TemperatureAmbient,
-                Graphics = weather.Type.Graphics,
-                Road = (byte)weather.TemperatureRoad,
-                WindDirection = (short)weather.WindDirection,
-                WindSpeed = (short)weather.WindSpeed
-            });
+            SendCurrentWeather();
         }
 
         // TODO for testing purposes only
@@ -440,21 +433,22 @@ namespace AssettoServer.Server
 
             CurrentWeather.Type = WeatherTypeProvider.GetWeatherType(type);
 
-            BroadcastPacket(new CSPWeatherUpdate
+            BroadcastPacketUdp(new CSPWeatherUpdate
             {
+                UnixTimestamp = (ulong)DateTimeOffset.Now.ToUnixTimeSeconds(),
                 WeatherType = (byte)type,
                 UpcomingWeatherType = (byte)type,
                 TransitionValue = 0,
-                TemperatureAmbient = (Half)30,
-                TemperatureRoad = (Half)40,
-                TrackGrip = (Half)100,
+                TemperatureAmbient = (Half)20.0,
+                TemperatureRoad = (Half)30.0,
+                TrackGrip = (Half)0.98,
                 WindDirectionDeg = (Half)CurrentWeather.WindDirection,
                 WindSpeed = (Half)CurrentWeather.WindSpeed,
                 Humidity = (Half)CurrentWeather.Humidity,
                 Pressure = (Half)CurrentWeather.Pressure,
-                RainIntensity = (Half)50,
-                RainWetness = (Half)50,
-                RainWater = (Half)50
+                RainIntensity = (Half)100,
+                RainWetness = (Half)1,
+                RainWater = (Half)1
             });
         }
 
@@ -466,6 +460,61 @@ namespace AssettoServer.Server
             BroadcastPacket(new SunAngleUpdate { SunAngle = Configuration.SunAngle });
         }
 
+        public void SendCurrentWeather(ACTcpClient endpoint = null)
+        {
+            if (Configuration.Extra.EnableWeatherFx)
+            {
+                var weather = new CSPWeatherUpdate
+                {
+                    UnixTimestamp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                    WeatherType = (byte) CurrentWeather.Type.WeatherFxType,
+                    UpcomingWeatherType = (byte) CurrentWeather.Type.WeatherFxType,
+                    TransitionValue = 0,
+                    TemperatureAmbient = (Half) CurrentWeather.TemperatureAmbient,
+                    TemperatureRoad = (Half) CurrentWeather.TemperatureRoad,
+                    TrackGrip = (Half) Configuration.DynamicTrack.BaseGrip,
+                    WindDirectionDeg = (Half) CurrentWeather.WindDirection,
+                    WindSpeed = (Half) CurrentWeather.WindSpeed,
+                    Humidity = (Half) CurrentWeather.Humidity,
+                    Pressure = (Half) CurrentWeather.Pressure,
+                    RainIntensity = (Half) 0,
+                    RainWetness = (Half) 0,
+                    RainWater = (Half) 0
+                };
+
+                Log.Information("CSP Weather: {0}", weather);
+
+                if (endpoint == null)
+                {
+                    BroadcastPacketUdp(weather);
+                }
+                else
+                {
+                    endpoint.SendPacketUdp(weather);
+                }
+            }
+            else
+            {
+                var weather = new WeatherUpdate
+                {
+                    Ambient = (byte) CurrentWeather.TemperatureAmbient,
+                    Graphics = CurrentWeather.Type.Graphics,
+                    Road = (byte) CurrentWeather.TemperatureRoad,
+                    WindDirection = (short) CurrentWeather.WindDirection,
+                    WindSpeed = (short) CurrentWeather.WindSpeed
+                };
+
+                if (endpoint == null)
+                {
+                    BroadcastPacket(weather);
+                }
+                else
+                {
+                    endpoint.SendPacket(weather);
+                }
+            }
+        }
+
         public void BroadcastPacket<TPacket>(TPacket packet, ACTcpClient sender = null) where TPacket : IOutgoingNetworkPacket
         {
             if (!(packet is SunAngleUpdate))
@@ -473,6 +522,15 @@ namespace AssettoServer.Server
 
             foreach (EntryCar car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client))
                 car.Client.SendPacket(packet);
+        }
+        
+        public void BroadcastPacketUdp<TPacket>(TPacket packet, ACTcpClient sender = null) where TPacket : IOutgoingNetworkPacket
+        {
+            if (!(packet is SunAngleUpdate))
+                Log.Debug("Broadcasting {0}", typeof(TPacket).Name);
+
+            foreach (EntryCar car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client && c.Client.HasAssociatedUdp))
+                car.Client.SendPacketUdp(packet);
         }
 
         public async Task UpdateAsync()
@@ -516,22 +574,23 @@ namespace AssettoServer.Server
                                             fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
                                         }
 
-                                        PacketWriter writer = new PacketWriter(buffer);
-                                        int bytesWritten = writer.WritePacket(new PositionUpdate
+                                        toClient.SendPacketUdp(new PositionUpdate
                                         {
                                             SessionId = fromClient.SessionId,
                                             EngineRpm = status.EngineRpm,
                                             Gas = status.Gas,
                                             Gear = status.Gear,
                                             LastRemoteTimestamp = fromCar.LastRemoteTimestamp,
-                                            Timestamp = (uint)(fromCar.Status.Timestamp - toCar.TimeOffset),
+                                            Timestamp = (uint) (fromCar.Status.Timestamp - toCar.TimeOffset),
                                             NormalizedPosition = status.NormalizedPosition,
                                             PakSequenceId = status.PakSequenceId,
                                             PerformanceDelta = status.PerformanceDelta,
                                             Ping = fromCar.Ping,
                                             Position = status.Position,
                                             Rotation = status.Rotation,
-                                            StatusFlag = (Configuration.Extra.ForceLights || fromCar.ForceLights) ? status.StatusFlag | 0x20 : status.StatusFlag,
+                                            StatusFlag = (Configuration.Extra.ForceLights || fromCar.ForceLights)
+                                                ? status.StatusFlag | 0x20
+                                                : status.StatusFlag,
                                             SteerAngle = status.SteerAngle,
                                             TyreAngularSpeedFL = status.TyreAngularSpeed[0],
                                             TyreAngularSpeedFR = status.TyreAngularSpeed[1],
@@ -540,10 +599,6 @@ namespace AssettoServer.Server
                                             Velocity = status.Velocity,
                                             WheelAngle = status.WheelAngle
                                         });
-
-                                        //await UdpClient.SendAsync(buffer, bytesWritten, toClient.UdpEndpoint);
-                                        //await UdpClient.Client.SendToAsync(new ArraySegment<byte>(buffer, 0, bytesWritten), SocketFlags.None, toClient.UdpEndpoint);
-                                        UdpServer.Send(toClient.UdpEndpoint, buffer, 0, bytesWritten);
                                     }
                                 }
                             

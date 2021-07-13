@@ -89,6 +89,22 @@ namespace AssettoServer.Network.Tcp
                 Server.Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
             }
         }
+        
+        internal void SendPacketUdp<TPacket>(TPacket packet) where TPacket : IOutgoingNetworkPacket
+        {
+            try
+            {
+                byte[] buffer = new byte[2048];
+                PacketWriter writer = new PacketWriter(buffer);
+                int bytesWritten = writer.WritePacket(packet);
+
+                Server.UdpServer.Send(UdpEndpoint, buffer, 0, bytesWritten);
+            }
+            catch (Exception ex)
+            {
+                Server.Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
+            }
+        }
 
         private async Task SendLoopAsync()
         {
@@ -484,14 +500,7 @@ namespace AssettoServer.Network.Tcp
                 SendPacket(new WelcomeMessage { Message = cfg.WelcomeMessage });
 
             SendPacket(new DriverInfoUpdate { ConnectedCars = connectedCars });
-            SendPacket(new WeatherUpdate
-            {
-                Ambient = (byte)Server.CurrentWeather.TemperatureAmbient,
-                Graphics = Server.CurrentWeather.Type.Graphics,
-                Road = (byte)Server.CurrentWeather.TemperatureRoad,
-                WindDirection = (short)Server.CurrentWeather.WindDirection,
-                WindSpeed = (short)Server.CurrentWeather.WindSpeed
-            });
+            Server.SendCurrentWeather(this);
 
             foreach (EntryCar car in connectedCars)
             {

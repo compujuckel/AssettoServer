@@ -87,10 +87,12 @@ namespace AssettoServer.Network.Http
                     var features = new List<string>();
                     if (ACServer.Configuration.Extra.UseSteamAuth)
                         features.Add("STEAM_TICKET");
+                    
+                    if(ACServer.Configuration.Extra.EnableWeatherFx)
+                        features.Add("WEATHERFX_V1");
 
                     features.Add("SPECTATING_AWARE");
                     features.Add("LOWER_CLIENTS_SENDING_RATE");
-                    features.Add("WEATHERFX_V1");
                     features.Add("CLIENTS_EXCHANGE_V1");
 
                     responseObj.Features = features;

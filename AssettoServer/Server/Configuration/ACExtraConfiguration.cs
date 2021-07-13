@@ -22,6 +22,7 @@ namespace AssettoServer.Server.Configuration
         public string OwmApiKey { get; set; } = "";
         public bool EnableLiveWeather { get; set; } = false;
         public bool EnableRealTime { get; set; } = false;
+        public bool EnableWeatherFx { get; set; } = false;
 
         [JsonIgnore]
         public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60000;

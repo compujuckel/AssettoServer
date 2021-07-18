@@ -103,7 +103,7 @@ namespace AssettoServer.Server
                 features.Add("STEAM_TICKET");
 
             features.Add("SPECTATING_AWARE");
-            features.Add("LOWER_CLIENTS_SENDING_RATE"); ;
+            features.Add("LOWER_CLIENTS_SENDING_RATE");
             features.Add("CLIENTS_EXCHANGE_V1");
 
             Features = features;

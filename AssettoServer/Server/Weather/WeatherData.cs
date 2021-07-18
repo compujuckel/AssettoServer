@@ -15,5 +15,8 @@ namespace AssettoServer.Server.Weather
         public int Humidity { get; set; }
         public float WindSpeed { get; set; }
         public int WindDirection { get; set; }
+        public float RainIntensity { get; set; }
+        public float RainWetness { get; set; }
+        public float RainWater { get; set; }
     }
 }

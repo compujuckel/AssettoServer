@@ -162,5 +162,75 @@ namespace AssettoServer.Commands.Modules
             Reply($"Sent: {udpServer.DatagramsSentPerSecond} packets/s ({ByteSize.FromBytes(udpServer.BytesSentPerSecond).Per(TimeSpan.FromSeconds(1)).Humanize("#.##")})\n" +
                 $"Received: {udpServer.DatagramsReceivedPerSecond} packets/s ({ByteSize.FromBytes(udpServer.BytesReceivedPerSecond).Per(TimeSpan.FromSeconds(1)).Humanize("#.##")})");
         }
+
+        [Command("acstore")]
+        public void AcStore(string key, string value)
+        {
+            var wfxInterface = Context.Server.WeatherFxControllerHost.Interface;
+            // TODO remove player on disconnect
+            if (wfxInterface.SharedMemoryWithPlayer == null)
+            {
+                wfxInterface.SharedMemoryWithPlayer = Context.Client;
+
+                foreach (var entry in wfxInterface.Storage)
+                {
+                    Reply($"/acstore {entry.Key} {entry.Value}");
+                }
+            }
+
+            if (wfxInterface.SharedMemoryWithPlayer == Context.Client)
+            {
+                wfxInterface.storeFromRemote(key, value);
+            }
+            else
+            {
+                Reply($"Memory is already shared with {wfxInterface.SharedMemoryWithPlayer.Name}");
+            }
+        }
+        
+        [Command("acstorep")]
+        public void AcStorePartial(string key, string value)
+        {
+            var wfxInterface = Context.Server.WeatherFxControllerHost.Interface;
+            // TODO remove player on disconnect
+            if (wfxInterface.SharedMemoryWithPlayer == null)
+            {
+                wfxInterface.SharedMemoryWithPlayer = Context.Client;
+            }
+
+            if (wfxInterface.SharedMemoryWithPlayer == Context.Client)
+            {
+                wfxInterface.storeFromRemote(key, value, true);
+            }
+            else
+            {
+                Reply($"Memory is already shared with {wfxInterface.SharedMemoryWithPlayer.Name}");
+            }
+        }
+
+        [Command("acload")]
+        public void AcLoad(string key)
+        {
+            var wfxInterface = Context.Server.WeatherFxControllerHost.Interface;
+            if (wfxInterface.SharedMemoryWithPlayer == null)
+            {
+                wfxInterface.SharedMemoryWithPlayer = Context.Client;
+                
+                foreach (var entry in wfxInterface.Storage)
+                {
+                    Reply($"/acstore {entry.Key} {entry.Value}");
+                }
+            }
+
+            if (wfxInterface.SharedMemoryWithPlayer == Context.Client)
+            {
+                string value = wfxInterface.load(key);
+                Reply($"/acstore {key} {value}");
+            }
+            else
+            {
+                Reply($"Memory is already shared with {wfxInterface.SharedMemoryWithPlayer.Name}");
+            }
+        }
     }
 }

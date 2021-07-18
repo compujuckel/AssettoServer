@@ -81,19 +81,8 @@ namespace AssettoServer.Network.Http
                     EntryListResponse responseObj = new EntryListResponse
                     {
                         Cars = ACServer.EntryCars.Select(ec => new EntryListResponseCar { Model = ec.Model, Skin = ec.Skin, IsEntryList = true, DriverName = ec?.Client?.Name, DriverTeam = ec?.Client?.Team, IsConnected = ec.Client != null }).ToList(),
-
+                        Features = ACServer.Features
                     };
-
-                    var features = new List<string>();
-                    if (ACServer.Configuration.Extra.UseSteamAuth)
-                        features.Add("STEAM_TICKET");
-
-                    features.Add("SPECTATING_AWARE");
-                    features.Add("LOWER_CLIENTS_SENDING_RATE");
-                    features.Add("WEATHERFX_V1");
-                    features.Add("CLIENTS_EXCHANGE_V1");
-
-                    responseObj.Features = features;
 
                     responseString = JsonConvert.SerializeObject(responseObj);
                 }
@@ -161,7 +150,8 @@ namespace AssettoServer.Network.Http
                         // TODO change these when dynamic weather is implemented
                         WindSpeed = ACServer.CurrentWeather.WindBaseSpeedMin,
                         WindDirection = ACServer.CurrentWeather.WindBaseDirection,
-                        Description = ACServer.Configuration.Extra.ServerDescription
+                        Description = ACServer.Configuration.Extra.ServerDescription,
+                        Features = ACServer.Features
                     };
 
                     responseString = JsonConvert.SerializeObject(responseObj, Formatting.None, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });

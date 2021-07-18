@@ -36,6 +36,7 @@ namespace AssettoServer.Server
         public WeatherConfiguration CurrentWeather { get; private set; }
         public float CurrentDayTime { get; private set; }
         public GeoParams GeoParams { get; private set; }
+        public IReadOnlyList<string> Features { get; private set; }
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
         internal ConcurrentDictionary<IPEndPoint, EntryCar> EndpointCars { get; }
@@ -96,6 +97,16 @@ namespace AssettoServer.Server
             CommandService.AddModules(Assembly.GetEntryAssembly());
             CommandService.AddTypeParser(new ACClientTypeParser());
             CommandService.CommandExecutionFailed += OnCommandExecutionFailed;
+            
+            var features = new List<string>();
+            if (Configuration.Extra.UseSteamAuth)
+                features.Add("STEAM_TICKET");
+
+            features.Add("SPECTATING_AWARE");
+            features.Add("LOWER_CLIENTS_SENDING_RATE"); ;
+            features.Add("CLIENTS_EXCHANGE_V1");
+
+            Features = features;
 
             string blacklistPath = "blacklist.txt";
             if (File.Exists(blacklistPath))

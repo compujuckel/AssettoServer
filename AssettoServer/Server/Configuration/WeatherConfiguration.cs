@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AssettoServer.Server.Weather;
 
 namespace AssettoServer.Server.Configuration
 {
@@ -17,5 +18,6 @@ namespace AssettoServer.Server.Configuration
         public int WindBaseSpeedMax { get; internal set; }
         public int WindBaseDirection { get; internal set; }
         public int WindVariationDirection { get; internal set; }
+        public WeatherFxParams WeatherFxParams { get; internal set; }
     }
 }

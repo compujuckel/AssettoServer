@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace AssettoServer.Server.Weather
 {
-    public class OpenWeatherMapWeatherProvider : IWeatherProvider
+    public class OpenWeatherMapWeatherProvider : ILiveWeatherProvider
     {
         public enum OpenWeatherType
         {
@@ -95,14 +95,14 @@ namespace AssettoServer.Server.Weather
             _apiKey = apiKey;
             _httpClient = new HttpClient();
         }
-        public async Task<WeatherProviderResponse> GetWeatherAsync(double lat, double lon)
+        public async Task<LiveWeatherProviderResponse> GetWeatherAsync(double lat, double lon)
         {
             HttpResponseMessage response = await _httpClient.GetAsync($"https://api.openweathermap.org/data/2.5/weather?appid={_apiKey}&units=metric&lat={lat}&lon={lon}");
             
             if (!response.IsSuccessStatusCode) return null;
             
             JObject json = JObject.Parse(await response.Content.ReadAsStringAsync());
-            WeatherProviderResponse weather = new WeatherProviderResponse
+            LiveWeatherProviderResponse weather = new LiveWeatherProviderResponse
             {
                 WeatherType = TranslateIdToWeatherType((OpenWeatherType)(int)json.SelectToken("weather[0].id")),
                 TemperatureAmbient = (float)json.SelectToken("main.temp"),

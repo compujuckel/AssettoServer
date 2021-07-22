@@ -36,10 +36,9 @@ namespace AssettoServer.Server
     {
         public ACServerConfiguration Configuration { get; }
         public SessionConfiguration CurrentSession { get; private set; }
-        public WeatherConfiguration WeatherConfiguration { get; private set; }
         public WeatherData CurrentWeather { get; private set; }
         public long? WeatherFxStartDate { get; private set; }
-        public float CurrentDayTime { get; private set; }
+        public float CurrentDaySeconds { get; private set; }
         public GeoParams GeoParams { get; private set; }
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
@@ -62,12 +61,11 @@ namespace AssettoServer.Server
 
         private SemaphoreSlim ConnectSempahore { get; }
         private HttpClient HttpClient { get; }
-        private IWeatherProvider WeatherProvider { get; }
-        private IWeatherTypeProvider WeatherTypeProvider { get; }
-        private LiveWeatherHelper LiveWeatherHelper { get; }
+        public IWeatherTypeProvider WeatherTypeProvider { get; }
+        public IWeatherProvider WeatherProvider { get; }
         private TimeZoneInfo RealTimeZone { get; }
         private ITrackParamsProvider TrackParamsProvider { get; }
-        public TrackParams.TrackParams TrackParams { get; private set; }
+        public TrackParams.TrackParams TrackParams { get; }
 
         public ACServer(ACServerConfiguration configuration)
         {
@@ -90,7 +88,7 @@ namespace AssettoServer.Server
                 EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Count];
             }
                                 
-            CurrentDayTime = (float)(Configuration.SunAngle * (50400.0 - 46800.0) / 16.0 + 46800.0);
+            CurrentDaySeconds = (float)(Configuration.SunAngle * (50400.0 - 46800.0) / 16.0 + 46800.0);
             ConnectSempahore = new SemaphoreSlim(1, 1);
             ConnectedCars = new ConcurrentDictionary<int, EntryCar>();
             EndpointCars = new ConcurrentDictionary<IPEndPoint, EntryCar>();
@@ -123,15 +121,16 @@ namespace AssettoServer.Server
             {
                 Configuration.Extra.EnableRealTime = false;
             }
+            
+            WeatherTypeProvider = new IniWeatherTypeProvider(Log);
 
             if (Configuration.Extra.EnableLiveWeather)
             {
-                if (!string.IsNullOrWhiteSpace(Configuration.Extra.OwmApiKey))
-                {
-                    WeatherTypeProvider = new IniWeatherTypeProvider(Log);
-                    WeatherProvider = new OpenWeatherMapWeatherProvider(Configuration.Extra.OwmApiKey);
-                    LiveWeatherHelper = new LiveWeatherHelper(WeatherTypeProvider, WeatherProvider, TrackParams.Latitude, TrackParams.Longitude);
-                }
+                WeatherProvider = new LiveWeatherProvider(this);
+            }
+            else
+            {
+                WeatherProvider = new DefaultWeatherProvider(this);
             }
 
             if (Configuration.Extra.EnableRealTime)
@@ -170,14 +169,7 @@ namespace AssettoServer.Server
             CurrentSession.StartTimeTicks = CurrentTime;
 
             await InitializeGeoParams();
-
-            if (Configuration.Extra.EnableLiveWeather)
-            {
-                await UpdateWeatherAsync();
-            } else
-            {
-                SetWeatherConfiguration(Configuration.Weathers[0]);
-            }
+            await WeatherProvider.UpdateAsync();
 
             InitializeSteam();
             _ = Task.Factory.StartNew(AcceptTcpConnectionsAsync, TaskCreationOptions.LongRunning);
@@ -185,8 +177,7 @@ namespace AssettoServer.Server
 
             if (Configuration.RegisterToLobby)
                 await RegisterToLobbyAsync();
-
-
+            
             _ = Task.Factory.StartNew(UpdateAsync, TaskCreationOptions.LongRunning);
             HttpServer.Start();
         }
@@ -213,27 +204,10 @@ namespace AssettoServer.Server
             }
         }
 
-        private async Task UpdateWeatherAsync()
-        {
-            if (LiveWeatherHelper != null)
-            {
-                WeatherData weather = await LiveWeatherHelper.UpdateAsync((int)CurrentDayTime, WeatherFxStartDate);
-                Log.Information("Live weather update: A:{0}°C R:{1}°C, {2}%, {3}hPa, {4}km/h {5}°, gfx={6}",
-                    Math.Round(weather.TemperatureAmbient, 1),
-                    Math.Round(weather.TemperatureRoad, 1),
-                    weather.Humidity,
-                    weather.Pressure,
-                    Math.Round(weather.WindSpeed),
-                    weather.WindDirection,
-                    weather.Type.Graphics);
-                SetWeather(weather);
-            }
-        }
-
         private void UpdateRealTime()
         {
             var realTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, RealTimeZone);
-            CurrentDayTime = (float)realTime.TimeOfDay.TotalSeconds;
+            CurrentDaySeconds = (float)realTime.TimeOfDay.TotalSeconds;
             WeatherFxStartDate = new DateTimeOffset(DateTime.SpecifyKind(realTime.Date, DateTimeKind.Utc)).ToUnixTimeSeconds();
         }
 
@@ -398,26 +372,6 @@ namespace AssettoServer.Server
                 await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => !p.Value).Select(p => p.Key));
         }
 
-        public void SetWeatherConfiguration(WeatherConfiguration weather)
-        {
-            WeatherConfiguration = weather;
-
-            SetWeather(new WeatherData
-            {
-                    Type = new WeatherType
-                    {
-                        WeatherFxType = WeatherFxType.None,
-                        Name = weather.Graphics,
-                        Graphics = weather.Graphics,
-                        TemperatureCoefficient = 0
-                    },
-                    TemperatureAmbient = weather.BaseTemperatureAmbient,
-                    TemperatureRoad = weather.BaseTemperatureRoad,
-                    WindSpeed = weather.WindBaseSpeedMin,
-                    WindDirection = weather.WindBaseDirection
-        });
-        }
-
         public void SetWeather(WeatherData weather)
         {
             Log.Information("Weather has been set to {0}.", weather.Type.Name);
@@ -446,15 +400,47 @@ namespace AssettoServer.Server
                 WindSpeed = (Half)CurrentWeather.WindSpeed,
                 Humidity = (Half)CurrentWeather.Humidity,
                 Pressure = (Half)CurrentWeather.Pressure,
-                RainIntensity = (Half)100,
-                RainWetness = (Half)1,
-                RainWater = (Half)1
+                RainIntensity = (Half)CurrentWeather.RainIntensity,
+                RainWetness = (Half)CurrentWeather.RainWetness,
+                RainWater = (Half)CurrentWeather.RainWater
             });
+        }
+
+        public void SendRawFileTcp(string filename)
+        {
+            try
+            {
+                byte[] file = File.ReadAllBytes(filename);
+                BroadcastPacket(new RawPacket()
+                {
+                    Content = file
+                });
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Could not send file");
+            }
+        }
+        
+        public void SendRawFileUdp(string filename)
+        {
+            try
+            {
+                byte[] file = File.ReadAllBytes(filename);
+                BroadcastPacketUdp(new RawPacket()
+                {
+                    Content = file
+                });
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Could not send file");
+            }
         }
 
         public void SetTime(float time)
         {
-            CurrentDayTime = Math.Clamp(time, 0, 86400);
+            CurrentDaySeconds = Math.Clamp(time, 0, 86400);
             Configuration.SunAngle = (float)(16.0 * (time - 46800.0) / (50400.0 - 46800.0));
 
             BroadcastPacket(new SunAngleUpdate { SunAngle = Configuration.SunAngle });
@@ -477,9 +463,9 @@ namespace AssettoServer.Server
                     WindSpeed = (Half) CurrentWeather.WindSpeed,
                     Humidity = (Half) CurrentWeather.Humidity,
                     Pressure = (Half) CurrentWeather.Pressure,
-                    RainIntensity = (Half) 0,
-                    RainWetness = (Half) 0,
-                    RainWater = (Half) 0
+                    RainIntensity = (Half) CurrentWeather.RainIntensity,
+                    RainWetness = (Half) CurrentWeather.RainWetness,
+                    RainWater = (Half) CurrentWeather.RainWater
                 };
 
                 Log.Information("CSP Weather: {0}", weather);
@@ -631,10 +617,7 @@ namespace AssettoServer.Server
                     if (Environment.TickCount64 - lastWeatherUpdate > 600000)
                     {
                         lastWeatherUpdate = Environment.TickCount64;
-                        if(Configuration.Extra.EnableLiveWeather)
-                        {
-                            _ = UpdateWeatherAsync();
-                        }
+                        _ = WeatherProvider.UpdateAsync();
                     }
 
                     if (Environment.TickCount64 - lastLobbyUpdate > 60000)
@@ -654,13 +637,13 @@ namespace AssettoServer.Server
                         }
                         else
                         {
-                            CurrentDayTime += (Environment.TickCount64 - lastTimeUpdate) / 1000 * Configuration.TimeOfDayMultiplier;
-                            if (CurrentDayTime <= 0)
-                                CurrentDayTime = 0;
-                            else if (CurrentDayTime >= 86400)
-                                CurrentDayTime = 0;
+                            CurrentDaySeconds += (Environment.TickCount64 - lastTimeUpdate) / 1000.0f * Configuration.TimeOfDayMultiplier;
+                            if (CurrentDaySeconds <= 0)
+                                CurrentDaySeconds = 0;
+                            else if (CurrentDaySeconds >= 86400)
+                                CurrentDaySeconds = 0;
                         }
-                        SetTime(CurrentDayTime);
+                        SetTime(CurrentDaySeconds);
                         lastTimeUpdate = Environment.TickCount64;
                     }
 

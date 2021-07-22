@@ -89,14 +89,22 @@ namespace AssettoServer.Commands.Modules
         [Command("setweather")]
         public void SetWeather(int weatherId)
         {
-            var allWeathers = Context.Server.Configuration.Weathers;
-            if (weatherId >= 0 && weatherId < allWeathers.Count)
+            if (Context.Server.WeatherProvider is DefaultWeatherProvider provider)
             {
-                WeatherConfiguration newWeather = allWeathers[weatherId];
-                Context.Server.SetWeatherConfiguration(newWeather);
-                Reply("Weather has been set.");
+                if (provider.SetWeatherConfiguration(weatherId))
+                {
+                    Reply("Weather has been set.");
+                }
+                else
+                {
+                    Reply("There is no weather with this id.");
+                }
             }
-            else Reply("There is no weather with this ID.");
+            else
+            {
+                Reply("Setting a weather configuration is not supported.");
+            }
+
         }
 
         [Command("setcspweather")]
@@ -104,6 +112,27 @@ namespace AssettoServer.Commands.Modules
         {
             Context.Server.SetCspWeather((WeatherFxType)weatherFxId);
             Reply("Weather has been set.");
+        }
+
+        [Command("setrain")]
+        public void SetRain(float intensity, float wetness, float water)
+        {
+            Context.Server.CurrentWeather.RainIntensity = intensity;
+            Context.Server.CurrentWeather.RainWetness = wetness;
+            Context.Server.CurrentWeather.RainWater = water;
+            Context.Server.SendCurrentWeather();
+        }
+
+        [Command("sendtcp")]
+        public void SendTcp(string filename)
+        {
+            Context.Server.SendRawFileTcp(filename);
+        }
+        
+        [Command("sendudp")]
+        public void SendUdp(string filename)
+        {
+            Context.Server.SendRawFileUdp(filename);
         }
 
         [Command("setafktime")]

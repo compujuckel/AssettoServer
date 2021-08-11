@@ -123,6 +123,14 @@ namespace AssettoServer.Commands.Modules
             Context.Server.SendCurrentWeather();
         }
 
+        [Command("settemp")]
+        public void SetTemp(float ambient, float road)
+        {
+            Context.Server.CurrentWeather.TemperatureAmbient = ambient;
+            Context.Server.CurrentWeather.TemperatureRoad = road;
+            Context.Server.SendCurrentWeather();
+        }
+
         [Command("sendtcp")]
         public void SendTcp(string filename)
         {

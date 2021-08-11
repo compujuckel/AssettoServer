@@ -375,7 +375,7 @@ ac.WeatherType = {}
 
             try
             {
-                _lua.DoFile("extension/weather-controllers/sol2/controller.lua");
+                _lua.DoFile("extension/weather-controllers/sol/controller.lua");
             }
             catch (LuaScriptException e)
             {

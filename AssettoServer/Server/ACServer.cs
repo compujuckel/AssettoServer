@@ -36,7 +36,7 @@ namespace AssettoServer.Server
     {
         public ACServerConfiguration Configuration { get; }
         public SessionConfiguration CurrentSession { get; private set; }
-        public WeatherData CurrentWeather { get; private set; }
+        public WeatherData CurrentWeather { get; set; }
         public long? WeatherFxStartDate { get; private set; }
         public float CurrentDaySeconds { get; private set; }
         public GeoParams GeoParams { get; private set; }

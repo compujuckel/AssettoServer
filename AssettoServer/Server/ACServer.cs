@@ -110,6 +110,9 @@ namespace AssettoServer.Server
             var features = new List<string>();
             if (Configuration.Extra.UseSteamAuth)
                 features.Add("STEAM_TICKET");
+            
+            if(Configuration.Extra.EnableWeatherFx)
+                features.Add("WEATHERFX_V1");
 
             features.Add("SPECTATING_AWARE");
             features.Add("LOWER_CLIENTS_SENDING_RATE");

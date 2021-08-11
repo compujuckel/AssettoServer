@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AssettoServer.Server.Weather
 {
-    public class WeatherProviderResponse
+    public class LiveWeatherProviderResponse
     {
         public WeatherFxType WeatherType { get; init; }
         public float TemperatureAmbient { get; init; }

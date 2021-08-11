@@ -36,11 +36,11 @@ namespace AssettoServer.Server
     {
         public ACServerConfiguration Configuration { get; }
         public SessionConfiguration CurrentSession { get; private set; }
-        public WeatherConfiguration WeatherConfiguration { get; private set; }
-        public WeatherData CurrentWeather { get; set; }
+        public WeatherData CurrentWeather { get; private set; }
         public long? WeatherFxStartDate { get; private set; }
         public float CurrentDaySeconds { get; private set; }
         public GeoParams GeoParams { get; private set; }
+        public IReadOnlyList<string> Features { get; private set; }
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
         internal ConcurrentDictionary<IPEndPoint, EntryCar> EndpointCars { get; }
@@ -62,9 +62,8 @@ namespace AssettoServer.Server
 
         private SemaphoreSlim ConnectSempahore { get; }
         private HttpClient HttpClient { get; }
-        private IWeatherProvider WeatherProvider { get; }
         public IWeatherTypeProvider WeatherTypeProvider { get; }
-        private LiveWeatherHelper LiveWeatherHelper { get; }
+        public IWeatherProvider WeatherProvider { get; }
         private TimeZoneInfo RealTimeZone { get; }
         private ITrackParamsProvider TrackParamsProvider { get; }
         public TrackParams.TrackParams TrackParams { get; }
@@ -108,6 +107,19 @@ namespace AssettoServer.Server
             CommandService.AddModules(Assembly.GetEntryAssembly());
             CommandService.AddTypeParser(new ACClientTypeParser());
             CommandService.CommandExecutionFailed += OnCommandExecutionFailed;
+            
+            var features = new List<string>();
+            if (Configuration.Extra.UseSteamAuth)
+                features.Add("STEAM_TICKET");
+            
+            if(Configuration.Extra.EnableWeatherFx)
+                features.Add("WEATHERFX_V1");
+
+            features.Add("SPECTATING_AWARE");
+            features.Add("LOWER_CLIENTS_SENDING_RATE");
+            features.Add("CLIENTS_EXCHANGE_V1");
+
+            Features = features;
 
             TrackParamsProvider = new IniTrackParamsProvider(Log);
             TrackParamsProvider.Initialize().Wait();
@@ -124,15 +136,16 @@ namespace AssettoServer.Server
             {
                 Configuration.Extra.EnableRealTime = false;
             }
+            
+            WeatherTypeProvider = new IniWeatherTypeProvider(Log);
 
             if (Configuration.Extra.EnableLiveWeather)
             {
-                if (!string.IsNullOrWhiteSpace(Configuration.Extra.OwmApiKey))
-                {
-                    WeatherTypeProvider = new IniWeatherTypeProvider(Log);
-                    WeatherProvider = new OpenWeatherMapWeatherProvider(Configuration.Extra.OwmApiKey);
-                    LiveWeatherHelper = new LiveWeatherHelper(WeatherTypeProvider, WeatherProvider, TrackParams.Latitude, TrackParams.Longitude);
-                }
+                WeatherProvider = new LiveWeatherProvider(this);
+            }
+            else
+            {
+                WeatherProvider = new DefaultWeatherProvider(this);
             }
 
             WeatherFxControllerHost = new WeatherFxControllerHost(this);
@@ -173,14 +186,7 @@ namespace AssettoServer.Server
             CurrentSession.StartTimeTicks = CurrentTime;
 
             await InitializeGeoParams();
-
-            if (Configuration.Extra.EnableLiveWeather)
-            {
-                await UpdateWeatherAsync();
-            } else
-            {
-                SetWeatherConfiguration(Configuration.Weathers[0]);
-            }
+            await WeatherProvider.UpdateAsync();
             
             WeatherFxControllerHost.LoadController();
 
@@ -215,23 +221,6 @@ namespace AssettoServer.Server
             {
                 Log.Information("Failed to get IP geolocation parameters.");
                 GeoParams = new GeoParams();
-            }
-        }
-
-        private async Task UpdateWeatherAsync()
-        {
-            if (LiveWeatherHelper != null)
-            {
-                WeatherData weather = await LiveWeatherHelper.UpdateAsync((int)CurrentDaySeconds, WeatherFxStartDate);
-                Log.Information("Live weather update: A:{0}°C R:{1}°C, {2}%, {3}hPa, {4}km/h {5}°, gfx={6}",
-                    Math.Round(weather.TemperatureAmbient, 1),
-                    Math.Round(weather.TemperatureRoad, 1),
-                    weather.Humidity,
-                    weather.Pressure,
-                    Math.Round(weather.WindSpeed),
-                    weather.WindDirection,
-                    weather.Type.Graphics);
-                SetWeather(weather);
             }
         }
 
@@ -403,26 +392,6 @@ namespace AssettoServer.Server
                 await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => !p.Value).Select(p => p.Key));
         }
 
-        public void SetWeatherConfiguration(WeatherConfiguration weather)
-        {
-            WeatherConfiguration = weather;
-
-            SetWeather(new WeatherData
-            {
-                    Type = new WeatherType
-                    {
-                        WeatherFxType = WeatherFxType.None,
-                        Name = weather.Graphics,
-                        Graphics = weather.Graphics,
-                        TemperatureCoefficient = 0
-                    },
-                    TemperatureAmbient = weather.BaseTemperatureAmbient,
-                    TemperatureRoad = weather.BaseTemperatureRoad,
-                    WindSpeed = weather.WindBaseSpeedMin,
-                    WindDirection = weather.WindBaseDirection
-        });
-        }
-
         public void SetWeather(WeatherData weather)
         {
             Log.Information("Weather has been set to {0}.", weather.Type.Name);
@@ -455,6 +424,38 @@ namespace AssettoServer.Server
                 RainWetness = (Half)CurrentWeather.RainWetness,
                 RainWater = (Half)CurrentWeather.RainWater
             });
+        }
+
+        public void SendRawFileTcp(string filename)
+        {
+            try
+            {
+                byte[] file = File.ReadAllBytes(filename);
+                BroadcastPacket(new RawPacket()
+                {
+                    Content = file
+                });
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Could not send file");
+            }
+        }
+        
+        public void SendRawFileUdp(string filename)
+        {
+            try
+            {
+                byte[] file = File.ReadAllBytes(filename);
+                BroadcastPacketUdp(new RawPacket()
+                {
+                    Content = file
+                });
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Could not send file");
+            }
         }
 
         public void SetTime(float time)
@@ -636,10 +637,7 @@ namespace AssettoServer.Server
                     if (Environment.TickCount64 - lastWeatherUpdate > 600000)
                     {
                         lastWeatherUpdate = Environment.TickCount64;
-                        if(Configuration.Extra.EnableLiveWeather)
-                        {
-                            _ = UpdateWeatherAsync();
-                        }
+                        _ = WeatherProvider.UpdateAsync();
                     }
 
                     if (Environment.TickCount64 - lastLobbyUpdate > 60000)
@@ -661,7 +659,7 @@ namespace AssettoServer.Server
                         }
                         else
                         {
-                            CurrentDaySeconds += (Environment.TickCount64 - lastTimeUpdate) / 1000 * Configuration.TimeOfDayMultiplier;
+                            CurrentDaySeconds += (Environment.TickCount64 - lastTimeUpdate) / 1000.0f * Configuration.TimeOfDayMultiplier;
                             if (CurrentDaySeconds <= 0)
                                 CurrentDaySeconds = 0;
                             else if (CurrentDaySeconds >= 86400)

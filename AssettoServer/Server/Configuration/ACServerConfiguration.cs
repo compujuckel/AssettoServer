@@ -1,14 +1,9 @@
-﻿using AssettoServer.Server.Configuration;
-using IniParser;
+﻿using IniParser;
 using IniParser.Model;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using AssettoServer.Server.Weather;
 
 namespace AssettoServer.Server.Configuration
 {
@@ -161,7 +156,8 @@ namespace AssettoServer.Server.Configuration
                     WindBaseSpeedMin = int.Parse(weather["WIND_BASE_SPEED_MIN"]),
                     WindBaseSpeedMax = int.Parse(weather["WIND_BASE_SPEED_MAX"]),
                     WindBaseDirection = int.Parse(weather["WIND_BASE_DIRECTION"]),
-                    WindVariationDirection = int.Parse(weather["WIND_VARIATION_DIRECTION"])
+                    WindVariationDirection = int.Parse(weather["WIND_VARIATION_DIRECTION"]),
+                    WeatherFxParams = WeatherFxParams.FromString(weather["GRAPHICS"])
                 };
 
                 weathers.Add(weatherConfiguration);

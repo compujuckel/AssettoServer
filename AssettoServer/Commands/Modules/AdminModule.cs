@@ -108,9 +108,9 @@ namespace AssettoServer.Commands.Modules
         }
 
         [Command("setcspweather")]
-        public void SetCspWeather(int weatherFxId)
+        public void SetCspWeather(int upcoming, int duration)
         {
-            Context.Server.SetCspWeather((WeatherFxType)weatherFxId);
+            Context.Server.SetCspWeather((WeatherFxType)upcoming, duration);
             Reply("Weather has been set.");
         }
 

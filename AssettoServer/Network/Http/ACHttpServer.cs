@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace AssettoServer.Network.Http
 {
@@ -23,13 +24,13 @@ namespace AssettoServer.Network.Http
 
         protected override void OnStarting()
         {
-            Server.Log.Information("Starting HTTP server on port {0}.", Server.Configuration.HttpPort);
+            Log.Information("Starting HTTP server on port {0}.", Server.Configuration.HttpPort);
             base.OnStarting();
         }
 
         protected override void OnError(SocketError error)
         {
-            Server.Log.Information("HTTP session caught an error: {0}.", error);
+            Log.Information("HTTP session caught an error: {0}.", error);
         }
     }
 }

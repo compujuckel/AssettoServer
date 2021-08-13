@@ -9,6 +9,10 @@ namespace AssettoServer.Server.Weather
     public class WeatherData
     {
         public WeatherType Type { get; set; }
+        public WeatherType UpcomingType { get; set; }
+        public ushort TransitionValue { get; set; }
+        public double TransitionValueInternal { get; set; }
+        public double TransitionDuration { get; set; }
         public float TemperatureAmbient { get; set; }
         public float TemperatureRoad { get; set; }
         public int Pressure { get; set; }

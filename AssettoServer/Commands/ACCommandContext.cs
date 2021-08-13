@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace AssettoServer.Commands
 {
@@ -27,14 +28,14 @@ namespace AssettoServer.Commands
         public void Reply(string message)
         {
             if (IsConsole)
-                Server.Log.Information(message);
+                Log.Information(message);
             else
                 Client.SendPacket(new ChatMessage { SessionId = 255, Message = message });
         }
 
         public void Broadcast(string message)
         {
-            Server.Log.Information(message);
+            Log.Information(message);
             Server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = message });
         }
     }

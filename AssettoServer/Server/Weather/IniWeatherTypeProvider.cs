@@ -36,14 +36,13 @@ namespace AssettoServer.Server.Weather
                         var weather = new WeatherType
                         {
                             WeatherFxType = cmWeatherType,
-                            Name = data["LAUNCHER"]["NAME"],
                             Graphics = new DirectoryInfo(path).Name,
                             TemperatureCoefficient = float.Parse(data["LAUNCHER"]["TEMPERATURE_COEFF"] ?? "0")
                         };
 
                         if (!_weatherTypes.ContainsKey(cmWeatherType))
                         {
-                            Log.Debug("Loaded weather {0} ({1}), coeff {2}", weather.Name, weather.WeatherFxType, weather.TemperatureCoefficient);
+                            Log.Debug("Loaded weather {0}, coeff {1}", weather.WeatherFxType, weather.TemperatureCoefficient);
                             _weatherTypes.Add(cmWeatherType, weather);
 
                         }
@@ -77,7 +76,6 @@ namespace AssettoServer.Server.Weather
             return new WeatherType
             {
                 WeatherFxType = WeatherFxType.Clear,
-                Name = "Clear",
                 Graphics = "3_clear",
                 TemperatureCoefficient = 0
             };

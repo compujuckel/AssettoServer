@@ -82,11 +82,11 @@ namespace AssettoServer.Network.Tcp
             try
             {
                 if (!OutgoingPacketChannel.Writer.TryWrite(packet) && !(packet is SunAngleUpdate))
-                    Server.Log.Warning("Failed to queue packet {0} for {1}. Perhaps the outgoing packet channel is full?", typeof(TPacket).Name, Name);
+                    Log.Warning("Failed to queue packet {0} for {1}. Perhaps the outgoing packet channel is full?", typeof(TPacket).Name, Name);
             }
             catch (Exception ex)
             {
-                Server.Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
+                Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
             }
         }
         
@@ -102,7 +102,7 @@ namespace AssettoServer.Network.Tcp
             }
             catch (Exception ex)
             {
-                Server.Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
+                Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
             }
         }
 
@@ -118,11 +118,11 @@ namespace AssettoServer.Network.Tcp
                     if (!(packet is SunAngleUpdate))
                     {
                         if (packet is AuthFailedResponse authResponse)
-                            Server.Log.Debug("Sending {0} ({1})", packet.GetType().Name, authResponse.Reason);
+                            Log.Debug("Sending {0} ({1})", packet.GetType().Name, authResponse.Reason);
                         else if (packet is ChatMessage chatMessage && chatMessage.SessionId == 255)
-                            Server.Log.Debug("Sending {0} ({1}) to {2}", packet.GetType().Name, chatMessage.Message, Name);
+                            Log.Debug("Sending {0} ({1}) to {2}", packet.GetType().Name, chatMessage.Message, Name);
                         else
-                            Server.Log.Debug("Sending {0} to {1}", packet.GetType().Name, Name);
+                            Log.Debug("Sending {0} to {1}", packet.GetType().Name, Name);
                     }
 
                     PacketWriter writer = new PacketWriter(TcpStream, TcpSendBuffer);
@@ -135,7 +135,7 @@ namespace AssettoServer.Network.Tcp
                 catch (OperationCanceledException) { }
                 catch (Exception ex)
                 {
-                    Server.Log.Error(ex, "Error sending {0} to {1}.", packet?.GetType().Name ?? "(no packet)", Name);
+                    Log.Error(ex, "Error sending {0} to {1}.", packet?.GetType().Name ?? "(no packet)", Name);
                 }
             }
         }
@@ -154,7 +154,7 @@ namespace AssettoServer.Network.Tcp
 
                     byte id = reader.Read<byte>();
                     if (id != 0x82)
-                        Server.Log.Debug("Received TCP packet with ID {0:X}", id);
+                        Log.Debug("Received TCP packet with ID {0:X}", id);
 
                     if (!HasStartedHandshake && id != 0x3D)
                         return;
@@ -167,10 +167,10 @@ namespace AssettoServer.Network.Tcp
 
                         Name = handshakeRequest.Name?.Trim();
 
-                        Server.Log.Information("{0} ({1}) is attempting to connect ({2}).", handshakeRequest.Name, handshakeRequest.Guid, handshakeRequest.RequestedCar);
+                        Log.Information("{0} ({1}) is attempting to connect ({2}).", handshakeRequest.Name, handshakeRequest.Guid, handshakeRequest.RequestedCar);
                         if(!string.IsNullOrEmpty(handshakeRequest.Features))
                         {
-                            Server.Log.Debug("{0} supports extra CSP features: {1}", handshakeRequest.Name, handshakeRequest.Features);
+                            Log.Debug("{0} supports extra CSP features: {1}", handshakeRequest.Name, handshakeRequest.Features);
                         }
 
                         if (id != 0x3D || handshakeRequest.ClientVersion != 202)
@@ -206,7 +206,7 @@ namespace AssettoServer.Network.Tcp
                             if (handshakeRequest.Password == Server.Configuration.AdminPassword)
                                 IsAdministrator = true;
 
-                            Server.Log.Information("{0} ({1}, {2} ({3})) has connected.", Name, Guid, SessionId, EntryCar.Model + "-" + EntryCar.Skin);
+                            Log.Information("{0} ({1}, {2} ({3})) has connected.", Name, Guid, SessionId, EntryCar.Model + "-" + EntryCar.Skin);
 
                             ACServerConfiguration cfg = Server.Configuration;
                             HandshakeResponse handshakeResponse = new HandshakeResponse
@@ -258,7 +258,7 @@ namespace AssettoServer.Network.Tcp
                             {
                                 if (EntryCar.Client == this && IsConnected && !HasSentFirstUpdate)
                                 {
-                                    Server.Log.Information("{0} has taken over 10 minutes to spawn in and will be disconnected.", Name);
+                                    Log.Information("{0} has taken over 10 minutes to spawn in and will be disconnected.", Name);
                                     await DisconnectAsync();
                                 }
                             });
@@ -284,7 +284,7 @@ namespace AssettoServer.Network.Tcp
                         else if (id == 0xAB)
                         {
                             id = reader.Read<byte>();
-                            Server.Log.Debug("Received extended TCP packet with ID {0:X}", id);
+                            Log.Debug("Received extended TCP packet with ID {0:X}", id);
 
                             if (id == 0x00)
                                 OnSpectateCar(reader);
@@ -298,7 +298,7 @@ namespace AssettoServer.Network.Tcp
             catch (IOException) { }
             catch (Exception ex)
             {
-                Server.Log.Error(ex, "Error receiving TCP packet from {0}.", Name);
+                Log.Error(ex, "Error receiving TCP packet from {0}.", Name);
             }
             finally
             {
@@ -317,9 +317,9 @@ namespace AssettoServer.Network.Tcp
                 if (arg1 == steamId)
                 {
                     if (arg3 != AuthResponse.OK)
-                        Server.Log.Information("Steam auth ticket verification failed ({0}) for {1}.", arg3, Name);
+                        Log.Information("Steam auth ticket verification failed ({0}) for {1}.", arg3, Name);
                     else
-                        Server.Log.Information("Steam auth ticket verification succeeded for {0}.", Name);
+                        Log.Information("Steam auth ticket verification succeeded for {0}.", Name);
 
                     taskCompletionSource.SetResult(arg3 == AuthResponse.OK);
                 }
@@ -339,7 +339,7 @@ namespace AssettoServer.Network.Tcp
 
             if (finishedTask == timeoutTask)
             {
-                Server.Log.Warning("Steam auth ticket verification timed out for {0}.", Name);
+                Log.Warning("Steam auth ticket verification timed out for {0}.", Name);
             }
             else
             {
@@ -383,7 +383,7 @@ namespace AssettoServer.Network.Tcp
                 for (int i = 0; i < allChecksums.Length; i++)
                     if (!allChecksums[i].Value.AsSpan().SequenceEqual(fullChecksum.AsSpan().Slice(i * 16, 16)))
                     {
-                        Server.Log.Information("{0} failed checksum for file {1}.", Name, allChecksums[i].Key);
+                        Log.Information("{0} failed checksum for file {1}.", Name, allChecksums[i].Key);
                         passedChecksum = false;
                         break;
                     }
@@ -415,7 +415,7 @@ namespace AssettoServer.Network.Tcp
             ChatMessage chatMessage = reader.ReadPacket<ChatMessage>();
             chatMessage.SessionId = SessionId;
 
-            Server.Log.Information("{0} ({1}): {2}", Name, SessionId, chatMessage.Message);
+            Log.Information("{0} ({1}): {2}", Name, SessionId, chatMessage.Message);
 
             if (!CommandUtilities.HasPrefix(chatMessage.Message, '/', out string commandStr))
                 Server.BroadcastPacket(chatMessage);
@@ -534,7 +534,7 @@ namespace AssettoServer.Network.Tcp
             try
             {
                 if (!DisconnectTokenSource.IsCancellationRequested)
-                    Server.Log.Debug("Disconnecting {0} ({1}).", Name, TcpClient?.Client?.RemoteEndPoint);
+                    Log.Debug("Disconnecting {0} ({1}).", Name, TcpClient?.Client?.RemoteEndPoint);
 
                 await Task.WhenAny(Task.Delay(2000), SendLoopTask);
                 OutgoingPacketChannel.Writer.TryComplete();
@@ -547,7 +547,7 @@ namespace AssettoServer.Network.Tcp
             }
             catch (Exception ex)
             {
-                Server.Log.Error(ex, "Error disconnecting {0}.", Name);
+                Log.Error(ex, "Error disconnecting {0}.", Name);
             }
         }
 

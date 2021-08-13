@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace AssettoServer.Server.Weather
 {
@@ -20,8 +21,9 @@ namespace AssettoServer.Server.Weather
             _liveWeatherProvider = new OpenWeatherMapWeatherProvider(_server.Configuration.Extra.OwmApiKey);
         }
         
-        public async Task UpdateAsync()
+        public async Task UpdateAsync(WeatherData last = null)
         {
+            Log.Debug("Updating live weather...");
             var response = await _liveWeatherProvider.GetWeatherAsync(_server.TrackParams.Latitude, _server.TrackParams.Longitude);
 
             var weatherType = _server.WeatherTypeProvider.GetWeatherType(response.WeatherType);
@@ -38,16 +40,41 @@ namespace AssettoServer.Server.Weather
                 };
             }
 
-            _server.SetWeather(new WeatherData
+            if (last == null)
             {
-                Type = weatherType,
-                TemperatureAmbient = response.TemperatureAmbient,
-                TemperatureRoad = (float)GetRoadTemperature(_server.CurrentDaySeconds, response.TemperatureAmbient, weatherType.TemperatureCoefficient),
-                Pressure = response.Pressure,
-                Humidity = response.Humidity,
-                WindSpeed = response.WindSpeed,
-                WindDirection = response.WindDirection
-            });
+                _server.SetWeather(new WeatherData
+                {
+                    Type = weatherType,
+                    UpcomingType = weatherType,
+                    TemperatureAmbient = response.TemperatureAmbient,
+                    TemperatureRoad = (float) GetRoadTemperature(_server.CurrentDaySeconds, response.TemperatureAmbient, weatherType.TemperatureCoefficient),
+                    Pressure = response.Pressure,
+                    Humidity = response.Humidity,
+                    WindSpeed = response.WindSpeed,
+                    WindDirection = response.WindDirection,
+                    RainIntensity = weatherType.RainIntensity,
+                    RainWetness = weatherType.RainWetness,
+                    RainWater = weatherType.RainWater
+                });
+            }
+            else
+            {
+                _server.SetWeather(new WeatherData
+                {
+                    Type = last.Type,
+                    UpcomingType = weatherType,
+                    TransitionDuration = 120000.0,
+                    TemperatureAmbient = response.TemperatureAmbient,
+                    TemperatureRoad = (float) GetRoadTemperature(_server.CurrentDaySeconds, response.TemperatureAmbient, weatherType.TemperatureCoefficient),
+                    Pressure = response.Pressure,
+                    Humidity = response.Humidity,
+                    WindSpeed = response.WindSpeed,
+                    WindDirection = response.WindDirection,
+                    RainIntensity = last.RainIntensity,
+                    RainWetness = last.RainWetness,
+                    RainWater = last.RainWater
+                });
+            }
         }
         
         // From https://github.com/gro-ove/actools/blob/master/AcTools/Processes/Game.Properties.cs#L481

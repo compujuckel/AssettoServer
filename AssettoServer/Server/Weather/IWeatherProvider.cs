@@ -4,6 +4,6 @@ namespace AssettoServer.Server.Weather
 {
     public interface IWeatherProvider
     {
-        public Task UpdateAsync();
+        public Task UpdateAsync(WeatherData last = null);
     }
 }

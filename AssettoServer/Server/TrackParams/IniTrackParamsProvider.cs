@@ -11,8 +11,6 @@ namespace AssettoServer.Server.TrackParams
 {
     public class IniTrackParamsProvider : ITrackParamsProvider
     {
-        private Logger Log { get; }
-        
         private const string TrackParamsPath = "cfg/data_track_params.ini";
 
         private const string RemoteTrackParamsUrl =
@@ -20,9 +18,8 @@ namespace AssettoServer.Server.TrackParams
         
         private readonly HttpClient _httpClient;
         
-        public IniTrackParamsProvider(Logger log)
+        public IniTrackParamsProvider()
         {
-            Log = log;
             _httpClient = new HttpClient();
         }
 

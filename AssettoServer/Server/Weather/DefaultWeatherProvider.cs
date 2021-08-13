@@ -27,24 +27,28 @@ namespace AssettoServer.Server.Weather
             
             _weatherConfiguration = _server.Configuration.Weathers[id];
 
+            var weatherType = _server.WeatherTypeProvider.GetWeatherType(_weatherConfiguration.WeatherFxParams.Type) with
+            {
+                Graphics = _weatherConfiguration.Graphics,
+            };
+
             _server.SetWeather(new WeatherData
             {
-                Type = new WeatherType
-                {
-                    WeatherFxType = _weatherConfiguration.WeatherFxParams.Type,
-                    Name = _weatherConfiguration.Graphics,
-                    Graphics = _weatherConfiguration.Graphics,
-                },
+                Type = weatherType,
+                UpcomingType = weatherType,
                 TemperatureAmbient = GetFloatWithVariation(_weatherConfiguration.BaseTemperatureAmbient, _weatherConfiguration.VariationAmbient),
                 TemperatureRoad = GetFloatWithVariation(_weatherConfiguration.BaseTemperatureRoad, _weatherConfiguration.VariationRoad),
                 WindSpeed = GetRandomFloatInRange(_weatherConfiguration.WindBaseSpeedMin, _weatherConfiguration.WindBaseSpeedMax),
-                WindDirection = (int) Math.Round(GetFloatWithVariation(_weatherConfiguration.WindBaseDirection, _weatherConfiguration.WindVariationDirection))
+                WindDirection = (int) Math.Round(GetFloatWithVariation(_weatherConfiguration.WindBaseDirection, _weatherConfiguration.WindVariationDirection)),
+                RainIntensity = weatherType.RainIntensity,
+                RainWater = weatherType.RainWater,
+                RainWetness = weatherType.RainWetness
             });
 
             return true;
         }
         
-        public Task UpdateAsync()
+        public Task UpdateAsync(WeatherData last = null)
         {
             return Task.CompletedTask;
         }

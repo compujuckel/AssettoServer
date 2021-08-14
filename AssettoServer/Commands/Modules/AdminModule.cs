@@ -123,6 +123,13 @@ namespace AssettoServer.Commands.Modules
             Context.Server.SendCurrentWeather();
         }
 
+        [Command("setgrip")]
+        public void SetGrip(float grip)
+        {
+            Context.Server.CurrentWeather.TrackGrip = grip;
+            Context.Server.SendCurrentWeather();
+        }
+
         [Command("sendtcp")]
         public void SendTcp(string filename)
         {

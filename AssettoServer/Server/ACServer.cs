@@ -450,7 +450,7 @@ namespace AssettoServer.Server
                     TransitionValue = CurrentWeather.TransitionValue,
                     TemperatureAmbient = (Half) CurrentWeather.TemperatureAmbient,
                     TemperatureRoad = (Half) CurrentWeather.TemperatureRoad,
-                    TrackGrip = (Half) Configuration.DynamicTrack.BaseGrip,
+                    TrackGrip = (Half) CurrentWeather.TrackGrip,
                     WindDirectionDeg = (Half) CurrentWeather.WindDirection,
                     WindSpeed = (Half) CurrentWeather.WindSpeed,
                     Humidity = (Half) CurrentWeather.Humidity,
@@ -640,7 +640,7 @@ namespace AssettoServer.Server
 
                         if (Configuration.Extra.EnableWeatherFx)
                         {
-                            RainHelper.Update(CurrentWeather, Environment.TickCount64 - lastTimeUpdate);
+                            RainHelper.Update(CurrentWeather, Configuration.DynamicTrack.BaseGrip, Configuration.Extra.RainTrackGripReduction, Environment.TickCount64 - lastTimeUpdate);
                             SendCurrentWeather();
                         }
                         else

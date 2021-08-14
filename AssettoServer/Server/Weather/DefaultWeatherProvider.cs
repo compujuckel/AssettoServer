@@ -42,7 +42,8 @@ namespace AssettoServer.Server.Weather
                 WindDirection = (int) Math.Round(GetFloatWithVariation(_weatherConfiguration.WindBaseDirection, _weatherConfiguration.WindVariationDirection)),
                 RainIntensity = weatherType.RainIntensity,
                 RainWater = weatherType.RainWater,
-                RainWetness = weatherType.RainWetness
+                RainWetness = weatherType.RainWetness,
+                TrackGrip = _server.Configuration.DynamicTrack.BaseGrip
             });
 
             return true;

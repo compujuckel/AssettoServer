@@ -22,5 +22,6 @@ namespace AssettoServer.Server.Weather
         public float RainIntensity { get; set; }
         public float RainWetness { get; set; }
         public float RainWater { get; set; }
+        public float TrackGrip { get; set; }
     }
 }

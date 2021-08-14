@@ -17,7 +17,7 @@ namespace AssettoServer.Server.Weather
         private const double PuddlesConstantDrain = 0.25;
         private const double TimeK = 0.001;
 
-        private double _tempWetness = 0;
+        private double _tempWetness;
 
         private static double Smoothstep(double fromValue, double toValue, double by)
         {
@@ -101,7 +101,12 @@ namespace AssettoServer.Server.Weather
             }
         }
 
-        public void Update(WeatherData weather, long dt)
+        private void CalcGrip(WeatherData condition, double baseGrip, double rainTrackGripReduction)
+        {
+            condition.TrackGrip = (float) (baseGrip - Lerp(0, rainTrackGripReduction * 0.4, condition.RainWetness) - Lerp(0, rainTrackGripReduction * 0.6, condition.RainWater));
+        }
+
+        public void Update(WeatherData weather, double baseGrip, double rainTrackGripReduction, long dt)
         {
             if (weather.Type.WeatherFxType != weather.UpcomingType.WeatherFxType)
             {
@@ -122,6 +127,7 @@ namespace AssettoServer.Server.Weather
             }
             
             CalcWater(weather, Lerp(weather.Type.Sun, weather.UpcomingType.Sun, weather.TransitionValueInternal), dt / 1000.0);
+            CalcGrip(weather, baseGrip, rainTrackGripReduction);
         }
     }
 }

@@ -54,7 +54,8 @@ namespace AssettoServer.Server.Weather
                     WindDirection = response.WindDirection,
                     RainIntensity = weatherType.RainIntensity,
                     RainWetness = weatherType.RainWetness,
-                    RainWater = weatherType.RainWater
+                    RainWater = weatherType.RainWater,
+                    TrackGrip = _server.Configuration.DynamicTrack.BaseGrip
                 });
             }
             else
@@ -72,7 +73,8 @@ namespace AssettoServer.Server.Weather
                     WindDirection = response.WindDirection,
                     RainIntensity = last.RainIntensity,
                     RainWetness = last.RainWetness,
-                    RainWater = last.RainWater
+                    RainWater = last.RainWater,
+                    TrackGrip = last.TrackGrip
                 });
             }
         }

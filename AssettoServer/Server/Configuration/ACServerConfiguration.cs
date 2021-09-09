@@ -3,6 +3,7 @@ using IniParser.Model;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
+using AssettoServer.Server.Ai;
 using AssettoServer.Server.Weather;
 
 namespace AssettoServer.Server.Configuration
@@ -212,14 +213,28 @@ namespace AssettoServer.Server.Configuration
                 if (entry.Count == 0)
                     break;
 
-                entryCars.Add(new EntryCar
+                if (entry["AI"] == "1")
                 {
-                    Model = entry["MODEL"],
-                    Skin = entry["SKIN"],
-                    SpectatorMode = int.Parse(entry["SPECTATOR_MODE"] ?? "0"),
-                    Ballast = int.Parse(entry["BALLAST"]),
-                    Restrictor = int.Parse(entry["RESTRICTOR"])
-                });
+                    entryCars.Add(new AiCar()
+                    {
+                        Model = entry["MODEL"],
+                        Skin = entry["SKIN"],
+                        SpectatorMode = int.Parse(entry["SPECTATOR_MODE"] ?? "0"),
+                        Ballast = int.Parse(entry["BALLAST"]),
+                        Restrictor = int.Parse(entry["RESTRICTOR"])
+                    });
+                }
+                else
+                {
+                    entryCars.Add(new EntryCar
+                    {
+                        Model = entry["MODEL"],
+                        Skin = entry["SKIN"],
+                        SpectatorMode = int.Parse(entry["SPECTATOR_MODE"] ?? "0"),
+                        Ballast = int.Parse(entry["BALLAST"]),
+                        Restrictor = int.Parse(entry["RESTRICTOR"])
+                    });
+                }
             }
 
             EntryCars = entryCars;

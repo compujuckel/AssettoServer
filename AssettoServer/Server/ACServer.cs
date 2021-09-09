@@ -22,6 +22,7 @@ using AssettoServer.Server.Weather;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Server.Ai;
 using AssettoServer.Server.TrackParams;
 using Serilog;
 using Serilog.Core;
@@ -67,6 +68,9 @@ namespace AssettoServer.Server
         private TimeZoneInfo RealTimeZone { get; }
         private ITrackParamsProvider TrackParamsProvider { get; }
         public TrackParams.TrackParams TrackParams { get; }
+        
+        public AiSpline AiSpline { get; }
+        public AiBehavior AiBehavior { get; }
 
         public ACServer(ACServerConfiguration configuration)
         {
@@ -148,6 +152,9 @@ namespace AssettoServer.Server
 
                 Log.Information("Enabled real time with time zone {0}", RealTimeZone.DisplayName);
             }
+
+            AiSpline = AiSpline.FromFile("content/tracks/" + Configuration.Track + "/ai/fast_lane.ai");
+            AiBehavior = new AiBehavior(this); 
 
             string blacklistPath = "blacklist.txt";
             if (File.Exists(blacklistPath))
@@ -310,7 +317,7 @@ namespace AssettoServer.Server
                 for (int i = 0; i < EntryCars.Count; i++)
                 {
                     EntryCar entryCar = EntryCars[i];
-                    if (entryCar.Client != null && entryCar.Client.Guid == client.Guid)
+                    if (entryCar is AiCar || (entryCar.Client != null && entryCar.Client.Guid == client.Guid))
                         return false;
 
                     if (entryCar.Client == null && handshakeRequest.RequestedCar == entryCar.Model)
@@ -521,6 +528,7 @@ namespace AssettoServer.Server
             long lastLobbyUpdate = 0;
             long lastTimeUpdate = Environment.TickCount64;
             long lastWeatherUpdate = Environment.TickCount64;
+            long lastAiUpdate = Environment.TickCount64;
             float networkDistanceSquared = (float)Math.Pow(Configuration.Extra.NetworkBubbleDistance, 2);
             int outsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
 
@@ -532,7 +540,7 @@ namespace AssettoServer.Server
                     foreach (EntryCar fromCar in EntryCars)
                     {
                         ACTcpClient fromClient = fromCar.Client;
-                        if (fromClient != null)
+                        if (fromClient != null || fromCar is AiCar)
                         {
                             if (fromCar.HasUpdateToSend)
                             {
@@ -553,10 +561,12 @@ namespace AssettoServer.Server
 
                                             fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
                                         }
+                                        
+                                        //Log.Debug("sending PositionUpdate {0}", fromCar.Status.PakSequenceId);
 
                                         toClient.SendPacketUdp(new PositionUpdate
                                         {
-                                            SessionId = fromClient.SessionId,
+                                            SessionId = fromCar.SessionId,
                                             EngineRpm = status.EngineRpm,
                                             Gas = status.Gas,
                                             Gear = status.Gear,
@@ -589,7 +599,7 @@ namespace AssettoServer.Server
                                 }
                             }
 
-                            if (fromClient.HasSentFirstUpdate && (CurrentTime - fromCar.LastPingTime) > 1000)
+                            if (fromClient != null && fromClient.HasSentFirstUpdate && (CurrentTime - fromCar.LastPingTime) > 1000)
                             {
                                 fromCar.CheckAfk();
                                 fromCar.LastPingTime = CurrentTime;
@@ -621,6 +631,13 @@ namespace AssettoServer.Server
                         {
                             _ = PingLobbyAsync();
                         }
+                    }
+
+                    if (Environment.TickCount64 - lastAiUpdate > 500)
+                    {
+                        _ = AiBehavior.UpdateAsync();
+
+                        lastAiUpdate = Environment.TickCount64;
                     }
 
                     if (Environment.TickCount64 - lastTimeUpdate > 1000)
@@ -663,9 +680,14 @@ namespace AssettoServer.Server
                         }
                     }
 
+                    foreach (AiCar aiCar in EntryCars.Where(entryCar => entryCar is AiCar))
+                    {
+                        aiCar.Update();
+                    }
+
                     UdpServer.UpdateStatistics();
 
-                    if (ConnectedCars.Count > 1)
+                    if (ConnectedCars.Count > 0)
                     {
                         long tickDelta;
                         do

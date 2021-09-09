@@ -23,6 +23,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using AssettoServer.Server.Ai;
 
 namespace AssettoServer.Network.Tcp
 {
@@ -494,7 +495,7 @@ namespace AssettoServer.Network.Tcp
             HasSentFirstUpdate = true;
 
             ACServerConfiguration cfg = Server.Configuration;
-            List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null).ToList();
+            List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null || c is AiCar).ToList();
 
             if (cfg.WelcomeMessage.Length > 0)
                 SendPacket(new WelcomeMessage { Message = cfg.WelcomeMessage });
@@ -504,7 +505,7 @@ namespace AssettoServer.Network.Tcp
 
             foreach (EntryCar car in connectedCars)
             {
-                SendPacket(new MandatoryPitUpdate { MandatoryPit = car.Status.MandatoryPit, SessionId = car.Client.SessionId });
+                SendPacket(new MandatoryPitUpdate { MandatoryPit = car.Status.MandatoryPit, SessionId = car.SessionId });
                 if (car != EntryCar)
                     SendPacket(new TyreCompoundUpdate { SessionId = car.SessionId, CompoundName = car.Status.CurrentTyreCompound });
             }

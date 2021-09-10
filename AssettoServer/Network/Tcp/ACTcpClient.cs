@@ -397,6 +397,9 @@ namespace AssettoServer.Network.Tcp
             }
             else
             {
+                if(Server.Configuration.Extra.EnableAi)
+                    EntryCar.SetAiControl(false);
+                
                 Server.BroadcastPacket(new CarConnected
                 {
                     SessionId = SessionId,
@@ -495,7 +498,7 @@ namespace AssettoServer.Network.Tcp
             HasSentFirstUpdate = true;
 
             ACServerConfiguration cfg = Server.Configuration;
-            List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null || c is AiCar).ToList();
+            List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
             if (cfg.WelcomeMessage.Length > 0)
                 SendPacket(new WelcomeMessage { Message = cfg.WelcomeMessage });

@@ -24,6 +24,7 @@ namespace AssettoServer.Server.Configuration
         public bool EnableRealTime { get; set; } = false;
         public bool EnableWeatherFx { get; set; } = false;
         public double RainTrackGripReduction { get; set; } = 0;
+        public bool EnableAi { get; set; } = false;
 
         [JsonIgnore]
         public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60000;

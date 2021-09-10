@@ -153,8 +153,11 @@ namespace AssettoServer.Server
                 Log.Information("Enabled real time with time zone {0}", RealTimeZone.DisplayName);
             }
 
-            AiSpline = AiSpline.FromFile("content/tracks/" + Configuration.Track + "/ai/fast_lane.ai");
-            AiBehavior = new AiBehavior(this); 
+            if (Configuration.Extra.EnableAi)
+            {
+                AiSpline = AiSpline.FromFile("content/tracks/" + Configuration.Track + "/ai/fast_lane.ai");
+                AiBehavior = new AiBehavior(this);
+            }
 
             string blacklistPath = "blacklist.txt";
             if (File.Exists(blacklistPath))
@@ -317,10 +320,10 @@ namespace AssettoServer.Server
                 for (int i = 0; i < EntryCars.Count; i++)
                 {
                     EntryCar entryCar = EntryCars[i];
-                    if (entryCar is AiCar || (entryCar.Client != null && entryCar.Client.Guid == client.Guid))
+                    if (entryCar.Client != null && entryCar.Client.Guid == client.Guid)
                         return false;
 
-                    if (entryCar.Client == null && handshakeRequest.RequestedCar == entryCar.Model)
+                    if (entryCar.AiMode != AiMode.Fixed && entryCar.Client == null && handshakeRequest.RequestedCar == entryCar.Model)
                     {
                         entryCar.Reset();
                         entryCar.Client = client;
@@ -540,7 +543,7 @@ namespace AssettoServer.Server
                     foreach (EntryCar fromCar in EntryCars)
                     {
                         ACTcpClient fromClient = fromCar.Client;
-                        if (fromClient != null || fromCar is AiCar)
+                        if (fromClient != null || fromCar.AiControlled)
                         {
                             if (fromCar.HasUpdateToSend)
                             {
@@ -618,13 +621,13 @@ namespace AssettoServer.Server
                         }
                     }
 
-                    if (Environment.TickCount64 - lastWeatherUpdate > 600000)
+                    if (Environment.TickCount64 - lastWeatherUpdate > 600_000)
                     {
                         lastWeatherUpdate = Environment.TickCount64;
                         _ = WeatherProvider.UpdateAsync(CurrentWeather);
                     }
 
-                    if (Environment.TickCount64 - lastLobbyUpdate > 60000)
+                    if (Environment.TickCount64 - lastLobbyUpdate > 60_000)
                     {
                         lastLobbyUpdate = Environment.TickCount64;
                         if (Configuration.RegisterToLobby)
@@ -635,9 +638,11 @@ namespace AssettoServer.Server
 
                     if (Environment.TickCount64 - lastAiUpdate > 500)
                     {
-                        _ = AiBehavior.UpdateAsync();
-
                         lastAiUpdate = Environment.TickCount64;
+                        if (Configuration.Extra.EnableAi)
+                        {
+                            _ = AiBehavior.UpdateAsync();
+                        }
                     }
 
                     if (Environment.TickCount64 - lastTimeUpdate > 1000)
@@ -680,9 +685,15 @@ namespace AssettoServer.Server
                         }
                     }
 
-                    foreach (AiCar aiCar in EntryCars.Where(entryCar => entryCar is AiCar))
+                    if (Configuration.Extra.EnableAi)
                     {
-                        aiCar.Update();
+                        foreach (EntryCar entryCar in EntryCars)
+                        {
+                            if (entryCar.AiControlled)
+                            {
+                                entryCar.AiUpdate();
+                            }
+                        }
                     }
 
                     UdpServer.UpdateStatistics();
@@ -742,6 +753,11 @@ namespace AssettoServer.Server
 
                     if (client.HasPassedChecksum)
                         BroadcastPacket(new CarDisconnected { SessionId = client.SessionId });
+
+                    if (Configuration.Extra.EnableAi && client.EntryCar.AiMode == AiMode.Auto)
+                    {
+                        client.EntryCar.SetAiControl(true);
+                    }
                 }
             }
             catch (Exception ex)

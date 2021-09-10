@@ -1,4 +1,5 @@
-﻿using IniParser;
+﻿using System;
+using IniParser;
 using IniParser.Model;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -213,28 +214,19 @@ namespace AssettoServer.Server.Configuration
                 if (entry.Count == 0)
                     break;
 
-                if (entry["AI"] == "1")
+                AiMode aiMode = AiMode.Disabled;
+                Enum.TryParse(entry["AI"], true, out aiMode);
+                
+                entryCars.Add(new EntryCar
                 {
-                    entryCars.Add(new AiCar()
-                    {
-                        Model = entry["MODEL"],
-                        Skin = entry["SKIN"],
-                        SpectatorMode = int.Parse(entry["SPECTATOR_MODE"] ?? "0"),
-                        Ballast = int.Parse(entry["BALLAST"]),
-                        Restrictor = int.Parse(entry["RESTRICTOR"])
-                    });
-                }
-                else
-                {
-                    entryCars.Add(new EntryCar
-                    {
-                        Model = entry["MODEL"],
-                        Skin = entry["SKIN"],
-                        SpectatorMode = int.Parse(entry["SPECTATOR_MODE"] ?? "0"),
-                        Ballast = int.Parse(entry["BALLAST"]),
-                        Restrictor = int.Parse(entry["RESTRICTOR"])
-                    });
-                }
+                    Model = entry["MODEL"],
+                    Skin = entry["SKIN"],
+                    SpectatorMode = int.Parse(entry["SPECTATOR_MODE"] ?? "0"),
+                    Ballast = int.Parse(entry["BALLAST"]),
+                    Restrictor = int.Parse(entry["RESTRICTOR"]),
+                    AiMode = aiMode,
+                    AiControlled = aiMode != AiMode.Disabled
+                });
             }
 
             EntryCars = entryCars;

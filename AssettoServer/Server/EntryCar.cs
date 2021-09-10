@@ -147,7 +147,7 @@ namespace AssettoServer.Server
             {
                 X = (float)(Math.Atan2(_aiCurrentVec.Z, _aiCurrentVec.X) - Math.PI / 2),
                 // TODO I'm 99% sure there is a better way to get Y rotation, but I don't speak math
-                Y = (float)(Math.Atan2(Vector3.Cross(Vector3.UnitY, _aiCurrentVec).Length(), Vector3.Dot(Vector3.UnitY, _aiCurrentVec)) - Math.PI / 2) * -1f,
+                Y = (float)(Math.Atan2(new Vector2(_aiCurrentVec.Z, _aiCurrentVec.X).Length(), _aiCurrentVec.Y) - Math.PI / 2) * -1f,
                 Z = 0
             };
             

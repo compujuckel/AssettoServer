@@ -58,6 +58,7 @@ namespace AssettoServer.Server
         public long AiSpawnProtectionEnds { get; set; }
         public bool AiControlled { get; set; }
         public AiMode AiMode { get; set; }
+        public float AiSafetyDistanceSquared { get; set; } = 20 * 20;
 
         private const float AiSpeed = 80 / 3.6f;
 
@@ -93,6 +94,7 @@ namespace AssettoServer.Server
                 {
                     Log.Debug("Slot {0} is now controlled by AI", SessionId);
                     Reset();
+                    
                     Server.BroadcastPacket(new CarConnected
                     {
                         SessionId = SessionId,
@@ -180,6 +182,8 @@ namespace AssettoServer.Server
             Status = new CarStatus();
             CurrentRace = null;
             TargetCar = null;
+            AiSpawnProtectionEnds = 0;
+            _aiInitialized = false;
         }
 
         internal void CheckAfk()

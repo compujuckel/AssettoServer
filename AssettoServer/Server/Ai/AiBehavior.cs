@@ -17,11 +17,12 @@ namespace AssettoServer.Server.Ai
         private const float PlayerRadius = 300.0f;
         private const long PlayerAfkTimeout = 30_000;
         private const int MinimumSpawnDistance = 100;
-        private const int SpawnDistanceVariation = 300;
-        private const float SpawnSafetyDistanceToAiSquared = 25 * 25;
+        private const int MaximumSpawnDistance = 400;
+        private const int MinimumAiSafetyDistanceSquared = 15 * 15;
+        private const int MaximumAiSafetyDistanceSquared = 40 * 40;
         private const float SpawnSafetyDistanceToPlayerSquared = 50 * 50;
-        private const int MinimumSpawnProtection = 5_000;
-        private const int SpawnProtectionVariation = 5_000;
+        private const int MinimumSpawnProtectionTime = 5_000;
+        private const int MaximumSpawnProtectionTime = 10_000;
 
         public AiBehavior(ACServer server)
         {
@@ -40,11 +41,11 @@ namespace AssettoServer.Server.Ai
             return (n * (n + 1)) / 2;
         }
 
-        private static bool IsPositionSafe(IEnumerable<EntryCar> entryCars, Vector3 position)
+        private bool IsPositionSafe(Vector3 position)
         {
-            foreach(var entryCar in entryCars)
+            foreach(var entryCar in _server.EntryCars)
             {
-                if (Vector3.DistanceSquared(entryCar.Status.Position, position) < (entryCar.AiControlled ? SpawnSafetyDistanceToAiSquared : SpawnSafetyDistanceToPlayerSquared))
+                if (Vector3.DistanceSquared(entryCar.Status.Position, position) < (entryCar.AiControlled ? entryCar.AiSafetyDistanceSquared : SpawnSafetyDistanceToPlayerSquared))
                     return false;
             }
 
@@ -55,22 +56,6 @@ namespace AssettoServer.Server.Ai
         {
             using var _ = Operation.Time("AI update");
 
-            /*foreach (var entryCar in _server.EntryCars)
-            {
-                // Cars with enabled AI and no client should be AI controlled
-                if (entryCar.AiMode != AiMode.Disabled && entryCar.Client == null && !entryCar.AiControlled)
-                { 
-                    entryCar.AiControlled = true;
-                    Log.Debug("Slot {0} is now controlled by AI", entryCar.SessionId);
-                }
-                // Cars with auto AI and a client should not be AI controlled (-> give control to human player)
-                if (entryCar.AiMode == AiMode.Auto && entryCar.Client != null && entryCar.AiControlled)
-                {
-                    entryCar.AiControlled = false;
-                    Log.Debug("Slot {0} is no longer controlled by AI", entryCar.SessionId);
-                }
-            }*/
-            
             List<EntryCar> playerCars = _server.EntryCars.Where(car => !car.AiControlled 
                                                                        && car.Client != null 
                                                                        && car.Client.HasSentFirstUpdate 
@@ -78,8 +63,6 @@ namespace AssettoServer.Server.Ai
                                                                        ).ToList();
             List<EntryCar> aiCars = _server.EntryCars.Where(car => car.AiControlled).ToList();
             List<AiDistance> distances = new List<AiDistance>();
-            
-            //Log.Debug("Players: {0} AIs: {1}", playerCars.Count, aiCars.Count);
 
             foreach(var aiCar in aiCars)
             {
@@ -99,42 +82,40 @@ namespace AssettoServer.Server.Ai
                 group distance by distance.AiCar
                 into aiGroup
                 where Environment.TickCount64 > aiGroup.Key.AiSpawnProtectionEnds && aiGroup.Min(d => d.Distance) > PlayerRadius
-                select aiGroup.Key;
-            
-            var playerCarsOrdered = from distance in distances
-                group distance by distance.PlayerCar
-                into aiGroup
                 orderby aiGroup.Min(d => d.Distance) descending 
                 select aiGroup.Key;
+
+            var playerCarsOrdered = from distance in distances
+                group distance by distance.PlayerCar
+                into playerGroup
+                orderby playerGroup.Min(d => d.Distance) descending 
+                select playerGroup.Key;
             
             int maxRand = GetTriangleNumber(playerCars.Count);
             int rand = _random.Next(maxRand);
             int target = 0;
             for (int i = playerCars.Count; i < maxRand; i += (i - 1))
             {
-                if (rand < i)
-                {
-                    break;
-                }
-
+                if (rand < i) break;
                 target++;
             }
 
             var targetAiCar = outOfRangeAiCars.First();
             var targetPlayerCar = playerCarsOrdered.ElementAt(target);
+            
             int splinePos = _server.AiSpline.WorldToSpline(targetPlayerCar.Status.Position);
-            int spawnPoint = splinePos + MinimumSpawnDistance + _random.Next(SpawnDistanceVariation);;
-            do
+            int spawnPoint = splinePos + _random.Next(MinimumSpawnDistance, MaximumSpawnDistance);;
+            while (!IsPositionSafe(_server.AiSpline.SplineToWorld(spawnPoint)))
             {
                 spawnPoint += 10;
-            } while (!IsPositionSafe(_server.EntryCars, _server.AiSpline.SplineToWorld(spawnPoint)));
+            }
             
-            int spawnProtection = MinimumSpawnProtection + _random.Next(SpawnProtectionVariation);
-            string msg = $"Moving AI {targetAiCar.SessionId} near {targetPlayerCar.Client.Name}, prob {rand}/{maxRand}";
-            _server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = msg });
-            Log.Debug("Moving AI {0} near {1}, spline pos {2} -> spawn pos {3} protect {4}ms",targetAiCar.SessionId, targetPlayerCar.Client.Name, splinePos, spawnPoint, spawnProtection);
+            int spawnProtection = _random.Next(MinimumSpawnProtectionTime, MaximumSpawnProtectionTime);
+
+            Log.Debug("Moving AI {0} to {1}, spline {2} -> spawn {3} prob {4}/{5}",targetAiCar.SessionId, targetPlayerCar.Client.Name, splinePos, spawnPoint, rand, maxRand);
 
             targetAiCar.AiSpawnProtectionEnds = Environment.TickCount64 + spawnProtection;
+            targetAiCar.AiSafetyDistanceSquared = _random.Next(MinimumAiSafetyDistanceSquared, MaximumAiSafetyDistanceSquared);
             targetAiCar.AiMoveToSplinePosition(spawnPoint, true);
         }
     }

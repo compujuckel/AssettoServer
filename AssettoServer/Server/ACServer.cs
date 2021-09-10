@@ -977,13 +977,48 @@ namespace AssettoServer.Server
                 try
                 {
                     SteamServer.Init(244210, serverInit);
+                }
+                catch { }
+
+                try
+                {
+                    //SteamServer.Init(244210, serverInit);
                     SteamServer.LogOnAnonymous();
+                    SteamServer.OnSteamServersDisconnected += SteamServer_OnSteamServersDisconnected;
+                    SteamServer.OnSteamServersConnected += SteamServer_OnSteamServersConnected;
                 }
                 catch (Exception ex)
                 {
                     Log.Fatal(ex, "Error trying to initialize SteamServer.");
                 }
             }
+        }
+
+        private void SteamServer_OnSteamServersConnected()
+        {
+            Log.Information("Connected to Steam Servers.");
+        }
+
+        private void SteamServer_OnSteamServersDisconnected(Result obj)
+        {
+            Log.Fatal("Disconnected from Steam Servers.");
+            SteamServer.OnSteamServersConnected -= SteamServer_OnSteamServersConnected;
+            SteamServer.OnSteamServersDisconnected -= SteamServer_OnSteamServersDisconnected;
+
+            try
+            {
+                SteamServer.LogOff();
+            }
+            catch { }
+
+            try
+            {
+                SteamServer.Shutdown();
+            }
+            catch { }
+
+            InitializeSteam();
+
         }
     }
 }

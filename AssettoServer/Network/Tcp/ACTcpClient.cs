@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AssettoServer.Network.Packets;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,7 +9,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using AssettoServer.Network.Packets;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Outgoing.Handshake;
@@ -16,8 +16,8 @@ using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using Qmmands;
-using Serilog;
 using Steamworks;
+using Serilog;
 
 namespace AssettoServer.Network.Tcp
 {
@@ -49,6 +49,7 @@ namespace AssettoServer.Network.Tcp
         private CancellationTokenSource DisconnectTokenSource { get; }
         private Task SendLoopTask { get; set; }
         private long LastChatTime { get; set; }
+        private SteamId? SteamId { get; set; }
 
         internal ACTcpClient(ACServer server, TcpClient tcpClient)
         {
@@ -324,7 +325,10 @@ namespace AssettoServer.Network.Tcp
                     if (arg3 != AuthResponse.OK)
                         Log.Information("Steam auth ticket verification failed ({0}) for {1}.", arg3, Name);
                     else
+                    {
+                        SteamId = arg1;
                         Log.Information("Steam auth ticket verification succeeded for {0}.", Name);
+                    }
 
                     taskCompletionSource.SetResult(arg3 == AuthResponse.OK);
                 }
@@ -553,11 +557,15 @@ namespace AssettoServer.Network.Tcp
                 await Task.WhenAny(Task.Delay(2000), SendLoopTask);
                 OutgoingPacketChannel.Writer.TryComplete();
                 DisconnectTokenSource.Cancel();
+                DisconnectTokenSource.Dispose();
 
                 if (IsConnected)
                     await Server.DisconnectClientAsync(this);
 
                 CloseConnection();
+
+                if (SteamId != null)
+                    SteamServer.EndSession(SteamId.Value);
             }
             catch (Exception ex)
             {
@@ -567,7 +575,6 @@ namespace AssettoServer.Network.Tcp
 
         private void CloseConnection()
         {
-
             try
             {
                 TcpStream.Dispose();

@@ -13,6 +13,9 @@ namespace AssettoServer.Server.Ai
             public int Id;
         }
 
+        // Add some height to the spline, cars will "scrape the ground" without it
+        public float HeightOffset { get; set; } = 0.18f;
+
         public AiSplinePoint[] IdealLine;
         public int Header;
         public int DetailCount;
@@ -38,7 +41,13 @@ namespace AssettoServer.Server.Ai
 
         public Vector3 SplineToWorld(int splinePos)
         {
-            return IdealLine[splinePos].Pos;
+            Vector3 ret = new()
+            {
+                X = IdealLine[splinePos].Pos.X,
+                Y = IdealLine[splinePos].Pos.Y + HeightOffset,
+                Z = IdealLine[splinePos].Pos.Z
+            };
+            return ret;
         }
 
         public static AiSpline FromFile(string path)

@@ -80,7 +80,15 @@ namespace AssettoServer.Network.Http
                 {
                     EntryListResponse responseObj = new EntryListResponse
                     {
-                        Cars = ACServer.EntryCars.Select(ec => new EntryListResponseCar { Model = ec.Model, Skin = ec.Skin, IsEntryList = true, DriverName = ec?.Client?.Name, DriverTeam = ec?.Client?.Team, IsConnected = ec.Client != null }).ToList(),
+                        Cars = ACServer.EntryCars.Select(ec => new EntryListResponseCar
+                        {
+                            Model = ec.Model, 
+                            Skin = ec.Skin, 
+                            IsEntryList = ec.AiMode != AiMode.Fixed, 
+                            DriverName = ec?.Client?.Name,
+                            DriverTeam = ec?.Client?.Team,
+                            IsConnected = ec.Client != null
+                        }).ToList(),
                         Features = ACServer.Features
                     };
 
@@ -117,7 +125,7 @@ namespace AssettoServer.Network.Http
                             Cars = ACServer.EntryCars.Select(ec => new DetailResponseCar {
                                 Model = ec.Model,
                                 Skin = ec.Skin,
-                                IsEntryList = true,
+                                IsEntryList = ec.AiMode != AiMode.Fixed,
                                 DriverName = ec?.Client?.Name,
                                 DriverTeam = ec?.Client?.Team,
                                 DriverNation = ec?.Client?.NationCode,

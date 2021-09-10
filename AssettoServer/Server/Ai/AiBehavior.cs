@@ -19,7 +19,7 @@ namespace AssettoServer.Server.Ai
         private const int MinimumSpawnDistance = 100;
         private const int MaximumSpawnDistance = 400;
         private const int MinimumAiSafetyDistanceSquared = 15 * 15;
-        private const int MaximumAiSafetyDistanceSquared = 40 * 40;
+        private const int MaximumAiSafetyDistanceSquared = 50 * 50;
         private const float SpawnSafetyDistanceToPlayerSquared = 50 * 50;
         private const int MinimumSpawnProtectionTime = 5_000;
         private const int MaximumSpawnProtectionTime = 10_000;
@@ -54,15 +54,15 @@ namespace AssettoServer.Server.Ai
         
         public async Task UpdateAsync()
         {
-            using var _ = Operation.Time("AI update");
+            //using var _ = Operation.Time("AI update");
 
-            List<EntryCar> playerCars = _server.EntryCars.Where(car => !car.AiControlled 
-                                                                       && car.Client != null 
-                                                                       && car.Client.HasSentFirstUpdate 
-                                                                       && Environment.TickCount64 - car.LastActiveTime < PlayerAfkTimeout
+            var playerCars = _server.EntryCars.Where(car => !car.AiControlled 
+                                                            && car.Client != null 
+                                                            && car.Client.HasSentFirstUpdate 
+                                                            && Environment.TickCount64 - car.LastActiveTime < PlayerAfkTimeout
                                                                        ).ToList();
-            List<EntryCar> aiCars = _server.EntryCars.Where(car => car.AiControlled).ToList();
-            List<AiDistance> distances = new List<AiDistance>();
+            var aiCars = _server.EntryCars.Where(car => car.AiControlled);
+            var distances = new List<AiDistance>();
 
             foreach(var aiCar in aiCars)
             {
@@ -112,7 +112,7 @@ namespace AssettoServer.Server.Ai
             
             int spawnProtection = _random.Next(MinimumSpawnProtectionTime, MaximumSpawnProtectionTime);
 
-            Log.Debug("Moving AI {0} to {1}, spline {2} -> spawn {3} prob {4}/{5}",targetAiCar.SessionId, targetPlayerCar.Client.Name, splinePos, spawnPoint, rand, maxRand);
+            //Log.Debug("Moving AI {0} to {1}, spline {2} -> spawn {3} prob {4}/{5}",targetAiCar.SessionId, targetPlayerCar.Client.Name, splinePos, spawnPoint, rand, maxRand);
 
             targetAiCar.AiSpawnProtectionEnds = Environment.TickCount64 + spawnProtection;
             targetAiCar.AiSafetyDistanceSquared = _random.Next(MinimumAiSafetyDistanceSquared, MaximumAiSafetyDistanceSquared);

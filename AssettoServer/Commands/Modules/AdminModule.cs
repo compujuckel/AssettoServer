@@ -198,5 +198,30 @@ namespace AssettoServer.Commands.Modules
             Reply($"Sent: {udpServer.DatagramsSentPerSecond} packets/s ({ByteSize.FromBytes(udpServer.BytesSentPerSecond).Per(TimeSpan.FromSeconds(1)).Humanize("#.##")})\n" +
                 $"Received: {udpServer.DatagramsReceivedPerSecond} packets/s ({ByteSize.FromBytes(udpServer.BytesReceivedPerSecond).Per(TimeSpan.FromSeconds(1)).Humanize("#.##")})");
         }
+
+        [Command("aityrespeed")]
+        public void AiTyreSpeed(byte speed)
+        {
+            foreach (var entryCar in Context.Server.EntryCars)
+            {
+                entryCar.TyreAngularSpeed = speed;
+            }
+        }
+
+        [Command("aiheight")]
+        public void AiHeight(float height)
+        {
+            Context.Server.AiSpline.HeightOffset = height;
+        }
+
+        [Command("airotation")]
+        public void AiRotation(float y, float z)
+        {
+            foreach (var entryCar in Context.Server.EntryCars)
+            {
+                entryCar.RotationY = y;
+                entryCar.RotationZ = z;
+            }
+        }
     }
 }

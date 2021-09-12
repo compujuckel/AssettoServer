@@ -156,6 +156,7 @@ namespace AssettoServer.Server
             if (Configuration.Extra.EnableAi)
             {
                 AiSpline = AiSpline.FromFile("content/tracks/" + Configuration.Track + "/ai/fast_lane.ai");
+                AiSpline.HeightOffset = Configuration.Extra.AiSplineHeightOffset;
                 AiBehavior = new AiBehavior(this);
             }
 
@@ -641,7 +642,7 @@ namespace AssettoServer.Server
                         lastAiUpdate = Environment.TickCount64;
                         if (Configuration.Extra.EnableAi)
                         {
-                            _ = AiBehavior.UpdateAsync();
+                            _ = AiBehavior.UpdateAsync().ContinueWith(t => Log.Error(t.Exception, "Error in AI update"), TaskContinuationOptions.OnlyOnFaulted);
                         }
                     }
 

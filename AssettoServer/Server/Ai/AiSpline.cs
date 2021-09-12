@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Numerics;
 using Serilog;
 
@@ -14,7 +15,7 @@ namespace AssettoServer.Server.Ai
         }
 
         // Add some height to the spline, cars will "scrape the ground" without it
-        public float HeightOffset { get; set; } = 0.18f;
+        public float HeightOffset { get; set; }
 
         public AiSplinePoint[] IdealLine;
         public int Header;
@@ -22,7 +23,7 @@ namespace AssettoServer.Server.Ai
         public int U1;
         public int U2;
         
-        public int WorldToSpline(Vector3 position)
+        public (int position, float distanceSquared) WorldToSpline(Vector3 position)
         {
             int splinePos = 0;
             float minDistance = float.MaxValue;
@@ -36,18 +37,17 @@ namespace AssettoServer.Server.Ai
                 }
             }
 
-            return splinePos;
+            return (position: splinePos, distanceSquared: minDistance);
         }
 
         public Vector3 SplineToWorld(int splinePos)
         {
-            Vector3 ret = new()
+            return new()
             {
                 X = IdealLine[splinePos].Pos.X,
                 Y = IdealLine[splinePos].Pos.Y + HeightOffset,
                 Z = IdealLine[splinePos].Pos.Z
             };
-            return ret;
         }
 
         public static AiSpline FromFile(string path)

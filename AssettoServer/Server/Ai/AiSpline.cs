@@ -42,6 +42,15 @@ namespace AssettoServer.Server.Ai
 
         public Vector3 SplineToWorld(int splinePos)
         {
+            if (splinePos < 0)
+            {
+                splinePos = IdealLine.Length + splinePos;
+            }
+            else
+            {
+                splinePos %= IdealLine.Length;
+            }
+            
             return new()
             {
                 X = IdealLine[splinePos].Pos.X,

@@ -213,15 +213,5 @@ namespace AssettoServer.Commands.Modules
         {
             Context.Server.AiSpline.HeightOffset = height;
         }
-
-        [Command("airotation")]
-        public void AiRotation(float y, float z)
-        {
-            foreach (var entryCar in Context.Server.EntryCars)
-            {
-                entryCar.RotationY = y;
-                entryCar.RotationZ = z;
-            }
-        }
     }
 }

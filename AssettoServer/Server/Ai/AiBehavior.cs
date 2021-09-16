@@ -145,7 +145,7 @@ namespace AssettoServer.Server.Ai
 
             targetAiCar.AiSpawnProtectionEnds = Environment.TickCount64 + _random.Next(MinSpawnProtectionTime, MaxSpawnProtectionTime);
             targetAiCar.AiSafetyDistanceSquared = _random.Next(MinAiSafetyDistanceSquared, MaxAiSafetyDistanceSquared);
-            targetAiCar.AiMoveToSplinePosition(spawnPoint, true);
+            targetAiCar.AiMoveToSplinePosition(spawnPoint, 0, true);
         }
     }
 }

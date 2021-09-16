@@ -541,6 +541,17 @@ namespace AssettoServer.Server
             {
                 try
                 {
+                    if (Configuration.Extra.EnableAi)
+                    {
+                        foreach (EntryCar entryCar in EntryCars)
+                        {
+                            if (entryCar.AiControlled)
+                            {
+                                entryCar.AiUpdate();
+                            }
+                        }
+                    }
+                    
                     foreach (EntryCar fromCar in EntryCars)
                     {
                         ACTcpClient fromClient = fromCar.Client;
@@ -683,17 +694,6 @@ namespace AssettoServer.Server
                         {
                             car.Client.SendCurrentSession();
                             Log.Information("Restarting session for {0}.", car.Client.Name);
-                        }
-                    }
-
-                    if (Configuration.Extra.EnableAi)
-                    {
-                        foreach (EntryCar entryCar in EntryCars)
-                        {
-                            if (entryCar.AiControlled)
-                            {
-                                entryCar.AiUpdate();
-                            }
                         }
                     }
 

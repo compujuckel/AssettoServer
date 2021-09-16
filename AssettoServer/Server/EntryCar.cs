@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Outgoing;
+using JPBotelho;
 using Serilog;
 
 namespace AssettoServer.Server
@@ -61,26 +62,24 @@ namespace AssettoServer.Server
         public float AiSafetyDistanceSquared { get; set; } = 20 * 20;
 
         public byte TyreAngularSpeed { get; set; } = 151; // just a random value that looks ok
-        public float RotationY { get; set; }
-        public float RotationZ { get; set; }
 
         private const float AiSpeed = 80 / 3.6f;
 
         private Vector3 _aiCurrentVec;
-        private Vector3 _aiCurrentVecNormal;
-        private Vector3 _aiCurrentVecProgress;
+        private float _aiCurrentVecLength;
+        private float _aiCurrentVecProgress;
         private int _aiSplinePosition;
         private bool _aiInitialized = false;
         private long _aiLastTick = Environment.TickCount64;
 
-        public void AiMoveToSplinePosition(int splinePos, bool forceUpdate = false)
+        public void AiMoveToSplinePosition(int splinePos, float progress = 0, bool forceUpdate = false)
         {
             _aiSplinePosition = splinePos;
             Vector3 currentPos = Server.AiSpline.SplineToWorld(splinePos);
             Vector3 nextPos = Server.AiSpline.SplineToWorld((splinePos + 1) % Server.AiSpline.IdealLine.Length);
-            _aiCurrentVec = Vector3.Subtract(nextPos, currentPos);
-            _aiCurrentVecNormal = Vector3.Normalize(_aiCurrentVec);
-            _aiCurrentVecProgress = Vector3.Zero;
+            _aiCurrentVec = nextPos - currentPos;
+            _aiCurrentVecLength = _aiCurrentVec.Length();
+            _aiCurrentVecProgress = Math.Clamp(progress, 0, _aiCurrentVecLength);
 
             if (forceUpdate)
             {
@@ -127,40 +126,48 @@ namespace AssettoServer.Server
             _aiLastTick = Environment.TickCount64;
 
             float moveMeters = (dt / 1000.0f) * AiSpeed;
-            
-            _aiCurrentVecProgress += _aiCurrentVecNormal * moveMeters;
-            
-            //Log.Debug("dt {0} m {1} cur {2} prog {3} pl {4} cl {5}", dt, moveMeters, _currentVec, _currentVecProgress, _currentVecProgress.Length(), _currentVec.Length());
-            if (_aiCurrentVecProgress.Length() > _aiCurrentVec.Length())
+
+            _aiCurrentVecProgress += moveMeters;
+
+            if (_aiCurrentVecProgress > _aiCurrentVecLength)
             {
                 _aiSplinePosition++;
                 if (_aiSplinePosition >= Server.AiSpline.IdealLine.Length)
                 {
                     _aiSplinePosition = 0;
                 }
-                //Log.Debug("next spline pos {0}", _aiSplinePosition);
                 
-                AiMoveToSplinePosition(_aiSplinePosition);
+                AiMoveToSplinePosition(_aiSplinePosition, _aiCurrentVecProgress - _aiCurrentVecLength);
             }
-            
+
+            Vector3 tanStart = Server.AiSpline.SplineToWorld(_aiSplinePosition) - Server.AiSpline.SplineToWorld(_aiSplinePosition == 0 ? Server.AiSpline.IdealLine.Length - 1 : _aiSplinePosition - 1);
+            Vector3 tanEnd = Server.AiSpline.SplineToWorld((_aiSplinePosition + 2) % Server.AiSpline.IdealLine.Length) - Server.AiSpline.SplineToWorld(_aiSplinePosition);
+
+            tanStart *= 0.5f;
+            tanEnd *= 0.5f;
+
+            CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(Server.AiSpline.SplineToWorld(_aiSplinePosition),
+                Server.AiSpline.SplineToWorld((_aiSplinePosition + 1) % Server.AiSpline.IdealLine.Length),
+                tanStart,
+                tanEnd,
+                _aiCurrentVecProgress / _aiCurrentVecLength);
+                
             Vector3 rotation = new Vector3()
             {
-                X = (float)(Math.Atan2(_aiCurrentVec.Z, _aiCurrentVec.X) - Math.PI / 2),
+                X = (float)(Math.Atan2(smoothPos.Tangent.Z, smoothPos.Tangent.X) - Math.PI / 2),
                 // TODO I'm 99% sure there is a better way to get Y rotation, but I don't speak math
-                Y = (float)(Math.Atan2(new Vector2(_aiCurrentVec.Z, _aiCurrentVec.X).Length(), _aiCurrentVec.Y) - Math.PI / 2) * -1f,
+                Y = (float)(Math.Atan2(new Vector2(smoothPos.Tangent.Z, smoothPos.Tangent.X).Length(), smoothPos.Tangent.Y) - Math.PI / 2) * -1f,
                 Z = 0
             };
-            
-            //Log.Debug("cur {0}, nxt {1}, rot {2}", currentPos, nextPos, rotation);
 
             UpdatePosition(new PositionUpdate()
             {
                 PakSequenceId = (byte)(Status.PakSequenceId + 1),
                 Timestamp = (uint)(Environment.TickCount - Server.StartTime),
                 LastRemoteTimestamp = (uint)(Environment.TickCount - Server.StartTime),
-                Position = Server.AiSpline.SplineToWorld(_aiSplinePosition) + _aiCurrentVecProgress,
+                Position = smoothPos.Position,
                 Rotation = rotation,
-                Velocity = Vector3.Multiply(Vector3.Normalize(_aiCurrentVec), AiSpeed),
+                Velocity = smoothPos.Tangent * AiSpeed,
                 SteerAngle = 127,
                 WheelAngle = 127,
                 TyreAngularSpeedFL = TyreAngularSpeed,

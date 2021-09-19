@@ -74,16 +74,28 @@ namespace AssettoServer.Server.Ai
             return true;
         }
 
+        public async Task ObstacleDetectionAsync()
+        {
+            using var _ = Operation.Time("AI obstacle detections");
+            
+            var aiCars = _server.EntryCars.Where(car => car.AiControlled).ToList();
+
+            foreach (var aiCar in aiCars)
+            {
+                aiCar.AiDetectCollisions();
+            }
+        }
+
         public async Task UpdateAsync()
         {
             //using var _ = Operation.Time("AI update");
 
-            var playerCars = _server.EntryCars.Where(car => !car.AiControlled 
-                                                            && car.Client != null 
-                                                            && car.Client.HasSentFirstUpdate 
+            var playerCars = _server.EntryCars.Where(car => !car.AiControlled
+                                                            && car.Client != null
+                                                            && car.Client.HasSentFirstUpdate
                                                             && Environment.TickCount64 - car.LastActiveTime < PlayerAfkTimeout
-                                                            && car.Status.Velocity.LengthSquared() > 1
-                                                                       ).ToList();
+                //&& car.Status.Velocity.LengthSquared() > 1
+            ).ToList();
             var aiCars = _server.EntryCars.Where(car => car.AiControlled);
             var distances = new List<AiDistance>();
 
@@ -122,7 +134,7 @@ namespace AssettoServer.Server.Ai
             if (playerCarsOrdered.Count == 0 || targetAiCar == null)
                 return;
 
-            var targetPlayerCar = playerCarsOrdered.ElementAt(GetRandomWeighted(playerCarsOrdered.Count));;
+            var targetPlayerCar = playerCarsOrdered.ElementAt(GetRandomWeighted(playerCarsOrdered.Count));
             var targetPlayerSplinePos = _server.AiSpline.WorldToSpline(targetPlayerCar.Status.Position);
             
             // Do not not spawn if a player is too far away from the AI spline, e.g. in pits or in a part of the map without traffic

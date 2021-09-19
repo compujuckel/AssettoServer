@@ -32,6 +32,14 @@ namespace AssettoServer.Network.Packets.Shared
         public byte Gas;
         public float NormalizedPosition;
 
+        [Flags]
+        public enum CarStatus
+        {
+            LightsOn = 0x20,
+            HazardsOn = 0x2000,
+            HighBeamsOff = 0x4000,
+        }
+
         public void FromReader(PacketReader reader)
         {
             PakSequenceId = reader.Read<byte>();

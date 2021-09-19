@@ -533,6 +533,7 @@ namespace AssettoServer.Server
             long lastTimeUpdate = Environment.TickCount64;
             long lastWeatherUpdate = Environment.TickCount64;
             long lastAiUpdate = Environment.TickCount64;
+            long lastAiObstacleDetectionUpdate = Environment.TickCount64;
             float networkDistanceSquared = (float)Math.Pow(Configuration.Extra.NetworkBubbleDistance, 2);
             int outsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
 
@@ -683,6 +684,15 @@ namespace AssettoServer.Server
                         }
 
                         lastTimeUpdate = Environment.TickCount64;
+                    }
+
+                    if (Environment.TickCount64 - lastAiObstacleDetectionUpdate > 100)
+                    {
+                        lastAiObstacleDetectionUpdate = Environment.TickCount64;
+                        if (Configuration.Extra.EnableAi)
+                        {
+                            _ = AiBehavior.ObstacleDetectionAsync();
+                        }
                     }
 
                     if (CurrentSession.TimeLeft.TotalMilliseconds < 100)

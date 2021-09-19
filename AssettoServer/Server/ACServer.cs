@@ -595,7 +595,7 @@ namespace AssettoServer.Server
                                             Position = status.Position,
                                             Rotation = status.Rotation,
                                             StatusFlag = (Configuration.Extra.ForceLights || fromCar.ForceLights)
-                                                ? status.StatusFlag | 0x20
+                                                ? status.StatusFlag | CarStatusFlags.LightsOn
                                                 : status.StatusFlag,
                                             SteerAngle = status.SteerAngle,
                                             TyreAngularSpeedFL = status.TyreAngularSpeed[0],

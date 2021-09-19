@@ -66,7 +66,7 @@ namespace AssettoServer.Server
 
         public byte TyreAngularSpeed { get; set; } = 151; // just a random value that looks ok
 
-        public const float AiMaxSpeed = 60 / 3.6f;
+        public const float AiMaxSpeed = 80 / 3.6f;
         public const float AiDefaultDeceleration = -4.5f;
         public const float AiDefaultAcceleration = 4.5f;
 
@@ -80,7 +80,13 @@ namespace AssettoServer.Server
         public int AiSplinePosition;
         private bool _aiInitialized = false;
         private long _aiLastTick = Environment.TickCount64;
-        private bool _aiHasObstacle;
+        private bool _aiStoppedForObstacle;
+        private long _aiStoppedForObstacleSince;
+        private long _aiIgnoreObstaclesUntil;
+        private long _aiObstacleHonkStart;
+        private long _aiObstacleHonkEnd;
+
+        private Random _random = new Random();
 
         public void AiMoveToSplinePosition(int splinePos, float progress = 0, bool forceUpdate = false)
         {
@@ -120,8 +126,14 @@ namespace AssettoServer.Server
 
         public void AiDetectCollisions()
         {
+            if (Environment.TickCount64 < _aiIgnoreObstaclesUntil)
+            {
+                AiSetTargetSpeed(AiMaxSpeed);
+                return;
+            }
+            
             float minSpeed = AiMaxSpeed;
-            _aiHasObstacle = false;
+            bool hasObstacle = false;
             
             foreach (var car in Server.EntryCars.Where(car => car.AiControlled || (car.Client != null && car.Client.HasSentFirstUpdate)))
             {
@@ -130,6 +142,11 @@ namespace AssettoServer.Server
                 float carSpeed = car.Status.Velocity.Length();
                 float distance = Vector3.Distance(car.Status.Position, Status.Position);
 
+                if (carSpeed < 0.1f)
+                {
+                    carSpeed = 0;
+                }
+
                 // Check first if car is in front of us
                 if (GetAngleToCar(car) is > 165 and < 195)
                 {
@@ -137,6 +154,7 @@ namespace AssettoServer.Server
                     if (distance < 10)
                     {
                         minSpeed = 0;
+                        hasObstacle = true;
                     }
                     else
                     {
@@ -144,19 +162,39 @@ namespace AssettoServer.Server
                         if (carSpeed < 20 / 3.6f)
                         {
                             carSpeed = 5 / 3.6f;
+                            //carSpeed = Math.Clamp(carSpeed, 0, 5 / 3.6f);
                         }
                         
                         if ((carSpeed + 1 < AiSpeed || carSpeed == 0)
-                            && distance < GetBrakingDistance(carSpeed) + 20)
+                            && distance < GetBrakingDistance(carSpeed) * 1.5 + 20)
                         {
                             minSpeed = Math.Min(minSpeed, Math.Max(5 / 3.6f, carSpeed));
-                            _aiHasObstacle = true;
-                            //Log.Debug("obstacle with car {0}, speed {1}, minSpeed now {2}", car.SessionId, carSpeed, minSpeed);
+                            hasObstacle = true;
                         }
                     }
                 }
             }
+            
+            if (AiSpeed == 0 && !_aiStoppedForObstacle && hasObstacle)
+            {
+                _aiStoppedForObstacle = true;
+                _aiStoppedForObstacleSince = Environment.TickCount64;
+                _aiObstacleHonkStart = _aiStoppedForObstacleSince + _random.Next(3000, 7000);
+                _aiObstacleHonkEnd = _aiObstacleHonkStart + _random.Next(500, 1500);
+                Log.Debug("AI {0} stopped for obstacle", SessionId);
+            }
+            else if (_aiStoppedForObstacle && !hasObstacle)
+            {
+                _aiStoppedForObstacle = false;
+                Log.Debug("AI {0} no longer stopped for obstacle", SessionId);
+            }
 
+            if (_aiStoppedForObstacle && Environment.TickCount64 - _aiStoppedForObstacleSince > 10_000)
+            {
+                _aiIgnoreObstaclesUntil = Environment.TickCount64 + 10_000;
+                Log.Debug("AI {0} ignoring obstacles until {1}", SessionId, _aiIgnoreObstaclesUntil);
+            }
+            
             AiSetTargetSpeed(minSpeed);
         }
 
@@ -278,7 +316,11 @@ namespace AssettoServer.Server
                 TyreAngularSpeedRL = tyreAngularSpeed,
                 TyreAngularSpeedRR = tyreAngularSpeed,
                 EngineRpm = (ushort) MathUtils.Lerp(800, 3000, AiSpeed / AiMaxSpeed),
-                StatusFlag = 0x4020 /* Lights on, high beams off */ | (AiSpeed < 20 / 3.6f ? (uint)0x2000 : 0) | (AiSpeed == 0 || AiAcceleration < 0 ? (uint)0x10 : 0),
+                StatusFlag = CarStatusFlags.LightsOn
+                             | CarStatusFlags.HighBeamsOff
+                             | (AiSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
+                             | (AiSpeed == 0 || AiAcceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
+                             | (_aiStoppedForObstacle && Environment.TickCount64 > _aiObstacleHonkStart && Environment.TickCount64 < _aiObstacleHonkEnd ? CarStatusFlags.Horn : 0),
                 Gear = 2
             });
         }
@@ -333,13 +375,13 @@ namespace AssettoServer.Server
                 SetActive();
 
             long currentTick = Environment.TickCount64;
-            if(((Status.StatusFlag & 0x20) == 0 && (positionUpdate.StatusFlag & 0x20) != 0) || ((Status.StatusFlag & 0x4000) == 0 && (positionUpdate.StatusFlag & 0x4000) != 0))
+            if(((Status.StatusFlag & CarStatusFlags.LightsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.LightsOn) != 0) || ((Status.StatusFlag & CarStatusFlags.HighBeamsOff) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HighBeamsOff) != 0))
             {
                 LastLightFlashTime = currentTick;
                 LightFlashCount++;
             }
 
-            if ((Status.StatusFlag & 0x2000) == 0 && (positionUpdate.StatusFlag & 0x2000) != 0)
+            if ((Status.StatusFlag & CarStatusFlags.HazardsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HazardsOn) != 0)
             {
                 if (CurrentRace != null && !CurrentRace.HasStarted && !CurrentRace.LineUpRequired)
                     _ = CurrentRace.StartAsync();
@@ -360,6 +402,11 @@ namespace AssettoServer.Server
                     LastRaceChallengeTime = currentTick;
                 }
             }
+
+            /*if (!AiControlled && Status.StatusFlag != positionUpdate.StatusFlag)
+            {
+                Log.Debug("Status flag from {0:X} to {1:X}", Status.StatusFlag, positionUpdate.StatusFlag);
+            }*/
 
 
             Status.Timestamp = LastRemoteTimestamp + TimeOffset;
@@ -484,7 +531,7 @@ namespace AssettoServer.Server
         public byte WheelAngle { get; internal set; }
         public ushort EngineRpm { get; internal set; }
         public byte Gear { get; internal set; }
-        public uint StatusFlag { get; internal set; }
+        public CarStatusFlags StatusFlag { get; internal set; }
         public short PerformanceDelta { get; internal set; }
         public byte Gas { get; internal set; }
         public float NormalizedPosition { get; internal set; }

@@ -35,6 +35,7 @@ namespace AssettoServer.Network.Packets.Shared
         [Flags]
         public enum CarStatus
         {
+            BrakeLightsOn = 0x10,
             LightsOn = 0x20,
             HazardsOn = 0x2000,
             HighBeamsOff = 0x4000,

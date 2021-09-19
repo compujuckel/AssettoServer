@@ -76,7 +76,7 @@ namespace AssettoServer.Server.Ai
 
         public async Task ObstacleDetectionAsync()
         {
-            using var _ = Operation.Time("AI obstacle detections");
+            //using var _ = Operation.Time("AI obstacle detections");
             
             var aiCars = _server.EntryCars.Where(car => car.AiControlled).ToList();
 

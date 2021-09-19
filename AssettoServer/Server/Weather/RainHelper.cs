@@ -19,18 +19,6 @@ namespace AssettoServer.Server.Weather
 
         private double _tempWetness;
 
-        private static double Smoothstep(double fromValue, double toValue, double by)
-        {
-            double x = Math.Clamp((by - fromValue) / (toValue - fromValue), 0, 1);
-
-            return x * x * (3 - 2 * x);
-        }
-
-        private static double Lerp(double fromValue, double toValue, double by)
-        {
-            return fromValue * (1 - by) + toValue * by;
-        }
-
         private static double GetTemperatureOffset(double tempBase, double mult, double lowLimit, double highLimit, double temp)
         {
             double f = Math.Pow(Math.Abs(temp - tempBase), mult);
@@ -59,7 +47,7 @@ namespace AssettoServer.Server.Weather
             double tmp = GetTemperatureOffset(tempBase, 1.0f, 0, 2, temp);
             tmp = tmp * 0.5;
 
-            return Lerp(value1, value2, tmp);
+            return MathUtils.Lerp(value1, value2, tmp);
         }
 
         private void CalcWater(WeatherData condition, double sun, double dt)
@@ -103,7 +91,7 @@ namespace AssettoServer.Server.Weather
 
         private void CalcGrip(WeatherData condition, double baseGrip, double rainTrackGripReduction)
         {
-            condition.TrackGrip = (float) (baseGrip - Lerp(0, rainTrackGripReduction * 0.4, condition.RainWetness) - Lerp(0, rainTrackGripReduction * 0.6, condition.RainWater));
+            condition.TrackGrip = (float) (baseGrip - MathUtils.Lerp(0, rainTrackGripReduction * 0.4, condition.RainWetness) - MathUtils.Lerp(0, rainTrackGripReduction * 0.6, condition.RainWater));
         }
 
         public void Update(WeatherData weather, double baseGrip, double rainTrackGripReduction, long dt)
@@ -121,12 +109,12 @@ namespace AssettoServer.Server.Weather
                 }
                 else
                 {
-                    weather.TransitionValue = (ushort) (Smoothstep(0, 1, weather.TransitionValueInternal) * ushort.MaxValue);
-                    weather.RainIntensity = (float) Lerp(weather.Type.RainIntensity, weather.UpcomingType.RainIntensity, weather.TransitionValueInternal);
+                    weather.TransitionValue = (ushort) (MathUtils.Smoothstep(0, 1, weather.TransitionValueInternal) * ushort.MaxValue);
+                    weather.RainIntensity = (float) MathUtils.Lerp(weather.Type.RainIntensity, weather.UpcomingType.RainIntensity, weather.TransitionValueInternal);
                 }
             }
             
-            CalcWater(weather, Lerp(weather.Type.Sun, weather.UpcomingType.Sun, weather.TransitionValueInternal), dt / 1000.0);
+            CalcWater(weather, MathUtils.Lerp(weather.Type.Sun, weather.UpcomingType.Sun, weather.TransitionValueInternal), dt / 1000.0);
             CalcGrip(weather, baseGrip, rainTrackGripReduction);
         }
     }

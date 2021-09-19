@@ -177,6 +177,11 @@ namespace AssettoServer.Server
         {
             return (float) Math.Abs(Math.Pow(targetSpeed - AiSpeed, 2) / (2 * AiDefaultDeceleration));
         }
+
+        public float GetTyreAngularSpeed(float speed, float wheelDiameter)
+        {
+            return (float) (speed / (Math.PI * wheelDiameter) * 6);
+        }
         
         public void AiSetTargetSpeed(float speed)
         {
@@ -256,6 +261,8 @@ namespace AssettoServer.Server
                 Z = 0
             };
 
+            byte tyreAngularSpeed = (byte) Math.Min(byte.MaxValue, 100 + GetTyreAngularSpeed(AiSpeed, 0.65f));
+
             UpdatePosition(new PositionUpdate()
             {
                 PakSequenceId = (byte)(Status.PakSequenceId + 1),
@@ -266,13 +273,13 @@ namespace AssettoServer.Server
                 Velocity = smoothPos.Tangent * AiSpeed,
                 SteerAngle = 127,
                 WheelAngle = 127,
-                TyreAngularSpeedFL = TyreAngularSpeed,
-                TyreAngularSpeedFR = TyreAngularSpeed,
-                TyreAngularSpeedRL = TyreAngularSpeed,
-                TyreAngularSpeedRR = TyreAngularSpeed,
-                EngineRpm = 3000,
-                StatusFlag = 0x4020 /* Lights on, high beams off */,
-                Gear = 4
+                TyreAngularSpeedFL = tyreAngularSpeed,
+                TyreAngularSpeedFR = tyreAngularSpeed,
+                TyreAngularSpeedRL = tyreAngularSpeed,
+                TyreAngularSpeedRR = tyreAngularSpeed,
+                EngineRpm = (ushort) MathUtils.Lerp(800, 3000, AiSpeed / AiMaxSpeed),
+                StatusFlag = 0x4020 /* Lights on, high beams off */ | (AiSpeed < 20 / 3.6f ? (uint)0x2000 : 0) | (AiSpeed == 0 || AiAcceleration < 0 ? (uint)0x10 : 0),
+                Gear = 2
             });
         }
 

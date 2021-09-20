@@ -135,7 +135,7 @@ namespace AssettoServer.Server.Ai
                 return;
 
             var targetPlayerCar = playerCarsOrdered.ElementAt(GetRandomWeighted(playerCarsOrdered.Count));
-            var targetPlayerSplinePos = _server.AiSpline.WorldToSpline(targetPlayerCar.Status.Position);
+            var targetPlayerSplinePos = _server.TrafficMap.WorldToSpline(targetPlayerCar.Status.Position);
             
             // Do not not spawn if a player is too far away from the AI spline, e.g. in pits or in a part of the map without traffic
             while (targetPlayerSplinePos.distanceSquared > MaxPlayerDistanceToAiSplineSquared)
@@ -145,19 +145,32 @@ namespace AssettoServer.Server.Ai
                     break;
                 
                 targetPlayerCar = playerCarsOrdered.ElementAt(GetRandomWeighted(playerCarsOrdered.Count));
-                targetPlayerSplinePos = _server.AiSpline.WorldToSpline(targetPlayerCar.Status.Position);
+                targetPlayerSplinePos = _server.TrafficMap.WorldToSpline(targetPlayerCar.Status.Position);
             }
 
-            int spawnPoint = (targetPlayerSplinePos.position + _random.Next(MinSpawnDistance, MaxSpawnDistance)) % _server.AiSpline.IdealLine.Length;
-            while (!IsPositionSafe(_server.AiSpline.SplineToWorld(spawnPoint)))
+            int spawnDistance = _random.Next(MinSpawnDistance, MaxSpawnDistance);
+            var spawnPoint = targetPlayerSplinePos.point.Traverse(spawnDistance);
+
+            if (spawnPoint == null)
             {
-                spawnPoint += 10;
-                spawnPoint %= _server.AiSpline.IdealLine.Length;
+                Log.Warning("Cannot find spawn point for car {0}, skipping", targetAiCar.SessionId);
+                return;
+            }
+            
+            while (!IsPositionSafe(spawnPoint.Point))
+            {
+                spawnPoint = spawnPoint.Traverse(1);
+                
+                if (spawnPoint == null)
+                {
+                    Log.Warning("Cannot find spawn point for car {0}, skipping", targetAiCar.SessionId);
+                    return;
+                }
             }
 
             targetAiCar.AiSpawnProtectionEnds = Environment.TickCount64 + _random.Next(MinSpawnProtectionTime, MaxSpawnProtectionTime);
             targetAiCar.AiSafetyDistanceSquared = _random.Next(MinAiSafetyDistanceSquared, MaxAiSafetyDistanceSquared);
-            targetAiCar.AiMoveToSplinePosition(spawnPoint, 0, true);
+            targetAiCar.AiTeleport(spawnPoint);
         }
     }
 }

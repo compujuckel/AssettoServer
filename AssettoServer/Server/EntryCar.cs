@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Server.Ai;
 using JPBotelho;
 using Serilog;
 
@@ -61,23 +62,18 @@ namespace AssettoServer.Server
         public AiMode AiMode { get; set; }
         public float AiSafetyDistanceSquared { get; set; } = 20 * 20;
         public float AiAcceleration { get; set; }
-        public float AiSpeed { get; private set; } = AiMaxSpeed;
+        public float AiCurrentSpeed { get; private set; } = AiMaxSpeed;
         public float AiTargetSpeed { get; private set; } = AiMaxSpeed;
-
-        public byte TyreAngularSpeed { get; set; } = 151; // just a random value that looks ok
 
         public const float AiMaxSpeed = 80 / 3.6f;
         public const float AiDefaultDeceleration = -4.5f;
         public const float AiDefaultAcceleration = 4.5f;
-
-        private Vector3 _aiCurrentPos;
-        private Vector3 _aiNextPos;
+        
         private Vector3 _aiStartTangent;
         private Vector3 _aiEndTangent;
 
         private float _aiCurrentVecLength;
         private float _aiCurrentVecProgress;
-        public int AiSplinePosition;
         private bool _aiInitialized = false;
         private long _aiLastTick = Environment.TickCount64;
         private bool _aiStoppedForObstacle;
@@ -85,43 +81,67 @@ namespace AssettoServer.Server
         private long _aiIgnoreObstaclesUntil;
         private long _aiObstacleHonkStart;
         private long _aiObstacleHonkEnd;
+        private TrafficSplinePoint _aiCurrentPoint;
 
         private Random _random = new Random();
 
-        public void AiMoveToSplinePosition(int splinePos, float progress = 0, bool forceUpdate = false)
+        public void AiTeleport(TrafficSplinePoint point)
         {
-            if (AiSplinePosition != splinePos)
+            if (point == null || point.Next == null)
             {
-                AiSplinePosition = splinePos;
-                
-                _aiCurrentPos = Server.AiSpline.SplineToWorld(AiSplinePosition);
-                _aiNextPos = Server.AiSpline.SplineToWorld(AiSplinePosition + 1);
-                _aiCurrentVecLength = (_aiNextPos - _aiCurrentPos).Length();
+                return;
             }
 
+            _aiCurrentPoint = point;
+            _aiCurrentVecLength = (_aiCurrentPoint.Next.Point - _aiCurrentPoint.Point).Length();
+            _aiCurrentVecProgress = 0;
+            
+            CalculateTangents();
+        }
+
+        private void CalculateTangents()
+        {
+            if (_aiCurrentPoint.Previous == null)
+            {
+                _aiStartTangent = (_aiCurrentPoint.Next.Point - _aiCurrentPoint.Point) * 0.5f;
+            }
+            else
+            {
+                _aiStartTangent = (_aiCurrentPoint.Point - _aiCurrentPoint.Previous.Point) * 0.5f;
+            }
+
+            if (_aiCurrentPoint.Next.Next == null)
+            {
+                _aiEndTangent = (_aiCurrentPoint.Next.Point - _aiCurrentPoint.Point) * 0.5f;
+            }
+            else
+            {
+                _aiEndTangent = (_aiCurrentPoint.Next.Next.Point - _aiCurrentPoint.Point) * 0.5f;
+            }
+        }
+
+        public bool AiMove(float progress)
+        {
             while (progress > _aiCurrentVecLength)
             {
                 progress -= _aiCurrentVecLength;
                 
-                AiSplinePosition = (AiSplinePosition + 1) % Server.AiSpline.IdealLine.Length;
+                if (_aiCurrentPoint.Next == null 
+                    || _aiCurrentPoint.Next.Next == null)
+                {
+                    Log.Warning("Spline end");
+                    return false;
+                }
                 
-                _aiCurrentPos = Server.AiSpline.SplineToWorld(AiSplinePosition);
-                _aiNextPos = Server.AiSpline.SplineToWorld(AiSplinePosition + 1);
-                _aiCurrentVecLength = (_aiNextPos - _aiCurrentPos).Length();
+                _aiCurrentPoint = _aiCurrentPoint.Next;
+                _aiCurrentVecLength = (_aiCurrentPoint.Next.Point - _aiCurrentPoint.Point).Length();
             }
 
-            if (AiSplinePosition != splinePos)
-            {
-                _aiStartTangent = (_aiCurrentPos - Server.AiSpline.SplineToWorld(AiSplinePosition - 1)) * 0.5f;
-                _aiEndTangent = (Server.AiSpline.SplineToWorld(AiSplinePosition + 2) - _aiCurrentPos) * 0.5f;
-            }
+            CalculateTangents();
 
             _aiCurrentVecProgress = progress;
 
-            if (forceUpdate)
-            {
-                AiUpdate();
-            }
+            return true;
         }
 
         public void AiDetectCollisions()
@@ -165,7 +185,7 @@ namespace AssettoServer.Server
                             //carSpeed = Math.Clamp(carSpeed, 0, 5 / 3.6f);
                         }
                         
-                        if ((carSpeed + 1 < AiSpeed || carSpeed == 0)
+                        if ((carSpeed + 1 < AiCurrentSpeed || carSpeed == 0)
                             && distance < GetBrakingDistance(carSpeed) * 1.5 + 20)
                         {
                             minSpeed = Math.Min(minSpeed, Math.Max(5 / 3.6f, carSpeed));
@@ -175,7 +195,7 @@ namespace AssettoServer.Server
                 }
             }
             
-            if (AiSpeed == 0 && !_aiStoppedForObstacle && hasObstacle)
+            if (AiCurrentSpeed == 0 && !_aiStoppedForObstacle && hasObstacle)
             {
                 _aiStoppedForObstacle = true;
                 _aiStoppedForObstacleSince = Environment.TickCount64;
@@ -213,7 +233,7 @@ namespace AssettoServer.Server
 
         public float GetBrakingDistance(float targetSpeed)
         {
-            return (float) Math.Abs(Math.Pow(targetSpeed - AiSpeed, 2) / (2 * AiDefaultDeceleration));
+            return (float) Math.Abs(Math.Pow(targetSpeed - AiCurrentSpeed, 2) / (2 * AiDefaultDeceleration));
         }
 
         public float GetTyreAngularSpeed(float speed, float wheelDiameter)
@@ -224,11 +244,11 @@ namespace AssettoServer.Server
         public void AiSetTargetSpeed(float speed)
         {
             AiTargetSpeed = speed;
-            if (speed < AiSpeed)
+            if (speed < AiCurrentSpeed)
             {
                 AiAcceleration = AiDefaultDeceleration;
             }
-            else if(speed > AiSpeed)
+            else if(speed > AiCurrentSpeed)
             {
                 AiAcceleration = AiDefaultAcceleration;
             }
@@ -267,9 +287,8 @@ namespace AssettoServer.Server
         {
             if (!_aiInitialized) // TODO remove?
             {
-                AiSplinePosition = new Random().Next(0, Server.AiSpline.IdealLine.Length);
-                
-                AiMoveToSplinePosition(AiSplinePosition);
+                int spawnPos = new Random().Next(0, Server.TrafficMap.Splines[0].Points.Length);
+                AiTeleport(Server.TrafficMap.Splines[0].Points[spawnPos]);
                 _aiInitialized = true;
             }
             
@@ -278,19 +297,23 @@ namespace AssettoServer.Server
 
             if (AiAcceleration != 0)
             {
-                AiSpeed += AiAcceleration * (dt / 1000.0f);
+                AiCurrentSpeed += AiAcceleration * (dt / 1000.0f);
                 
-                if ((AiAcceleration < 0 && AiSpeed < AiTargetSpeed) || (AiAcceleration > 0 && AiSpeed > AiTargetSpeed))
+                if ((AiAcceleration < 0 && AiCurrentSpeed < AiTargetSpeed) || (AiAcceleration > 0 && AiCurrentSpeed > AiTargetSpeed))
                 {
-                    AiSpeed = AiTargetSpeed;
+                    AiCurrentSpeed = AiTargetSpeed;
                     AiAcceleration = 0;
                 }
             }
 
-            float moveMeters = (dt / 1000.0f) * AiSpeed;
-            AiMoveToSplinePosition(AiSplinePosition, _aiCurrentVecProgress + moveMeters);
+            float moveMeters = (dt / 1000.0f) * AiCurrentSpeed;
+            if (!AiMove(_aiCurrentVecProgress + moveMeters))
+            {
+                Log.Debug("Car {0} reached spline end, respawning", SessionId);
+                AiTeleport(Server.TrafficMap.Splines[0].Points[0]);
+            }
 
-            CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(_aiCurrentPos, _aiNextPos, _aiStartTangent, _aiEndTangent, _aiCurrentVecProgress / _aiCurrentVecLength);
+            CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(_aiCurrentPoint.Point, _aiCurrentPoint.Next.Point, _aiStartTangent, _aiEndTangent, _aiCurrentVecProgress / _aiCurrentVecLength);
                 
             Vector3 rotation = new Vector3()
             {
@@ -299,7 +322,7 @@ namespace AssettoServer.Server
                 Z = 0
             };
 
-            byte tyreAngularSpeed = (byte) Math.Min(byte.MaxValue, 100 + GetTyreAngularSpeed(AiSpeed, 0.65f));
+            byte tyreAngularSpeed = (byte) Math.Min(byte.MaxValue, 100 + GetTyreAngularSpeed(AiCurrentSpeed, 0.65f));
 
             UpdatePosition(new PositionUpdate()
             {
@@ -308,18 +331,18 @@ namespace AssettoServer.Server
                 LastRemoteTimestamp = (uint)(Environment.TickCount - Server.StartTime),
                 Position = smoothPos.Position,
                 Rotation = rotation,
-                Velocity = smoothPos.Tangent * AiSpeed,
+                Velocity = smoothPos.Tangent * AiCurrentSpeed,
                 SteerAngle = 127,
                 WheelAngle = 127,
                 TyreAngularSpeedFL = tyreAngularSpeed,
                 TyreAngularSpeedFR = tyreAngularSpeed,
                 TyreAngularSpeedRL = tyreAngularSpeed,
                 TyreAngularSpeedRR = tyreAngularSpeed,
-                EngineRpm = (ushort) MathUtils.Lerp(800, 3000, AiSpeed / AiMaxSpeed),
+                EngineRpm = (ushort) MathUtils.Lerp(800, 3000, AiCurrentSpeed / AiMaxSpeed),
                 StatusFlag = CarStatusFlags.LightsOn
                              | CarStatusFlags.HighBeamsOff
-                             | (AiSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
-                             | (AiSpeed == 0 || AiAcceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
+                             | (AiCurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
+                             | (AiCurrentSpeed == 0 || AiAcceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
                              | (_aiStoppedForObstacle && Environment.TickCount64 > _aiObstacleHonkStart && Environment.TickCount64 < _aiObstacleHonkEnd ? CarStatusFlags.Horn : 0),
                 Gear = 2
             });

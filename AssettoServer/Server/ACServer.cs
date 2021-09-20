@@ -69,7 +69,7 @@ namespace AssettoServer.Server
         private ITrackParamsProvider TrackParamsProvider { get; }
         public TrackParams.TrackParams TrackParams { get; }
         
-        public AiSpline AiSpline { get; }
+        public TrafficMap TrafficMap { get; }
         public AiBehavior AiBehavior { get; }
 
         public ACServer(ACServerConfiguration configuration)
@@ -155,8 +155,17 @@ namespace AssettoServer.Server
 
             if (Configuration.Extra.EnableAi)
             {
-                AiSpline = AiSpline.FromFile("content/tracks/" + Configuration.Track + "/ai/fast_lane.ai");
-                AiSpline.HeightOffset = Configuration.Extra.AiSplineHeightOffset;
+                string trafficMapPath = "content/tracks/" + Configuration.Track + "/ai/traffic_map.obj";
+                string fastLanePath = "content/tracks/" + Configuration.Track + "/ai/fast_lane.ai";
+                if (File.Exists(trafficMapPath))
+                {
+                    TrafficMap = WavefrontObjParser.ParseFile("content/tracks/" + Configuration.Track + "/ai/traffic_map.obj");
+                } 
+                else if (File.Exists(fastLanePath))
+                {
+                    TrafficMap = FastLaneParser.FromFile(fastLanePath);
+                }
+
                 AiBehavior = new AiBehavior(this);
             }
 

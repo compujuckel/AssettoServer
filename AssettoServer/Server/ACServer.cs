@@ -557,7 +557,10 @@ namespace AssettoServer.Server
                         {
                             if (entryCar.AiControlled)
                             {
-                                entryCar.AiUpdate();
+                                foreach (var aiState in entryCar.AiStates)
+                                {
+                                    aiState.Update();
+                                }
                             }
                         }
                     }
@@ -565,7 +568,7 @@ namespace AssettoServer.Server
                     foreach (EntryCar fromCar in EntryCars)
                     {
                         ACTcpClient fromClient = fromCar.Client;
-                        if (fromClient != null || fromCar.AiControlled)
+                        if (fromClient != null)
                         {
                             if (fromCar.HasUpdateToSend)
                             {
@@ -638,6 +641,47 @@ namespace AssettoServer.Server
                                 {
                                     Log.Information("{0} has not sent a ping response for over 15 seconds.", fromCar?.Client?.Name);
                                     _ = fromCar.Client?.DisconnectAsync();
+                                }
+                            }
+                        }
+                        else if (fromCar.AiControlled)
+                        {
+                            foreach (EntryCar toCar in EntryCars)
+                            {
+                                ACTcpClient toClient = toCar.Client;
+                                if (toCar != fromCar && toClient != null && toClient.HasSentFirstUpdate)
+                                {
+                                    var fromState = fromCar.AiStates.OrderBy(ai => Vector3.DistanceSquared(ai.Status.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position)).First();
+
+                                    // TODO network bubble necessary?
+
+                                    CarStatus status = fromState.Status;
+                                        
+                                    toClient.SendPacketUdp(new PositionUpdate
+                                    {
+                                        SessionId = fromCar.SessionId,
+                                        EngineRpm = status.EngineRpm,
+                                        Gas = status.Gas,
+                                        Gear = status.Gear,
+                                        LastRemoteTimestamp = (uint)status.Timestamp,
+                                        Timestamp = (uint) (status.Timestamp - toCar.TimeOffset),
+                                        NormalizedPosition = status.NormalizedPosition,
+                                        PakSequenceId = status.PakSequenceId,
+                                        PerformanceDelta = status.PerformanceDelta,
+                                        Ping = fromCar.Ping,
+                                        Position = status.Position,
+                                        Rotation = status.Rotation,
+                                        StatusFlag = (Configuration.Extra.ForceLights || fromCar.ForceLights)
+                                            ? status.StatusFlag | CarStatusFlags.LightsOn
+                                            : status.StatusFlag,
+                                        SteerAngle = status.SteerAngle,
+                                        TyreAngularSpeedFL = status.TyreAngularSpeed[0],
+                                        TyreAngularSpeedFR = status.TyreAngularSpeed[1],
+                                        TyreAngularSpeedRL = status.TyreAngularSpeed[2],
+                                        TyreAngularSpeedRR = status.TyreAngularSpeed[3],
+                                        Velocity = status.Velocity,
+                                        WheelAngle = status.WheelAngle
+                                    });
                                 }
                             }
                         }

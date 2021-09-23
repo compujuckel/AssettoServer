@@ -84,6 +84,7 @@ namespace AssettoServer.Server
                 EntryCars[i].SessionId = (byte)i;
                 EntryCars[i].Server = this;
                 EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Count];
+                EntryCars[i].SetAiOverbooking(1);
             }
                                 
             CurrentDaySeconds = (float)(Configuration.SunAngle * (50400.0 - 46800.0) / 16.0 + 46800.0);
@@ -821,6 +822,7 @@ namespace AssettoServer.Server
                     if (Configuration.Extra.EnableAi && client.EntryCar.AiMode == AiMode.Auto)
                     {
                         client.EntryCar.SetAiControl(true);
+                        AiBehavior.SetAiOverbooking(ConnectedCars.Count);
                     }
                 }
             }

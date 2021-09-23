@@ -14,19 +14,6 @@ namespace AssettoServer.Server.Ai
         private readonly ACServer _server;
         private readonly Random _random = new();
 
-        private const float PlayerRadius = 200.0f;
-        private const long PlayerAfkTimeout = 10_000;
-        private const float PlayerPositionOffset = 100.0f;
-        private const float MaxPlayerDistanceToAiSplineSquared = 7 * 7;
-        private const int MinSpawnDistance = 100;
-        private const int MaxSpawnDistance = 400;
-        private const int MinAiSafetyDistanceSquared = 20 * 20;
-        private const int MaxAiSafetyDistanceSquared = 70 * 70;
-        private const int StateSafetyDistanceSquared = 2000 * 2000;
-        private const float SpawnSafetyDistanceToPlayerSquared = 80 * 80;
-        private const int MinSpawnProtectionTime = 4_000;
-        private const int MaxSpawnProtectionTime = 8_000;
-
         public AiBehavior(ACServer server)
         {
             _server = server;
@@ -77,7 +64,7 @@ namespace AssettoServer.Server.Ai
                 }
                 else
                 {
-                    if (Vector3.DistanceSquared(entryCar.Status.Position, position) < SpawnSafetyDistanceToPlayerSquared)
+                    if (Vector3.DistanceSquared(entryCar.Status.Position, position) < _server.Configuration.Extra.AiParams.SpawnSafetyDistanceToPlayerSquared)
                     {
                         return false;
                     }
@@ -92,12 +79,12 @@ namespace AssettoServer.Server.Ai
             var targetPlayerSplinePos = _server.TrafficMap.WorldToSpline(playerCar.Status.Position);
             
             // Do not not spawn if a player is too far away from the AI spline, e.g. in pits or in a part of the map without traffic
-            if (targetPlayerSplinePos.distanceSquared > MaxPlayerDistanceToAiSplineSquared)
+            if (targetPlayerSplinePos.distanceSquared > _server.Configuration.Extra.AiParams.MaxPlayerDistanceToAiSplineSquared)
             {
                 return null;
             }
             
-            int spawnDistance = _random.Next(MinSpawnDistance, MaxSpawnDistance);
+            int spawnDistance = _random.Next(_server.Configuration.Extra.AiParams.MinSpawnDistance, _server.Configuration.Extra.AiParams.MaxSpawnDistance);
             var spawnPoint = targetPlayerSplinePos.point.Traverse(spawnDistance);
 
             if (spawnPoint == null)
@@ -132,14 +119,32 @@ namespace AssettoServer.Server.Ai
                 }
             }
         }
-
-        private bool CheckStateDistance(Vector3 spawnPoint, AiState aiState)
+        
+        public void SetAiOverbooking(int count)
         {
+            var aiCars = _server.EntryCars.Where(car => car.AiControlled).ToList();
+
+            foreach (var aiCar in aiCars)
+            {
+                aiCar.SetAiOverbooking(count);
+            }
+        }
+
+        private bool CanSpawnState(Vector3 spawnPoint, AiState aiState)
+        {
+            int index = aiState.EntryCar.AiStates.IndexOf(aiState);
+            if (index >= aiState.EntryCar.TargetAiStateCount)
+            {
+                aiState.EntryCar.AiStates.Remove(aiState);
+                Log.Debug("removed idx {0}, target {1}, max {2}", index, aiState.EntryCar.TargetAiStateCount, _server.Configuration.Extra.AiParams.MaxOverbooking);
+                return false;
+            }
+            
             foreach (var state in aiState.EntryCar.AiStates)
             {
                 if (state == aiState) continue;
 
-                if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < StateSafetyDistanceSquared)
+                if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < _server.Configuration.Extra.AiParams.StateSafetyDistanceSquared)
                 {
                     return false;
                 }
@@ -154,7 +159,7 @@ namespace AssettoServer.Server.Ai
             var playerCars = _server.EntryCars.Where(car => !car.AiControlled
                                                             && car.Client != null
                                                             && car.Client.HasSentFirstUpdate
-                                                            && Environment.TickCount64 - car.LastActiveTime < PlayerAfkTimeout
+                                                            && Environment.TickCount64 - car.LastActiveTime < _server.Configuration.Extra.AiParams.PlayerAfkTimeoutMilliseconds
                 //&& car.Status.Velocity.LengthSquared() > 1
             ).ToList();
             var aiStates = _server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.AiStates);
@@ -164,7 +169,7 @@ namespace AssettoServer.Server.Ai
             {
                 foreach (var playerCar in playerCars)
                 {
-                    var offsetPosition = playerCar.Status.Position + Vector3.Normalize(playerCar.Status.Velocity) * PlayerPositionOffset;
+                    var offsetPosition = playerCar.Status.Position + Vector3.Normalize(playerCar.Status.Velocity) * _server.Configuration.Extra.AiParams.PlayerPositionOffset;
                     
                     distances.Add(new AiDistance()
                     {
@@ -179,7 +184,7 @@ namespace AssettoServer.Server.Ai
             var outOfRangeAiStates = (from distance in distances
                 group distance by distance.AiCar
                 into aiGroup
-                where Environment.TickCount64 > aiGroup.Key.SpawnProtectionEnds && aiGroup.Min(d => d.Distance) > PlayerRadius
+                where Environment.TickCount64 > aiGroup.Key.SpawnProtectionEnds && aiGroup.Min(d => d.Distance) > _server.Configuration.Extra.AiParams.PlayerRadius
                 orderby aiGroup.Min(d => d.Distance) descending 
                 select aiGroup.Key).ToList();
 
@@ -212,14 +217,14 @@ namespace AssettoServer.Server.Ai
 
             foreach (var targetAiState in outOfRangeAiStates)
             {
-                if (!CheckStateDistance(spawnPoint.Point, targetAiState))
+                if (!CanSpawnState(spawnPoint.Point, targetAiState))
                 {
                     //Log.Warning("Target player {0} is too close to another state of AI {1}", targetPlayerCar.Client.Name, targetAiState.EntryCar.SessionId);
                     continue;
                 }
 
-                targetAiState.SpawnProtectionEnds = Environment.TickCount64 + _random.Next(MinSpawnProtectionTime, MaxSpawnProtectionTime);
-                targetAiState.SafetyDistanceSquared = _random.Next(MinAiSafetyDistanceSquared, MaxAiSafetyDistanceSquared);
+                targetAiState.SpawnProtectionEnds = Environment.TickCount64 + _random.Next(_server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, _server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
+                targetAiState.SafetyDistanceSquared = _random.Next(_server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, _server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
                 targetAiState.Teleport(spawnPoint);
                 break;
             }

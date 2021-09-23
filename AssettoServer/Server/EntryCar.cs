@@ -61,17 +61,11 @@ namespace AssettoServer.Server
         public AiMode AiMode { get; set; }
 
         public List<AiState> AiStates { get; }
+        public int TargetAiStateCount { get; private set; } = 1;
 
-        private const int NumAiStates = 2;
-        
         public EntryCar()
         {
             AiStates = new List<AiState>();
-
-            for (var i = 0; i < NumAiStates; i++)
-            {
-                AiStates.Add(new AiState(this));
-            }
         }
         
         public void SetAiControl(bool aiControlled)
@@ -97,6 +91,22 @@ namespace AssettoServer.Server
                     Server.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
                 }
             }
+        }
+
+        public void SetAiOverbooking(int count)
+        {
+            int targetCount = Math.Clamp(count, 1, Server.Configuration.Extra.AiParams.MaxOverbooking);
+            
+            if (targetCount > AiStates.Count)
+            {
+                int newAis = targetCount - AiStates.Count;
+                for (int i = 0; i < newAis; i++)
+                {
+                    AiStates.Add(new AiState(this));
+                }
+            }
+            
+            TargetAiStateCount = targetCount;
         }
 
         internal void Reset()

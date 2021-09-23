@@ -16,12 +16,8 @@ namespace AssettoServer.Server.Ai
         public long SpawnProtectionEnds { get; set; }
         public float SafetyDistanceSquared { get; set; } = 20 * 20;
         public float Acceleration { get; set; }
-        public float CurrentSpeed { get; private set; } = MaxSpeed;
-        public float TargetSpeed { get; private set; } = MaxSpeed;
-
-        public const float MaxSpeed = 80 / 3.6f;
-        public const float DefaultDeceleration = -4.5f;
-        public const float DefaultAcceleration = 4.5f;
+        public float CurrentSpeed { get; private set; }
+        public float TargetSpeed { get; private set; }
         
         private Vector3 _startTangent;
         private Vector3 _endTangent;
@@ -42,6 +38,8 @@ namespace AssettoServer.Server.Ai
         public AiState(EntryCar entryCar)
         {
             EntryCar = entryCar;
+            CurrentSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs;
+            TargetSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs;
         }
         
         public void Teleport(TrafficSplinePoint point)
@@ -107,11 +105,11 @@ namespace AssettoServer.Server.Ai
         {
             if (Environment.TickCount64 < _ignoreObstaclesUntil)
             {
-                SetTargetSpeed(MaxSpeed);
+                SetTargetSpeed(EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs);
                 return;
             }
 
-            float minSpeed = MaxSpeed;
+            float minSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs;
             bool hasObstacle = false;
 
             var playerCars = EntryCar.Server.EntryCars.Where(car => car.Client != null && car.Client.HasSentFirstUpdate).Select(car => car.Status);
@@ -198,7 +196,7 @@ namespace AssettoServer.Server.Ai
 
         private float GetBrakingDistance(float targetSpeed)
         {
-            return (float) Math.Abs(Math.Pow(targetSpeed - CurrentSpeed, 2) / (2 * DefaultDeceleration));
+            return (float) Math.Abs(Math.Pow(targetSpeed - CurrentSpeed, 2) / (2 * EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration));
         }
 
         private float GetTyreAngularSpeed(float speed, float wheelDiameter)
@@ -211,11 +209,11 @@ namespace AssettoServer.Server.Ai
             TargetSpeed = speed;
             if (speed < CurrentSpeed)
             {
-                Acceleration = DefaultDeceleration;
+                Acceleration = EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration;
             }
             else if(speed > CurrentSpeed)
             {
-                Acceleration = DefaultAcceleration;
+                Acceleration = EntryCar.Server.Configuration.Extra.AiParams.DefaultAcceleration;
             }
             else
             {
@@ -282,7 +280,7 @@ namespace AssettoServer.Server.Ai
                 TyreAngularSpeedFR = tyreAngularSpeed,
                 TyreAngularSpeedRL = tyreAngularSpeed,
                 TyreAngularSpeedRR = tyreAngularSpeed,
-                EngineRpm = (ushort) MathUtils.Lerp(800, 3000, CurrentSpeed / MaxSpeed),
+                EngineRpm = (ushort) MathUtils.Lerp(800, 3000, CurrentSpeed / EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs),
                 StatusFlag = CarStatusFlags.LightsOn
                              | CarStatusFlags.HighBeamsOff
                              | (CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)

@@ -708,7 +708,8 @@ namespace AssettoServer.Server
                         lastAiUpdate = Environment.TickCount64;
                         if (Configuration.Extra.EnableAi)
                         {
-                            _ = AiBehavior.UpdateAsync().ContinueWith(t => Log.Error(t.Exception, "Error in AI update"), TaskContinuationOptions.OnlyOnFaulted);
+                            _ = Task.Run(AiBehavior.Update)
+                                .ContinueWith(t => Log.Error(t.Exception, "Error in AI update"), TaskContinuationOptions.OnlyOnFaulted);
                         }
                     }
 
@@ -745,7 +746,8 @@ namespace AssettoServer.Server
                         lastAiObstacleDetectionUpdate = Environment.TickCount64;
                         if (Configuration.Extra.EnableAi)
                         {
-                            _ = AiBehavior.ObstacleDetectionAsync();
+                            _ = Task.Run(AiBehavior.ObstacleDetection)
+                                .ContinueWith(t => Log.Error(t.Exception, "Error in AI obstacle detection"), TaskContinuationOptions.OnlyOnFaulted);
                         }
                     }
 

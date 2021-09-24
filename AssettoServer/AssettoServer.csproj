@@ -8,7 +8,9 @@
 
   <ItemGroup>
     <PackageReference Include="Humanizer.Core" Version="2.10.1" />
-    <PackageReference Include="ini-parser" Version="2.5.2" />
+    <PackageReference Include="ini-parser" Version="2.5.2">
+      <NoWarn>NU1701</NoWarn>
+    </PackageReference>
     <PackageReference Include="NetCoreServer" Version="5.0.18" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Qmmands" Version="4.0.0" />

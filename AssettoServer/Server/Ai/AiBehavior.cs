@@ -105,10 +105,8 @@ namespace AssettoServer.Server.Ai
             return spawnPoint;
         }
 
-        public async Task ObstacleDetectionAsync()
+        public void ObstacleDetection()
         {
-            //using var _ = Operation.Time("AI obstacle detections");
-            
             var aiCars = _server.EntryCars.Where(car => car.AiControlled).ToList();
 
             foreach (var aiCar in aiCars)
@@ -125,8 +123,10 @@ namespace AssettoServer.Server.Ai
             int playerCount = _server.EntryCars.Count(car => car.Client != null && car.Client.HasSentFirstUpdate);
             int aiCount = _server.EntryCars.Count(car => car.AiControlled);
 
-            int overbooking = (int) Math.Ceiling(Math.Min((double)playerCount * Math.Min(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount, aiCount), _server.Configuration.Extra.AiParams.MaxAiTargetCount) / aiCount);
-            Log.Debug("#Players {0} #AIs {1} -> overbooking {2}", playerCount, aiCount, overbooking);
+            int targetAiCount = Math.Min(playerCount * Math.Min(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount, aiCount), _server.Configuration.Extra.AiParams.MaxAiTargetCount);
+
+            int overbooking = (int) Math.Max(1, Math.Ceiling((float) targetAiCount / aiCount));
+            Log.Debug("Overbooking update, #Players {0} #AIs {1} #Target {2} -> {3}", playerCount, aiCount, targetAiCount, overbooking);
             
             SetAiOverbooking(overbooking);
         }
@@ -162,15 +162,12 @@ namespace AssettoServer.Server.Ai
             return true;
         }
 
-        public async Task UpdateAsync()
+        public void Update()
         {
-            //using var _ = Operation.Time("AI update");
-
             var playerCars = _server.EntryCars.Where(car => !car.AiControlled
                                                             && car.Client != null
                                                             && car.Client.HasSentFirstUpdate
                                                             && Environment.TickCount64 - car.LastActiveTime < _server.Configuration.Extra.AiParams.PlayerAfkTimeoutMilliseconds
-                //&& car.Status.Velocity.LengthSquared() > 1
             ).ToList();
             var aiStates = _server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.AiStates);
             var distances = new List<AiDistance>();

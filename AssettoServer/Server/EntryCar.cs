@@ -95,18 +95,16 @@ namespace AssettoServer.Server
 
         public void SetAiOverbooking(int count)
         {
-            int targetCount = Math.Clamp(count, 1, Server.Configuration.Extra.AiParams.MaxOverbooking);
-            
-            if (targetCount > AiStates.Count)
+            if (count > AiStates.Count)
             {
-                int newAis = targetCount - AiStates.Count;
+                int newAis = count - AiStates.Count;
                 for (int i = 0; i < newAis; i++)
                 {
                     AiStates.Add(new AiState(this));
                 }
             }
             
-            TargetAiStateCount = targetCount;
+            TargetAiStateCount = count;
         }
 
         internal void Reset()

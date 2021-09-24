@@ -400,7 +400,7 @@ namespace AssettoServer.Network.Tcp
                 if (Server.Configuration.Extra.EnableAi)
                 {
                     EntryCar.SetAiControl(false);
-                    Server.AiBehavior.SetAiOverbooking(Server.ConnectedCars.Count);
+                    Server.AiBehavior.AdjustOverbooking();
                 }
 
                 Server.BroadcastPacket(new CarConnected

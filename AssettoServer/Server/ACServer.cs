@@ -822,7 +822,7 @@ namespace AssettoServer.Server
                     if (Configuration.Extra.EnableAi && client.EntryCar.AiMode == AiMode.Auto)
                     {
                         client.EntryCar.SetAiControl(true);
-                        AiBehavior.SetAiOverbooking(ConnectedCars.Count);
+                        AiBehavior.AdjustOverbooking();
                     }
                 }
             }

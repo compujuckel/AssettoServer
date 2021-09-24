@@ -119,6 +119,17 @@ namespace AssettoServer.Server.Ai
                 }
             }
         }
+
+        public void AdjustOverbooking()
+        {
+            int playerCount = _server.EntryCars.Count(car => car.Client != null && car.Client.HasSentFirstUpdate);
+            int aiCount = _server.EntryCars.Count(car => car.AiControlled);
+
+            int overbooking = (int) Math.Ceiling(Math.Min((double)playerCount * Math.Min(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount, aiCount), _server.Configuration.Extra.AiParams.MaxAiTargetCount) / aiCount);
+            Log.Debug("#Players {0} #AIs {1} -> overbooking {2}", playerCount, aiCount, overbooking);
+            
+            SetAiOverbooking(overbooking);
+        }
         
         public void SetAiOverbooking(int count)
         {
@@ -136,7 +147,6 @@ namespace AssettoServer.Server.Ai
             if (index >= aiState.EntryCar.TargetAiStateCount)
             {
                 aiState.EntryCar.AiStates.Remove(aiState);
-                Log.Debug("removed idx {0}, target {1}, max {2}", index, aiState.EntryCar.TargetAiStateCount, _server.Configuration.Extra.AiParams.MaxOverbooking);
                 return false;
             }
             

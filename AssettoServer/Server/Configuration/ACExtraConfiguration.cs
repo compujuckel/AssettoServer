@@ -46,11 +46,13 @@ namespace AssettoServer.Server.Configuration
             public float SpawnSafetyDistanceToPlayer { get; set; } = 80;
             public int MinSpawnProtectionTime { get; set; } = 4;
             public int MaxSpawnProtectionTime { get; set; } = 8;
-            public int MaxOverbooking { get; set; } = 5;
             public float AiSplineHeightOffset { get; set; }
             public float MaxSpeed { get; set; } = 80;
             public float DefaultDeceleration { get; set; } = -4.5f;
-            public float DefaultAcceleration { get; set; }= 4.5f; 
+            public float DefaultAcceleration { get; set; }= 4.5f;
+
+            public int MaxAiTargetCount { get; set; } = 150;
+            public int AiPerPlayerTargetCount { get; set; } = 10;
             
             [JsonIgnore]
             public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeout * 1000;

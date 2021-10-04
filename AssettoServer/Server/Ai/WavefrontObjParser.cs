@@ -16,6 +16,8 @@ namespace AssettoServer.Server.Ai
             List<TrafficSpline> splines = new List<TrafficSpline>();
 
             float heightOffset = 0;
+            // obj-Files are one-indexed
+            int objectStartIndex = 1;
             string currentSplineName = null;
             List<TrafficSplinePoint> points = null;
             foreach (string line in lines)
@@ -29,6 +31,7 @@ namespace AssettoServer.Server.Ai
                     case "o":
                         if (points != null)
                         {
+                            objectStartIndex = objectStartIndex + points.Count;
                             var spline = new TrafficSpline(currentSplineName, points.ToArray());
                             splines.Add(spline);
                             Log.Debug("Spline {0} finished with {1} points", spline.Name, spline.Points.Length);
@@ -53,8 +56,8 @@ namespace AssettoServer.Server.Ai
                         });
                         break;
                     case "l":
-                        int start = int.Parse(words[1]) - 1;
-                        int end = int.Parse(words[2]) - 1;
+                        int start = int.Parse(words[1]) - objectStartIndex;
+                        int end = int.Parse(words[2]) - objectStartIndex;
 
                         points[start].Next = points[end];
                         points[end].Previous = points[start];

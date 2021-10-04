@@ -5,10 +5,11 @@ namespace AssettoServer.Server.Ai
     public class TrafficSplinePoint
     {
         public Vector3 Point { get; init; }
-        public TrafficSplinePointJunction Junction { get; set; } = null;
-
-        public TrafficSplinePoint Previous { get; set; } = null;
-        public TrafficSplinePoint Next { get; set; } = null;
+        
+        public TrafficSplinePoint JunctionEnd { get; set; }
+        public TrafficSplinePoint Previous { get; set; }
+        public TrafficSplineJunction JunctionStart { get; set; }
+        public TrafficSplinePoint Next { get; set; }
 
         public TrafficSplinePoint Traverse(int count)
         {

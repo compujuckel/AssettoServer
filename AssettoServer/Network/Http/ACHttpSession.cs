@@ -84,7 +84,7 @@ namespace AssettoServer.Network.Http
                         {
                             Model = ec.Model, 
                             Skin = ec.Skin, 
-                            IsEntryList = ec.AiMode != AiMode.Fixed, 
+                            IsEntryList = ec.AiMode != AiMode.Fixed && (ACServer.Configuration.Extra.AiParams.MaxPlayerCount == 0 || ACServer.ConnectedCars.Count < ACServer.Configuration.Extra.AiParams.MaxPlayerCount), 
                             DriverName = ec?.Client?.Name,
                             DriverTeam = ec?.Client?.Team,
                             IsConnected = ec.Client != null
@@ -125,7 +125,7 @@ namespace AssettoServer.Network.Http
                             Cars = ACServer.EntryCars.Select(ec => new DetailResponseCar {
                                 Model = ec.Model,
                                 Skin = ec.Skin,
-                                IsEntryList = ec.AiMode != AiMode.Fixed,
+                                IsEntryList = ec.AiMode != AiMode.Fixed && (ACServer.Configuration.Extra.AiParams.MaxPlayerCount == 0 || ACServer.ConnectedCars.Count < ACServer.Configuration.Extra.AiParams.MaxPlayerCount),
                                 DriverName = ec?.Client?.Name,
                                 DriverTeam = ec?.Client?.Team,
                                 DriverNation = ec?.Client?.NationCode,

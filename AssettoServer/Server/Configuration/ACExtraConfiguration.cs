@@ -53,6 +53,7 @@ namespace AssettoServer.Server.Configuration
 
             public int MaxAiTargetCount { get; set; } = 150;
             public int AiPerPlayerTargetCount { get; set; } = 10;
+            public int MaxPlayerCount { get; set; } = 0;
             
             [JsonIgnore]
             public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeout * 1000;

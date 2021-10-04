@@ -333,8 +333,9 @@ namespace AssettoServer.Server
                     EntryCar entryCar = EntryCars[i];
                     if (entryCar.Client != null && entryCar.Client.Guid == client.Guid)
                         return false;
-
-                    if (entryCar.AiMode != AiMode.Fixed && entryCar.Client == null && handshakeRequest.RequestedCar == entryCar.Model)
+                    if (entryCar.AiMode != AiMode.Fixed 
+                        && (Configuration.Extra.AiParams.MaxPlayerCount == 0 || ConnectedCars.Count < Configuration.Extra.AiParams.MaxPlayerCount) 
+                        && entryCar.Client == null && handshakeRequest.RequestedCar == entryCar.Model)
                     {
                         entryCar.Reset();
                         entryCar.Client = client;

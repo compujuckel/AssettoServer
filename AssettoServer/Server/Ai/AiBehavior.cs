@@ -215,7 +215,7 @@ namespace AssettoServer.Server.Ai
                         _server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
                     targetAiState.SafetyDistanceSquared =
                         _random.Next(_server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, _server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
-                    targetAiState.Teleport(spawnPoint);
+                    targetAiState.Teleport(spawnPoint, true);
 
                     outOfRangeAiStates.Remove(targetAiState);
                     break;

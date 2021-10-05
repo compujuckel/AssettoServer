@@ -42,7 +42,7 @@ namespace AssettoServer.Server.Ai
             TargetSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs;
         }
         
-        public void Teleport(TrafficSplinePoint point)
+        public void Teleport(TrafficSplinePoint point, bool forceUpdate = false)
         {
             if (point == null || point.Next == null)
             {
@@ -54,6 +54,11 @@ namespace AssettoServer.Server.Ai
             _currentVecProgress = 0;
             
             CalculateTangents();
+
+            if (forceUpdate)
+            {
+                Update();
+            }
         }
 
         private void CalculateTangents()

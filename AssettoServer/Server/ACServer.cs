@@ -668,7 +668,7 @@ namespace AssettoServer.Server
                                         LastRemoteTimestamp = (uint)status.Timestamp,
                                         Timestamp = (uint) (status.Timestamp - toCar.TimeOffset),
                                         NormalizedPosition = status.NormalizedPosition,
-                                        PakSequenceId = status.PakSequenceId,
+                                        PakSequenceId = fromCar.AiPakSequenceIds[toCar.SessionId]++,
                                         PerformanceDelta = status.PerformanceDelta,
                                         Ping = fromCar.Ping,
                                         Position = status.Position,

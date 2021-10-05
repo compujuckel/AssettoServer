@@ -225,7 +225,8 @@ namespace AssettoServer.Server.Configuration
                     Ballast = int.Parse(entry["BALLAST"]),
                     Restrictor = int.Parse(entry["RESTRICTOR"]),
                     AiMode = aiMode,
-                    AiControlled = aiMode != AiMode.Disabled
+                    AiControlled = aiMode != AiMode.Disabled,
+                    AiPakSequenceIds = new byte[MaxClients]
                 });
             }
 

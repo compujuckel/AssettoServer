@@ -58,8 +58,9 @@ namespace AssettoServer.Server
         private long LastRaceChallengeTime { get; set; }
         
         public bool AiControlled { get; set; }
-        public AiMode AiMode { get; set; }
+        public AiMode AiMode { get; init; }
 
+        public byte[] AiPakSequenceIds { get; init; }
         public List<AiState> AiStates { get; }
         public int TargetAiStateCount { get; private set; } = 1;
 

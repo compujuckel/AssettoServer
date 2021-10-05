@@ -87,19 +87,9 @@ namespace AssettoServer.Server.Ai
             int spawnDistance = _random.Next(_server.Configuration.Extra.AiParams.MinSpawnDistance, _server.Configuration.Extra.AiParams.MaxSpawnDistance);
             var spawnPoint = targetPlayerSplinePos.point.Traverse(spawnDistance);
 
-            if (spawnPoint == null)
-            {
-                return null;
-            }
-
-            while (!IsPositionSafe(spawnPoint.Point))
+            while (spawnPoint != null && !IsPositionSafe(spawnPoint.Point))
             {
                 spawnPoint = spawnPoint.Traverse(1);
-
-                if (spawnPoint == null)
-                {
-                    return null;
-                }
             }
 
             return spawnPoint;
@@ -107,20 +97,17 @@ namespace AssettoServer.Server.Ai
 
         public void ObstacleDetection()
         {
-            var aiCars = _server.EntryCars.Where(car => car.AiControlled).ToList();
+            var aiStates = _server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.AiStates);
 
-            foreach (var aiCar in aiCars)
+            foreach (var aiState in aiStates)
             {
-                foreach (var aiState in aiCar.AiStates)
-                {
-                    aiState.DetectObstacles();
-                }
+                aiState.DetectObstacles();
             }
         }
 
         public void AdjustOverbooking()
         {
-            int playerCount = _server.EntryCars.Count(car => car.Client != null && car.Client.HasSentFirstUpdate);
+            int playerCount = _server.EntryCars.Count(car => car.Client != null && car.Client.IsConnected);
             int aiCount = _server.EntryCars.Count(car => car.AiControlled);
 
             int targetAiCount = Math.Min(playerCount * Math.Min(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount, aiCount), _server.Configuration.Extra.AiParams.MaxAiTargetCount);
@@ -133,7 +120,7 @@ namespace AssettoServer.Server.Ai
         
         public void SetAiOverbooking(int count)
         {
-            var aiCars = _server.EntryCars.Where(car => car.AiControlled).ToList();
+            var aiCars = _server.EntryCars.Where(car => car.AiControlled);
 
             foreach (var aiCar in aiCars)
             {
@@ -143,8 +130,8 @@ namespace AssettoServer.Server.Ai
 
         private bool CanSpawnState(Vector3 spawnPoint, AiState aiState)
         {
-            int index = aiState.EntryCar.AiStates.IndexOf(aiState);
-            if (index >= aiState.EntryCar.TargetAiStateCount)
+            // Remove state if AI slot overbooking was reduced
+            if (aiState.EntryCar.AiStates.IndexOf(aiState) >= aiState.EntryCar.TargetAiStateCount)
             {
                 aiState.EntryCar.AiStates.Remove(aiState);
                 return false;
@@ -202,38 +189,37 @@ namespace AssettoServer.Server.Ai
                 orderby playerGroup.Min(d => d.Distance) descending
                 select playerGroup.Key).ToList();
 
-            if (playerCarsOrdered.Count == 0 || outOfRangeAiStates.Count == 0)
-                return;
-
-
-            TrafficSplinePoint spawnPoint;
-            EntryCar targetPlayerCar;
-            do
+            while (playerCarsOrdered.Count > 0 && outOfRangeAiStates.Count > 0)
             {
-                if (playerCarsOrdered.Count == 0)
+                TrafficSplinePoint spawnPoint = null;
+                while (spawnPoint == null && playerCarsOrdered.Count > 0)
                 {
-                    //Log.Warning("No player available for spawning");
-                    return;
+                    var targetPlayerCar = playerCarsOrdered.ElementAt(GetRandomWeighted(playerCarsOrdered.Count));
+                    playerCarsOrdered.Remove(targetPlayerCar);
+
+                    spawnPoint = GetSpawnPoint(targetPlayerCar);
                 }
-                
-                targetPlayerCar = playerCarsOrdered.ElementAt(GetRandomWeighted(playerCarsOrdered.Count));
-                playerCarsOrdered.Remove(targetPlayerCar);
-                
-                spawnPoint = GetSpawnPoint(targetPlayerCar);
-            } while (spawnPoint == null);
 
-            foreach (var targetAiState in outOfRangeAiStates)
-            {
-                if (!CanSpawnState(spawnPoint.Point, targetAiState))
-                {
-                    //Log.Warning("Target player {0} is too close to another state of AI {1}", targetPlayerCar.Client.Name, targetAiState.EntryCar.SessionId);
+                if (spawnPoint == null)
                     continue;
-                }
 
-                targetAiState.SpawnProtectionEnds = Environment.TickCount64 + _random.Next(_server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, _server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
-                targetAiState.SafetyDistanceSquared = _random.Next(_server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, _server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
-                targetAiState.Teleport(spawnPoint);
-                break;
+                foreach (var targetAiState in outOfRangeAiStates)
+                {
+                    if (!CanSpawnState(spawnPoint.Point, targetAiState))
+                    {
+                        //Log.Warning("Target player {0} is too close to another state of AI {1}", targetPlayerCar.Client.Name, targetAiState.EntryCar.SessionId);
+                        continue;
+                    }
+
+                    targetAiState.SpawnProtectionEnds = Environment.TickCount64 + _random.Next(_server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds,
+                        _server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
+                    targetAiState.SafetyDistanceSquared =
+                        _random.Next(_server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, _server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
+                    targetAiState.Teleport(spawnPoint);
+
+                    outOfRangeAiStates.Remove(targetAiState);
+                    break;
+                }
             }
         }
     }

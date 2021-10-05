@@ -268,7 +268,6 @@ namespace AssettoServer.Server.Ai
 
             UpdatePosition(new PositionUpdate()
             {
-                PakSequenceId = (byte)(Status.PakSequenceId + 1),
                 Timestamp = (uint)(Environment.TickCount - EntryCar.Server.StartTime),
                 LastRemoteTimestamp = (uint)(Environment.TickCount - EntryCar.Server.StartTime),
                 Position = smoothPos.Position,

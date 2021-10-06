@@ -205,6 +205,9 @@ namespace AssettoServer.Network.Tcp
                             NationCode = handshakeRequest.Nation;
                             Guid = handshakeRequest.Guid;
 
+                            // Gracefully despawn AI cars
+                            EntryCar.SetAiOverbooking(0);
+
                             if (handshakeRequest.Password == Server.Configuration.AdminPassword)
                                 IsAdministrator = true;
 

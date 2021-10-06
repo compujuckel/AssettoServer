@@ -12,6 +12,7 @@ namespace AssettoServer.Server.Ai
     {
         public CarStatus Status = new CarStatus();
         public EntryCar EntryCar { get; internal set; }
+        public bool Initialized { get; private set; }
 
         public long SpawnProtectionEnds { get; set; }
         public float SafetyDistanceSquared { get; set; } = 20 * 20;
@@ -24,7 +25,6 @@ namespace AssettoServer.Server.Ai
 
         private float _currentVecLength;
         private float _currentVecProgress;
-        private bool _initialized = false;
         private long _lastTick = Environment.TickCount64;
         private bool _stoppedForObstacle;
         private long _stoppedForObstacleSince;
@@ -41,7 +41,7 @@ namespace AssettoServer.Server.Ai
             CurrentSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs;
             TargetSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs;
         }
-        
+
         public void Teleport(TrafficSplinePoint point, bool forceUpdate = false)
         {
             if (point == null || point.Next == null)
@@ -55,6 +55,8 @@ namespace AssettoServer.Server.Ai
             
             CalculateTangents();
 
+            Initialized = true;
+            
             if (forceUpdate)
             {
                 Update();
@@ -228,12 +230,8 @@ namespace AssettoServer.Server.Ai
 
         public void Update()
         {
-            if (!_initialized) // TODO remove?
-            {
-                int spawnPos = new Random().Next(0, EntryCar.Server.TrafficMap.Splines[0].Points.Length);
-                Teleport(EntryCar.Server.TrafficMap.Splines[0].Points[spawnPos]);
-                _initialized = true;
-            }
+            if (!Initialized)
+                return;
             
             long dt = Environment.TickCount64 - _lastTick;
             _lastTick = Environment.TickCount64;

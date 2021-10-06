@@ -577,7 +577,7 @@ namespace AssettoServer.Server
                     foreach (EntryCar fromCar in EntryCars)
                     {
                         ACTcpClient fromClient = fromCar.Client;
-                        if (fromClient != null)
+                        if (!fromCar.AiControlled && fromClient != null)
                         {
                             if (fromCar.HasUpdateToSend)
                             {
@@ -653,14 +653,17 @@ namespace AssettoServer.Server
                                 }
                             }
                         }
-                        else if (fromCar.AiControlled)
+                        else if (fromCar.AiControlled && fromCar.AiStates.Any(state => state.Initialized))
                         {
                             foreach (EntryCar toCar in EntryCars)
                             {
                                 ACTcpClient toClient = toCar.Client;
                                 if (toCar != fromCar && toClient != null && toClient.HasSentFirstUpdate)
                                 {
-                                    var fromState = fromCar.AiStates.OrderBy(ai => Vector3.DistanceSquared(ai.Status.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position)).First();
+                                    var fromState = fromCar.AiStates
+                                        .Where(state => state.Initialized)
+                                        .OrderBy(ai => Vector3.DistanceSquared(ai.Status.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position))
+                                        .First();
 
                                     // TODO network bubble necessary?
 

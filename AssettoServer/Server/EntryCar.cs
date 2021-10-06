@@ -61,7 +61,7 @@ namespace AssettoServer.Server
         public AiMode AiMode { get; init; }
 
         public byte[] AiPakSequenceIds { get; init; }
-        public List<AiState> AiStates { get; }
+        public List<AiState> AiStates { get; private set; }
         public int TargetAiStateCount { get; private set; } = 1;
 
         public EntryCar()
@@ -78,8 +78,8 @@ namespace AssettoServer.Server
                 if (AiControlled)
                 {
                     Log.Debug("Slot {0} is now controlled by AI", SessionId);
-                    Reset();
-                    
+
+                    AiReset();
                     Server.BroadcastPacket(new CarConnected
                     {
                         SessionId = SessionId,
@@ -89,7 +89,12 @@ namespace AssettoServer.Server
                 else
                 {
                     Log.Debug("Slot {0} is no longer controlled by AI", SessionId);
-                    Server.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
+                    if (AiStates.Count > 0)
+                    {
+                        Server.BroadcastPacket(new CarDisconnected {SessionId = SessionId});
+                    }
+
+                    AiReset();
                 }
             }
         }
@@ -106,6 +111,14 @@ namespace AssettoServer.Server
             }
             
             TargetAiStateCount = count;
+        }
+
+        private void AiReset()
+        {
+            AiStates = new List<AiState>()
+            {
+                new AiState(this)
+            };
         }
 
         internal void Reset()

@@ -62,7 +62,7 @@ namespace AssettoServer.Server.Ai
                         return false;
                     }
                 }
-                else
+                else if(entryCar.Client != null && entryCar.Client.HasSentFirstUpdate)
                 {
                     if (Vector3.DistanceSquared(entryCar.Status.Position, position) < _server.Configuration.Extra.AiParams.SpawnSafetyDistanceToPlayerSquared)
                     {
@@ -113,7 +113,7 @@ namespace AssettoServer.Server.Ai
             int targetAiCount = Math.Min(playerCount * Math.Min(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount, aiCount), _server.Configuration.Extra.AiParams.MaxAiTargetCount);
 
             int overbooking = (int) Math.Max(1, Math.Ceiling((float) targetAiCount / aiCount));
-            Log.Debug("Overbooking update, #Players {0} #AIs {1} #Target {2} -> {3}", playerCount, aiCount, targetAiCount, overbooking);
+            _server.ChatLog.Debug("Overbooking update, #Players {0} #AIs {1} #Target {2} -> {3}", playerCount, aiCount, targetAiCount, overbooking);
             
             SetAiOverbooking(overbooking);
         }
@@ -134,6 +134,7 @@ namespace AssettoServer.Server.Ai
             if (aiState.EntryCar.AiStates.IndexOf(aiState) >= aiState.EntryCar.TargetAiStateCount)
             {
                 aiState.EntryCar.AiStates.Remove(aiState);
+                _server.ChatLog.Debug("Removed state of Traffic {0} due to overbooking reduction", aiState.EntryCar.SessionId);
                 return false;
             }
             
@@ -206,15 +207,10 @@ namespace AssettoServer.Server.Ai
                 foreach (var targetAiState in outOfRangeAiStates)
                 {
                     if (!CanSpawnState(spawnPoint.Point, targetAiState))
-                    {
-                        //Log.Warning("Target player {0} is too close to another state of AI {1}", targetPlayerCar.Client.Name, targetAiState.EntryCar.SessionId);
                         continue;
-                    }
 
-                    targetAiState.SpawnProtectionEnds = Environment.TickCount64 + _random.Next(_server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds,
-                        _server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
-                    targetAiState.SafetyDistanceSquared =
-                        _random.Next(_server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, _server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
+                    targetAiState.SpawnProtectionEnds = Environment.TickCount64 + _random.Next(_server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, _server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
+                    targetAiState.SafetyDistanceSquared = _random.Next(_server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, _server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
                     targetAiState.Teleport(spawnPoint, true);
 
                     outOfRangeAiStates.Remove(targetAiState);

@@ -35,6 +35,7 @@ namespace AssettoServer.Server
 {
     public class ACServer
     {
+        public ILogger ChatLog { get; }
         public ACServerConfiguration Configuration { get; }
         public SessionConfiguration CurrentSession { get; private set; }
         public WeatherData CurrentWeather { get; private set; }
@@ -75,6 +76,12 @@ namespace AssettoServer.Server
         public ACServer(ACServerConfiguration configuration)
         {
             Log.Information("Starting server.");
+
+            ChatLog = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Sink((ILogEventSink)Log.Logger)
+                .WriteTo.ChatLog(this)
+                .CreateLogger();
 
             Configuration = configuration;
             EntryCars = Configuration.EntryCars.ToList();
@@ -520,7 +527,7 @@ namespace AssettoServer.Server
         public void BroadcastPacket<TPacket>(TPacket packet, ACTcpClient sender = null) where TPacket : IOutgoingNetworkPacket
         {
             if (!(packet is SunAngleUpdate))
-                Log.Debug("Broadcasting {0}", typeof(TPacket).Name);
+                Log.Verbose("Broadcasting {0}", typeof(TPacket).Name);
 
             foreach (EntryCar car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client))
                 car.Client.SendPacket(packet);
@@ -529,7 +536,7 @@ namespace AssettoServer.Server
         public void BroadcastPacketUdp<TPacket>(TPacket packet, ACTcpClient sender = null) where TPacket : IOutgoingNetworkPacket
         {
             if (!(packet is SunAngleUpdate))
-                Log.Debug("Broadcasting {0}", typeof(TPacket).Name);
+                Log.Verbose("Broadcasting {0}", typeof(TPacket).Name);
 
             foreach (EntryCar car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client && c.Client.HasAssociatedUdp))
                 car.Client.SendPacketUdp(packet);

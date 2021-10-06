@@ -36,6 +36,7 @@ namespace AssettoServer.Network.Tcp
         public string NationCode { get; private set; }
         public bool IsAdministrator { get; internal set; }
         public string Guid { get; internal set; }
+        public bool IsChatLogEnabled { get; set; }
 
         internal TcpClient TcpClient { get; }
         internal NetworkStream TcpStream { get; }
@@ -121,9 +122,9 @@ namespace AssettoServer.Network.Tcp
                         if (packet is AuthFailedResponse authResponse)
                             Log.Debug("Sending {0} ({1})", packet.GetType().Name, authResponse.Reason);
                         else if (packet is ChatMessage chatMessage && chatMessage.SessionId == 255)
-                            Log.Debug("Sending {0} ({1}) to {2}", packet.GetType().Name, chatMessage.Message, Name);
+                            Log.Verbose("Sending {0} ({1}) to {2}", packet.GetType().Name, chatMessage.Message, Name);
                         else
-                            Log.Debug("Sending {0} to {1}", packet.GetType().Name, Name);
+                            Log.Verbose("Sending {0} to {1}", packet.GetType().Name, Name);
                     }
 
                     PacketWriter writer = new PacketWriter(TcpStream, TcpSendBuffer);
@@ -155,7 +156,7 @@ namespace AssettoServer.Network.Tcp
 
                     byte id = reader.Read<byte>();
                     if (id != 0x82)
-                        Log.Debug("Received TCP packet with ID {0:X}", id);
+                        Log.Verbose("Received TCP packet with ID {0:X}", id);
 
                     if (!HasStartedHandshake && id != 0x3D)
                         return;
@@ -285,7 +286,7 @@ namespace AssettoServer.Network.Tcp
                         else if (id == 0xAB)
                         {
                             id = reader.Read<byte>();
-                            Log.Debug("Received extended TCP packet with ID {0:X}", id);
+                            Log.Verbose("Received extended TCP packet with ID {0:X}", id);
 
                             if (id == 0x00)
                                 OnSpectateCar(reader);

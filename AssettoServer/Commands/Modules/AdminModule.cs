@@ -198,5 +198,11 @@ namespace AssettoServer.Commands.Modules
             Reply($"Sent: {udpServer.DatagramsSentPerSecond} packets/s ({ByteSize.FromBytes(udpServer.BytesSentPerSecond).Per(TimeSpan.FromSeconds(1)).Humanize("#.##")})\n" +
                 $"Received: {udpServer.DatagramsReceivedPerSecond} packets/s ({ByteSize.FromBytes(udpServer.BytesReceivedPerSecond).Per(TimeSpan.FromSeconds(1)).Humanize("#.##")})");
         }
+
+        [Command("chatlog")]
+        public void ChatLog(bool enable)
+        {
+            Context.Client.IsChatLogEnabled = enable;
+        }
     }
 }

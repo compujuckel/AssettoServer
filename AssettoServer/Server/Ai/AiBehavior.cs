@@ -88,9 +88,17 @@ namespace AssettoServer.Server.Ai
             int spawnDistance = _random.Next(_server.Configuration.Extra.AiParams.MinSpawnDistance, _server.Configuration.Extra.AiParams.MaxSpawnDistance);
             var spawnPoint = targetPlayerSplinePos.point.Traverse(spawnDistance);
 
+            if (spawnPoint != null)
+            {
+                var lanes = spawnPoint.GetLanes();
+                spawnPoint = lanes[_random.Next(0, lanes.Count)]; //GetRandomWeighted(lanes.Count)];
+            }
+
             while (spawnPoint != null && !IsPositionSafe(spawnPoint.Point))
             {
                 spawnPoint = spawnPoint.Traverse(1);
+                var lanes = spawnPoint.GetLanes();
+                spawnPoint = lanes[_random.Next(0, lanes.Count)]; //GetRandomWeighted(lanes.Count)];
             }
 
             return spawnPoint;

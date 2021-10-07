@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace AssettoServer.Server.Ai
@@ -6,10 +7,18 @@ namespace AssettoServer.Server.Ai
     public class TrafficMap
     {
         public List<TrafficSpline> Splines { get; }
+        
+        public Dictionary<int, TrafficSplinePoint> PointsById { get; }
 
         public TrafficMap(List<TrafficSpline> splines)
         {
             Splines = splines;
+            PointsById = new Dictionary<int, TrafficSplinePoint>();
+
+            foreach (var point in splines.SelectMany(spline => spline.Points))
+            {
+                PointsById.Add(point.Id, point);
+            }
         }
 
         public (TrafficSplinePoint point, float distanceSquared) WorldToSpline(Vector3 position)

@@ -18,6 +18,7 @@ namespace AssettoServer.Server.Ai
             float heightOffset = 0;
             // obj-Files are one-indexed
             int objectStartIndex = 1;
+            int id = 1;
             string currentSplineName = null;
             List<TrafficSplinePoint> points = null;
             foreach (string line in lines)
@@ -52,6 +53,8 @@ namespace AssettoServer.Server.Ai
                         float z = float.Parse(words[3]);
                         points.Add(new TrafficSplinePoint
                         {
+                            
+                            Id = id++,
                             Point = new Vector3(x, y, z)
                         });
                         break;

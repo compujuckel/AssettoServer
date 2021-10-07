@@ -163,18 +163,26 @@ namespace AssettoServer.Server
 
             if (Configuration.Extra.EnableAi)
             {
-                string trafficMapPath = "content/tracks/" + Configuration.Track + "/ai/traffic_map.obj";
-                string fastLanePath = "content/tracks/" + Configuration.Track + "/ai/fast_lane.ai";
-                if (File.Exists(trafficMapPath))
+                string mapAiBasePath = "content/tracks/" + Configuration.Track + "/ai/";
+                if (File.Exists(mapAiBasePath + "traffic_map.obj"))
                 {
-                    TrafficMap = WavefrontObjParser.ParseFile("content/tracks/" + Configuration.Track + "/ai/traffic_map.obj");
+                    TrafficMap = WavefrontObjParser.ParseFile(mapAiBasePath + "traffic_map.obj");
                 } 
-                else if (File.Exists(fastLanePath))
+                else if (File.Exists(mapAiBasePath + "fast_lane.ai"))
                 {
-                    TrafficMap = FastLaneParser.FromFile(fastLanePath);
+                    TrafficMap = FastLaneParser.FromFile(mapAiBasePath + "fast_lane.ai");
                 }
 
-                AiBehavior = new AiBehavior(this);
+                if (TrafficMap == null)
+                {
+                    Log.Error("AI enabled but no AI spline found. Disabling AI");
+                    Configuration.Extra.EnableAi = false;
+                }
+                else
+                {
+                    AdjacentLaneDetector.GetAdjacentLanesForMap(TrafficMap, mapAiBasePath + "lane.cache");
+                    AiBehavior = new AiBehavior(this);
+                }
             }
 
             string blacklistPath = "blacklist.txt";

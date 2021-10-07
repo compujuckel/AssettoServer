@@ -204,5 +204,19 @@ namespace AssettoServer.Commands.Modules
         {
             Context.Client.IsChatLogEnabled = enable;
         }
+
+        [Command("setstatesafetydistance")]
+        public void SetStateSafetyDistance(int distance)
+        {
+            Context.Server.Configuration.Extra.AiParams.StateSafetyDistance = distance;
+            Reply("State safety distance set");
+        }
+
+        [Command("setmaxaitargetcount")]
+        public void SetMaxAiTargetCount(int count)
+        {
+            Context.Server.Configuration.Extra.AiParams.MaxAiTargetCount = count;
+            Reply("Max AI target count set.");
+        }
     }
 }

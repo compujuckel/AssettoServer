@@ -23,6 +23,7 @@ namespace AssettoServer.Server.Ai
             {
                 var p = new TrafficSplinePoint
                 {
+                    Id = i,
                     Point = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle())
                 };
 

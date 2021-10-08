@@ -108,6 +108,11 @@ namespace AssettoServer.Server.Ai
             return true;
         }
 
+        public bool CanSpawn(Vector3 spawnPoint)
+        {
+            return EntryCar.CanSpawnAiState(spawnPoint, this);
+        }
+
         public void DetectObstacles()
         {
             if (Environment.TickCount64 < _ignoreObstaclesUntil)
@@ -120,7 +125,7 @@ namespace AssettoServer.Server.Ai
             bool hasObstacle = false;
 
             var playerCars = EntryCar.Server.EntryCars.Where(car => car.Client != null && car.Client.HasSentFirstUpdate).Select(car => car.Status);
-            var aiCars = EntryCar.Server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.AiStates).Select(state => state.Status);
+            var aiCars = EntryCar.Server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.GetAiStatesCopy()).Select(state => state.Status);
 
             var all = playerCars.Concat(aiCars);
             

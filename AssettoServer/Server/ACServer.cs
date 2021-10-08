@@ -574,7 +574,7 @@ namespace AssettoServer.Server
                         {
                             if (entryCar.AiControlled)
                             {
-                                foreach (var aiState in entryCar.AiStates)
+                                foreach (var aiState in entryCar.GetAiStatesCopy())
                                 {
                                     aiState.Update();
                                 }
@@ -661,14 +661,14 @@ namespace AssettoServer.Server
                                 }
                             }
                         }
-                        else if (fromCar.AiControlled && fromCar.AiStates.Any(state => state.Initialized))
+                        else if (fromCar.AiControlled && fromCar.GetAiStatesCopy().Any(state => state.Initialized))
                         {
                             foreach (EntryCar toCar in EntryCars)
                             {
                                 ACTcpClient toClient = toCar.Client;
                                 if (toCar != fromCar && toClient != null && toClient.HasSentFirstUpdate)
                                 {
-                                    var fromState = fromCar.AiStates
+                                    var fromState = fromCar.GetAiStatesCopy()
                                         .Where(state => state.Initialized)
                                         .OrderBy(ai => Vector3.DistanceSquared(ai.Status.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position))
                                         .First();

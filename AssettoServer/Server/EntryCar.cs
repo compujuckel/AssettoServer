@@ -57,12 +57,68 @@ namespace AssettoServer.Server
         public AiMode AiMode { get; init; }
 
         public byte[] AiPakSequenceIds { get; init; }
-        public List<AiState> AiStates { get; private set; }
+        private readonly List<AiState> _aiStates = new List<AiState>();
+        private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim();
         public int TargetAiStateCount { get; private set; } = 1;
 
-        public EntryCar()
+        public List<AiState> GetAiStatesCopy()
         {
-            AiStates = new List<AiState>();
+            _aiStatesLock.EnterReadLock();
+            try
+            {
+                return new List<AiState>(_aiStates);
+            }
+            finally
+            {
+                _aiStatesLock.ExitReadLock();
+            }
+        }
+        
+        public bool CanSpawnAiState(Vector3 spawnPoint, AiState aiState)
+        {
+            _aiStatesLock.EnterUpgradeableReadLock();
+            try
+            {
+                // Remove state if AI slot overbooking was reduced
+                if (_aiStates.IndexOf(aiState) >= TargetAiStateCount)
+                {
+                    _aiStatesLock.EnterWriteLock();
+                    try
+                    {
+                        _aiStates.Remove(aiState);
+                    }
+                    finally
+                    {
+                        _aiStatesLock.ExitWriteLock();
+                    }
+
+                    Log.Verbose("Removed state of Traffic {0} due to overbooking reduction", SessionId);
+
+                    if (_aiStates.Count == 0)
+                    {
+                        Log.Verbose("Traffic {0} has no states left, disconnecting", SessionId);
+                        Server.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
+                    }
+
+                    return false;
+                }
+
+                foreach (var state in _aiStates)
+                {
+                    if (state == aiState || !state.Initialized) continue;
+
+                    if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < Server.Configuration.Extra.AiParams.StateSafetyDistanceSquared)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            finally
+            {
+                _aiStatesLock.ExitUpgradeableReadLock();
+            }
         }
         
         public void SetAiControl(bool aiControlled)
@@ -85,7 +141,7 @@ namespace AssettoServer.Server
                 else
                 {
                     Log.Debug("Slot {0} is no longer controlled by AI", SessionId);
-                    if (AiStates.Count > 0)
+                    if (_aiStates.Count > 0)
                     {
                         Server.BroadcastPacket(new CarDisconnected {SessionId = SessionId});
                     }
@@ -97,24 +153,46 @@ namespace AssettoServer.Server
 
         public void SetAiOverbooking(int count)
         {
-            if (count > AiStates.Count)
+            _aiStatesLock.EnterUpgradeableReadLock();
+            try
             {
-                int newAis = count - AiStates.Count;
-                for (int i = 0; i < newAis; i++)
+                if (count > _aiStates.Count)
                 {
-                    AiStates.Add(new AiState(this));
+                    _aiStatesLock.EnterWriteLock();
+                    try
+                    {
+                        int newAis = count - _aiStates.Count;
+                        for (int i = 0; i < newAis; i++)
+                        {
+                            _aiStates.Add(new AiState(this));
+                        }
+                    }
+                    finally
+                    {
+                        _aiStatesLock.ExitWriteLock();
+                    }
                 }
+                
+                TargetAiStateCount = count;
             }
-            
-            TargetAiStateCount = count;
+            finally
+            {
+                _aiStatesLock.ExitUpgradeableReadLock();
+            }
         }
 
         private void AiReset()
         {
-            AiStates = new List<AiState>()
+            _aiStatesLock.EnterWriteLock();
+            try
             {
-                new AiState(this)
-            };
+                _aiStates.Clear();
+                _aiStates.Add(new AiState(this));
+            }
+            finally
+            {
+                _aiStatesLock.ExitWriteLock();
+            }
         }
 
         internal void Reset()

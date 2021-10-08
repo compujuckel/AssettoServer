@@ -58,7 +58,7 @@ namespace AssettoServer.Server.Ai
             {
                 if (entryCar.AiControlled)
                 {
-                    if (entryCar.AiStates.Any(state => Vector3.DistanceSquared(state.Status.Position, position) < state.SafetyDistanceSquared))
+                    if (entryCar.GetAiStatesCopy().Any(state => Vector3.DistanceSquared(state.Status.Position, position) < state.SafetyDistanceSquared))
                     {
                         return false;
                     }
@@ -98,7 +98,7 @@ namespace AssettoServer.Server.Ai
 
         public void ObstacleDetection()
         {
-            var aiStates = _server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.AiStates);
+            var aiStates = _server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.GetAiStatesCopy());
 
             foreach (var aiState in aiStates)
             {
@@ -129,41 +129,13 @@ namespace AssettoServer.Server.Ai
             }
         }
 
-        private bool CanSpawnState(Vector3 spawnPoint, AiState aiState)
-        {
-            // Remove state if AI slot overbooking was reduced
-            if (aiState.EntryCar.AiStates.IndexOf(aiState) >= aiState.EntryCar.TargetAiStateCount)
-            {
-                aiState.EntryCar.AiStates.Remove(aiState);
-                _server.ChatLog.Debug("Removed state of Traffic {0} due to overbooking reduction", aiState.EntryCar.SessionId);
-
-                if (aiState.EntryCar.AiStates.Count == 0)
-                {
-                    Log.Debug("Traffic {0} has no states left, disconnecting", aiState.EntryCar.SessionId);
-                    _server.BroadcastPacket(new CarDisconnected { SessionId = aiState.EntryCar.SessionId });
-                }
-                return false;
-            }
-            
-            foreach (var state in aiState.EntryCar.AiStates)
-            {
-                if (state == aiState || !state.Initialized) continue;
-
-                if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < _server.Configuration.Extra.AiParams.StateSafetyDistanceSquared)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
         private void InitializeState(AiState state)
         {
             int spawnSpline = _random.Next(_server.TrafficMap.Splines.Count);
             int spawnPos = _random.Next(_server.TrafficMap.Splines[spawnSpline].Points.Length);
             var spawnPoint = _server.TrafficMap.Splines[spawnSpline].Points[spawnPos];
             
-            while (spawnPoint != null && !IsPositionSafe(spawnPoint.Point) && !CanSpawnState(spawnPoint.Point, state))
+            while (spawnPoint != null && !IsPositionSafe(spawnPoint.Point) && !state.CanSpawn(spawnPoint.Point))
             {
                 spawnPoint = spawnPoint.Traverse(5);
             }
@@ -181,7 +153,9 @@ namespace AssettoServer.Server.Ai
                                                             && car.Client.HasSentFirstUpdate
                                                             && Environment.TickCount64 - car.LastActiveTime < _server.Configuration.Extra.AiParams.PlayerAfkTimeoutMilliseconds
             ).ToList();
-            var initializedAiStates = _server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.AiStates).Where(state => state.Initialized);
+
+            var allStates = _server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.GetAiStatesCopy()).ToList();
+            var initializedAiStates = allStates.Where(state => state.Initialized);
             var distances = new List<AiDistance>();
 
             foreach(var aiState in initializedAiStates)
@@ -199,7 +173,7 @@ namespace AssettoServer.Server.Ai
                 }
             }
 
-            var uninitializedAiStates = _server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.AiStates).Where(state => !state.Initialized);
+            var uninitializedAiStates = allStates.Where(state => !state.Initialized);
             foreach (var state in uninitializedAiStates)
             {
                 InitializeState(state);
@@ -236,7 +210,7 @@ namespace AssettoServer.Server.Ai
 
                 foreach (var targetAiState in outOfRangeAiStates)
                 {
-                    if (!CanSpawnState(spawnPoint.Point, targetAiState))
+                    if (!targetAiState.CanSpawn(spawnPoint.Point))
                         continue;
 
                     targetAiState.SpawnProtectionEnds = Environment.TickCount64 + _random.Next(_server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, _server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);

@@ -16,7 +16,7 @@ namespace AssettoServer.Server.Weather
             _server = server;
             _random = new Random();
 
-            int config = _random.Next(0, _server.Configuration.Weathers.Count);
+            int config = _random.Next(_server.Configuration.Weathers.Count);
             SetWeatherConfiguration(config);
         }
 

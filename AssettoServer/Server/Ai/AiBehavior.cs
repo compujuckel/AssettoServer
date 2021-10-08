@@ -86,19 +86,11 @@ namespace AssettoServer.Server.Ai
             }
             
             int spawnDistance = _random.Next(_server.Configuration.Extra.AiParams.MinSpawnDistance, _server.Configuration.Extra.AiParams.MaxSpawnDistance);
-            var spawnPoint = targetPlayerSplinePos.point.Traverse(spawnDistance);
-
-            if (spawnPoint != null)
-            {
-                var lanes = spawnPoint.GetLanes();
-                spawnPoint = lanes[_random.Next(0, lanes.Count)]; //GetRandomWeighted(lanes.Count)];
-            }
+            var spawnPoint = targetPlayerSplinePos.point.Traverse(spawnDistance)?.RandomLane(_random);
 
             while (spawnPoint != null && !IsPositionSafe(spawnPoint.Point))
             {
-                spawnPoint = spawnPoint.Traverse(1);
-                var lanes = spawnPoint.GetLanes();
-                spawnPoint = lanes[_random.Next(0, lanes.Count)]; //GetRandomWeighted(lanes.Count)];
+                spawnPoint = spawnPoint.Traverse(1).RandomLane(_random);
             }
 
             return spawnPoint;
@@ -167,8 +159,8 @@ namespace AssettoServer.Server.Ai
 
         private void InitializeState(AiState state)
         {
-            int spawnSpline = _random.Next(0, _server.TrafficMap.Splines.Count - 1);
-            int spawnPos = _random.Next(0, _server.TrafficMap.Splines[spawnSpline].Points.Length);
+            int spawnSpline = _random.Next(_server.TrafficMap.Splines.Count);
+            int spawnPos = _random.Next(_server.TrafficMap.Splines[spawnSpline].Points.Length);
             var spawnPoint = _server.TrafficMap.Splines[spawnSpline].Points[spawnPos];
             
             while (spawnPoint != null && !IsPositionSafe(spawnPoint.Point) && !CanSpawnState(spawnPoint.Point, state))
@@ -178,7 +170,7 @@ namespace AssettoServer.Server.Ai
 
             if (spawnPoint != null)
             {
-                state.Teleport(_server.TrafficMap.Splines[spawnSpline].Points[spawnPos], true);
+                state.Teleport(spawnPoint, true);
             }
         }
         

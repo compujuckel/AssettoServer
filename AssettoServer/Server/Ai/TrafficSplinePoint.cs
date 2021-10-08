@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace AssettoServer.Server.Ai
@@ -48,6 +49,12 @@ namespace AssettoServer.Server.Ai
             }
             
             return ret;
+        }
+
+        public TrafficSplinePoint RandomLane(Random random)
+        {
+            var lanes = GetLanes();
+            return lanes[random.Next(lanes.Count)];
         }
     }
 }

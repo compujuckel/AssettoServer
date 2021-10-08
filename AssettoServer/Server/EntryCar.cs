@@ -1,16 +1,12 @@
-﻿using AssettoServer.Network.Packets;
-using AssettoServer.Network.Packets.Incoming;
-using AssettoServer.Network.Packets.Shared;
+﻿using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
-using JPBotelho;
 using Serilog;
 
 namespace AssettoServer.Server

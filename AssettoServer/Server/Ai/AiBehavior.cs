@@ -109,7 +109,7 @@ namespace AssettoServer.Server.Ai
         public void AdjustOverbooking()
         {
             int playerCount = _server.EntryCars.Count(car => car.Client != null && car.Client.IsConnected);
-            int aiCount = _server.EntryCars.Count(car => car.AiControlled);
+            int aiCount = _server.EntryCars.Count(car => car.Client == null && car.AiControlled); // client null check is necessary here so that slots where someone is connecting don't count
 
             int targetAiCount = Math.Min(playerCount * Math.Min(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount, aiCount), _server.Configuration.Extra.AiParams.MaxAiTargetCount);
 

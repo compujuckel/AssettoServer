@@ -19,6 +19,10 @@ namespace AssettoServer.Server.Ai
         public float Acceleration { get; set; }
         public float CurrentSpeed { get; private set; }
         public float TargetSpeed { get; private set; }
+        public float InitialMaxSpeed { get; private set; }
+        public float MaxSpeed { get; private set; }
+
+        private const float WalkingSpeed = 5 / 3.6f;
         
         private Vector3 _startTangent;
         private Vector3 _endTangent;
@@ -31,15 +35,29 @@ namespace AssettoServer.Server.Ai
         private long _ignoreObstaclesUntil;
         private long _obstacleHonkStart;
         private long _obstacleHonkEnd;
-        private TrafficSplinePoint _currentPoint;
+        public TrafficSplinePoint CurrentSplinePoint { get; private set; }
 
         private Random _random = new Random();
 
         public AiState(EntryCar entryCar)
         {
             EntryCar = entryCar;
-            CurrentSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs;
-            TargetSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs;
+            SetRandomSpeed();
+        }
+
+        public void SetRandomSpeed()
+        {
+            float variation = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs * EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedVariation;
+
+            float fastLaneOffset = 0;
+            if (CurrentSplinePoint != null && CurrentSplinePoint.Left != null)
+            {
+                fastLaneOffset = 10 / 3.6f;
+            }
+            InitialMaxSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs + fastLaneOffset - (variation / 2) + (float)_random.NextDouble() * variation;
+            CurrentSpeed = InitialMaxSpeed;
+            TargetSpeed = InitialMaxSpeed;
+            MaxSpeed = InitialMaxSpeed;
         }
 
         public void Teleport(TrafficSplinePoint point, bool forceUpdate = false)
@@ -49,8 +67,8 @@ namespace AssettoServer.Server.Ai
                 return;
             }
 
-            _currentPoint = point;
-            _currentVecLength = (_currentPoint.Next.Point - _currentPoint.Point).Length();
+            CurrentSplinePoint = point;
+            _currentVecLength = (CurrentSplinePoint.Next.Point - CurrentSplinePoint.Point).Length();
             _currentVecProgress = 0;
             
             CalculateTangents();
@@ -59,28 +77,29 @@ namespace AssettoServer.Server.Ai
             
             if (forceUpdate)
             {
+                SetRandomSpeed();
                 Update();
             }
         }
 
         private void CalculateTangents()
         {
-            if (_currentPoint.Previous == null)
+            if (CurrentSplinePoint.Previous == null)
             {
-                _startTangent = (_currentPoint.Next.Point - _currentPoint.Point) * 0.5f;
+                _startTangent = (CurrentSplinePoint.Next.Point - CurrentSplinePoint.Point) * 0.5f;
             }
             else
             {
-                _startTangent = (_currentPoint.Point - _currentPoint.Previous.Point) * 0.5f;
+                _startTangent = (CurrentSplinePoint.Point - CurrentSplinePoint.Previous.Point) * 0.5f;
             }
 
-            if (_currentPoint.Next.Next == null)
+            if (CurrentSplinePoint.Next.Next == null)
             {
-                _endTangent = (_currentPoint.Next.Point - _currentPoint.Point) * 0.5f;
+                _endTangent = (CurrentSplinePoint.Next.Point - CurrentSplinePoint.Point) * 0.5f;
             }
             else
             {
-                _endTangent = (_currentPoint.Next.Next.Point - _currentPoint.Point) * 0.5f;
+                _endTangent = (CurrentSplinePoint.Next.Next.Point - CurrentSplinePoint.Point) * 0.5f;
             }
         }
 
@@ -90,15 +109,15 @@ namespace AssettoServer.Server.Ai
             {
                 progress -= _currentVecLength;
                 
-                if (_currentPoint.Next == null 
-                    || _currentPoint.Next.Next == null)
+                if (CurrentSplinePoint.Next == null 
+                    || CurrentSplinePoint.Next.Next == null)
                 {
                     Log.Warning("Spline end");
                     return false;
                 }
                 
-                _currentPoint = _currentPoint.Next;
-                _currentVecLength = (_currentPoint.Next.Point - _currentPoint.Point).Length();
+                CurrentSplinePoint = CurrentSplinePoint.Next;
+                _currentVecLength = (CurrentSplinePoint.Next.Point - CurrentSplinePoint.Point).Length();
             }
 
             CalculateTangents();
@@ -113,64 +132,120 @@ namespace AssettoServer.Server.Ai
             return EntryCar.CanSpawnAiState(spawnPoint, this);
         }
 
+        private (AiState aiState, float distance) FindClosestAiObstacle()
+        {
+            var aiStates = EntryCar.Server.EntryCars
+                .Where(car => car.AiControlled)
+                .SelectMany(car => car.GetAiStatesCopy())
+                .Where(state => Vector3.DistanceSquared(Status.Position, state.Status.Position) < 250 * 250);
+
+            AiState closestState = null;
+            int minDistance = int.MaxValue;
+            foreach (var aiState in aiStates)
+            {
+                if(aiState == this) continue;
+                
+                var point = CurrentSplinePoint;
+                for (int distance = 0; distance < 100 && point != null; distance++)
+                {
+                    if (point == aiState.CurrentSplinePoint && distance < minDistance)
+                    {
+                        minDistance = distance;
+                        closestState = aiState;
+                        break;
+                    }
+
+                    point = point.Next;
+                }
+            }
+
+            if (closestState != null)
+            {
+                float distance = Vector3.Distance(Status.Position, closestState.Status.Position);
+                return (closestState, distance);
+            }
+            
+            return (null, float.MaxValue);
+        }
+
+        private (EntryCar entryCar, float distance) FindClosestPlayerObstacle()
+        {
+            var playerCars = EntryCar.Server.EntryCars
+                .Where(car => car.Client != null && car.Client.HasSentFirstUpdate);
+
+            EntryCar closestCar = null;
+            float minDistance = float.MaxValue;
+            foreach (var playerCar in playerCars)
+            {
+                float distance = Vector3.DistanceSquared(playerCar.Status.Position, Status.Position);
+
+                if (distance < minDistance && GetAngleToCar(playerCar.Status) is > 165 and < 195)
+                {
+                    minDistance = distance;
+                    closestCar = playerCar;
+                }
+            }
+
+            if (closestCar != null)
+            {
+                return (closestCar, (float)Math.Sqrt(minDistance));
+            }
+
+            return (null, float.MaxValue);
+        }
+
         public void DetectObstacles()
         {
             if (Environment.TickCount64 < _ignoreObstaclesUntil)
             {
-                SetTargetSpeed(EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs);
+                SetTargetSpeed(MaxSpeed);
                 return;
             }
 
-            float minSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs;
-            bool hasObstacle = false;
+            float targetSpeed = InitialMaxSpeed;
 
-            var playerCars = EntryCar.Server.EntryCars.Where(car => car.Client != null && car.Client.HasSentFirstUpdate).Select(car => car.Status);
-            var aiCars = EntryCar.Server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.GetAiStatesCopy()).Select(state => state.Status);
+            var aiObstacle = FindClosestAiObstacle();
+            var playerObstacle = FindClosestPlayerObstacle();
 
-            var all = playerCars.Concat(aiCars);
-            
-            //foreach (var car in EntryCar.Server.EntryCars.Where(car => car.AiControlled || (car.Client != null && car.Client.HasSentFirstUpdate)))
-            foreach (var carStatus in all)
+            if (playerObstacle.distance < 15 || aiObstacle.distance < 15)
             {
-                if (carStatus == Status) continue;
+                targetSpeed = 0;
+            }
+            else if (playerObstacle.distance < aiObstacle.distance && playerObstacle.entryCar != null)
+            {
+                float playerSpeed = playerObstacle.entryCar.Status.Velocity.Length();
 
-                float carSpeed = carStatus.Velocity.Length();
-                float distance = Vector3.Distance(carStatus.Position, Status.Position);
-
-                if (carSpeed < 0.1f)
+                if (playerSpeed < 0.1f)
                 {
-                    carSpeed = 0;
+                    playerSpeed = 0;
                 }
 
-                // Check first if car is in front of us
-                if (GetAngleToCar(carStatus) is > 165 and < 195)
+                if ((playerSpeed < CurrentSpeed || playerSpeed == 0)
+                    && playerObstacle.distance < GetBrakingDistance(playerSpeed) * 2 + 20)
                 {
-                    // always brake if the distance is too small
-                    if (distance < 10)
+                    targetSpeed = Math.Max(WalkingSpeed, playerSpeed);
+                }
+            }
+            else if (aiObstacle.aiState != null)
+            {
+                // AI in front has obstacle
+                if (aiObstacle.aiState.TargetSpeed < aiObstacle.aiState.MaxSpeed)
+                {
+                    if ((aiObstacle.aiState.CurrentSpeed < CurrentSpeed || aiObstacle.aiState.CurrentSpeed == 0)
+                        && aiObstacle.distance < GetBrakingDistance(aiObstacle.aiState.CurrentSpeed) * 2 + 20)
                     {
-                        minSpeed = 0;
-                        hasObstacle = true;
+                        targetSpeed = Math.Max(WalkingSpeed, aiObstacle.aiState.CurrentSpeed);
                     }
-                    else
-                    {
-                        // Make full stop if speed is too low. Someone might be trying to turn around
-                        if (carSpeed < 20 / 3.6f)
-                        {
-                            carSpeed = 5 / 3.6f;
-                            //carSpeed = Math.Clamp(carSpeed, 0, 5 / 3.6f);
-                        }
-                        
-                        if ((carSpeed + 1 < CurrentSpeed || carSpeed == 0)
-                            && distance < GetBrakingDistance(carSpeed) * 1.5 + 20)
-                        {
-                            minSpeed = Math.Min(minSpeed, Math.Max(5 / 3.6f, carSpeed));
-                            hasObstacle = true;
-                        }
-                    }
+                }
+                // AI in front is in clean air, so we just adapt our max speed
+                else if(Math.Pow(aiObstacle.distance, 2) < SafetyDistanceSquared)
+                {
+                    MaxSpeed = Math.Max(WalkingSpeed, aiObstacle.aiState.CurrentSpeed);
+                    targetSpeed = MaxSpeed;
                 }
             }
             
-            if (CurrentSpeed == 0 && !_stoppedForObstacle && hasObstacle)
+            if (CurrentSpeed == 0 && !_stoppedForObstacle)
             {
                 _stoppedForObstacle = true;
                 _stoppedForObstacleSince = Environment.TickCount64;
@@ -178,19 +253,18 @@ namespace AssettoServer.Server.Ai
                 _obstacleHonkEnd = _obstacleHonkStart + _random.Next(500, 1500);
                 Log.Debug("AI {0} stopped for obstacle", EntryCar.SessionId);
             }
-            else if (_stoppedForObstacle && !hasObstacle)
+            else if (CurrentSpeed > 0 && _stoppedForObstacle)
             {
                 _stoppedForObstacle = false;
                 Log.Debug("AI {0} no longer stopped for obstacle", EntryCar.SessionId);
             }
-
-            if (_stoppedForObstacle && Environment.TickCount64 - _stoppedForObstacleSince > 10_000)
+            else if (_stoppedForObstacle && Environment.TickCount64 - _stoppedForObstacleSince > 10_000)
             {
                 _ignoreObstaclesUntil = Environment.TickCount64 + 10_000;
                 Log.Debug("AI {0} ignoring obstacles until {1}", EntryCar.SessionId, _ignoreObstaclesUntil);
             }
             
-            SetTargetSpeed(minSpeed);
+            SetTargetSpeed(targetSpeed);
         }
 
         private float GetAngleToCar(CarStatus car)
@@ -259,8 +333,8 @@ namespace AssettoServer.Server.Ai
                 Teleport(EntryCar.Server.TrafficMap.Splines[0].Points[0]);
             }
 
-            CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(_currentPoint.Point, 
-                _currentPoint.Next.Point, 
+            CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(CurrentSplinePoint.Point, 
+                CurrentSplinePoint.Next.Point, 
                 _startTangent, 
                 _endTangent, 
                 _currentVecProgress / _currentVecLength);

@@ -56,5 +56,28 @@ namespace AssettoServer.Server.Ai
             var lanes = GetLanes();
             return lanes[random.Next(lanes.Count)];
         }
+
+        public float GetBankAngle(float lerp = 0)
+        {
+            Vector3 banking = Vector3.UnitZ;
+            if (Left != null)
+            {
+                banking = Point - Left.Point;
+            }
+            else if (Right != null)
+            {
+                banking = Right.Point - Point;
+            }
+            
+            float bankAngle = (float)(Math.Atan2(new Vector2(banking.Z, banking.X).Length(), banking.Y) - Math.PI / 2) * -1f;
+
+            if (lerp != 0 && Next != null)
+            {
+                float nextAngle = Next.GetBankAngle();
+                bankAngle = (float)MathUtils.Lerp(bankAngle, nextAngle, lerp);
+            }
+
+            return bankAngle;
+        }
     }
 }

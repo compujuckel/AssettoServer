@@ -135,7 +135,7 @@ namespace AssettoServer.Server.Ai
             int spawnPos = _random.Next(_server.TrafficMap.Splines[spawnSpline].Points.Length);
             var spawnPoint = _server.TrafficMap.Splines[spawnSpline].Points[spawnPos];
             
-            while (spawnPoint != null && !IsPositionSafe(spawnPoint.Point) && !state.CanSpawn(spawnPoint.Point))
+            while (spawnPoint != null && (!IsPositionSafe(spawnPoint.Point) || !state.CanSpawn(spawnPoint.Point)))
             {
                 spawnPoint = spawnPoint.Traverse(5);
             }

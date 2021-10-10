@@ -43,6 +43,7 @@ namespace AssettoServer.Server
         public float CurrentDaySeconds { get; private set; }
         public GeoParams GeoParams { get; private set; }
         public IReadOnlyList<string> Features { get; private set; }
+        public Discord Discord { get; }
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
         internal ConcurrentDictionary<IPEndPoint, EntryCar> EndpointCars { get; }
@@ -69,7 +70,7 @@ namespace AssettoServer.Server
         private TimeZoneInfo RealTimeZone { get; }
         private ITrackParamsProvider TrackParamsProvider { get; }
         public TrackParams.TrackParams TrackParams { get; }
-        
+
         public TrafficMap TrafficMap { get; }
         public AiBehavior AiBehavior { get; }
 
@@ -79,7 +80,7 @@ namespace AssettoServer.Server
 
             ChatLog = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .WriteTo.Sink((ILogEventSink)Log.Logger)
+                .WriteTo.Sink((ILogEventSink) Log.Logger)
                 .WriteTo.ChatLog(this)
                 .CreateLogger();
 
@@ -88,13 +89,13 @@ namespace AssettoServer.Server
             Log.Information("Loaded {0} cars.", EntryCars.Count);
             for (int i = 0; i < EntryCars.Count; i++)
             {
-                EntryCars[i].SessionId = (byte)i;
+                EntryCars[i].SessionId = (byte) i;
                 EntryCars[i].Server = this;
                 EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Count];
                 EntryCars[i].SetAiOverbooking(0);
             }
-                                
-            CurrentDaySeconds = (float)(Configuration.SunAngle * (50400.0 - 46800.0) / 16.0 + 46800.0);
+
+            CurrentDaySeconds = (float) (Configuration.SunAngle * (50400.0 - 46800.0) / 16.0 + 46800.0);
             ConnectSempahore = new SemaphoreSlim(1, 1);
             ConnectedCars = new ConcurrentDictionary<int, EntryCar>();
             EndpointCars = new ConcurrentDictionary<IPEndPoint, EntryCar>();
@@ -111,12 +112,12 @@ namespace AssettoServer.Server
             CommandService.AddModules(Assembly.GetEntryAssembly());
             CommandService.AddTypeParser(new ACClientTypeParser());
             CommandService.CommandExecutionFailed += OnCommandExecutionFailed;
-            
+
             var features = new List<string>();
             if (Configuration.Extra.UseSteamAuth)
                 features.Add("STEAM_TICKET");
-            
-            if(Configuration.Extra.EnableWeatherFx)
+
+            if (Configuration.Extra.EnableWeatherFx)
                 features.Add("WEATHERFX_V1");
 
             features.Add("SPECTATING_AWARE");
@@ -131,7 +132,8 @@ namespace AssettoServer.Server
 
             if (TrackParams == null)
             {
-                Log.Error("No track params found for {0}. Live weather and realtime will be disabled.", Configuration.Track);
+                Log.Error("No track params found for {0}. Live weather and realtime will be disabled.",
+                    Configuration.Track);
 
                 Configuration.Extra.EnableRealTime = false;
                 Configuration.Extra.EnableLiveWeather = false;
@@ -167,7 +169,7 @@ namespace AssettoServer.Server
                 if (File.Exists(mapAiBasePath + "traffic_map.obj"))
                 {
                     TrafficMap = WavefrontObjParser.ParseFile(mapAiBasePath + "traffic_map.obj");
-                } 
+                }
                 else if (File.Exists(mapAiBasePath + "fast_lane.ai"))
                 {
                     TrafficMap = FastLaneParser.FromFile(mapAiBasePath + "fast_lane.ai");
@@ -202,6 +204,8 @@ namespace AssettoServer.Server
             else
                 File.Create(adminsPath);
 
+            Discord = new Discord(configuration.Extra);
+
             InitializeChecksums();
         }
 
@@ -220,7 +224,7 @@ namespace AssettoServer.Server
 
             if (Configuration.RegisterToLobby)
                 await RegisterToLobbyAsync();
-            
+
             _ = Task.Factory.StartNew(UpdateAsync, TaskCreationOptions.LongRunning);
             HttpServer.Start();
         }
@@ -250,8 +254,9 @@ namespace AssettoServer.Server
         private void UpdateRealTime()
         {
             var realTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, RealTimeZone);
-            CurrentDaySeconds = (float)realTime.TimeOfDay.TotalSeconds;
-            WeatherFxStartDate = new DateTimeOffset(DateTime.SpecifyKind(realTime.Date, DateTimeKind.Utc)).ToUnixTimeSeconds();
+            CurrentDaySeconds = (float) realTime.TimeOfDay.TotalSeconds;
+            WeatherFxStartDate = new DateTimeOffset(DateTime.SpecifyKind(realTime.Date, DateTimeKind.Utc))
+                .ToUnixTimeSeconds();
         }
 
         private void InitializeChecksums()
@@ -296,7 +301,9 @@ namespace AssettoServer.Server
                 }
 
                 createChecksum("system/data/surfaces.ini");
-                checksumDirectory("content/tracks/" + (string.IsNullOrEmpty(Configuration.TrackConfig) ? Configuration.Track : Configuration.Track + "/" + Configuration.TrackConfig));
+                checksumDirectory("content/tracks/" + (string.IsNullOrEmpty(Configuration.TrackConfig)
+                    ? Configuration.Track
+                    : Configuration.Track + "/" + Configuration.TrackConfig));
 
                 TrackChecksums = checksums;
                 checksums = new Dictionary<string, byte[]>();
@@ -347,8 +354,9 @@ namespace AssettoServer.Server
                     EntryCar entryCar = EntryCars[i];
                     if (entryCar.Client != null && entryCar.Client.Guid == client.Guid)
                         return false;
-                    if (entryCar.AiMode != AiMode.Fixed 
-                        && (Configuration.Extra.AiParams.MaxPlayerCount == 0 || ConnectedCars.Count < Configuration.Extra.AiParams.MaxPlayerCount) 
+                    if (entryCar.AiMode != AiMode.Fixed
+                        && (Configuration.Extra.AiParams.MaxPlayerCount == 0 ||
+                            ConnectedCars.Count < Configuration.Extra.AiParams.MaxPlayerCount)
                         && entryCar.Client == null && handshakeRequest.RequestedCar == entryCar.Model)
                     {
                         entryCar.Reset();
@@ -379,32 +387,51 @@ namespace AssettoServer.Server
             return false;
         }
 
-        public async Task KickAsync(ACTcpClient client, KickReason reason, string reasonStr = null, bool broadcastMessage = true)
+        public async Task KickAsync(
+            ACTcpClient client,
+            KickReason reason,
+            string reasonStr = null,
+            bool broadcastMessage = true,
+            ACTcpClient admin = null
+        )
         {
             if (reasonStr != null && broadcastMessage)
-                BroadcastPacket(new ChatMessage { SessionId = 255, Message = reasonStr });
+                BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
 
             if (client != null)
             {
-                Log.Information("{0} was kicked. Reason: {1}", client.Name, reasonStr);
-                client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = reason });
+                string kickMessage = reasonStr == null
+                    ? client.Name + " was kicked."
+                    : client.Name + " was kicked. Reason: " + reasonStr;
+
+                Log.Information(kickMessage);
+                client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
+                if (!reason.Equals(KickReason.ChecksumFailed))
+                    Discord.SendAuditKickMessage(Configuration.Name, client, reasonStr, admin);
             }
 
             await client.DisconnectAsync();
         }
 
-        public async ValueTask BanAsync(ACTcpClient client, KickReason reason, string reasonStr = null)
+        public async ValueTask BanAsync(ACTcpClient client, KickReason reason, string reasonStr = null,
+            ACTcpClient admin = null)
         {
             if (reasonStr != null)
-                BroadcastPacket(new ChatMessage { SessionId = 255, Message = reasonStr });
+                BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
 
             if (client != null)
             {
                 Blacklist.TryAdd(client.Guid, true);
 
-                Log.Information("{0} was banned. Reason: {1}", client.Name, reasonStr);
+                string banMessage = reasonStr == null
+                    ? client.Name + " was banned."
+                    : client.Name + " was banned. Reason: " + reasonStr;
+
+                Log.Information(banMessage);
                 await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => !p.Value).Select(p => p.Key));
-                client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = reason });
+                client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
+
+                Discord.SendAuditBanMessage(Configuration.Name, client, reasonStr, admin);
             }
 
             await client.DisconnectAsync();
@@ -421,11 +448,11 @@ namespace AssettoServer.Server
             CurrentWeather = weather;
             SendCurrentWeather();
         }
-        
+
         public void SetCspWeather(WeatherFxType upcoming, int duration)
         {
             Log.Information("CSP weather transitioning to {0}", upcoming);
-            
+
             CurrentWeather.UpcomingType = WeatherTypeProvider.GetWeatherType(upcoming);
             CurrentWeather.TransitionValue = 0;
             CurrentWeather.TransitionValueInternal = 0;
@@ -449,7 +476,7 @@ namespace AssettoServer.Server
                 Log.Error(e, "Could not send file");
             }
         }
-        
+
         public void SendRawFileUdp(string filename)
         {
             try
@@ -469,9 +496,9 @@ namespace AssettoServer.Server
         public void SetTime(float time)
         {
             CurrentDaySeconds = Math.Clamp(time, 0, 86400);
-            Configuration.SunAngle = (float)(16.0 * (time - 46800.0) / (50400.0 - 46800.0));
+            Configuration.SunAngle = (float) (16.0 * (time - 46800.0) / (50400.0 - 46800.0));
 
-            BroadcastPacket(new SunAngleUpdate { SunAngle = Configuration.SunAngle });
+            BroadcastPacket(new SunAngleUpdate {SunAngle = Configuration.SunAngle});
         }
 
         public void SendCurrentWeather(ACTcpClient endpoint = null)
@@ -517,7 +544,7 @@ namespace AssettoServer.Server
                     WindDirection = (short) CurrentWeather.WindDirection,
                     WindSpeed = (short) CurrentWeather.WindSpeed
                 };
-                
+
                 Log.Information("Weather: {0}", weather);
 
                 if (endpoint == null)
@@ -531,21 +558,25 @@ namespace AssettoServer.Server
             }
         }
 
-        public void BroadcastPacket<TPacket>(TPacket packet, ACTcpClient sender = null) where TPacket : IOutgoingNetworkPacket
+        public void BroadcastPacket<TPacket>(TPacket packet, ACTcpClient sender = null)
+            where TPacket : IOutgoingNetworkPacket
         {
             if (!(packet is SunAngleUpdate))
                 Log.Verbose("Broadcasting {0}", typeof(TPacket).Name);
 
-            foreach (EntryCar car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client))
+            foreach (EntryCar car in EntryCars.Where(c =>
+                c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client))
                 car.Client.SendPacket(packet);
         }
-        
-        public void BroadcastPacketUdp<TPacket>(TPacket packet, ACTcpClient sender = null) where TPacket : IOutgoingNetworkPacket
+
+        public void BroadcastPacketUdp<TPacket>(TPacket packet, ACTcpClient sender = null)
+            where TPacket : IOutgoingNetworkPacket
         {
             if (!(packet is SunAngleUpdate))
                 Log.Verbose("Broadcasting {0}", typeof(TPacket).Name);
 
-            foreach (EntryCar car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client && c.Client.HasAssociatedUdp))
+            foreach (EntryCar car in EntryCars.Where(c =>
+                c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client && c.Client.HasAssociatedUdp))
                 car.Client.SendPacketUdp(packet);
         }
 
@@ -559,7 +590,7 @@ namespace AssettoServer.Server
             long lastWeatherUpdate = Environment.TickCount64;
             long lastAiUpdate = Environment.TickCount64;
             long lastAiObstacleDetectionUpdate = Environment.TickCount64;
-            float networkDistanceSquared = (float)Math.Pow(Configuration.Extra.NetworkBubbleDistance, 2);
+            float networkDistanceSquared = (float) Math.Pow(Configuration.Extra.NetworkBubbleDistance, 2);
             int outsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
 
             Log.Information("Starting update loop with an update rate of {0}hz.", Configuration.RefreshRateHz);
@@ -580,7 +611,7 @@ namespace AssettoServer.Server
                             }
                         }
                     }
-                    
+
                     foreach (EntryCar fromCar in EntryCars)
                     {
                         ACTcpClient fromClient = fromCar.Client;
@@ -597,15 +628,21 @@ namespace AssettoServer.Server
                                     ACTcpClient toClient = toCar.Client;
                                     if (toCar != fromCar && toClient != null && toClient.HasSentFirstUpdate)
                                     {
-                                        float distance = Vector3.DistanceSquared(status.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position);
+                                        float distance = Vector3.DistanceSquared(status.Position,
+                                            toCar.TargetCar == null
+                                                ? toCar.Status.Position
+                                                : toCar.TargetCar.Status.Position);
                                         if (fromCar.TargetCar != null || distance > networkDistanceSquared)
                                         {
-                                            if ((Environment.TickCount64 - fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId]) < outsideNetworkBubbleUpdateRateMs)
+                                            if ((Environment.TickCount64 -
+                                                 fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId]) <
+                                                outsideNetworkBubbleUpdateRateMs)
                                                 continue;
 
-                                            fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
+                                            fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId] =
+                                                Environment.TickCount64;
                                         }
-                                        
+
                                         //Log.Debug("sending PositionUpdate {0}", fromCar.Status.PakSequenceId);
 
                                         toClient.SendPacketUdp(new PositionUpdate
@@ -635,27 +672,31 @@ namespace AssettoServer.Server
                                         });
                                     }
                                 }
-                            
-                                if(fromCar.Status.Position.Y < -500 && Environment.TickCount64 - fromCar.LastFallCheckTime > 1000)
+
+                                if (fromCar.Status.Position.Y < -500 &&
+                                    Environment.TickCount64 - fromCar.LastFallCheckTime > 1000)
                                 {
                                     fromCar.LastFallCheckTime = Environment.TickCount64;
                                     fromCar.Client?.SendCurrentSession();
                                 }
                             }
 
-                            if (fromClient != null && fromClient.HasSentFirstUpdate && (CurrentTime - fromCar.LastPingTime) > 1000)
+                            if (fromClient != null && fromClient.HasSentFirstUpdate &&
+                                (CurrentTime - fromCar.LastPingTime) > 1000)
                             {
                                 fromCar.CheckAfk();
                                 fromCar.LastPingTime = CurrentTime;
 
                                 PacketWriter writer = new PacketWriter(buffer);
-                                int bytesWritten = writer.WritePacket(new PingUpdate { CurrentPing = fromCar.Ping, Time = CurrentTime });
+                                int bytesWritten = writer.WritePacket(new PingUpdate
+                                    {CurrentPing = fromCar.Ping, Time = CurrentTime});
 
                                 UdpServer.SendAsync(fromClient.UdpEndpoint, buffer, 0, bytesWritten);
 
                                 if (CurrentTime - fromCar.LastPongTime > 15000)
                                 {
-                                    Log.Information("{0} has not sent a ping response for over 15 seconds.", fromCar?.Client?.Name);
+                                    Log.Information("{0} has not sent a ping response for over 15 seconds.",
+                                        fromCar?.Client?.Name);
                                     _ = fromCar.Client?.DisconnectAsync();
                                 }
                             }
@@ -669,20 +710,23 @@ namespace AssettoServer.Server
                                 {
                                     var fromState = fromCar.GetAiStatesCopy()
                                         .Where(state => state.Initialized)
-                                        .OrderBy(ai => Vector3.DistanceSquared(ai.Status.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position))
+                                        .OrderBy(ai => Vector3.DistanceSquared(ai.Status.Position,
+                                            toCar.TargetCar == null
+                                                ? toCar.Status.Position
+                                                : toCar.TargetCar.Status.Position))
                                         .First();
 
                                     // TODO network bubble necessary?
 
                                     CarStatus status = fromState.Status;
-                                        
+
                                     toClient.SendPacketUdp(new PositionUpdate
                                     {
                                         SessionId = fromCar.SessionId,
                                         EngineRpm = status.EngineRpm,
                                         Gas = status.Gas,
                                         Gear = status.Gear,
-                                        LastRemoteTimestamp = (uint)status.Timestamp,
+                                        LastRemoteTimestamp = (uint) status.Timestamp,
                                         Timestamp = (uint) (status.Timestamp - toCar.TimeOffset),
                                         NormalizedPosition = status.NormalizedPosition,
                                         PakSequenceId = fromCar.AiPakSequenceIds[toCar.SessionId]++,
@@ -727,7 +771,8 @@ namespace AssettoServer.Server
                         if (Configuration.Extra.EnableAi)
                         {
                             _ = Task.Run(AiBehavior.Update)
-                                .ContinueWith(t => Log.Error(t.Exception, "Error in AI update"), TaskContinuationOptions.OnlyOnFaulted);
+                                .ContinueWith(t => Log.Error(t.Exception, "Error in AI update"),
+                                    TaskContinuationOptions.OnlyOnFaulted);
                         }
                     }
 
@@ -739,7 +784,8 @@ namespace AssettoServer.Server
                         }
                         else
                         {
-                            CurrentDaySeconds += (Environment.TickCount64 - lastTimeUpdate) / 1000.0f * Configuration.TimeOfDayMultiplier;
+                            CurrentDaySeconds += (Environment.TickCount64 - lastTimeUpdate) / 1000.0f *
+                                                 Configuration.TimeOfDayMultiplier;
                             if (CurrentDaySeconds <= 0)
                                 CurrentDaySeconds = 0;
                             else if (CurrentDaySeconds >= 86400)
@@ -748,7 +794,8 @@ namespace AssettoServer.Server
 
                         if (Configuration.Extra.EnableWeatherFx)
                         {
-                            RainHelper.Update(CurrentWeather, Configuration.DynamicTrack.BaseGrip, Configuration.Extra.RainTrackGripReduction, Environment.TickCount64 - lastTimeUpdate);
+                            RainHelper.Update(CurrentWeather, Configuration.DynamicTrack.BaseGrip,
+                                Configuration.Extra.RainTrackGripReduction, Environment.TickCount64 - lastTimeUpdate);
                             SendCurrentWeather();
                         }
                         else
@@ -765,7 +812,8 @@ namespace AssettoServer.Server
                         if (Configuration.Extra.EnableAi)
                         {
                             _ = Task.Run(AiBehavior.ObstacleDetection)
-                                .ContinueWith(t => Log.Error(t.Exception, "Error in AI obstacle detection"), TaskContinuationOptions.OnlyOnFaulted);
+                                .ContinueWith(t => Log.Error(t.Exception, "Error in AI obstacle detection"),
+                                    TaskContinuationOptions.OnlyOnFaulted);
                         }
                     }
 
@@ -792,7 +840,7 @@ namespace AssettoServer.Server
                             tickDelta = nextTick - currentTick;
 
                             if (tickDelta > 0)
-                                await Task.Delay((int)tickDelta);
+                                await Task.Delay((int) tickDelta);
                             else if (tickDelta < -sleepMs)
                             {
                                 if (tickDelta < -1000)
@@ -826,7 +874,8 @@ namespace AssettoServer.Server
             try
             {
                 await ConnectSempahore.WaitAsync();
-                if (client.IsConnected && client.EntryCar?.Client == client && ConnectedCars.TryRemove(client.SessionId, out _))
+                if (client.IsConnected && client.EntryCar?.Client == client &&
+                    ConnectedCars.TryRemove(client.SessionId, out _))
                 {
                     Log.Information("{0} has disconnected.", client.Name);
 
@@ -837,7 +886,7 @@ namespace AssettoServer.Server
                     client.IsConnected = false;
 
                     if (client.HasPassedChecksum)
-                        BroadcastPacket(new CarDisconnected { SessionId = client.SessionId });
+                        BroadcastPacket(new CarDisconnected {SessionId = client.SessionId});
 
                     if (Configuration.Extra.EnableAi && client.EntryCar.AiMode == AiMode.Auto)
                     {
@@ -889,7 +938,7 @@ namespace AssettoServer.Server
                 ["max_clients"] = cfg.MaxClients,
                 ["track"] = cfg.FullTrackName,
                 ["cars"] = string.Join(',', cfg.EntryCars.Select(c => c.Model).Distinct()),
-                ["timeofday"] = (int)cfg.SunAngle,
+                ["timeofday"] = (int) cfg.SunAngle,
                 ["sessions"] = string.Join(',', cfg.Sessions.Select(s => s.Type)),
                 ["durations"] = string.Join(',', cfg.Sessions.Select(s => s.Type == 3 ? s.Laps : s.Time * 60)),
                 ["password"] = string.IsNullOrEmpty(cfg.Password) ? "0" : cfg.Password,
@@ -909,7 +958,8 @@ namespace AssettoServer.Server
 
             Log.Information("Registering server to lobby.");
             string queryString = string.Join('&', queryParamsDict.Select(p => $"{p.Key}={p.Value}"));
-            HttpResponseMessage response = await HttpClient.GetAsync($"http://93.57.10.21/lobby.ashx/register?{queryString}");
+            HttpResponseMessage response =
+                await HttpClient.GetAsync($"http://93.57.10.21/lobby.ashx/register?{queryString}");
             if (!response.IsSuccessStatusCode)
                 Log.Information("Failed to register to lobby.");
         }
@@ -919,7 +969,7 @@ namespace AssettoServer.Server
             Dictionary<string, object> queryParamsDict = new Dictionary<string, object>
             {
                 ["session"] = CurrentSession.Type,
-                ["timeleft"] = (int)CurrentSession.TimeLeft.TotalSeconds,
+                ["timeleft"] = (int) CurrentSession.TimeLeft.TotalSeconds,
                 ["port"] = Configuration.UdpPort,
                 ["clients"] = ConnectedCars.Count,
                 ["track"] = Configuration.FullTrackName,
@@ -928,7 +978,8 @@ namespace AssettoServer.Server
 
             //Console.WriteLine("Sending lobby update ping.");
             string queryString = string.Join('&', queryParamsDict.Select(p => $"{p.Key}={p.Value}"));
-            HttpResponseMessage response = await HttpClient.GetAsync($"http://93.57.10.21/lobby.ashx/ping?{queryString}");
+            HttpResponseMessage response =
+                await HttpClient.GetAsync($"http://93.57.10.21/lobby.ashx/ping?{queryString}");
             if (!response.IsSuccessStatusCode)
                 Log.Information("Failed to send lobby ping update.");
         }

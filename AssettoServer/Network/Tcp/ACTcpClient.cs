@@ -1,4 +1,14 @@
-﻿using AssettoServer.Network;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+using Serilog;
+using AssettoServer.Server.Ai;
 using AssettoServer.Network.Packets;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
@@ -7,23 +17,7 @@ using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using Qmmands;
-using Serilog;
 using Steamworks;
-using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Runtime.CompilerServices;
-using System.Runtime.ExceptionServices;
-using System.Security;
-using System.Text;
-using System.Threading;
-using System.Threading.Channels;
-using System.Threading.Tasks;
-using AssettoServer.Server.Ai;
 
 namespace AssettoServer.Network.Tcp
 {
@@ -430,7 +424,10 @@ namespace AssettoServer.Network.Tcp
             Log.Information("{0} ({1}): {2}", Name, SessionId, chatMessage.Message);
 
             if (!CommandUtilities.HasPrefix(chatMessage.Message, '/', out string commandStr))
+            {
                 Server.BroadcastPacket(chatMessage);
+                Server.Discord.SendChatMessage(Name, chatMessage.Message);
+            }
             else
             {
                 chatMessage.Message = commandStr;

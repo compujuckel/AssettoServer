@@ -6,12 +6,14 @@ namespace AssettoServer.Server.Ai
 {
     public class TrafficMap
     {
+        public string SourcePath { get; }
         public List<TrafficSpline> Splines { get; }
         
         public Dictionary<int, TrafficSplinePoint> PointsById { get; }
 
-        public TrafficMap(List<TrafficSpline> splines)
+        public TrafficMap(string sourcePath, List<TrafficSpline> splines)
         {
+            SourcePath = sourcePath;
             Splines = splines;
             PointsById = new Dictionary<int, TrafficSplinePoint>();
 
@@ -19,6 +21,14 @@ namespace AssettoServer.Server.Ai
             {
                 PointsById.Add(point.Id, point);
             }
+            
+            AdjacentLaneDetector.GetAdjacentLanesForMap(this, SourcePath + ".lanes");
+            JunctionParser.Parse(this, SourcePath + ".junctions.csv");
+        }
+
+        public TrafficMapView NewView()
+        {
+            return new TrafficMapView(this);
         }
 
         public (TrafficSplinePoint point, float distanceSquared) WorldToSpline(Vector3 position)

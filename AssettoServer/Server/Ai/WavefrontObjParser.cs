@@ -75,7 +75,7 @@ namespace AssettoServer.Server.Ai
                 Log.Debug("Spline {0} finished with {1} points", spline.Name, spline.Points.Length);
             }
 
-            return new TrafficMap(splines);
+            return new TrafficMap(filename, splines);
         }
     }
 }

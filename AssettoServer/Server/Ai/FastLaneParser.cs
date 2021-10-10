@@ -44,7 +44,7 @@ namespace AssettoServer.Server.Ai
                 new TrafficSpline("fast_lane.ai", points)
             };
 
-            return new TrafficMap(splines);
+            return new TrafficMap(filename, splines);
         }
     }
 }

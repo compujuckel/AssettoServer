@@ -10,7 +10,7 @@ namespace AssettoServer.Server.Ai
         public Vector3 Point { get; init; }
         
         public TrafficSplineJunction JunctionStart { get; set; }
-        public TrafficSplinePoint JunctionEnd { get; set; }
+        public TrafficSplineJunction JunctionEnd { get; set; }
         public TrafficSplinePoint Previous { get; set; }
         public TrafficSplinePoint Next { get; set; }
         public TrafficSplinePoint Left { get; set; }

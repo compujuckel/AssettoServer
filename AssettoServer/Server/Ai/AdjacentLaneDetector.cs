@@ -15,16 +15,16 @@ namespace AssettoServer.Server.Ai
     {
         private const float LaneWidth = 3.27f; // TODO configurable
 
-        public static void GetAdjacentLanesForMap(TrafficMap map, string cacheFilePath)
+        public static void GetAdjacentLanesForMap(TrafficMap map, string path)
         {
-            if (File.Exists(cacheFilePath))
+            if (File.Exists(path))
             {
-                ParseCache(map, cacheFilePath);
+                ParseCache(map, path);
             }
             else
             {
                 DetectAdjacentLanes(map);
-                WriteCache(map, cacheFilePath);
+                WriteCache(map, path);
             }
         }
 

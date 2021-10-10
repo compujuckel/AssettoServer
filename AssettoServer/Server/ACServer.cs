@@ -91,7 +91,7 @@ namespace AssettoServer.Server
                 EntryCars[i].SessionId = (byte)i;
                 EntryCars[i].Server = this;
                 EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Count];
-                EntryCars[i].SetAiOverbooking(1);
+                EntryCars[i].SetAiOverbooking(0);
             }
                                 
             CurrentDaySeconds = (float)(Configuration.SunAngle * (50400.0 - 46800.0) / 16.0 + 46800.0);
@@ -180,7 +180,6 @@ namespace AssettoServer.Server
                 }
                 else
                 {
-                    AdjacentLaneDetector.GetAdjacentLanesForMap(TrafficMap, mapAiBasePath + "lane.cache");
                     AiBehavior = new AiBehavior(this);
                 }
             }

@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="27.1.1" />
     <PackageReference Include="Humanizer.Core" Version="2.10.1" />
     <PackageReference Include="ini-parser" Version="2.5.2">
       <NoWarn>NU1701</NoWarn>

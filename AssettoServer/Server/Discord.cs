@@ -97,18 +97,18 @@ namespace AssettoServer.Server
                         Color = color,
                         Fields = new List<EmbedField>
                         {
-                            new() {Name = "Name", Value = Sanitize(clientName)},
-                            new() {Name = "Steam-GUID", Value = clientGuid + " ([link](" + userSteamUrl + "))"}
+                            new() {Name = "Name", Value = Sanitize(clientName), InLine = true},
+                            new() {Name = "Steam-GUID", Value = clientGuid + " ([link](" + userSteamUrl + "))", InLine = true}
                         }
                     }
                 }
             };
 
+            if (adminName != null)
+                message.Embeds[0].Fields.Add(new EmbedField {Name = "By Admin", Value = Sanitize(adminName), InLine = true});
+            
             if (reason != null)
                 message.Embeds[0].Fields.Add(new EmbedField {Name = "Message", Value = Sanitize(reason)});
-            
-            if (adminName != null)
-                message.Embeds[0].Fields.Add(new EmbedField {Name = "By Admin", Value = Sanitize(adminName)});
 
             return message;
         }

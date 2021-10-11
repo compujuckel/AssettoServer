@@ -1,7 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
-using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Shared;
 using JPBotelho;
 using Serilog;
@@ -35,7 +35,7 @@ namespace AssettoServer.Server.Ai
         private long _ignoreObstaclesUntil;
         private long _obstacleHonkStart;
         private long _obstacleHonkEnd;
-        //public TrafficSplinePoint CurrentSplinePoint { get; private set; }
+        public TrafficSplinePoint CurrentSplinePoint { get; private set; }
         public TrafficMapView MapView { get; private set; }
 
         private Random _random = new Random();
@@ -52,7 +52,7 @@ namespace AssettoServer.Server.Ai
             float variation = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs * EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedVariation;
 
             float fastLaneOffset = 0;
-            if (MapView.CurrentSplinePoint != null && MapView.CurrentSplinePoint.Left != null)
+            if (CurrentSplinePoint != null && CurrentSplinePoint.Left != null)
             {
                 fastLaneOffset = 10 / 3.6f;
             }
@@ -69,8 +69,9 @@ namespace AssettoServer.Server.Ai
                 return;
             }
             
-            MapView.Teleport(point);
-            _currentVecLength = (MapView.Peek().Point - MapView.CurrentSplinePoint.Point).Length();
+            MapView.Clear();
+            CurrentSplinePoint = point;
+            _currentVecLength = (MapView.Next(CurrentSplinePoint).Point - CurrentSplinePoint.Point).Length();
             _currentVecProgress = 0;
             
             CalculateTangents();
@@ -86,22 +87,22 @@ namespace AssettoServer.Server.Ai
 
         private void CalculateTangents()
         {
-            if (MapView.PeekBehind() == null)
+            if (MapView.Previous(CurrentSplinePoint) == null)
             {
-                _startTangent = (MapView.Peek().Point - MapView.CurrentSplinePoint.Point) * 0.5f;
+                _startTangent = (MapView.Next(CurrentSplinePoint).Point - CurrentSplinePoint.Point) * 0.5f;
             }
             else
             {
-                _startTangent = (MapView.CurrentSplinePoint.Point - MapView.PeekBehind().Point) * 0.5f;
+                _startTangent = (MapView.Next(CurrentSplinePoint).Point - MapView.Previous(CurrentSplinePoint).Point) * 0.5f;
             }
 
-            if (MapView.Peek(2) == null)
+            if (MapView.Next(CurrentSplinePoint, 2) == null)
             {
-                _endTangent = (MapView.Peek().Point - MapView.CurrentSplinePoint.Point) * 0.5f;
+                _endTangent = (MapView.Next(CurrentSplinePoint).Point - CurrentSplinePoint.Point) * 0.5f;
             }
             else
             {
-                _endTangent = (MapView.Peek(2).Point - MapView.CurrentSplinePoint.Point) * 0.5f;
+                _endTangent = (MapView.Next(CurrentSplinePoint, 2).Point - CurrentSplinePoint.Point) * 0.5f;
             }
         }
 
@@ -111,14 +112,14 @@ namespace AssettoServer.Server.Ai
             {
                 progress -= _currentVecLength;
                 
-                if (MapView.Peek(2) == null)
+                if (MapView.Next(CurrentSplinePoint, 2) == null)
                 {
                     Log.Warning("Spline end");
                     return false;
                 }
-                
-                MapView.Traverse();
-                _currentVecLength = (MapView.Peek().Point - MapView.CurrentSplinePoint.Point).Length();
+
+                CurrentSplinePoint = MapView.Next(CurrentSplinePoint);
+                _currentVecLength = (MapView.Next(CurrentSplinePoint).Point - CurrentSplinePoint.Point).Length();
             }
 
             CalculateTangents();
@@ -146,17 +147,17 @@ namespace AssettoServer.Server.Ai
             {
                 if(aiState == this) continue;
                 
-                var point = MapView.CurrentSplinePoint;
+                var point = CurrentSplinePoint;
                 for (int distance = 0; distance < 100 && point != null; distance++)
                 {
-                    if (point == aiState.MapView.CurrentSplinePoint && distance < minDistance)
+                    if (point == aiState.CurrentSplinePoint && distance < minDistance)
                     {
                         minDistance = distance;
                         closestState = aiState;
                         break;
                     }
 
-                    point = MapView.Peek(distance);
+                    point = MapView.Next(point);
                 }
             }
 
@@ -334,8 +335,8 @@ namespace AssettoServer.Server.Ai
                 Teleport(EntryCar.Server.TrafficMap.Splines[0].Points[0]);
             }
 
-            CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(MapView.CurrentSplinePoint.Point, 
-                MapView.Peek().Point, 
+            CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(CurrentSplinePoint.Point, 
+                MapView.Next(CurrentSplinePoint).Point, 
                 _startTangent, 
                 _endTangent, 
                 _currentVecProgress / _currentVecLength);
@@ -344,7 +345,7 @@ namespace AssettoServer.Server.Ai
             {
                 X = (float)(Math.Atan2(smoothPos.Tangent.Z, smoothPos.Tangent.X) - Math.PI / 2),
                 Y = (float)(Math.Atan2(new Vector2(smoothPos.Tangent.Z, smoothPos.Tangent.X).Length(), smoothPos.Tangent.Y) - Math.PI / 2) * -1f,
-                Z = MapView.CurrentSplinePoint.GetBankAngle(_currentVecProgress / _currentVecLength)
+                Z = CurrentSplinePoint.GetBankAngle(_currentVecProgress / _currentVecLength)
             };
 
             byte tyreAngularSpeed = (byte) Math.Min(byte.MaxValue, 100 + GetTyreAngularSpeed(CurrentSpeed, 0.65f));

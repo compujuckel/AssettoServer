@@ -11,36 +11,26 @@ namespace AssettoServer.Server.Ai
 
         private readonly ConcurrentDictionary<TrafficSplineJunction, bool> _evaluated = new();
         private readonly Random _random = new();
-        
-        public TrafficSplinePoint CurrentSplinePoint { get; private set; }
 
         public TrafficMapView(TrafficMap map)
         {
             _map = map;
         }
 
-        public void Teleport(TrafficSplinePoint point)
+        public void Clear()
         {
-            CurrentSplinePoint = point;
             _evaluated.Clear();
         }
 
-        public TrafficSplinePoint Traverse(int count = 1)
+        public TrafficSplinePoint Next(TrafficSplinePoint point, int count = 1)
         {
-            CurrentSplinePoint = Peek(count);
-            return CurrentSplinePoint;
-        }
-
-        public TrafficSplinePoint Peek(int count = 1)
-        {
-            var point = CurrentSplinePoint;
             for (int i = 0; i < count && point != null; i++)
             {
                 if (point.JunctionStart != null)
                 {
                     var junction = point.JunctionStart;
 
-                    bool result = _evaluated.GetOrAdd(junction, (key) => _random.NextDouble() < junction.Probability);
+                    bool result = _evaluated.GetOrAdd(junction, _ => _random.NextDouble() < junction.Probability);
                     point = result ? junction.EndPoint : point.Next;
                 }
                 else
@@ -52,9 +42,8 @@ namespace AssettoServer.Server.Ai
             return point;
         }
 
-        public TrafficSplinePoint PeekBehind(int count = 1)
+        public TrafficSplinePoint Previous(TrafficSplinePoint point, int count = 1)
         {
-            var point = CurrentSplinePoint;
             for (int i = 0; i < count && point != null; i++)
             {
                 if (point.JunctionEnd != null)
@@ -66,12 +55,12 @@ namespace AssettoServer.Server.Ai
                     {
                         result = _evaluated[junction];
                     }
-                    /*else
+                    else if (point.Previous == null)
                     {
                         result = _random.NextDouble() < junction.Probability;
-                        _evaluated.Add(junction, result);
-                    }*/
-
+                        _evaluated.TryAdd(junction, result);
+                    }
+                    
                     point = result ? junction.StartPoint : point.Previous;
                 }
                 else

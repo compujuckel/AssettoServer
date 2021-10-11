@@ -43,6 +43,7 @@ namespace AssettoServer.Server
         public float CurrentDaySeconds { get; private set; }
         public GeoParams GeoParams { get; private set; }
         public IReadOnlyList<string> Features { get; private set; }
+        public Discord Discord { get; }
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
         internal ConcurrentDictionary<IPEndPoint, EntryCar> EndpointCars { get; }
@@ -201,6 +202,8 @@ namespace AssettoServer.Server
             }
             else
                 File.Create(adminsPath);
+
+            Discord = new Discord(configuration.Extra);
 
             InitializeChecksums();
         }
@@ -379,32 +382,44 @@ namespace AssettoServer.Server
             return false;
         }
 
-        public async Task KickAsync(ACTcpClient client, KickReason reason, string reasonStr = null, bool broadcastMessage = true)
+        public async Task KickAsync(ACTcpClient client, KickReason reason, string reasonStr = null, bool broadcastMessage = true, ACTcpClient admin = null)
         {
             if (reasonStr != null && broadcastMessage)
-                BroadcastPacket(new ChatMessage { SessionId = 255, Message = reasonStr });
+                BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
 
             if (client != null)
             {
-                Log.Information("{0} was kicked. Reason: {1}", client.Name, reasonStr);
-                client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = reason });
+                string kickMessage = reasonStr == null
+                    ? client.Name + " was kicked."
+                    : client.Name + " was kicked. Reason: " + reasonStr;
+
+                Log.Information(kickMessage);
+                client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
+                if (!reason.Equals(KickReason.ChecksumFailed))
+                    Discord.SendAuditKickMessage(Configuration.Name, client, reasonStr, admin);
             }
 
             await client.DisconnectAsync();
         }
 
-        public async ValueTask BanAsync(ACTcpClient client, KickReason reason, string reasonStr = null)
+        public async ValueTask BanAsync(ACTcpClient client, KickReason reason, string reasonStr = null, ACTcpClient admin = null)
         {
             if (reasonStr != null)
-                BroadcastPacket(new ChatMessage { SessionId = 255, Message = reasonStr });
+                BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
 
             if (client != null)
             {
                 Blacklist.TryAdd(client.Guid, true);
 
-                Log.Information("{0} was banned. Reason: {1}", client.Name, reasonStr);
+                string banMessage = reasonStr == null
+                    ? client.Name + " was banned."
+                    : client.Name + " was banned. Reason: " + reasonStr;
+
+                Log.Information(banMessage);
                 await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => !p.Value).Select(p => p.Key));
-                client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = reason });
+                client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
+
+                Discord.SendAuditBanMessage(Configuration.Name, client, reasonStr, admin);
             }
 
             await client.DisconnectAsync();

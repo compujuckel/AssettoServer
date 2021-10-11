@@ -28,7 +28,7 @@ namespace AssettoServer.Commands.Modules
             else
             {
                 string kickMessage = reason == null ? $"{player.Name} ({player.Guid}) has been kicked." : $"{player.Name} has been kicked for: {reason}.";
-                return Context.Server.KickAsync(player, KickReason.None, kickMessage);
+                return Context.Server.KickAsync(player, KickReason.None, kickMessage, true, Context.Client);
             }
 
             return Task.CompletedTask;
@@ -44,7 +44,7 @@ namespace AssettoServer.Commands.Modules
             else
             {
                 string kickMessage = reason == null ? $"{player.Name} has been banned." : $"{player.Name} ({player.Guid}) has been banned for: {reason}.";
-                return Context.Server.BanAsync(player, KickReason.Blacklisted, kickMessage);
+                return Context.Server.BanAsync(player, KickReason.Blacklisted, kickMessage, Context.Client);
             }
 
             return ValueTask.CompletedTask;

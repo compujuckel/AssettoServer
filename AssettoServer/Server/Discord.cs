@@ -77,7 +77,7 @@ namespace AssettoServer.Server
         {
             Run(() =>
             {
-                if (!IsEnabled || ChatHook.Url == null)
+                if (IsEnabled && ChatHook.Url != null)
                 {
                     DiscordMessage message = new DiscordMessage
                     {

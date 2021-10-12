@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
 using Discord;
 using Discord.Webhook;
+using Serilog;
 
 namespace AssettoServer.Server
 {
@@ -34,44 +37,59 @@ namespace AssettoServer.Server
 
         public void SendAuditKickMessage(string serverName, ACTcpClient client, string reason, ACTcpClient admin = null)
         {
-            if (IsEnabled)
-                AuditHook.Send(PrepareAuditMessage(
-                    ":boot: Kick alert",
-                    serverName,
-                    client.Guid,
-                    client.Name,
-                    reason,
-                    Color.Yellow,
-                    admin?.Name
-                ));
+            Run(() =>
+            {
+                if (IsEnabled && AuditHook.Url != null)
+                    AuditHook.Send(PrepareAuditMessage(
+                        ":boot: Kick alert",
+                        serverName,
+                        client.Guid,
+                        client.Name,
+                        reason,
+                        Color.Yellow,
+                        admin?.Name
+                    ));
+            });
         }
 
         public void SendAuditBanMessage(string serverName, ACTcpClient bannedClient, string reason, ACTcpClient admin = null)
         {
-            if (IsEnabled)
-                AuditHook.Send(PrepareAuditMessage(
-                    ":hammer: Ban alert",
-                    serverName,
-                    bannedClient.Guid,
-                    bannedClient.Name,
-                    reason,
-                    Color.Red,
-                    admin?.Name
-                ));
+            Run(() =>
+            {
+                if (IsEnabled && AuditHook.Url != null)
+                    AuditHook.Send(PrepareAuditMessage(
+                        ":hammer: Ban alert",
+                        serverName,
+                        bannedClient.Guid,
+                        bannedClient.Name,
+                        reason,
+                        Color.Red,
+                        admin?.Name
+                    ));
+            });
         }
 
         public void SendChatMessage(string userName, string messageContent)
         {
-            if (!IsEnabled) return;
-
-            DiscordMessage message = new DiscordMessage
+            Run(() =>
             {
-                AvatarUrl = PictureUrl,
-                Username = userName,
-                Content = Sanitize(messageContent)
-            };
+                if (!IsEnabled || ChatHook.Url == null) return;
 
-            ChatHook.Send(message);
+                DiscordMessage message = new DiscordMessage
+                {
+                    AvatarUrl = PictureUrl,
+                    Username = userName,
+                    Content = Sanitize(messageContent)
+                };
+
+                ChatHook.Send(message);
+            });
+        }
+
+        private static void Run(Action action)
+        {
+            Task.Run(action)
+                .ContinueWith(t => Log.Error(t.Exception, "Error in AI update"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         private DiscordMessage PrepareAuditMessage(
@@ -106,13 +124,13 @@ namespace AssettoServer.Server
 
             if (adminName != null)
                 message.Embeds[0].Fields.Add(new EmbedField {Name = "By Admin", Value = Sanitize(adminName), InLine = true});
-            
+
             if (reason != null)
                 message.Embeds[0].Fields.Add(new EmbedField {Name = "Message", Value = Sanitize(reason)});
 
             return message;
         }
-        
+
         private static string Sanitize(string text)
         {
             foreach (string unsafeChar in SensitiveCharacters)

@@ -40,6 +40,7 @@ namespace AssettoServer.Server
             Run(() =>
             {
                 if (IsEnabled && AuditHook.Url != null)
+                {
                     AuditHook.Send(PrepareAuditMessage(
                         ":boot: Kick alert",
                         serverName,
@@ -49,6 +50,7 @@ namespace AssettoServer.Server
                         Color.Yellow,
                         admin?.Name
                     ));
+                }
             });
         }
 
@@ -57,6 +59,7 @@ namespace AssettoServer.Server
             Run(() =>
             {
                 if (IsEnabled && AuditHook.Url != null)
+                {
                     AuditHook.Send(PrepareAuditMessage(
                         ":hammer: Ban alert",
                         serverName,
@@ -66,6 +69,7 @@ namespace AssettoServer.Server
                         Color.Red,
                         admin?.Name
                     ));
+                }
             });
         }
 
@@ -73,23 +77,24 @@ namespace AssettoServer.Server
         {
             Run(() =>
             {
-                if (!IsEnabled || ChatHook.Url == null) return;
-
-                DiscordMessage message = new DiscordMessage
+                if (!IsEnabled || ChatHook.Url == null)
                 {
-                    AvatarUrl = PictureUrl,
-                    Username = userName,
-                    Content = Sanitize(messageContent)
-                };
+                    DiscordMessage message = new DiscordMessage
+                    {
+                        AvatarUrl = PictureUrl,
+                        Username = userName,
+                        Content = Sanitize(messageContent)
+                    };
 
-                ChatHook.Send(message);
+                    ChatHook.Send(message);
+                }
             });
         }
 
         private static void Run(Action action)
         {
             Task.Run(action)
-                .ContinueWith(t => Log.Error(t.Exception, "Error in AI update"), TaskContinuationOptions.OnlyOnFaulted);
+                .ContinueWith(t => Log.Error(t.Exception, "Error in Discord webhook"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         private DiscordMessage PrepareAuditMessage(

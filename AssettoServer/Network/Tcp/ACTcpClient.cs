@@ -4,11 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Serilog;
-using AssettoServer.Server.Ai;
 using AssettoServer.Network.Packets;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
@@ -17,6 +16,7 @@ using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using Qmmands;
+using Serilog;
 using Steamworks;
 
 namespace AssettoServer.Network.Tcp
@@ -184,16 +184,16 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new AuthFailedResponse("Steam authentication failed."));
                         else if (string.IsNullOrEmpty(handshakeRequest.Guid) || !(handshakeRequest.Guid?.Length >= 6))
                             SendPacket(new AuthFailedResponse("Invalid Guid."));
-                        else if (string.IsNullOrEmpty(handshakeRequest.Name) || handshakeRequest.Name == null || handshakeRequest.Name.Length < 1)
-                            SendPacket(new AuthFailedResponse("Username is not allowed."));
-                        else if (handshakeRequest.Name == "RLD!")
-                            SendPacket(new AuthFailedResponse("The name \"RLD!\" is not allowed."));
                         else if (!await Server.TrySecureSlotAsync(this, handshakeRequest))
                             SendPacket(new NoSlotsAvailableResponse());
                         else
                         {
-                            if (Name.Equals("player", StringComparison.OrdinalIgnoreCase))
-                                Name += handshakeRequest.Guid[^6..];
+                            if (!HasValidUserName(handshakeRequest.Name, Server.Configuration.Extra.NameFilters))
+                            {
+                                Log.Information("Kicking Player '{0}' for having an invalid name.", handshakeRequest.Name);
+                                SendPacket(new AuthFailedResponse("Invalid username. Change your Online Name in Settings > Content Manager > Drive > Online Name."));
+                                return;
+                            }
 
                             EntryCar.SetActive();
                             Team = handshakeRequest.Team;
@@ -304,6 +304,11 @@ namespace AssettoServer.Network.Tcp
             {
                 await DisconnectAsync();
             }
+        }
+
+        private static bool HasValidUserName(string name, List<string> nameFilters)
+        {
+            return !string.IsNullOrEmpty(name) && nameFilters.All(regex => !Regex.Match(name, regex, RegexOptions.IgnoreCase).Success);
         }
 
         private async ValueTask<bool> ValidateSessionTicketAsync(byte[] sessionTicket, string guid)

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace AssettoServer.Server.Configuration
 {
@@ -26,6 +27,8 @@ namespace AssettoServer.Server.Configuration
         public bool EnableAi { get; set; } = false;
 
         public AiParams AiParams { get; set; } = new AiParams();
+
+        public List<string> NameFilters { get; set; } = new();
 
         [JsonIgnore]
         public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60000;

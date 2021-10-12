@@ -122,8 +122,6 @@ namespace AssettoServer.Server.Configuration
 
             if(Extra.EnableServerDetails)
             {
-                Name = Name + " ℹ" + HttpPort;
-
                 string cmContentPath = "cfg/cm_content/content.json";
                 CMContentConfiguration cmContent = new CMContentConfiguration();
                 // Only load if the file already exists, otherwise this will fail if the content directory does not exist

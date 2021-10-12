@@ -59,7 +59,7 @@ namespace AssettoServer.Network.Http
                         Inverted = ACServer.Configuration.InvertedGridPositions,
                         Ip = ACServer.GeoParams.Ip,
                         MaxClients = ACServer.Configuration.MaxClients,
-                        Name = ACServer.Configuration.Name,
+                        Name = ACServer.Configuration.Name + (ACServer.Configuration.Extra.EnableServerDetails ? " ℹ" + ACServer.Configuration.HttpPort : ""),
                         Pass = !string.IsNullOrEmpty(ACServer.Configuration.Password),
                         Pickup = true,
                         Pit = false,

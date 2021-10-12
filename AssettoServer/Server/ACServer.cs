@@ -389,11 +389,7 @@ namespace AssettoServer.Server
 
             if (client != null)
             {
-                string kickMessage = reasonStr == null
-                    ? client.Name + " was kicked."
-                    : client.Name + " was kicked. Reason: " + reasonStr;
-
-                Log.Information(kickMessage);
+                Log.Information("{0} was kicked. Reason: {1}", client.Name, reasonStr ?? "No reason given.");
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
                 if (!reason.Equals(KickReason.ChecksumFailed))
                     Discord.SendAuditKickMessage(Configuration.Name, client, reasonStr, admin);
@@ -411,11 +407,7 @@ namespace AssettoServer.Server
             {
                 Blacklist.TryAdd(client.Guid, true);
 
-                string banMessage = reasonStr == null
-                    ? client.Name + " was banned."
-                    : client.Name + " was banned. Reason: " + reasonStr;
-
-                Log.Information(banMessage);
+                Log.Information("{0} was banned. Reason: {1}", client.Name, reasonStr ?? "No reason given.");
                 await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => !p.Value).Select(p => p.Key));
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
 

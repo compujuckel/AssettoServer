@@ -44,7 +44,8 @@ namespace AssettoServer.Server.Configuration
         public int MaxSpawnDistance { get; set; } = 400;
         public int MinAiSafetyDistance { get; set; } = 20;
         public int MaxAiSafetyDistance { get; set; } = 70;
-        public int StateSafetyDistance { get; set; } = 1500;
+        public float StateSafetyDistance { get; set; } = 1500;
+        public float StateTieBreakerDistance { get; set; } = 200;
         public float SpawnSafetyDistanceToPlayer { get; set; } = 80;
         public int MinSpawnProtectionTime { get; set; } = 4;
         public int MaxSpawnProtectionTime { get; set; } = 8;
@@ -62,7 +63,8 @@ namespace AssettoServer.Server.Configuration
         [JsonIgnore] public float MaxPlayerDistanceToAiSplineSquared => MaxPlayerDistanceToAiSpline * MaxPlayerDistanceToAiSpline;
         [JsonIgnore] public int MinAiSafetyDistanceSquared => MinAiSafetyDistance * MinAiSafetyDistance;
         [JsonIgnore] public int MaxAiSafetyDistanceSquared => MaxAiSafetyDistance * MaxAiSafetyDistance;
-        [JsonIgnore] public int StateSafetyDistanceSquared => StateSafetyDistance * StateSafetyDistance;
+        [JsonIgnore] public float StateSafetyDistanceSquared => StateSafetyDistance * StateSafetyDistance;
+        [JsonIgnore] public float StateTieBreakerDistanceSquared => StateTieBreakerDistance * StateTieBreakerDistance;
         [JsonIgnore] public float SpawnSafetyDistanceToPlayerSquared => SpawnSafetyDistanceToPlayer * SpawnSafetyDistanceToPlayer;
         [JsonIgnore] public int MinSpawnProtectionTimeMilliseconds => MinSpawnProtectionTime * 1000;
         [JsonIgnore] public int MaxSpawnProtectionTimeMilliseconds => MaxSpawnProtectionTime * 1000;

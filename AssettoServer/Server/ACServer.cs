@@ -674,15 +674,25 @@ namespace AssettoServer.Server
                                 ACTcpClient toClient = toCar.Client;
                                 if (toCar != fromCar && toClient != null && toClient.HasSentFirstUpdate)
                                 {
-                                    var fromState = fromCar.GetAiStatesCopy()
+                                    var fromStates = fromCar.GetAiStatesCopy()
                                         .Where(state => state.Initialized)
-                                        .OrderBy(ai => Vector3.DistanceSquared(ai.Status.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position))
-                                        .First();
+                                        .Select(ai => (ai, Vector3.DistanceSquared(ai.Status.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position)))
+                                        .OrderBy(ai => ai.Item2)
+                                        .ToList();
 
-                                    // TODO network bubble necessary?
+                                    CarStatus status = fromStates.First().Item1.Status;
+                                    
+                                    // Tie breaker when multiple states are close to the player. Filter for cars driving in the same direction
+                                    if (fromStates.Count(ai => ai.Item2 < Configuration.Extra.AiParams.StateTieBreakerDistanceSquared) > 1)
+                                    {
+                                        var sameDirection = fromStates.Where(ai => Vector3.Dot(toCar.Status.Velocity, ai.Item1.Status.Velocity) > 0).ToList();
 
-                                    CarStatus status = fromState.Status;
-                                        
+                                        if (sameDirection.Count > 0)
+                                        {
+                                            status = sameDirection.First().Item1.Status;
+                                        }
+                                    }
+
                                     toClient.SendPacketUdp(new PositionUpdate
                                     {
                                         SessionId = fromCar.SessionId,

@@ -408,19 +408,19 @@ namespace AssettoServer.Server
                 Blacklist.TryAdd(client.Guid, true);
 
                 Log.Information("{0} was banned. Reason: {1}", client.Name, reasonStr ?? "No reason given.");
-                await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => !p.Value).Select(p => p.Key));
+                await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => p.Value).Select(p => p.Key));
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
 
                 Discord.SendAuditBanMessage(Configuration.Name, client, reasonStr, admin);
+                
+                await client.DisconnectAsync();
             }
-
-            await client.DisconnectAsync();
         }
 
         public async ValueTask UnbanAsync(string guid)
         {
             if (Blacklist.TryRemove(guid, out _))
-                await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => !p.Value).Select(p => p.Key));
+                await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => p.Value).Select(p => p.Key));
         }
 
         public void SetWeather(WeatherData weather)

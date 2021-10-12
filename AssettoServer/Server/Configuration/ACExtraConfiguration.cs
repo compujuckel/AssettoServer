@@ -1,9 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AssettoServer.Server.Configuration
 {
@@ -19,6 +14,10 @@ namespace AssettoServer.Server.Configuration
         public int OutsideNetworkBubbleRefreshRateHz { get; set; } = 4;
         public bool EnableServerDetails { get; set; } = true;
         public string ServerDescription { get; set; } = "";
+        public bool UseDiscordWebHook { get; set; } = false;
+        public string DiscordWebHookPictureUrl { get; set; } = "https://i.imgur.com/Sr8cBdY.png";
+        public string DiscordWebHookAuditUrl { get; set; }
+        public string DiscordWebHookChatUrl { get; set; }
         public string OwmApiKey { get; set; } = "";
         public bool EnableLiveWeather { get; set; } = false;
         public bool EnableRealTime { get; set; } = false;

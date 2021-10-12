@@ -556,8 +556,15 @@ namespace AssettoServer.Network.Tcp
 
                 await Task.WhenAny(Task.Delay(2000), SendLoopTask);
                 OutgoingPacketChannel.Writer.TryComplete();
-                DisconnectTokenSource.Cancel();
-                DisconnectTokenSource.Dispose();
+                try
+                {
+                    DisconnectTokenSource.Cancel();
+                    DisconnectTokenSource.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    
+                }
 
                 if (IsConnected)
                     await Server.DisconnectClientAsync(this);

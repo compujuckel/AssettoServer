@@ -674,9 +674,11 @@ namespace AssettoServer.Server
                                 ACTcpClient toClient = toCar.Client;
                                 if (toCar != fromCar && toClient != null && toClient.HasSentFirstUpdate)
                                 {
+                                    var targetCarStatus = toCar.TargetCar == null ? toCar.Status : toCar.TargetCar.Status;
+                                    
                                     var fromStates = fromCar.GetAiStatesCopy()
                                         .Where(state => state.Initialized)
-                                        .Select(ai => (ai, Vector3.DistanceSquared(ai.Status.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position)))
+                                        .Select(ai => (ai, Vector3.DistanceSquared(ai.Status.Position, targetCarStatus.Position)))
                                         .OrderBy(ai => ai.Item2)
                                         .ToList();
 
@@ -685,7 +687,7 @@ namespace AssettoServer.Server
                                     // Tie breaker when multiple states are close to the player. Filter for cars driving in the same direction
                                     if (fromStates.Count(ai => ai.Item2 < Configuration.Extra.AiParams.StateTieBreakerDistanceSquared) > 1)
                                     {
-                                        var sameDirection = fromStates.Where(ai => Vector3.Dot(toCar.Status.Velocity, ai.Item1.Status.Velocity) > 0).ToList();
+                                        var sameDirection = fromStates.Where(ai => Vector3.Dot(targetCarStatus.Velocity, ai.Item1.Status.Velocity) > 0).ToList();
 
                                         if (sameDirection.Count > 0)
                                         {

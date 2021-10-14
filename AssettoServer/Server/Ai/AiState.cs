@@ -265,7 +265,7 @@ namespace AssettoServer.Server.Ai
                 _ignoreObstaclesUntil = Environment.TickCount64 + 10_000;
                 Log.Verbose("AI {0} ignoring obstacles until {1}", EntryCar.SessionId, _ignoreObstaclesUntil);
             }
-            
+
             SetTargetSpeed(targetSpeed);
         }
 

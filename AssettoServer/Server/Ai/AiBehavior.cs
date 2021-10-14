@@ -98,11 +98,12 @@ namespace AssettoServer.Server.Ai
 
         public void ObstacleDetection()
         {
-            var aiStates = _server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.GetAiStatesCopy());
-
-            foreach (var aiState in aiStates)
+            foreach (var entryCar in _server.EntryCars)
             {
-                aiState.DetectObstacles();
+                if (entryCar.AiControlled)
+                {
+                    entryCar.AiObstacleDetection();
+                }
             }
         }
 

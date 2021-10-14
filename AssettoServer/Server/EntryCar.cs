@@ -58,7 +58,7 @@ namespace AssettoServer.Server
 
         public byte[] AiPakSequenceIds { get; init; }
         private readonly List<AiState> _aiStates = new List<AiState>();
-        private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim();
+        private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         public int TargetAiStateCount { get; private set; } = 1;
 
         public List<AiState> GetAiStatesCopy()
@@ -67,6 +67,38 @@ namespace AssettoServer.Server
             try
             {
                 return new List<AiState>(_aiStates);
+            }
+            finally
+            {
+                _aiStatesLock.ExitReadLock();
+            }
+        }
+
+        public void AiUpdate()
+        {
+            _aiStatesLock.EnterReadLock();
+            try
+            {
+                foreach (var aiState in _aiStates)
+                {
+                    aiState.Update();
+                }
+            }
+            finally
+            {
+                _aiStatesLock.ExitReadLock();
+            }
+        }
+
+        public void AiObstacleDetection()
+        {
+            _aiStatesLock.EnterReadLock();
+            try
+            {
+                foreach (var aiState in _aiStates)
+                {
+                    aiState.DetectObstacles();
+                }
             }
             finally
             {

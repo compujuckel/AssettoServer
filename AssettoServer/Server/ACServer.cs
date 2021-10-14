@@ -580,10 +580,7 @@ namespace AssettoServer.Server
                         {
                             if (entryCar.AiControlled)
                             {
-                                foreach (var aiState in entryCar.GetAiStatesCopy())
-                                {
-                                    aiState.Update();
-                                }
+                                entryCar.AiUpdate();
                             }
                         }
                     }

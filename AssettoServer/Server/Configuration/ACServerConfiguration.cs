@@ -112,11 +112,16 @@ namespace AssettoServer.Server.Configuration
             }
 
             string extraCfgPath = "cfg/extra_cfg.json";
-            ACExtraConfiguration extraCfg = new ACExtraConfiguration();
+            ACExtraConfiguration extraCfg;
             if (File.Exists(extraCfgPath))
+            {
                 extraCfg = JsonConvert.DeserializeObject<ACExtraConfiguration>(File.ReadAllText(extraCfgPath));
-
-            File.WriteAllText(extraCfgPath, JsonConvert.SerializeObject(extraCfg, Formatting.Indented));
+            }
+            else
+            {
+                extraCfg = new ACExtraConfiguration();
+                File.WriteAllText(extraCfgPath, JsonConvert.SerializeObject(extraCfg, Formatting.Indented));
+            }
 
             Extra = extraCfg;
 

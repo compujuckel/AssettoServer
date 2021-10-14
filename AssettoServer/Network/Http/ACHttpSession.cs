@@ -3,11 +3,9 @@ using NetCoreServer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace AssettoServer.Network.Http
 {
@@ -78,13 +76,16 @@ namespace AssettoServer.Network.Http
                 }
                 else if (requestUrl.StartsWith("/JSON", StringComparison.OrdinalIgnoreCase))
                 {
+                    string guid = Uri.UnescapeDataString(requestUrl).Replace("/JSON|", "", StringComparison.InvariantCultureIgnoreCase);
+                    bool isAdmin = !string.IsNullOrEmpty(guid) && ACServer.Admins.ContainsKey(guid);
+
                     EntryListResponse responseObj = new EntryListResponse
                     {
                         Cars = ACServer.EntryCars.Select(ec => new EntryListResponseCar
                         {
                             Model = ec.Model, 
                             Skin = ec.Skin, 
-                            IsEntryList = ec.AiMode != AiMode.Fixed && (ACServer.Configuration.Extra.AiParams.MaxPlayerCount == 0 || ACServer.ConnectedCars.Count < ACServer.Configuration.Extra.AiParams.MaxPlayerCount), 
+                            IsEntryList = ec.AiMode != AiMode.Fixed && (isAdmin || ACServer.Configuration.Extra.AiParams.MaxPlayerCount == 0 || ACServer.ConnectedCars.Count < ACServer.Configuration.Extra.AiParams.MaxPlayerCount), 
                             DriverName = ec?.Client?.Name,
                             DriverTeam = ec?.Client?.Team,
                             IsConnected = ec.Client != null
@@ -96,6 +97,9 @@ namespace AssettoServer.Network.Http
                 }
                 else if (ACServer.Configuration.Extra.EnableServerDetails && requestUrl.StartsWith("/api/details", StringComparison.OrdinalIgnoreCase))
                 {
+                    string guid = requestUrl.Replace("/api/details?guid=", "", StringComparison.InvariantCultureIgnoreCase);
+                    bool isAdmin = !string.IsNullOrEmpty(guid) && ACServer.Admins.ContainsKey(guid);
+
                     DetailResponse responseObj = new DetailResponse()
                     {
                         Cars = ACServer.Configuration.EntryCars.Select(c => c.Model).Distinct(),
@@ -125,7 +129,7 @@ namespace AssettoServer.Network.Http
                             Cars = ACServer.EntryCars.Select(ec => new DetailResponseCar {
                                 Model = ec.Model,
                                 Skin = ec.Skin,
-                                IsEntryList = ec.AiMode != AiMode.Fixed && (ACServer.Configuration.Extra.AiParams.MaxPlayerCount == 0 || ACServer.ConnectedCars.Count < ACServer.Configuration.Extra.AiParams.MaxPlayerCount),
+                                IsEntryList = ec.AiMode != AiMode.Fixed && (isAdmin || ACServer.Configuration.Extra.AiParams.MaxPlayerCount == 0 || ACServer.ConnectedCars.Count < ACServer.Configuration.Extra.AiParams.MaxPlayerCount),
                                 DriverName = ec?.Client?.Name,
                                 DriverTeam = ec?.Client?.Team,
                                 DriverNation = ec?.Client?.NationCode,

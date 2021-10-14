@@ -350,8 +350,11 @@ namespace AssettoServer.Server
                     EntryCar entryCar = EntryCars[i];
                     if (entryCar.Client != null && entryCar.Client.Guid == client.Guid)
                         return false;
+
+                    var isAdmin = !string.IsNullOrEmpty(handshakeRequest.Guid) && Admins.ContainsKey(handshakeRequest.Guid);
+                    
                     if (entryCar.AiMode != AiMode.Fixed 
-                        && (Configuration.Extra.AiParams.MaxPlayerCount == 0 || ConnectedCars.Count < Configuration.Extra.AiParams.MaxPlayerCount) 
+                        && (isAdmin || Configuration.Extra.AiParams.MaxPlayerCount == 0 || ConnectedCars.Count < Configuration.Extra.AiParams.MaxPlayerCount) 
                         && entryCar.Client == null && handshakeRequest.RequestedCar == entryCar.Model)
                     {
                         entryCar.Reset();
@@ -359,9 +362,7 @@ namespace AssettoServer.Server
                         client.EntryCar = entryCar;
                         client.SessionId = entryCar.SessionId;
                         client.IsConnected = true;
-
-                        if (!string.IsNullOrEmpty(handshakeRequest.Guid) && Admins.ContainsKey(handshakeRequest.Guid))
-                            client.IsAdministrator = true;
+                        client.IsAdministrator = isAdmin;
 
                         ConnectedCars[client.SessionId] = entryCar;
 
@@ -371,7 +372,6 @@ namespace AssettoServer.Server
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error securing slot for {0}: {1}", client.Name, ex);
                 Log.Error(ex, "Error securing slot for {0}.", client.Name);
             }
             finally
@@ -942,7 +942,6 @@ namespace AssettoServer.Server
                 ["pickup"] = "1"
             };
 
-            //Console.WriteLine("Sending lobby update ping.");
             string queryString = string.Join('&', queryParamsDict.Select(p => $"{p.Key}={p.Value}"));
             HttpResponseMessage response = await HttpClient.GetAsync($"http://93.57.10.21/lobby.ashx/ping?{queryString}");
             if (!response.IsSuccessStatusCode)

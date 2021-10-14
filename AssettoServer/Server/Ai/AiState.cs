@@ -253,17 +253,17 @@ namespace AssettoServer.Server.Ai
                 _stoppedForObstacleSince = Environment.TickCount64;
                 _obstacleHonkStart = _stoppedForObstacleSince + _random.Next(3000, 7000);
                 _obstacleHonkEnd = _obstacleHonkStart + _random.Next(500, 1500);
-                Log.Debug("AI {0} stopped for obstacle", EntryCar.SessionId);
+                Log.Verbose("AI {0} stopped for obstacle", EntryCar.SessionId);
             }
             else if (CurrentSpeed > 0 && _stoppedForObstacle)
             {
                 _stoppedForObstacle = false;
-                Log.Debug("AI {0} no longer stopped for obstacle", EntryCar.SessionId);
+                Log.Verbose("AI {0} no longer stopped for obstacle", EntryCar.SessionId);
             }
             else if (_stoppedForObstacle && Environment.TickCount64 - _stoppedForObstacleSince > 10_000)
             {
                 _ignoreObstaclesUntil = Environment.TickCount64 + 10_000;
-                Log.Debug("AI {0} ignoring obstacles until {1}", EntryCar.SessionId, _ignoreObstaclesUntil);
+                Log.Verbose("AI {0} ignoring obstacles until {1}", EntryCar.SessionId, _ignoreObstaclesUntil);
             }
             
             SetTargetSpeed(targetSpeed);

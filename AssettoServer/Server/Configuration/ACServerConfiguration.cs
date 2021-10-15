@@ -59,6 +59,7 @@ namespace AssettoServer.Server.Configuration
         public ACExtraConfiguration Extra { get; internal set; }
         public CMContentConfiguration ContentConfiguration { get; internal set; }
         public DynamicTrackConfiguration DynamicTrack { get; internal set; } = new DynamicTrackConfiguration();
+        public string ServerVersion { get; set; }
 
         public ACServerConfiguration FromFiles()
         {

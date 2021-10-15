@@ -69,7 +69,8 @@ namespace AssettoServer.Network.Http
                         TimeOfDay = (int)ACServer.Configuration.SunAngle,
                         Timestamp = ACServer.CurrentTime,
                         TPort = ACServer.Configuration.TcpPort,
-                        Track = ACServer.Configuration.Track + (string.IsNullOrEmpty(ACServer.Configuration.TrackConfig) ? null : "-" + ACServer.Configuration.TrackConfig)
+                        Track = ACServer.Configuration.Track + (string.IsNullOrEmpty(ACServer.Configuration.TrackConfig) ? null : "-" + ACServer.Configuration.TrackConfig),
+                        PoweredBy = "AssettoServer " + ACServer.Configuration.ServerVersion
                     };
 
                     responseString = JsonConvert.SerializeObject(responseObj, Formatting.None, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });

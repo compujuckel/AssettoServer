@@ -1,9 +1,9 @@
 ﻿using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using Steamworks;
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
+using System.Reflection;
 using System.Threading.Tasks;
 using Serilog;
 
@@ -22,8 +22,15 @@ namespace AssettoServer
                 .WriteTo.Console()
                 .WriteTo.File($"logs/{DateTime.Now:MMddyyyy_HHmmss}.txt")
                 .CreateLogger();
+            
+            var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
+            version = version.Substring(version.IndexOf('+') + 1);
+            
+            Log.Information("AssettoServer {0}", version);
 
             var config = new ACServerConfiguration().FromFiles();
+            config.ServerVersion = version;
+            
             ACServer server = new ACServer(config);
 
             await server.StartAsync();

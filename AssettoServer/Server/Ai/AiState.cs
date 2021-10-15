@@ -81,6 +81,8 @@ namespace AssettoServer.Server.Ai
             if (forceUpdate)
             {
                 SetRandomSpeed();
+                _stoppedForCollisionUntil = 0;
+                _ignoreObstaclesUntil = 0;
                 Update();
             }
         }

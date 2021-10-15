@@ -43,6 +43,7 @@ namespace AssettoServer.Network.Tcp
         internal IPEndPoint UdpEndpoint { get; private set; }
         internal bool HasAssociatedUdp { get; private set; }
 
+        private ThreadLocal<byte[]> UdpSendBuffer { get; }
         private Memory<byte> TcpSendBuffer { get; }
         private SemaphoreSlim TcpSendSemaphore { get; }
         private Channel<IOutgoingNetworkPacket> OutgoingPacketChannel { get; }
@@ -54,6 +55,8 @@ namespace AssettoServer.Network.Tcp
         internal ACTcpClient(ACServer server, TcpClient tcpClient)
         {
             Server = server;
+
+            UdpSendBuffer = new ThreadLocal<byte[]>(() => new byte[2048]);
 
             TcpClient = tcpClient;
             tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
@@ -91,7 +94,7 @@ namespace AssettoServer.Network.Tcp
         {
             try
             {
-                byte[] buffer = new byte[2048];
+                byte[] buffer = UdpSendBuffer.Value;
                 PacketWriter writer = new PacketWriter(buffer);
                 int bytesWritten = writer.WritePacket(packet);
 

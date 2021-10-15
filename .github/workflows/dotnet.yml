@@ -16,9 +16,9 @@ jobs:
       with:
         dotnet-version: 5.0.x
     - name: Publish (Linux)
-      run: dotnet publish --output out-linux-x64 --runtime linux-x64 --no-self-contained
+      run: dotnet publish --output out-linux-x64 --runtime linux-x64 --no-self-contained -c Release
     - name: Publish (Windows)
-      run: dotnet publish --output out-win-x64 --runtime win-x64 --no-self-contained
+      run: dotnet publish --output out-win-x64 --runtime win-x64 --no-self-contained -c Release
     - name: Package (Linux)
       run: tar -czf assetto-server-linux-x64.tar.gz out-linux-x64/*
     - name: Package (Windows)

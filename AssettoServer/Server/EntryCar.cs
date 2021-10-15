@@ -127,6 +127,53 @@ namespace AssettoServer.Server
             return false;
         }
 
+        public (AiState aiState, float distanceSquared) GetClosestAiState(Vector3 position)
+        {
+            AiState closestState = null;
+            float minDistanceSquared = float.MaxValue;
+            
+            _aiStatesLock.EnterReadLock();
+            try
+            {
+                foreach (var aiState in _aiStates)
+                {
+                    float distanceSquared = Vector3.DistanceSquared(position, aiState.Status.Position); 
+                    if (distanceSquared < minDistanceSquared)
+                    {
+                        closestState = aiState;
+                        minDistanceSquared = distanceSquared;
+                    }
+                }
+            }
+            finally
+            {
+                _aiStatesLock.ExitReadLock();
+            }
+
+            return (closestState, minDistanceSquared);
+        }
+
+        public bool HasInitializedAiStates()
+        {
+            _aiStatesLock.EnterReadLock();
+            try
+            {
+                foreach (var aiState in _aiStates)
+                {
+                    if (aiState.Initialized)
+                    {
+                        return true;
+                    }
+                }
+            }
+            finally
+            {
+                _aiStatesLock.ExitReadLock();
+            }
+
+            return false;
+        }
+
         public (AiState aiState, float distanceSquared) FindClosestAiObstacle(AiState targetState)
         {
             _aiStatesLock.EnterReadLock();

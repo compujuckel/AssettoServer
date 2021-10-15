@@ -293,8 +293,8 @@ namespace AssettoServer.Network.Tcp
                             if (id == 0x00)
                                 OnSpectateCar(reader);
                         }
-                        //else if (id == 0x82)
-                        //    await OnClientEvent(reader);
+                        else if (id == 0x82)
+                            OnClientEvent(reader);
                     }
                 }
             }
@@ -365,10 +365,18 @@ namespace AssettoServer.Network.Tcp
         private void OnClientEvent(PacketReader reader)
         {
             ClientEvent clientEvent = reader.ReadPacket<ClientEvent>();
-            if (clientEvent.Type == 0xC)
+
+            foreach (var evt in clientEvent.ClientEvents)
             {
-                clientEvent.SessionId = SessionId;
-                Server.BroadcastPacket(clientEvent);
+                if (evt.Type == ClientEvent.ClientEventType.PlayerCollision)
+                {
+                    var targetCar = Server.EntryCars[evt.TargetSessionId];
+
+                    if (targetCar.AiControlled)
+                    {
+                        targetCar.GetClosestAiState(EntryCar.Status.Position).aiState.StopForCollision();
+                    }
+                }
             }
         }
 

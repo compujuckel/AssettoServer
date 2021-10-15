@@ -664,8 +664,10 @@ namespace AssettoServer.Server
                                 }
                             }
                         }
-                        else if (fromCar.AiControlled && fromCar.GetAiStatesCopy().Any(state => state.Initialized))
+                        else if (fromCar.AiControlled && fromCar.HasInitializedAiStates())
                         {
+                            var fromStates = fromCar.GetAiStatesCopy();
+                            
                             foreach (EntryCar toCar in EntryCars)
                             {
                                 ACTcpClient toClient = toCar.Client;
@@ -673,18 +675,19 @@ namespace AssettoServer.Server
                                 {
                                     var targetCarStatus = toCar.TargetCar == null ? toCar.Status : toCar.TargetCar.Status;
                                     
-                                    var fromStates = fromCar.GetAiStatesCopy()
+                                    var fromStatesOrdered = fromStates
                                         .Where(state => state.Initialized)
                                         .Select(ai => (ai, Vector3.DistanceSquared(ai.Status.Position, targetCarStatus.Position)))
                                         .OrderBy(ai => ai.Item2)
                                         .ToList();
 
-                                    CarStatus status = fromStates.First().Item1.Status;
+                                    CarStatus status = fromStatesOrdered.First().Item1.Status;
                                     
                                     // Tie breaker when multiple states are close to the player. Filter for cars driving in the same direction
-                                    if (fromStates.Count(ai => ai.Item2 < Configuration.Extra.AiParams.StateTieBreakerDistanceSquared) > 1)
+                                    if (fromStatesOrdered.Count(ai => ai.Item2 < Configuration.Extra.AiParams.StateTieBreakerDistanceSquared) > 1 
+                                        && targetCarStatus.Velocity.LengthSquared() > 1) // velocity direction fluctuates wildly when car is standing still
                                     {
-                                        var sameDirection = fromStates.Where(ai => Vector3.Dot(targetCarStatus.Velocity, ai.Item1.Status.Velocity) > 0).ToList();
+                                        var sameDirection = fromStatesOrdered.Where(ai => Vector3.Dot(targetCarStatus.Velocity, ai.Item1.Status.Velocity) > 0).ToList();
 
                                         if (sameDirection.Count > 0)
                                         {

@@ -163,7 +163,8 @@ namespace AssettoServer.Network.Http
                         WindSpeed = (int)ACServer.CurrentWeather.WindSpeed,
                         WindDirection = ACServer.CurrentWeather.WindDirection,
                         Description = ACServer.Configuration.Extra.ServerDescription,
-                        Features = ACServer.Features
+                        Features = ACServer.Features,
+                        PoweredBy = "AssettoServer " + ACServer.Configuration.ServerVersion
                     };
 
                     responseString = JsonConvert.SerializeObject(responseObj, Formatting.None, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });

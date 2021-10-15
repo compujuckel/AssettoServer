@@ -32,6 +32,7 @@ namespace AssettoServer.Server.Ai
         private bool _stoppedForObstacle;
         private long _stoppedForObstacleSince;
         private long _ignoreObstaclesUntil;
+        private long _stoppedForCollisionUntil;
         private long _obstacleHonkStart;
         private long _obstacleHonkEnd;
         public TrafficSplinePoint CurrentSplinePoint { get; private set; }
@@ -193,6 +194,12 @@ namespace AssettoServer.Server.Ai
                 return;
             }
 
+            if (Environment.TickCount64 < _stoppedForCollisionUntil)
+            {
+                SetTargetSpeed(0);
+                return;
+            }
+
             float targetSpeed = InitialMaxSpeed;
 
             var aiObstacle = FindClosestAiObstacle();
@@ -256,6 +263,11 @@ namespace AssettoServer.Server.Ai
             }
 
             SetTargetSpeed(targetSpeed);
+        }
+
+        public void StopForCollision()
+        {
+            _stoppedForCollisionUntil = Environment.TickCount64 + 5000;
         }
 
         private float GetAngleToCar(CarStatus car)

@@ -185,17 +185,21 @@ namespace AssettoServer.Server
                 {
                     if (aiState == targetState) continue;
 
-                    var point = targetState.CurrentSplinePoint;
-                    for (int distance = 0; distance < 100 && point != null; distance++)
+                    if (Vector3.DistanceSquared(aiState.Status.Position, targetState.Status.Position) < 200 * 200 
+                        && targetState.GetAngleToCar(aiState.Status) is > 165 and < 195)
                     {
-                        if (point == aiState.CurrentSplinePoint && distance < minDistance)
+                        var point = targetState.CurrentSplinePoint;
+                        for (int distance = 0; distance < 100 && point != null; distance++)
                         {
-                            minDistance = distance;
-                            closestState = aiState;
-                            break;
-                        }
+                            if (point == aiState.CurrentSplinePoint && distance < minDistance)
+                            {
+                                minDistance = distance;
+                                closestState = aiState;
+                                break;
+                            }
 
-                        point = targetState.MapView.Next(point);
+                            point = targetState.MapView.Next(point);
+                        }
                     }
                 }
 

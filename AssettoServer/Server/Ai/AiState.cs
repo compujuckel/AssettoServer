@@ -270,7 +270,7 @@ namespace AssettoServer.Server.Ai
             _stoppedForCollisionUntil = Environment.TickCount64 + 4000;
         }
 
-        private float GetAngleToCar(CarStatus car)
+        public float GetAngleToCar(CarStatus car)
         {
             float challengedAngle = (float) (Math.Atan2(Status.Position.X - car.Position.X, Status.Position.Z - car.Position.Z) * 180 / Math.PI);
             if (challengedAngle < 0)

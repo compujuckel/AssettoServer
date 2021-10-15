@@ -267,7 +267,7 @@ namespace AssettoServer.Server.Ai
 
         public void StopForCollision()
         {
-            _stoppedForCollisionUntil = Environment.TickCount64 + 5000;
+            _stoppedForCollisionUntil = Environment.TickCount64 + 4000;
         }
 
         private float GetAngleToCar(CarStatus car)
@@ -367,7 +367,7 @@ namespace AssettoServer.Server.Ai
                 EngineRpm = (ushort) MathUtils.Lerp(800, 3000, CurrentSpeed / EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs),
                 StatusFlag = CarStatusFlags.LightsOn
                              | CarStatusFlags.HighBeamsOff
-                             | (CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
+                             | (Environment.TickCount64 < _stoppedForCollisionUntil || CurrentSpeed < 30 / 3.6f ? CarStatusFlags.HazardsOn : 0)
                              | (CurrentSpeed == 0 || Acceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
                              | (_stoppedForObstacle && Environment.TickCount64 > _obstacleHonkStart && Environment.TickCount64 < _obstacleHonkEnd ? CarStatusFlags.Horn : 0),
                 Gear = 2

@@ -105,6 +105,66 @@ namespace AssettoServer.Server
                 _aiStatesLock.ExitReadLock();
             }
         }
+
+        public bool HasCloseAiStates(Vector3 position)
+        {
+            _aiStatesLock.EnterReadLock();
+            try
+            {
+                foreach (var aiState in _aiStates)
+                {
+                    if (Vector3.DistanceSquared(aiState.Status.Position, position) < aiState.SafetyDistanceSquared)
+                    {
+                        return true;
+                    }
+                }
+            }
+            finally
+            {
+                _aiStatesLock.ExitReadLock();
+            }
+
+            return false;
+        }
+
+        public (AiState aiState, float distanceSquared) FindClosestAiObstacle(AiState targetState)
+        {
+            _aiStatesLock.EnterReadLock();
+            try
+            {
+                AiState closestState = null;
+                int minDistance = int.MaxValue;
+                foreach (var aiState in _aiStates)
+                {
+                    if (aiState == targetState) continue;
+
+                    var point = targetState.CurrentSplinePoint;
+                    for (int distance = 0; distance < 100 && point != null; distance++)
+                    {
+                        if (point == aiState.CurrentSplinePoint && distance < minDistance)
+                        {
+                            minDistance = distance;
+                            closestState = aiState;
+                            break;
+                        }
+
+                        point = targetState.MapView.Next(point);
+                    }
+                }
+
+                if (closestState != null)
+                {
+                    float distanceSquared = Vector3.DistanceSquared(targetState.Status.Position, closestState.Status.Position);
+                    return (closestState, distanceSquared);
+                }
+            }
+            finally
+            {
+                _aiStatesLock.ExitReadLock();
+            }
+
+            return (null, float.MaxValue);
+        }
         
         public bool CanSpawnAiState(Vector3 spawnPoint, AiState aiState)
         {

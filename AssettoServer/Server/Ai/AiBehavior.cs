@@ -56,19 +56,16 @@ namespace AssettoServer.Server.Ai
         {
             foreach(var entryCar in _server.EntryCars)
             {
-                if (entryCar.AiControlled)
+                if (entryCar.AiControlled && entryCar.HasCloseAiStates(position))
                 {
-                    if (entryCar.GetAiStatesCopy().Any(state => Vector3.DistanceSquared(state.Status.Position, position) < state.SafetyDistanceSquared))
-                    {
-                        return false;
-                    }
+                    return false;
                 }
-                else if(entryCar.Client != null && entryCar.Client.HasSentFirstUpdate)
+                
+                if (entryCar.Client != null 
+                    && entryCar.Client.HasSentFirstUpdate
+                    && Vector3.DistanceSquared(entryCar.Status.Position, position) < _server.Configuration.Extra.AiParams.SpawnSafetyDistanceToPlayerSquared)
                 {
-                    if (Vector3.DistanceSquared(entryCar.Status.Position, position) < _server.Configuration.Extra.AiParams.SpawnSafetyDistanceToPlayerSquared)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
 

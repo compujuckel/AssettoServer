@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 using AssettoServer.Network.Packets.Shared;
@@ -136,37 +135,27 @@ namespace AssettoServer.Server.Ai
 
         private (AiState aiState, float distance) FindClosestAiObstacle()
         {
-            var aiStates = EntryCar.Server.EntryCars
-                .Where(car => car.AiControlled)
-                .SelectMany(car => car.GetAiStatesCopy())
-                .Where(state => Vector3.DistanceSquared(Status.Position, state.Status.Position) < 250 * 250);
-
             AiState closestState = null;
-            int minDistance = int.MaxValue;
-            foreach (var aiState in aiStates)
+            float minDistance = float.MaxValue;
+            foreach (var entryCar in EntryCar.Server.EntryCars)
             {
-                if(aiState == this) continue;
-                
-                var point = CurrentSplinePoint;
-                for (int distance = 0; distance < 100 && point != null; distance++)
+                if (entryCar.AiControlled)
                 {
-                    if (point == aiState.CurrentSplinePoint && distance < minDistance)
-                    {
-                        minDistance = distance;
-                        closestState = aiState;
-                        break;
-                    }
+                    var ret = entryCar.FindClosestAiObstacle(this);
 
-                    point = MapView.Next(point);
+                    if (ret.distanceSquared < minDistance)
+                    {
+                        closestState = ret.aiState;
+                        minDistance = ret.distanceSquared;
+                    }
                 }
             }
 
             if (closestState != null)
             {
-                float distance = Vector3.Distance(Status.Position, closestState.Status.Position);
-                return (closestState, distance);
+                return (closestState, (float)Math.Sqrt(minDistance));
             }
-            
+
             return (null, float.MaxValue);
         }
 

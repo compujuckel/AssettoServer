@@ -49,12 +49,14 @@ namespace AssettoServer.Server.Configuration
         public float SpawnSafetyDistanceToPlayer { get; set; } = 80;
         public int MinSpawnProtectionTime { get; set; } = 4;
         public int MaxSpawnProtectionTime { get; set; } = 8;
+        public int MinCollisionStopTime { get; set; } = 1;
+        public int MaxCollisionStopTime { get; set; } = 3;
         public float AiSplineHeightOffset { get; set; }
         public float MaxSpeed { get; set; } = 80;
+        public float RightLaneOffset { get; set; } = 10;
         public float MaxSpeedVariation { get; set; } = 0.15f;
         public float DefaultDeceleration { get; set; } = -8.5f;
         public float DefaultAcceleration { get; set; } = 2.5f;
-
         public int MaxAiTargetCount { get; set; } = 300;
         public int AiPerPlayerTargetCount { get; set; } = 10;
         public int MaxPlayerCount { get; set; } = 0;
@@ -68,6 +70,9 @@ namespace AssettoServer.Server.Configuration
         [JsonIgnore] public float SpawnSafetyDistanceToPlayerSquared => SpawnSafetyDistanceToPlayer * SpawnSafetyDistanceToPlayer;
         [JsonIgnore] public int MinSpawnProtectionTimeMilliseconds => MinSpawnProtectionTime * 1000;
         [JsonIgnore] public int MaxSpawnProtectionTimeMilliseconds => MaxSpawnProtectionTime * 1000;
+        [JsonIgnore] public int MinCollisionStopTimeMilliseconds => MinCollisionStopTime * 1000;
+        [JsonIgnore] public int MaxCollisionStopTimeMilliseconds => MaxCollisionStopTime * 1000;
         [JsonIgnore] public float MaxSpeedMs => MaxSpeed / 3.6f;
+        [JsonIgnore] public float RightLaneOffsetMs => RightLaneOffset / 3.6f;
     }
 }

@@ -21,7 +21,7 @@ namespace AssettoServer.Server.Ai
         public float InitialMaxSpeed { get; private set; }
         public float MaxSpeed { get; private set; }
 
-        private const float WalkingSpeed = 5 / 3.6f;
+        private const float WalkingSpeed = 7 / 3.6f;
         
         private Vector3 _startTangent;
         private Vector3 _endTangent;
@@ -54,7 +54,7 @@ namespace AssettoServer.Server.Ai
             float fastLaneOffset = 0;
             if (CurrentSplinePoint != null && CurrentSplinePoint.Left != null)
             {
-                fastLaneOffset = 10 / 3.6f;
+                fastLaneOffset = EntryCar.Server.Configuration.Extra.AiParams.RightLaneOffsetMs;
             }
             InitialMaxSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs + fastLaneOffset - (variation / 2) + (float)_random.NextDouble() * variation;
             CurrentSpeed = InitialMaxSpeed;
@@ -173,7 +173,7 @@ namespace AssettoServer.Server.Ai
             {
                 float distance = Vector3.DistanceSquared(playerCar.Status.Position, Status.Position);
 
-                if (distance < minDistance && GetAngleToCar(playerCar.Status) is > 165 and < 195)
+                if (distance < minDistance && GetAngleToCar(playerCar.Status) is > 166 and < 194)
                 {
                     minDistance = distance;
                     closestCar = playerCar;
@@ -207,7 +207,7 @@ namespace AssettoServer.Server.Ai
             var aiObstacle = FindClosestAiObstacle();
             var playerObstacle = FindClosestPlayerObstacle();
 
-            if (playerObstacle.distance < 15 || aiObstacle.distance < 15)
+            if (playerObstacle.distance < 10 || aiObstacle.distance < 10)
             {
                 targetSpeed = 0;
             }
@@ -269,7 +269,7 @@ namespace AssettoServer.Server.Ai
 
         public void StopForCollision()
         {
-            _stoppedForCollisionUntil = Environment.TickCount64 + 4000;
+            _stoppedForCollisionUntil = Environment.TickCount64 + _random.Next(EntryCar.Server.Configuration.Extra.AiParams.MinCollisionStopTimeMilliseconds, EntryCar.Server.Configuration.Extra.AiParams.MaxCollisionStopTimeMilliseconds);
         }
 
         public float GetAngleToCar(CarStatus car)

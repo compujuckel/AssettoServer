@@ -205,10 +205,10 @@ namespace AssettoServer.Commands.Modules
             Context.Client.IsChatLogEnabled = enable;
         }
 
-        [Command("setstatesafetydistance")]
-        public void SetStateSafetyDistance(int distance)
+        [Command("setstatespawndistance")]
+        public void SetStateSpawnDistance(int distance)
         {
-            Context.Server.Configuration.Extra.AiParams.StateSafetyDistance = distance;
+            Context.Server.Configuration.Extra.AiParams.StateSpawnDistance = distance;
             Reply("State safety distance set");
         }
 

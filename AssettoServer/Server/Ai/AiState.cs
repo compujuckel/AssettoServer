@@ -11,7 +11,7 @@ namespace AssettoServer.Server.Ai
     {
         public CarStatus Status = new CarStatus();
         public EntryCar EntryCar { get; internal set; }
-        public bool Initialized { get; private set; }
+        public bool Initialized { get; set; }
 
         public long SpawnProtectionEnds { get; set; }
         public float SafetyDistanceSquared { get; set; } = 20 * 20;

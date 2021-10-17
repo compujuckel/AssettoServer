@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using AssettoServer.Commands;
 using AssettoServer.Network.Udp;
 using AssettoServer.Network.Tcp;
@@ -47,7 +48,7 @@ namespace AssettoServer.Server
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
         internal ConcurrentDictionary<IPEndPoint, EntryCar> EndpointCars { get; }
-        internal IReadOnlyList<EntryCar> EntryCars { get; }
+        internal ImmutableList<EntryCar> EntryCars { get; }
         internal ConcurrentDictionary<string, bool> Blacklist { get; }
         internal ConcurrentDictionary<string, bool> Admins { get; }
         internal IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; }
@@ -85,7 +86,7 @@ namespace AssettoServer.Server
                 .CreateLogger();
 
             Configuration = configuration;
-            EntryCars = Configuration.EntryCars.ToList();
+            EntryCars = Configuration.EntryCars.ToImmutableList();
             Log.Information("Loaded {0} cars.", EntryCars.Count);
             for (int i = 0; i < EntryCars.Count; i++)
             {

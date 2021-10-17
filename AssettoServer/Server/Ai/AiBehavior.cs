@@ -124,6 +124,14 @@ namespace AssettoServer.Server.Ai
         
         public void Update()
         {
+            foreach (var entryCar in _server.EntryCars)
+            {
+                if (entryCar.AiControlled)
+                {
+                    entryCar.RemoveUnsafeStates();
+                }
+            }
+
             var playerCars = _server.EntryCars.Where(car => !car.AiControlled
                                                             && car.Client != null
                                                             && car.Client.HasSentFirstUpdate

@@ -74,6 +74,33 @@ namespace AssettoServer.Server
             }
         }
 
+        public void RemoveUnsafeStates()
+        {
+            _aiStatesLock.EnterReadLock();
+            try
+            {
+                foreach (var aiState in _aiStates)
+                {
+                    if (!aiState.Initialized) continue;
+                    
+                    foreach (var targetAiState in _aiStates)
+                    {
+                        if (aiState != targetAiState
+                            && targetAiState.Initialized
+                            && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < Server.Configuration.Extra.AiParams.MinStateDistanceSquared
+                            && Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0)
+                        {
+                            aiState.Initialized = false;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                _aiStatesLock.ExitReadLock();
+            }
+        }
+
         public void AiUpdate()
         {
             _aiStatesLock.EnterReadLock();
@@ -250,7 +277,7 @@ namespace AssettoServer.Server
                 {
                     if (state == aiState || !state.Initialized) continue;
 
-                    if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < Server.Configuration.Extra.AiParams.StateSafetyDistanceSquared)
+                    if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < Server.Configuration.Extra.AiParams.StateSpawnDistanceSquared)
                     {
                         return false;
                     }

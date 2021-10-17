@@ -113,7 +113,7 @@ namespace AssettoServer.Server
             {
                 foreach (var aiState in _aiStates)
                 {
-                    if (Vector3.DistanceSquared(aiState.Status.Position, position) < aiState.SafetyDistanceSquared)
+                    if (aiState.Initialized && Vector3.DistanceSquared(aiState.Status.Position, position) < aiState.SafetyDistanceSquared)
                     {
                         return true;
                     }

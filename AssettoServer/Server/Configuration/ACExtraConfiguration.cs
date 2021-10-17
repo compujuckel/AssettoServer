@@ -61,6 +61,7 @@ namespace AssettoServer.Server.Configuration
         public int AiPerPlayerTargetCount { get; set; } = 10;
         public int MaxPlayerCount { get; set; } = 0;
 
+        [JsonIgnore] public float PlayerRadiusSquared => PlayerRadius * PlayerRadius;
         [JsonIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeout * 1000;
         [JsonIgnore] public float MaxPlayerDistanceToAiSplineSquared => MaxPlayerDistanceToAiSpline * MaxPlayerDistanceToAiSpline;
         [JsonIgnore] public int MinAiSafetyDistanceSquared => MinAiSafetyDistance * MinAiSafetyDistance;

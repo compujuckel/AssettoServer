@@ -374,7 +374,11 @@ namespace AssettoServer.Network.Tcp
 
                     if (targetCar.AiControlled)
                     {
-                        targetCar.GetClosestAiState(EntryCar.Status.Position).aiState.StopForCollision();
+                        var targetAiState = targetCar.GetClosestAiState(EntryCar.Status.Position);
+                        if (targetAiState.distanceSquared < 25 * 25)
+                        {
+                            targetAiState.aiState.StopForCollision();
+                        }
                     }
                 }
             }

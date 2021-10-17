@@ -2,11 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
-using AssettoServer.Network.Packets.Outgoing;
-using AssettoServer.Network.Packets.Shared;
-using Serilog;
-using SerilogTimings;
 
 namespace AssettoServer.Server.Ai
 {
@@ -24,7 +19,7 @@ namespace AssettoServer.Server.Ai
         {
             public AiState AiCar;
             public EntryCar PlayerCar;
-            public float Distance;
+            public float DistanceSquared;
         }
 
         private static int GetTriangleNumber(int n)
@@ -126,23 +121,6 @@ namespace AssettoServer.Server.Ai
                 aiCar.SetAiOverbooking(count);
             }
         }
-
-        private void InitializeState(AiState state)
-        {
-            int spawnSpline = _random.Next(_server.TrafficMap.Splines.Count);
-            int spawnPos = _random.Next(_server.TrafficMap.Splines[spawnSpline].Points.Length);
-            var spawnPoint = _server.TrafficMap.Splines[spawnSpline].Points[spawnPos];
-            
-            while (spawnPoint != null && (!IsPositionSafe(spawnPoint.Point) || !state.CanSpawn(spawnPoint.Point)))
-            {
-                spawnPoint = spawnPoint.Traverse(5);
-            }
-
-            if (spawnPoint != null)
-            {
-                state.Teleport(spawnPoint, true);
-            }
-        }
         
         public void Update()
         {
@@ -166,31 +144,37 @@ namespace AssettoServer.Server.Ai
                     {
                         AiCar = aiState,
                         PlayerCar = playerCar,
-                        Distance = Vector3.Distance(aiState.Status.Position, offsetPosition)
+                        DistanceSquared = Vector3.DistanceSquared(aiState.Status.Position, offsetPosition)
                     });
                 }
             }
 
-            var uninitializedAiStates = allStates.Where(state => !state.Initialized);
-            foreach (var state in uninitializedAiStates)
-            {
-                InitializeState(state);
-            }
+            var uninitializedAiStates = allStates.Where(state => !state.Initialized).ToList();
 
             // Find all AIs that are at least <PlayerRadius> meters away from all players. Highest distance AI will be teleported
-            var outOfRangeAiStates = (from distance in distances
+            var outOfRangeAiStates = uninitializedAiStates.Concat(from distance in distances
                 group distance by distance.AiCar
                 into aiGroup
-                where Environment.TickCount64 > aiGroup.Key.SpawnProtectionEnds && aiGroup.Min(d => d.Distance) > _server.Configuration.Extra.AiParams.PlayerRadius
-                orderby aiGroup.Min(d => d.Distance) descending 
+                where Environment.TickCount64 > aiGroup.Key.SpawnProtectionEnds && aiGroup.Min(d => d.DistanceSquared) > _server.Configuration.Extra.AiParams.PlayerRadiusSquared
+                orderby aiGroup.Min(d => d.DistanceSquared) descending 
                 select aiGroup.Key).ToList();
-
+            
+            List<EntryCar> playerCarsOrdered;
+            
+            // Special case after server startup when no AI cars are spawned yet
+            if (distances.Count == 0)
+            {
+                playerCarsOrdered = playerCars;
+            }
             // Order player cars by their minimum distance to an AI. Higher distance -> higher probability for the next AI to spawn next to them
-            var playerCarsOrdered = (from distance in distances
-                group distance by distance.PlayerCar
-                into playerGroup
-                orderby playerGroup.Min(d => d.Distance) descending
-                select playerGroup.Key).ToList();
+            else
+            {
+                playerCarsOrdered = (from distance in distances
+                    group distance by distance.PlayerCar
+                    into playerGroup
+                    orderby playerGroup.Min(d => d.DistanceSquared) descending
+                    select playerGroup.Key).ToList();
+            }
 
             while (playerCarsOrdered.Count > 0 && outOfRangeAiStates.Count > 0)
             {

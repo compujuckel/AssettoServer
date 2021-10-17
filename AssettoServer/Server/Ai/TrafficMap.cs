@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Supercluster.KDTree;
 
 namespace AssettoServer.Server.Ai
 {
@@ -10,6 +11,8 @@ namespace AssettoServer.Server.Ai
         public List<TrafficSpline> Splines { get; }
         
         public Dictionary<int, TrafficSplinePoint> PointsById { get; }
+        
+        public KDTree<float, TrafficSplinePoint> KdTree { get; }
 
         public TrafficMap(string sourcePath, List<TrafficSpline> splines)
         {
@@ -22,6 +25,20 @@ namespace AssettoServer.Server.Ai
                 PointsById.Add(point.Id, point);
             }
             
+            var treeData = CreateTreeData();
+            var treeNodes = PointsById.Values.ToArray();
+
+            KdTree = new KDTree<float, TrafficSplinePoint>(3, treeData, treeNodes, (x, y) =>
+            {
+                double dist = 0;
+                for (int i = 0; i < x.Length; i++)
+                {
+                    dist += (x[i] - y[i]) * (x[i] - y[i]);
+                }
+
+                return dist;
+            });
+            
             AdjacentLaneDetector.GetAdjacentLanesForMap(this, SourcePath + ".lanes");
             JunctionParser.Parse(this, SourcePath + ".junctions.csv");
         }
@@ -31,24 +48,29 @@ namespace AssettoServer.Server.Ai
             return new TrafficMapView(this);
         }
 
-        public (TrafficSplinePoint point, float distanceSquared) WorldToSpline(Vector3 position)
+        private float[][] CreateTreeData()
         {
-            TrafficSplinePoint minPoint = null;
-            float minDistance = float.MaxValue;
-            foreach (var spline in Splines)
+            var data = new List<float[]>();
+            foreach (var point in PointsById)
             {
-                foreach (var point in spline.Points)
-                {
-                    float dist = Vector3.DistanceSquared(position, point.Point);
-                    if (dist < minDistance)
-                    {
-                        minPoint = point;
-                        minDistance = dist;
-                    }
-                }
+                var pointArray = new float[3];
+                point.Value.Point.CopyTo(pointArray);
+                
+                data.Add(pointArray);
             }
 
-            return (point: minPoint, distanceSquared: minDistance);
+            return data.ToArray();
+        }
+
+        public (TrafficSplinePoint point, float distanceSquared) WorldToSpline(Vector3 position)
+        {
+            var pointArray = new float[3];
+            position.CopyTo(pointArray);
+
+            var nearest = KdTree.NearestNeighbors(pointArray, 1)[0].Item2;
+            float dist = Vector3.DistanceSquared(position, nearest.Point);
+
+            return (nearest, dist);
         }
     }
 }

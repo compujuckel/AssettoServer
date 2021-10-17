@@ -91,6 +91,7 @@ namespace AssettoServer.Server
                             && Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0)
                         {
                             aiState.Initialized = false;
+                            Log.Debug("Removed close state from AI {0}", SessionId);
                         }
                     }
                 }

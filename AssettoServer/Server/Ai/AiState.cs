@@ -83,6 +83,7 @@ namespace AssettoServer.Server.Ai
                 SetRandomSpeed();
                 _stoppedForCollisionUntil = 0;
                 _ignoreObstaclesUntil = 0;
+                _lastTick = Environment.TickCount64;
                 Update();
             }
         }

@@ -441,7 +441,7 @@ namespace AssettoServer.Network.Tcp
             ChatMessage chatMessage = reader.ReadPacket<ChatMessage>();
             chatMessage.SessionId = SessionId;
 
-            Log.Information("{0} ({1}): {2}", Name, SessionId, chatMessage.Message);
+            Log.Information("CHAT: {0} ({1}): {2}", Name, SessionId, chatMessage.Message);
 
             if (!CommandUtilities.HasPrefix(chatMessage.Message, '/', out string commandStr))
             {

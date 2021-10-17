@@ -132,8 +132,53 @@ namespace AssettoServer.Server
                 _aiStatesLock.ExitReadLock();
             }
         }
+        
+        public CarStatus GetBestStateForPlayer(CarStatus playerStatus)
+        {
+            _aiStatesLock.EnterReadLock();
+            try
+            {
+                AiState bestState = null;
+                float minDistance = float.MaxValue;
 
-        public bool HasCloseAiStates(Vector3 position)
+                foreach (var aiState in _aiStates)
+                {
+                    if(!aiState.Initialized) continue;
+
+                    var distance = Vector3.DistanceSquared(aiState.Status.Position, playerStatus.Position);
+
+                    // Tie breaker: Multiple close states, so take the one with min distance and same direction
+                    if (minDistance < Server.Configuration.Extra.AiParams.StateTieBreakerDistanceSquared
+                        && distance < Server.Configuration.Extra.AiParams.StateTieBreakerDistanceSquared
+                        && playerStatus.Velocity.LengthSquared() > 1)
+                    {
+                        bool bestSameDirection = Vector3.Dot(bestState.Status.Velocity, playerStatus.Velocity) > 0;
+                        bool newSameDirection = Vector3.Dot(aiState.Status.Velocity, playerStatus.Velocity) > 0;
+
+                        if ((newSameDirection && !bestSameDirection)
+                            || (newSameDirection && distance < minDistance))
+                        {
+                            bestState = aiState;
+                            minDistance = distance;
+                        }
+                    }
+                    else if (distance < minDistance)
+                    {
+                        bestState = aiState;
+                        minDistance = distance;
+                    }
+                }
+
+                return bestState.Status;
+            }
+            finally
+            {
+                _aiStatesLock.ExitReadLock();
+            }
+        }
+
+
+        public bool IsPositionSafe(Vector3 position)
         {
             _aiStatesLock.EnterReadLock();
             try
@@ -142,7 +187,7 @@ namespace AssettoServer.Server
                 {
                     if (aiState.Initialized && Vector3.DistanceSquared(aiState.Status.Position, position) < aiState.SafetyDistanceSquared)
                     {
-                        return true;
+                        return false;
                     }
                 }
             }
@@ -151,7 +196,7 @@ namespace AssettoServer.Server
                 _aiStatesLock.ExitReadLock();
             }
 
-            return false;
+            return true;
         }
 
         public (AiState aiState, float distanceSquared) GetClosestAiState(Vector3 position)

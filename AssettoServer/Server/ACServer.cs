@@ -667,34 +667,14 @@ namespace AssettoServer.Server
                         }
                         else if (fromCar.AiControlled && fromCar.HasInitializedAiStates())
                         {
-                            var fromStates = fromCar.GetAiStatesCopy();
-                            
                             foreach (EntryCar toCar in EntryCars)
                             {
                                 ACTcpClient toClient = toCar.Client;
                                 if (toCar != fromCar && toClient != null && toClient.HasSentFirstUpdate)
                                 {
                                     var targetCarStatus = toCar.TargetCar == null ? toCar.Status : toCar.TargetCar.Status;
-                                    
-                                    var fromStatesOrdered = fromStates
-                                        .Where(state => state.Initialized)
-                                        .Select(ai => (ai, Vector3.DistanceSquared(ai.Status.Position, targetCarStatus.Position)))
-                                        .OrderBy(ai => ai.Item2)
-                                        .ToList();
 
-                                    CarStatus status = fromStatesOrdered.First().Item1.Status;
-                                    
-                                    // Tie breaker when multiple states are close to the player. Filter for cars driving in the same direction
-                                    if (fromStatesOrdered.Count(ai => ai.Item2 < Configuration.Extra.AiParams.StateTieBreakerDistanceSquared) > 1 
-                                        && targetCarStatus.Velocity.LengthSquared() > 1) // velocity direction fluctuates wildly when car is standing still
-                                    {
-                                        var sameDirection = fromStatesOrdered.Where(ai => Vector3.Dot(targetCarStatus.Velocity, ai.Item1.Status.Velocity) > 0).ToList();
-
-                                        if (sameDirection.Count > 0)
-                                        {
-                                            status = sameDirection.First().Item1.Status;
-                                        }
-                                    }
+                                    CarStatus status = fromCar.GetBestStateForPlayer(targetCarStatus);
 
                                     toClient.SendPacketUdp(new PositionUpdate
                                     {

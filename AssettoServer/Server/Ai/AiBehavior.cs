@@ -51,7 +51,7 @@ namespace AssettoServer.Server.Ai
         {
             foreach(var entryCar in _server.EntryCars)
             {
-                if (entryCar.AiControlled && entryCar.HasCloseAiStates(position))
+                if (entryCar.AiControlled && !entryCar.IsPositionSafe(position))
                 {
                     return false;
                 }

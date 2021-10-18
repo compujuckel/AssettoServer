@@ -46,7 +46,7 @@ namespace AssettoServer.Server.Configuration
         public int MaxAiSafetyDistance { get; set; } = 70;
         public float StateSpawnDistance { get; set; } = 1000;
         public float MinStateDistance { get; set; } = 200;
-        public float StateTieBreakerDistance { get; set; } = 200;
+        public float StateTieBreakerDistance { get; set; } = 250;
         public float SpawnSafetyDistanceToPlayer { get; set; } = 100;
         public int MinSpawnProtectionTime { get; set; } = 4;
         public int MaxSpawnProtectionTime { get; set; } = 8;

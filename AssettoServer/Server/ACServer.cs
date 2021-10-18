@@ -665,7 +665,7 @@ namespace AssettoServer.Server
                                 }
                             }
                         }
-                        else if (fromCar.AiControlled && fromCar.HasInitializedAiStates())
+                        else if (fromCar.AiControlled)
                         {
                             foreach (EntryCar toCar in EntryCars)
                             {
@@ -675,6 +675,8 @@ namespace AssettoServer.Server
                                     var targetCarStatus = toCar.TargetCar == null ? toCar.Status : toCar.TargetCar.Status;
 
                                     CarStatus status = fromCar.GetBestStateForPlayer(targetCarStatus);
+
+                                    if (status == null) continue;
 
                                     toClient.SendPacketUdp(new PositionUpdate
                                     {

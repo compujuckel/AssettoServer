@@ -13,9 +13,9 @@ namespace AssettoServer.Server
         public string CurrentTyreCompound { get; internal set; }
 
         public byte PakSequenceId { get; internal set; }
-        public Vector3 Position { get; internal set; }
+        public Vector3 Position { get; set; }
         public Vector3 Rotation { get; internal set; }
-        public Vector3 Velocity { get; internal set; }
+        public Vector3 Velocity { get; set; }
         public long Timestamp { get; internal set; }
         public byte[] TyreAngularSpeed { get; } = new byte[4];
         public byte SteerAngle { get; internal set; }

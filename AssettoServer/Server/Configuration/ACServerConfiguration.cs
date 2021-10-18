@@ -4,8 +4,8 @@ using IniParser.Model;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
-using AssettoServer.Server.Ai;
 using AssettoServer.Server.Weather;
+using YamlDotNet.Serialization;
 
 namespace AssettoServer.Server.Configuration
 {
@@ -112,16 +112,20 @@ namespace AssettoServer.Server.Configuration
                 DynamicTrack.TotalLapCount = float.Parse(dynTrack["LAP_GAIN"]);
             }
 
-            string extraCfgPath = "cfg/extra_cfg.json";
+            string extraCfgPath = "cfg/extra_cfg.yml";
             ACExtraConfiguration extraCfg;
             if (File.Exists(extraCfgPath))
             {
-                extraCfg = JsonConvert.DeserializeObject<ACExtraConfiguration>(File.ReadAllText(extraCfgPath));
+                using var stream = File.OpenText(extraCfgPath);
+                var deserializer = new DeserializerBuilder().Build();
+                extraCfg = deserializer.Deserialize<ACExtraConfiguration>(stream);
             }
             else
             {
+                using var stream = File.CreateText(extraCfgPath);
+                var serializer = new SerializerBuilder().Build();
                 extraCfg = new ACExtraConfiguration();
-                File.WriteAllText(extraCfgPath, JsonConvert.SerializeObject(extraCfg, Formatting.Indented));
+                serializer.Serialize(stream, extraCfg);
             }
 
             Extra = extraCfg;

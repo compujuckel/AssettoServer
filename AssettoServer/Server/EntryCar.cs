@@ -151,17 +151,12 @@ namespace AssettoServer.Server
                     // Tie breaker: Multiple close states, so take the one with min distance and same direction
                     if (minDistance < Server.Configuration.Extra.AiParams.StateTieBreakerDistanceSquared
                         && distance < Server.Configuration.Extra.AiParams.StateTieBreakerDistanceSquared
-                        && playerStatus.Velocity.LengthSquared() > 1)
+                        && playerStatus.Velocity.LengthSquared() > 1
+                        && Vector3.Dot(aiState.Status.Velocity, playerStatus.Velocity) > 0
+                        && (Vector3.Dot(bestState.Status.Velocity, playerStatus.Velocity) < 0 || distance < minDistance))
                     {
-                        bool bestSameDirection = Vector3.Dot(bestState.Status.Velocity, playerStatus.Velocity) > 0;
-                        bool newSameDirection = Vector3.Dot(aiState.Status.Velocity, playerStatus.Velocity) > 0;
-
-                        if ((newSameDirection && !bestSameDirection)
-                            || (newSameDirection && distance < minDistance))
-                        {
-                            bestState = aiState;
-                            minDistance = distance;
-                        }
+                        bestState = aiState;
+                        minDistance = distance;
                     }
                     else if (distance < minDistance)
                     {

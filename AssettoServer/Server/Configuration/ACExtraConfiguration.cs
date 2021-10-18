@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using YamlDotNet.Serialization;
 
 namespace AssettoServer.Server.Configuration
 {
@@ -30,7 +30,7 @@ namespace AssettoServer.Server.Configuration
 
         public List<string> NameFilters { get; set; } = new();
 
-        [JsonIgnore]
+        [YamlIgnore]
         public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60000;
     }
 
@@ -62,20 +62,20 @@ namespace AssettoServer.Server.Configuration
         public int AiPerPlayerTargetCount { get; set; } = 10;
         public int MaxPlayerCount { get; set; } = 0;
 
-        [JsonIgnore] public float PlayerRadiusSquared => PlayerRadius * PlayerRadius;
-        [JsonIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeout * 1000;
-        [JsonIgnore] public float MaxPlayerDistanceToAiSplineSquared => MaxPlayerDistanceToAiSpline * MaxPlayerDistanceToAiSpline;
-        [JsonIgnore] public int MinAiSafetyDistanceSquared => MinAiSafetyDistance * MinAiSafetyDistance;
-        [JsonIgnore] public int MaxAiSafetyDistanceSquared => MaxAiSafetyDistance * MaxAiSafetyDistance;
-        [JsonIgnore] public float StateSpawnDistanceSquared => StateSpawnDistance * StateSpawnDistance;
-        [JsonIgnore] public float MinStateDistanceSquared => MinStateDistance * MinStateDistance;
-        [JsonIgnore] public float StateTieBreakerDistanceSquared => StateTieBreakerDistance * StateTieBreakerDistance;
-        [JsonIgnore] public float SpawnSafetyDistanceToPlayerSquared => SpawnSafetyDistanceToPlayer * SpawnSafetyDistanceToPlayer;
-        [JsonIgnore] public int MinSpawnProtectionTimeMilliseconds => MinSpawnProtectionTime * 1000;
-        [JsonIgnore] public int MaxSpawnProtectionTimeMilliseconds => MaxSpawnProtectionTime * 1000;
-        [JsonIgnore] public int MinCollisionStopTimeMilliseconds => MinCollisionStopTime * 1000;
-        [JsonIgnore] public int MaxCollisionStopTimeMilliseconds => MaxCollisionStopTime * 1000;
-        [JsonIgnore] public float MaxSpeedMs => MaxSpeed / 3.6f;
-        [JsonIgnore] public float RightLaneOffsetMs => RightLaneOffset / 3.6f;
+        [YamlIgnore] public float PlayerRadiusSquared => PlayerRadius * PlayerRadius;
+        [YamlIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeout * 1000;
+        [YamlIgnore] public float MaxPlayerDistanceToAiSplineSquared => MaxPlayerDistanceToAiSpline * MaxPlayerDistanceToAiSpline;
+        [YamlIgnore] public int MinAiSafetyDistanceSquared => MinAiSafetyDistance * MinAiSafetyDistance;
+        [YamlIgnore] public int MaxAiSafetyDistanceSquared => MaxAiSafetyDistance * MaxAiSafetyDistance;
+        [YamlIgnore] public float StateSpawnDistanceSquared => StateSpawnDistance * StateSpawnDistance;
+        [YamlIgnore] public float MinStateDistanceSquared => MinStateDistance * MinStateDistance;
+        [YamlIgnore] public float StateTieBreakerDistanceSquared => StateTieBreakerDistance * StateTieBreakerDistance;
+        [YamlIgnore] public float SpawnSafetyDistanceToPlayerSquared => SpawnSafetyDistanceToPlayer * SpawnSafetyDistanceToPlayer;
+        [YamlIgnore] public int MinSpawnProtectionTimeMilliseconds => MinSpawnProtectionTime * 1000;
+        [YamlIgnore] public int MaxSpawnProtectionTimeMilliseconds => MaxSpawnProtectionTime * 1000;
+        [YamlIgnore] public int MinCollisionStopTimeMilliseconds => MinCollisionStopTime * 1000;
+        [YamlIgnore] public int MaxCollisionStopTimeMilliseconds => MaxCollisionStopTime * 1000;
+        [YamlIgnore] public float MaxSpeedMs => MaxSpeed / 3.6f;
+        [YamlIgnore] public float RightLaneOffsetMs => RightLaneOffset / 3.6f;
     }
 }

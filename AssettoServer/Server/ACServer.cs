@@ -656,7 +656,7 @@ namespace AssettoServer.Server
                                 PacketWriter writer = new PacketWriter(buffer);
                                 int bytesWritten = writer.WritePacket(new PingUpdate { CurrentPing = fromCar.Ping, Time = CurrentTime });
 
-                                UdpServer.SendAsync(fromClient.UdpEndpoint, buffer, 0, bytesWritten);
+                                UdpServer.Send(fromClient.UdpEndpoint, buffer, 0, bytesWritten);
 
                                 if (CurrentTime - fromCar.LastPongTime > 15000)
                                 {

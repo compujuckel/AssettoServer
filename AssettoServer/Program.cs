@@ -3,6 +3,7 @@ using AssettoServer.Server.Configuration;
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using CommandLine;
@@ -14,8 +15,8 @@ namespace AssettoServer
     {
         public class Options
         {
-            [Option('p', "preset", Required = false, HelpText = "Configuration preset directory")]
-            public string PresetFolder { get; set; } = "cfg";
+            [Option('p', "preset", Required = false, HelpText = "Configuration preset")]
+            public string Preset { get; set; } = "";
         }
         
         static async Task Main(string[] args)
@@ -24,22 +25,26 @@ namespace AssettoServer
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             
+            var options = Parser.Default.ParseArguments<Options>(args).Value;
+            if (options == null) return;
+
+            string logPrefix = string.IsNullOrEmpty(options.Preset) ? "" : $"{options.Preset}-";
+
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.Console()
-                .WriteTo.File($"logs/{DateTime.Now:MMddyyyy_HHmmss}.txt")
+                .WriteTo.File($"logs/{logPrefix}{DateTime.Now:MMddyyyy_HHmmss}.txt")
                 .CreateLogger();
-
-            var options = Parser.Default.ParseArguments<Options>(args).Value;
-            if (options == null) return;
 
             var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
             version = version.Substring(version.IndexOf('+') + 1);
             
             Log.Information("AssettoServer {0}", version);
-            Log.Information("Using preset {0}", options.PresetFolder);
+            Log.Information("Using preset {0}", options.Preset);
 
-            var config = new ACServerConfiguration().FromFiles(options.PresetFolder);
+            string configDir = string.IsNullOrEmpty(options.Preset) ? "cfg" : Path.Join("presets", options.Preset);
+
+            var config = new ACServerConfiguration().FromFiles(configDir);
             config.ServerVersion = version;
             
             ACServer server = new ACServer(config);

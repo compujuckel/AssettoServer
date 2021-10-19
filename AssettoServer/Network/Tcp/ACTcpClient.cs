@@ -169,9 +169,16 @@ namespace AssettoServer.Network.Tcp
                         Name = handshakeRequest.Name?.Trim();
 
                         Log.Information("{0} ({1}) is attempting to connect ({2}).", handshakeRequest.Name, handshakeRequest.Guid, handshakeRequest.RequestedCar);
+                        
+                        List<string> cspFeatures;
                         if(!string.IsNullOrEmpty(handshakeRequest.Features))
                         {
                             Log.Debug("{0} supports extra CSP features: {1}", handshakeRequest.Name, handshakeRequest.Features);
+                            cspFeatures = handshakeRequest.Features.Split(',').ToList();
+                        }
+                        else
+                        {
+                            cspFeatures = new List<string>();
                         }
 
                         if (id != 0x3D || handshakeRequest.ClientVersion != 202)
@@ -184,6 +191,9 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new SessionClosedResponse());
                         //else if (handshakeRequest.Password.Length > 0 && handshakeRequest.Password != Server.Configuration.AdminPassword)
                         //    await SendPacketAsync(new AuthFailedResponse("Incorrect admin password."));
+                        else if ((Server.Configuration.Extra.EnableWeatherFx && !cspFeatures.Contains("WEATHERFX_V1"))
+                                 || (Server.Configuration.Extra.UseSteamAuth && !cspFeatures.Contains("STEAM_TICKET")))
+                            SendPacket(new AuthFailedResponse("Content Manager version not supported. Please update Content Manager to v0.8.2329.38887 or above."));
                         else if (Server.Configuration.Extra.UseSteamAuth && !await ValidateSessionTicketAsync(handshakeRequest.SessionTicket, handshakeRequest.Guid))
                             SendPacket(new AuthFailedResponse("Steam authentication failed."));
                         else if (string.IsNullOrEmpty(handshakeRequest.Guid) || !(handshakeRequest.Guid?.Length >= 6))

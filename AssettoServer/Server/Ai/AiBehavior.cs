@@ -202,10 +202,8 @@ namespace AssettoServer.Server.Ai
                 {
                     if (!targetAiState.CanSpawn(spawnPoint.Point))
                         continue;
-
-                    targetAiState.SpawnProtectionEnds = Environment.TickCount64 + _random.Next(_server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, _server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
-                    targetAiState.SafetyDistanceSquared = _random.Next(_server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, _server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
-                    targetAiState.Teleport(spawnPoint, true);
+                    
+                    targetAiState.Teleport(spawnPoint);
 
                     outOfRangeAiStates.Remove(targetAiState);
                     break;

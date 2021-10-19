@@ -44,7 +44,6 @@ namespace AssettoServer.Server.Ai
         {
             EntryCar = entryCar;
             MapView = EntryCar.Server.TrafficMap.NewView();
-            SetRandomSpeed();
         }
 
         public void SetRandomSpeed()
@@ -62,7 +61,7 @@ namespace AssettoServer.Server.Ai
             MaxSpeed = InitialMaxSpeed;
         }
 
-        public void Teleport(TrafficSplinePoint point, bool forceUpdate = false)
+        public void Teleport(TrafficSplinePoint point)
         {
             if (point == null || point.Next == null)
             {
@@ -75,17 +74,18 @@ namespace AssettoServer.Server.Ai
             _currentVecProgress = 0;
             
             CalculateTangents();
-
-            Initialized = true;
             
-            if (forceUpdate)
-            {
-                SetRandomSpeed();
-                _stoppedForCollisionUntil = 0;
-                _ignoreObstaclesUntil = 0;
-                _lastTick = Environment.TickCount64;
-                Update();
-            }
+            SetRandomSpeed();
+            
+            SpawnProtectionEnds = Environment.TickCount64 + _random.Next(EntryCar.Server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, EntryCar.Server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
+            SafetyDistanceSquared = _random.Next(EntryCar.Server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, EntryCar.Server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
+            _stoppedForCollisionUntil = 0;
+            _ignoreObstaclesUntil = 0;
+            _obstacleHonkEnd = 0;
+            _obstacleHonkStart = 0;
+            _lastTick = Environment.TickCount64;
+            Initialized = true;
+            Update();
         }
 
         private void CalculateTangents()
@@ -335,8 +335,9 @@ namespace AssettoServer.Server.Ai
             float moveMeters = (dt / 1000.0f) * CurrentSpeed;
             if (!Move(_currentVecProgress + moveMeters))
             {
-                Log.Debug("Car {0} reached spline end, respawning", EntryCar.SessionId);
-                Teleport(EntryCar.Server.TrafficMap.Splines[0].Points[0]);
+                Log.Debug("Car {0} reached spline end, despawning", EntryCar.SessionId);
+                Initialized = false;
+                return;
             }
 
             CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(CurrentSplinePoint.Point, 

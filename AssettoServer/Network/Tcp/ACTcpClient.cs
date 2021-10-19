@@ -529,7 +529,7 @@ namespace AssettoServer.Network.Tcp
             ACServerConfiguration cfg = Server.Configuration;
             List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
-            if (cfg.WelcomeMessage.Length > 0)
+            if (!string.IsNullOrEmpty(cfg.WelcomeMessage))
                 SendPacket(new WelcomeMessage { Message = cfg.WelcomeMessage });
 
             SendPacket(new DriverInfoUpdate { ConnectedCars = connectedCars });

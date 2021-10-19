@@ -61,10 +61,10 @@ namespace AssettoServer.Server.Configuration
         public DynamicTrackConfiguration DynamicTrack { get; internal set; } = new DynamicTrackConfiguration();
         public string ServerVersion { get; set; }
 
-        public ACServerConfiguration FromFiles()
+        public ACServerConfiguration FromFiles(string presetFolder)
         {
             var parser = new FileIniDataParser();
-            IniData data = parser.ReadFile("cfg/server_cfg.ini");
+            IniData data = parser.ReadFile(Path.Join(presetFolder, "server_cfg.ini"));
             var server = data["SERVER"];
             Name = server["NAME"];
             Track = server["TRACK"];
@@ -112,7 +112,7 @@ namespace AssettoServer.Server.Configuration
                 DynamicTrack.TotalLapCount = float.Parse(dynTrack["LAP_GAIN"]);
             }
 
-            string extraCfgPath = "cfg/extra_cfg.yml";
+            string extraCfgPath = Path.Join(presetFolder, "extra_cfg.yml");
             ACExtraConfiguration extraCfg;
             if (File.Exists(extraCfgPath))
             {
@@ -132,7 +132,7 @@ namespace AssettoServer.Server.Configuration
 
             if(Extra.EnableServerDetails)
             {
-                string cmContentPath = "cfg/cm_content/content.json";
+                string cmContentPath = Path.Join(presetFolder, "cm_content/content.json");
                 CMContentConfiguration cmContent = new CMContentConfiguration();
                 // Only load if the file already exists, otherwise this will fail if the content directory does not exist
                 if (File.Exists(cmContentPath))
@@ -145,7 +145,7 @@ namespace AssettoServer.Server.Configuration
                 }
             }
 
-            string welcomeMessagePath = server["WELCOME_MESSAGE"];
+            string welcomeMessagePath = Path.Join(presetFolder, server["WELCOME_MESSAGE"]);
             if (File.Exists(welcomeMessagePath))
                 WelcomeMessage = File.ReadAllText(welcomeMessagePath);
 
@@ -213,7 +213,7 @@ namespace AssettoServer.Server.Configuration
             Sessions = sessions;
 
             var entryCarsParser = new FileIniDataParser();
-            IniData entryData = entryCarsParser.ReadFile("cfg/entry_list.ini");
+            IniData entryData = entryCarsParser.ReadFile(Path.Join(presetFolder, "entry_list.ini"));
 
             List<EntryCar> entryCars = new List<EntryCar>();
             for(int i = 0; i < MaxClients; i++)

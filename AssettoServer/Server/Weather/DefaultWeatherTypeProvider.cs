@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Linq;
 
 namespace AssettoServer.Server.Weather
 {
@@ -306,7 +307,8 @@ namespace AssettoServer.Server.Weather
 
         public WeatherType GetWeatherType(WeatherFxType id)
         {
-            return WeatherTypes.Find(type => type.WeatherFxType == id);
+            return WeatherTypes.Find(type => type.WeatherFxType == id) ?? 
+                   WeatherTypes.Find(type => type.WeatherFxType == WeatherFxType.Clear);
         }
     }
 }

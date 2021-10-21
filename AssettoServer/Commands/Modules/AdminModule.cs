@@ -10,6 +10,7 @@ using Humanizer;
 using Humanizer.Bytes;
 using Qmmands;
 using System;
+using System.Drawing;
 using System.Numerics;
 using System.Threading.Tasks;
 
@@ -217,6 +218,28 @@ namespace AssettoServer.Commands.Modules
         {
             Context.Server.Configuration.Extra.AiParams.MaxAiTargetCount = count;
             Reply("Max AI target count set.");
+        }
+
+        [Command("setvis")]
+        public void SetVisibility(byte sessionid, bool visible)
+        {
+            Context.Client.SendPacket(new CSPCarVisibilityUpdate
+            {
+                SessionId = sessionid,
+                Visible = visible
+            });
+        }
+
+        [Command("setcolor")]
+        public void SetColor(byte sessionid, string colorCode)
+        {
+            var color = ColorTranslator.FromHtml(colorCode);
+            
+            Context.Server.BroadcastPacket(new CSPCarColorUpdate
+            {
+                SessionId = sessionid,
+                Color = color
+            });
         }
     }
 }

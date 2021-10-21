@@ -376,6 +376,11 @@ namespace AssettoServer.Server
                         SessionId = SessionId,
                         Name = $"Traffic {SessionId}"
                     });
+                    /*Server.BroadcastPacket(new CSPCarVisibilityUpdate
+                    {
+                        SessionId = SessionId,
+                        Visible = false
+                    });*/
                 }
                 else
                 {
@@ -384,6 +389,11 @@ namespace AssettoServer.Server
                     {
                         Server.BroadcastPacket(new CarDisconnected {SessionId = SessionId});
                     }
+                    /*Server.BroadcastPacket(new CSPCarVisibilityUpdate
+                    {
+                        SessionId = SessionId,
+                        Visible = true
+                    });*/
 
                     AiReset();
                 }

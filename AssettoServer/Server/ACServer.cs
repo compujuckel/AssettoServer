@@ -674,10 +674,24 @@ namespace AssettoServer.Server
                                 {
                                     var targetCarStatus = toCar.TargetCar == null ? toCar.Status : toCar.TargetCar.Status;
 
-                                    CarStatus status = fromCar.GetBestStateForPlayer(targetCarStatus);
+                                    AiState aiState = fromCar.GetBestStateForPlayer(targetCarStatus);
 
-                                    if (status == null) continue;
+                                    if (aiState == null) continue;
 
+                                    if (fromCar.LastSeenAiState[toCar.SessionId] != aiState 
+                                        || fromCar.LastSeenAiSpawn[toCar.SessionId] != aiState.SpawnCounter)
+                                    {
+                                        fromCar.LastSeenAiState[toCar.SessionId] = aiState;
+                                        fromCar.LastSeenAiSpawn[toCar.SessionId] = aiState.SpawnCounter;
+                                        
+                                        toClient.SendPacket(new CSPCarColorUpdate
+                                        {
+                                            SessionId = fromCar.SessionId,
+                                            Color = aiState.Color
+                                        });
+                                    }
+
+                                    var status = aiState.Status;
                                     toClient.SendPacketUdp(new PositionUpdate
                                     {
                                         SessionId = fromCar.SessionId,

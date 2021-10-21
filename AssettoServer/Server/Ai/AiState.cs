@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Drawing;
 using System.Linq;
 using System.Numerics;
 using AssettoServer.Network.Packets.Shared;
@@ -20,6 +23,8 @@ namespace AssettoServer.Server.Ai
         public float TargetSpeed { get; private set; }
         public float InitialMaxSpeed { get; private set; }
         public float MaxSpeed { get; private set; }
+        public Color Color { get; private set; }
+        public byte SpawnCounter { get; private set; }
 
         private const float WalkingSpeed = 7 / 3.6f;
         
@@ -40,13 +45,35 @@ namespace AssettoServer.Server.Ai
 
         private Random _random = new Random();
 
+        private static readonly ImmutableList<Color> CarColors = new List<Color>()
+        {
+            Color.FromArgb(13, 17, 22),
+            Color.FromArgb(19, 24, 31),
+            Color.FromArgb(28, 29, 33),
+            Color.FromArgb(12, 13, 24),
+            Color.FromArgb(11, 20, 33),
+            Color.FromArgb(151, 154, 151),
+            Color.FromArgb(153, 157, 160),
+            Color.FromArgb(194, 196, 198 ),
+            Color.FromArgb(234, 234, 234),
+            Color.FromArgb(255, 255, 255),
+            Color.FromArgb(182, 17, 27),
+            Color.FromArgb(218, 25, 24),
+            Color.FromArgb(73, 17, 29),
+            Color.FromArgb(35, 49, 85),
+            Color.FromArgb(28, 53, 81),
+            Color.FromArgb(37, 58, 167),
+            Color.FromArgb(21, 92, 45),
+            Color.FromArgb(18, 46, 43),
+        }.ToImmutableList();
+
         public AiState(EntryCar entryCar)
         {
             EntryCar = entryCar;
             MapView = EntryCar.Server.TrafficMap.NewView();
         }
 
-        public void SetRandomSpeed()
+        private void SetRandomSpeed()
         {
             float variation = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs * EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedVariation;
 
@@ -59,6 +86,11 @@ namespace AssettoServer.Server.Ai
             CurrentSpeed = InitialMaxSpeed;
             TargetSpeed = InitialMaxSpeed;
             MaxSpeed = InitialMaxSpeed;
+        }
+
+        private void SetRandomColor()
+        {
+            Color = CarColors[_random.Next(CarColors.Count)];
         }
 
         public void Teleport(TrafficSplinePoint point)
@@ -76,6 +108,7 @@ namespace AssettoServer.Server.Ai
             CalculateTangents();
             
             SetRandomSpeed();
+            SetRandomColor();
             
             SpawnProtectionEnds = Environment.TickCount64 + _random.Next(EntryCar.Server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, EntryCar.Server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
             SafetyDistanceSquared = _random.Next(EntryCar.Server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, EntryCar.Server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
@@ -84,6 +117,7 @@ namespace AssettoServer.Server.Ai
             _obstacleHonkEnd = 0;
             _obstacleHonkStart = 0;
             _lastTick = Environment.TickCount64;
+            SpawnCounter++;
             Initialized = true;
             Update();
         }

@@ -57,6 +57,8 @@ namespace AssettoServer.Server
         public AiMode AiMode { get; init; }
 
         public byte[] AiPakSequenceIds { get; init; }
+        public AiState[] LastSeenAiState { get; init; }
+        public byte[] LastSeenAiSpawn { get; init; }
         private readonly List<AiState> _aiStates = new List<AiState>();
         private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         public int TargetAiStateCount { get; private set; } = 1;
@@ -134,7 +136,7 @@ namespace AssettoServer.Server
             }
         }
         
-        public CarStatus GetBestStateForPlayer(CarStatus playerStatus)
+        public AiState GetBestStateForPlayer(CarStatus playerStatus)
         {
             _aiStatesLock.EnterReadLock();
             try
@@ -164,7 +166,7 @@ namespace AssettoServer.Server
                     }
                 }
 
-                return bestState?.Status;
+                return bestState;
             }
             finally
             {

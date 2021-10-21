@@ -4,6 +4,7 @@ using IniParser.Model;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
+using AssettoServer.Server.Ai;
 using AssettoServer.Server.Weather;
 using YamlDotNet.Serialization;
 
@@ -234,7 +235,9 @@ namespace AssettoServer.Server.Configuration
                     Restrictor = int.Parse(entry["RESTRICTOR"]),
                     AiMode = aiMode,
                     AiControlled = aiMode != AiMode.Disabled,
-                    AiPakSequenceIds = new byte[MaxClients]
+                    AiPakSequenceIds = new byte[MaxClients],
+                    LastSeenAiState = new AiState[MaxClients],
+                    LastSeenAiSpawn = new byte[MaxClients]
                 });
             }
 

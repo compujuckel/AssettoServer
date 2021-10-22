@@ -491,10 +491,9 @@ namespace AssettoServer.Server
             HasUpdateToSend = true;
             LastRemoteTimestamp = positionUpdate.LastRemoteTimestamp;
 
-            const float afkMinSpeed = 15 / 3.6f;
-            if ((Server.Configuration.Extra.AfkKickBehavior == AfkKickBehavior.PlayerInput &&
-                 (positionUpdate.StatusFlag != Status.StatusFlag || positionUpdate.Gas != Status.Gas || positionUpdate.SteerAngle != Status.SteerAngle))
-                || (Server.Configuration.Extra.AfkKickBehavior == AfkKickBehavior.MinimumSpeed && positionUpdate.Velocity.LengthSquared() > afkMinSpeed * afkMinSpeed))
+            const float afkMinSpeed = 20 / 3.6f;
+            if ((positionUpdate.StatusFlag != Status.StatusFlag || positionUpdate.Gas != Status.Gas || positionUpdate.SteerAngle != Status.SteerAngle)
+                && (Server.Configuration.Extra.AfkKickBehavior != AfkKickBehavior.MinimumSpeed || positionUpdate.Velocity.LengthSquared() > afkMinSpeed * afkMinSpeed))
             {
                 SetActive();
             }

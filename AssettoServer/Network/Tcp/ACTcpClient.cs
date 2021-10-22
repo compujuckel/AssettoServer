@@ -451,7 +451,11 @@ namespace AssettoServer.Network.Tcp
                 return;
             LastChatTime = Environment.TickCount64;
 
-            EntryCar?.SetActive();
+            if (Server.Configuration.Extra.AfkKickBehavior == AfkKickBehavior.PlayerInput)
+            {
+                EntryCar?.SetActive();
+            }
+
             ChatMessage chatMessage = reader.ReadPacket<ChatMessage>();
             chatMessage.SessionId = SessionId;
 

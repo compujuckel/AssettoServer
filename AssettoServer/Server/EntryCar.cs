@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
+using AssettoServer.Server.Configuration;
 using Serilog;
 
 namespace AssettoServer.Server
@@ -490,8 +491,13 @@ namespace AssettoServer.Server
             HasUpdateToSend = true;
             LastRemoteTimestamp = positionUpdate.LastRemoteTimestamp;
 
-            if (positionUpdate.StatusFlag != Status.StatusFlag || positionUpdate.Gas != Status.Gas || positionUpdate.SteerAngle != Status.SteerAngle)
+            const float afkMinSpeed = 15 / 3.6f;
+            if ((Server.Configuration.Extra.AfkKickBehavior == AfkKickBehavior.PlayerInput &&
+                 (positionUpdate.StatusFlag != Status.StatusFlag || positionUpdate.Gas != Status.Gas || positionUpdate.SteerAngle != Status.SteerAngle))
+                || (Server.Configuration.Extra.AfkKickBehavior == AfkKickBehavior.MinimumSpeed && positionUpdate.Velocity.LengthSquared() > afkMinSpeed * afkMinSpeed))
+            {
                 SetActive();
+            }
 
             long currentTick = Environment.TickCount64;
             if(((Status.StatusFlag & CarStatusFlags.LightsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.LightsOn) != 0) || ((Status.StatusFlag & CarStatusFlags.HighBeamsOff) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HighBeamsOff) != 0))

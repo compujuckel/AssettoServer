@@ -8,6 +8,7 @@ namespace AssettoServer.Server.Configuration
         public bool UseSteamAuth { get; set; } = false;
         public bool EnableAntiAfk { get; set; } = true;
         public int MaxAfkTimeMinutes { get; set; } = 10;
+        public AfkKickBehavior AfkKickBehavior { get; set; } = AfkKickBehavior.PlayerInput;
         public int MaxPing { get; set; } = 500;
         public int MaxPingSeconds { get; set; } = 10;
         public bool ForceLights { get; set; }
@@ -77,5 +78,11 @@ namespace AssettoServer.Server.Configuration
         [YamlIgnore] public int MaxCollisionStopTimeMilliseconds => MaxCollisionStopTime * 1000;
         [YamlIgnore] public float MaxSpeedMs => MaxSpeed / 3.6f;
         [YamlIgnore] public float RightLaneOffsetMs => RightLaneOffset / 3.6f;
+    }
+
+    public enum AfkKickBehavior
+    {
+        PlayerInput,
+        MinimumSpeed
     }
 }

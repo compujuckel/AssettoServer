@@ -426,6 +426,8 @@ namespace AssettoServer.Network.Tcp
             HasPassedChecksum = passedChecksum;
             if (!passedChecksum)
             {
+                // Small delay is necessary, otherwise the client will not always show the "Checksum failed" screen
+                await Task.Delay(1000);
                 await Server.KickAsync(this, KickReason.ChecksumFailed, $"{Name} failed the checksum check and has been kicked.", false);
             }
             else

@@ -25,6 +25,8 @@ using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.TrackParams;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Hosting;
 using Serilog;
 using Serilog.Core;
 using Qmmands;
@@ -56,7 +58,7 @@ namespace AssettoServer.Server
         internal CommandService CommandService { get; }
         internal TcpListener TcpListener { get; set; }
         internal ACUdpServer UdpServer { get; }
-        internal ACHttpServer HttpServer { get; }
+        internal IWebHost HttpServer { get; private set; }
 
         internal int StartTime { get; } = Environment.TickCount;
         internal int CurrentTime => Environment.TickCount - StartTime;
@@ -102,7 +104,6 @@ namespace AssettoServer.Server
             EndpointCars = new ConcurrentDictionary<IPEndPoint, EntryCar>();
             Blacklist = new ConcurrentDictionary<string, bool>();
             Admins = new ConcurrentDictionary<string, bool>();
-            HttpServer = new ACHttpServer(this, IPAddress.Any, Configuration.HttpPort);
             UdpServer = new ACUdpServer(this, Configuration.UdpPort);
             HttpClient = new HttpClient();
             CommandService = new CommandService(new CommandServiceConfiguration
@@ -222,11 +223,17 @@ namespace AssettoServer.Server
             _ = Task.Factory.StartNew(AcceptTcpConnectionsAsync, TaskCreationOptions.LongRunning);
             UdpServer.Start();
 
+            HttpServer = WebHost.CreateDefaultBuilder()
+                .UseSerilog()
+                .UseStartup(context => new Startup(this))
+                .UseUrls($"http://*:{Configuration.HttpPort}")
+                .Build();
+            await HttpServer.StartAsync();
+            
             if (Configuration.RegisterToLobby)
                 await RegisterToLobbyAsync();
             
             _ = Task.Factory.StartNew(UpdateAsync, TaskCreationOptions.LongRunning);
-            HttpServer.Start();
         }
 
         private async Task InitializeGeoParams()

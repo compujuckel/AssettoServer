@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using CommandLine;
 using Serilog;
+using Serilog.Events;
 
 namespace AssettoServer
 {
@@ -32,6 +33,7 @@ namespace AssettoServer
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                 .WriteTo.Console()
                 .WriteTo.File($"logs/{logPrefix}{DateTime.Now:MMddyyyy_HHmmss}.txt")
                 .CreateLogger();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -169,6 +170,33 @@ namespace AssettoServer.Network.Http
             };
             
             return responseObj;
+        }
+
+        [HttpGet("/api/players")]
+        public PlayerListResponse GetPlayers()
+        {
+            List<PlayerListEntry> playerList = new List<PlayerListEntry>();
+
+            foreach (EntryCar car in _server.EntryCars)
+            {
+                if (car.Client != null)
+                {
+                    playerList.Add(new PlayerListEntry
+                    {
+                        SessionId = car.SessionId,
+                        Guid = car.Client.Guid,
+                        Name = car.Client.Name,
+                        Country = car.Client.NationCode,
+                        Car = car.Model,
+                        Skin = car.Skin
+                    });
+                }
+            }
+
+            return new PlayerListResponse
+            {
+                Players = playerList
+            };
         }
     }
 }

@@ -33,7 +33,7 @@ namespace AssettoServer
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .WriteTo.Console()
                 .WriteTo.File($"logs/{logPrefix}{DateTime.Now:MMddyyyy_HHmmss}.txt")
                 .CreateLogger();

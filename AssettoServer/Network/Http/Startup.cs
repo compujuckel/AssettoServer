@@ -32,6 +32,8 @@ namespace AssettoServer.Network.Http
             }
 
             app.UseRouting();
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
 
             app.UseEndpoints(endpoints =>
             {

@@ -14,7 +14,7 @@ namespace AssettoServer.Server.Weather
         {
             var sb = new StringBuilder();
             
-            sb.AppendFormat("wfx_type={0}", (int)Type);
+            sb.AppendFormat("3_clear_type={0}", (int)Type);
 
             if (StartDate.HasValue)
             {

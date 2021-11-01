@@ -91,7 +91,7 @@ namespace AssettoServer.Server.Weather
 
         private void CalcGrip(WeatherData condition, double baseGrip, double rainTrackGripReduction)
         {
-            condition.TrackGrip = (float) (baseGrip - MathUtils.Lerp(0, rainTrackGripReduction * 0.4, condition.RainWetness) - MathUtils.Lerp(0, rainTrackGripReduction * 0.6, condition.RainWater));
+            condition.TrackGrip = (float) (baseGrip - MathUtils.Lerp(0, rainTrackGripReduction * 0.3, condition.RainWetness) - MathUtils.Lerp(0, rainTrackGripReduction * 0.7, condition.RainWater));
         }
 
         public void Update(WeatherData weather, double baseGrip, double rainTrackGripReduction, long dt)

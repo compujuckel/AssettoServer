@@ -151,6 +151,10 @@ namespace AssettoServer.Server
             {
                 WeatherProvider = new LiveWeatherProvider(this);
             }
+            else if (Configuration.Extra.EnableWeatherVoting)
+            {
+                WeatherProvider = new VotingWeatherProvider(this);
+            }
             else
             {
                 WeatherProvider = new DefaultWeatherProvider(this);
@@ -729,7 +733,7 @@ namespace AssettoServer.Server
                         }
                     }
 
-                    if (Environment.TickCount64 - lastWeatherUpdate > 600_000)
+                    if (Environment.TickCount64 - lastWeatherUpdate > Configuration.Extra.WeatherUpdateIntervalMilliseconds)
                     {
                         lastWeatherUpdate = Environment.TickCount64;
                         _ = WeatherProvider.UpdateAsync(CurrentWeather);

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using AssettoServer.Server.Weather;
 using YamlDotNet.Serialization;
 
 namespace AssettoServer.Server.Configuration
@@ -22,8 +23,11 @@ namespace AssettoServer.Server.Configuration
         public string DiscordWebHookChatUrl { get; set; }
         public string OwmApiKey { get; set; } = "";
         public bool EnableLiveWeather { get; set; } = false;
+        public bool EnableWeatherVoting { get; set; } = false;
+        public List<WeatherFxType> VotingBlacklistedWeathers { get; set; } = new List<WeatherFxType>() { WeatherFxType.None };
         public bool EnableRealTime { get; set; } = false;
         public bool EnableWeatherFx { get; set; } = false;
+        public int WeatherUpdateIntervalMinutes { get; set; } = 600;
         public double RainTrackGripReduction { get; set; } = 0;
         public bool EnableAi { get; set; } = false;
 
@@ -31,8 +35,8 @@ namespace AssettoServer.Server.Configuration
 
         public List<string> NameFilters { get; set; } = new();
 
-        [YamlIgnore]
-        public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60000;
+        [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60000;
+        [YamlIgnore] public int WeatherUpdateIntervalMilliseconds => WeatherUpdateIntervalMinutes * 60000;
     }
 
     public class AiParams

@@ -13,7 +13,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.1f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 0.20f
+                Sun = 0.20f,
+                Humidity = 0.60f
             },
             new()
             {
@@ -22,7 +23,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.2f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 0.10f
+                Sun = 0.10f,
+                Humidity = 0.80f
             },
             new()
             {
@@ -31,7 +33,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.4f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 0.00f
+                Sun = 0.00f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -40,7 +43,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.05f,
                 RainWetness = 0.05f,
                 RainWater = 0.00f,
-                Sun = 0.50f
+                Sun = 0.50f,
+                Humidity = 0.70f
             },
             new()
             {
@@ -49,7 +53,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.15f,
                 RainWetness = 0.10f,
                 RainWater = 0.05f,
-                Sun = 0.10f
+                Sun = 0.10f,
+                Humidity = 0.85f
             },
             new()
             {
@@ -58,7 +63,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.25f,
                 RainWetness = 0.20f,
                 RainWater = 0.10f,
-                Sun = 0.00f
+                Sun = 0.00f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -67,7 +73,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.3f,
                 RainWetness = 0.30f,
                 RainWater = 0.10f,
-                Sun = 0.25f
+                Sun = 0.25f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -76,7 +83,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.6f,
                 RainWetness = 0.60f,
                 RainWater = 0.30f,
-                Sun = 0.05f
+                Sun = 0.05f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -85,7 +93,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 1.0f,
                 RainWetness = 1.00f,
                 RainWater = 0.50f,
-                Sun = 0.00f
+                Sun = 0.00f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -94,7 +103,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.20f,
                 RainWater = 0.05f,
-                Sun = 0.50f
+                Sun = 0.50f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -103,7 +113,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.30f,
                 RainWater = 0.10f,
-                Sun = 0.00f
+                Sun = 0.00f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -112,7 +123,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.40f,
                 RainWater = 0.15f,
-                Sun = 0.00f
+                Sun = 0.00f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -121,7 +133,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.2f,
                 RainWetness = 0.30f,
                 RainWater = 0.10f,
-                Sun = 0.10f
+                Sun = 0.10f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -130,7 +143,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.5f,
                 RainWetness = 0.50f,
                 RainWater = 0.20f,
-                Sun = 0.00f
+                Sun = 0.00f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -139,7 +153,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.8f,
                 RainWetness = 0.70f,
                 RainWater = 0.30f,
-                Sun = 0.00f
+                Sun = 0.00f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -148,7 +163,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 1.00f
+                Sun = 1.00f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -157,7 +173,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 1.00f
+                Sun = 1.00f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -166,7 +183,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 0.75f
+                Sun = 0.75f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -175,7 +193,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 0.50f
+                Sun = 0.50f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -184,7 +203,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 0.20f
+                Sun = 0.20f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -193,7 +213,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.20f,
                 RainWater = 0.00f,
-                Sun = 0.50f
+                Sun = 0.50f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -202,7 +223,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.10f,
                 RainWater = 0.00f,
-                Sun = 0.50f
+                Sun = 0.50f,
+                Humidity = 0.95f
             },
             new()
             {
@@ -211,7 +233,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 0.00f
+                Sun = 0.00f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -220,7 +243,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 1.00f
+                Sun = 1.00f,
+                Humidity = 0.80f
             },
             new()
             {
@@ -229,7 +253,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 1.00f
+                Sun = 1.00f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -238,7 +263,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 1.00f
+                Sun = 1.00f,
+                Humidity = 0.50f
             },
             new()
             {
@@ -247,7 +273,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 0.50f
+                Sun = 0.50f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -256,7 +283,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.3f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 0.00f
+                Sun = 0.00f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -265,7 +293,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.5f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 0.00f
+                Sun = 0.00f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -274,7 +303,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 1.00f
+                Sun = 1.00f,
+                Humidity = 1.00f
             },
             new()
             {
@@ -283,7 +313,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 1.00f
+                Sun = 1.00f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -292,7 +323,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.0f,
                 RainWetness = 0.00f,
                 RainWater = 0.00f,
-                Sun = 0.85f
+                Sun = 0.85f,
+                Humidity = 0.00f
             },
             new()
             {
@@ -301,7 +333,8 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = 0.5f,
                 RainWetness = 0.50f,
                 RainWater = 0.10f,
-                Sun = 0.30f
+                Sun = 0.30f,
+                Humidity = 1.00f
             }
         );
 

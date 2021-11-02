@@ -121,7 +121,7 @@ namespace AssettoServer.Server.Weather
                 TemperatureAmbient = last.TemperatureAmbient,
                 TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(_server.CurrentDaySeconds, last.TemperatureAmbient, winnerType.TemperatureCoefficient),
                 Pressure = last.Pressure,
-                Humidity = last.Humidity,
+                Humidity = (int)(winnerType.Humidity * 100),
                 WindSpeed = last.WindSpeed,
                 WindDirection = last.WindDirection,
                 RainIntensity = last.RainIntensity,

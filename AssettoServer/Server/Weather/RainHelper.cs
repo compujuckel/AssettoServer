@@ -50,7 +50,7 @@ namespace AssettoServer.Server.Weather
             return MathUtils.Lerp(value1, value2, tmp);
         }
 
-        private void CalcWater(WeatherData condition, double sun, double dt)
+        private void CalcWater(WeatherData condition, double sun, double dt, bool calcHumidity = false)
         {
             double dryingForce = Math.Max(0, WetnessDryingAirtempK * TempInterpol(condition.TemperatureAmbient, WetnessDryingAirtempMin, -1, 2)) +
                                  Math.Max(0, WetnessDryingRoadtempK * TempInterpol(condition.TemperatureRoad, WetnessDryingRoadtempMin, -1, 2)) + 
@@ -86,6 +86,18 @@ namespace AssettoServer.Server.Weather
             if (tempWetting < 0 && _tempWetness >= 1)
             {
                 _tempWetness = 1;
+            }
+
+            if (calcHumidity)
+            {
+                double humidRaiseForce = (Math.Max(0, tempWetting * -1) + (Math.Pow(Math.Max(0, dryingForce - 4), 3) * TimeK * dt))
+                                         * Math.Pow(condition.RainWetness * 1.1, 3)
+                                         * (1 - condition.Humidity);
+                double humidFallForce = dt * TimeK;
+                double generatedHumidity = condition.Humidity + (humidRaiseForce - humidFallForce) * 10;
+                
+                // TODO
+                // condition.Humidity = Math.Max(generatedHumidity)
             }
         }
 

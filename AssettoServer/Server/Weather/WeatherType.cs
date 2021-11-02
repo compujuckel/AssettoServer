@@ -15,6 +15,7 @@ namespace AssettoServer.Server.Weather
         public float RainWetness { get; init; }
         public float RainWater { get; init; }
         public float Sun { get; init; }
+        public float Humidity { get; init; }
     }
 
     public enum WeatherFxType

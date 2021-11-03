@@ -91,7 +91,7 @@ namespace AssettoServer.Server.Weather
 
             var weathersLeft = new List<WeatherFxType>(_weathers);
 
-            _server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = "Vote vor next weather:" });
+            _server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = "Vote for next weather:" });
             for (int i = 0; i < NumChoices; i++)
             {
                 var nextWeather = weathersLeft[_random.Next(weathersLeft.Count)];

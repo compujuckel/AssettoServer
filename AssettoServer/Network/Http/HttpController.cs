@@ -71,10 +71,10 @@ namespace AssettoServer.Network.Http
             return responseObj;
         }
 
-        [HttpGet("/JSON|{guid:int}")]
+        [HttpGet("/JSON{guid}")]
         public EntryListResponse GetEntryList(string guid)
         {
-            //string guid = Uri.UnescapeDataString(requestUrl).Replace("/JSON|", "", StringComparison.InvariantCultureIgnoreCase);
+            guid = guid.Substring(1);
             bool isAdmin = !string.IsNullOrEmpty(guid) && _server.Admins.ContainsKey(guid);
 
             EntryListResponse responseObj = new EntryListResponse

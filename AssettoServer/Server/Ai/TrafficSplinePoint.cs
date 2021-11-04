@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using CsvHelper.Configuration.Attributes;
 
 namespace AssettoServer.Server.Ai
 {
@@ -9,12 +10,30 @@ namespace AssettoServer.Server.Ai
         public int Id { get; init; }
         public Vector3 Point { get; init; }
         
-        public TrafficSplineJunction JunctionStart { get; set; }
-        public TrafficSplineJunction JunctionEnd { get; set; }
-        public TrafficSplinePoint Previous { get; set; }
-        public TrafficSplinePoint Next { get; set; }
-        public TrafficSplinePoint Left { get; set; }
-        public TrafficSplinePoint Right { get; set; }
+        public float Speed { get; set; }
+        public float MaxCorneringSpeed { get; set; }
+        public float TargetSpeed { get; set; }
+        public float BrakingDistance { get; set; }
+        public float Gas { get; set; }
+        public float Brake { get; set; }
+        //public float ObsoleteLatG { get; set; }
+        public float Radius { get; set; }
+        //public float SideLeft { get; set; }
+        //public float SideRight { get; set; }
+        public float Camber { get; set; }
+        //public float Direction { get; set; }
+        public Vector3 Normal { get; set; }
+        public float Length { get; set; }
+        public Vector3 ForwardVector { get; set; }
+        //public float Tag { get; set; }
+        //public float Grade { get; set; }
+        
+        [Ignore] public TrafficSplineJunction JunctionStart { get; set; }
+        [Ignore] public TrafficSplineJunction JunctionEnd { get; set; }
+        [Ignore] public TrafficSplinePoint Previous { get; set; }
+        [Ignore] public TrafficSplinePoint Next { get; set; }
+        [Ignore] public TrafficSplinePoint Left { get; set; }
+        [Ignore] public TrafficSplinePoint Right { get; set; }
 
         public TrafficSplinePoint Traverse(int count)
         {

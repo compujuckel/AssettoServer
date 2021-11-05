@@ -63,7 +63,8 @@ namespace AssettoServer.Server.Ai
                 /*points[i].Tag*/ _ = reader.ReadSingle();
                 /*points[i].Grade*/ _ = reader.ReadSingle();
 
-                points[i].MaxCorneringSpeed = CalculateMaxCorneringSpeed(points[i].Radius);
+                points[i].MaxCorneringSpeed = PhysicsUtils.CalculateMaxCorneringSpeed(points[i].Radius);
+                points[i].TargetSpeed = Math.Min(points[i].MaxCorneringSpeed, _server.Configuration.Extra.AiParams.MaxSpeedMs);
             }
 
             for (var i = 0; i < detailCount; i++)
@@ -76,7 +77,7 @@ namespace AssettoServer.Server.Ai
             {
                 if (point.MaxCorneringSpeed < _server.Configuration.Extra.AiParams.MaxSpeedMs)
                 {
-                    float brakingDistance = CalculateBrakingDistance(point.MaxCorneringSpeed);
+                    float brakingDistance = PhysicsUtils.CalculateBrakingDistance(_server.Configuration.Extra.AiParams.MaxSpeedMs - point.MaxCorneringSpeed, -_server.Configuration.Extra.AiParams.DefaultDeceleration);
 
                     point.BrakingDistance = brakingDistance;
 
@@ -84,16 +85,15 @@ namespace AssettoServer.Server.Ai
                     var currentPoint = point;
                     while (distanceTraveled < brakingDistance)
                     {
-                        currentPoint.TargetSpeed = currentPoint.TargetSpeed > 0 ? Math.Min(currentPoint.TargetSpeed, point.MaxCorneringSpeed) : point.MaxCorneringSpeed;
-                        
-                        var prevPoint = currentPoint.Previous;
-                        distanceTraveled += prevPoint.Length;
-                        currentPoint = prevPoint;
+                        currentPoint.TargetSpeed = Math.Min(currentPoint.TargetSpeed, point.MaxCorneringSpeed);
+
+                        if (currentPoint.MaxCorneringSpeed > _server.Configuration.Extra.AiParams.MaxSpeedMs)
+                        {
+                            distanceTraveled += currentPoint.Previous.Length;
+                        }
+
+                        currentPoint = currentPoint.Previous;
                     }
-                }
-                else
-                {
-                    point.TargetSpeed = _server.Configuration.Extra.AiParams.MaxSpeedMs;
                 }
             }
 
@@ -109,25 +109,6 @@ namespace AssettoServer.Server.Ai
             }*/
 
             return new TrafficMap(filename, splines);
-        }
-
-        private static float CalculateMaxCorneringSpeed(float radius)
-        {
-            const float staticFrictionCoefficient = 1;
-            const float gravityAcceleration = 9.81f;
-            const float vehicleMass = 1000;
-            const float roadSlope = 0;
-
-            float staticFriction = staticFrictionCoefficient * vehicleMass * gravityAcceleration * (float)Math.Sin(roadSlope);
-            float netForce = staticFriction + (vehicleMass * gravityAcceleration * (float)Math.Cos(roadSlope));
-            float speed = (float)Math.Sqrt(netForce * radius / vehicleMass);
-
-            return speed * 0.8f;
-        }
-
-        private float CalculateBrakingDistance(float speed)
-        {
-            return (float) Math.Pow(_server.Configuration.Extra.AiParams.MaxSpeedMs - speed, 2) / (2 * -_server.Configuration.Extra.AiParams.DefaultDeceleration);
         }
     }
 }

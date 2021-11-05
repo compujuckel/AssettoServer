@@ -272,7 +272,7 @@ namespace AssettoServer.Server.Ai
                 return;
             }
             
-            float targetSpeed = Math.Min(Math.Min(CurrentSplinePoint.MaxCorneringSpeed, CurrentSplinePoint.TargetSpeed), InitialMaxSpeed);
+            float targetSpeed = InitialMaxSpeed;
 
             var aiObstacle = FindClosestAiObstacle();
             var playerObstacle = FindClosestPlayerObstacle();
@@ -291,7 +291,7 @@ namespace AssettoServer.Server.Ai
                 }
 
                 if ((playerSpeed < CurrentSpeed || playerSpeed == 0)
-                    && playerObstacle.distance < GetBrakingDistance(playerSpeed) * 2 + 20)
+                    && playerObstacle.distance < PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - playerSpeed, -EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration) * 2 + 20)
                 {
                     targetSpeed = Math.Max(WalkingSpeed, playerSpeed);
                 }
@@ -302,7 +302,7 @@ namespace AssettoServer.Server.Ai
                 if (aiObstacle.aiState.TargetSpeed < aiObstacle.aiState.MaxSpeed)
                 {
                     if ((aiObstacle.aiState.CurrentSpeed < CurrentSpeed || aiObstacle.aiState.CurrentSpeed == 0)
-                        && aiObstacle.distance < GetBrakingDistance(aiObstacle.aiState.CurrentSpeed) * 2 + 20)
+                        && aiObstacle.distance < PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - aiObstacle.aiState.CurrentSpeed, -EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration) * 2 + 20)
                     {
                         targetSpeed = Math.Max(WalkingSpeed, aiObstacle.aiState.CurrentSpeed);
                     }
@@ -314,6 +314,8 @@ namespace AssettoServer.Server.Ai
                     targetSpeed = MaxSpeed;
                 }
             }
+
+            targetSpeed = Math.Min(CurrentSplinePoint.TargetSpeed, targetSpeed);
             
             if (CurrentSpeed == 0 && !_stoppedForObstacle)
             {
@@ -353,11 +355,6 @@ namespace AssettoServer.Server.Ai
             challengedAngle %= 360;
 
             return challengedAngle;
-        }
-
-        private float GetBrakingDistance(float targetSpeed)
-        {
-            return (float) Math.Abs(Math.Pow(targetSpeed - CurrentSpeed, 2) / (2 * EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration));
         }
 
         private float GetTyreAngularSpeed(float speed, float wheelDiameter)
@@ -440,7 +437,7 @@ namespace AssettoServer.Server.Ai
                 EngineRpm = (ushort) MathUtils.Lerp(800, 3000, CurrentSpeed / EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs),
                 StatusFlag = CarStatusFlags.LightsOn
                              | CarStatusFlags.HighBeamsOff
-                             | (Environment.TickCount64 < _stoppedForCollisionUntil || CurrentSpeed < 30 / 3.6f ? CarStatusFlags.HazardsOn : 0)
+                             | (Environment.TickCount64 < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
                              | (CurrentSpeed == 0 || Acceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
                              | (_stoppedForObstacle && Environment.TickCount64 > _obstacleHonkStart && Environment.TickCount64 < _obstacleHonkEnd ? CarStatusFlags.Horn : 0),
                 Gear = 2

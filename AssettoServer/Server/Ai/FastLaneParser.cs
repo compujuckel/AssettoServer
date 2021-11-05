@@ -44,19 +44,21 @@ namespace AssettoServer.Server.Ai
             }
 
             int extraCount = reader.ReadInt32();
-            Log.Debug("extraCount={0}, detailCount={1}", extraCount, detailCount);
+            if (extraCount != detailCount)
+            {
+                throw new ArgumentException("Count of spline points does not match extra spline points");
+            }
 
             for (var i = 0; i < detailCount; i++)
             {
                 points[i].Speed = reader.ReadSingle();
-                points[i].Gas = reader.ReadSingle();
-                points[i].Brake = reader.ReadSingle();
+                /*points[i].Gas*/ _ = reader.ReadSingle();
+                /*points[i].Brake*/ _ = reader.ReadSingle();
                 /*points[i].ObsoleteLatG*/ _ = reader.ReadSingle();
                 points[i].Radius = reader.ReadSingle();
                 /*points[i].SideLeft*/ _ = reader.ReadSingle();
                 /*points[i].SideRight*/ _ = reader.ReadSingle();
-                points[i].Camber = reader.ReadSingle();
-                /*points[i].Direction*/ _ = reader.ReadSingle();
+                points[i].Camber = reader.ReadSingle() /* camber */ * reader.ReadSingle() /* direction, either 1 or -1 */;
                 points[i].Normal = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
                 points[i].Length = reader.ReadSingle();
                 points[i].ForwardVector = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
@@ -64,7 +66,7 @@ namespace AssettoServer.Server.Ai
                 /*points[i].Grade*/ _ = reader.ReadSingle();
 
                 points[i].MaxCorneringSpeed = PhysicsUtils.CalculateMaxCorneringSpeed(points[i].Radius);
-                points[i].TargetSpeed = Math.Min(points[i].MaxCorneringSpeed, _server.Configuration.Extra.AiParams.MaxSpeedMs);
+                points[i].TargetSpeed = points[i].MaxCorneringSpeed;
             }
 
             for (var i = 0; i < detailCount; i++)

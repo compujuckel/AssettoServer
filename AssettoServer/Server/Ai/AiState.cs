@@ -416,7 +416,7 @@ namespace AssettoServer.Server.Ai
             {
                 X = (float)(Math.Atan2(smoothPos.Tangent.Z, smoothPos.Tangent.X) - Math.PI / 2),
                 Y = (float)(Math.Atan2(new Vector2(smoothPos.Tangent.Z, smoothPos.Tangent.X).Length(), smoothPos.Tangent.Y) - Math.PI / 2) * -1f,
-                Z = CurrentSplinePoint.GetBankAngle(_currentVecProgress / _currentVecLength)
+                Z = CurrentSplinePoint.GetCamber(_currentVecProgress / _currentVecLength)
             };
 
             byte tyreAngularSpeed = (byte) Math.Min(byte.MaxValue, 100 + GetTyreAngularSpeed(CurrentSpeed, 0.65f));

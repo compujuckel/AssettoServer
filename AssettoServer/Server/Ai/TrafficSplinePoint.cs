@@ -14,8 +14,8 @@ namespace AssettoServer.Server.Ai
         public float MaxCorneringSpeed { get; set; }
         public float TargetSpeed { get; set; }
         public float BrakingDistance { get; set; }
-        public float Gas { get; set; }
-        public float Brake { get; set; }
+        //public float Gas { get; set; }
+        //public float Brake { get; set; }
         //public float ObsoleteLatG { get; set; }
         public float Radius { get; set; }
         //public float SideLeft { get; set; }
@@ -76,27 +76,16 @@ namespace AssettoServer.Server.Ai
             return lanes[random.Next(lanes.Count)];
         }
 
-        public float GetBankAngle(float lerp = 0)
+        public float GetCamber(float lerp = 0)
         {
-            Vector3 banking = Vector3.UnitZ;
-            if (Left != null)
-            {
-                banking = Point - Left.Point;
-            }
-            else if (Right != null)
-            {
-                banking = Right.Point - Point;
-            }
+            float camber = Camber;
             
-            float bankAngle = (float)(Math.Atan2(new Vector2(banking.Z, banking.X).Length(), banking.Y) - Math.PI / 2) * -1f;
-
             if (lerp != 0 && Next != null)
             {
-                float nextAngle = Next.GetBankAngle();
-                bankAngle = (float)MathUtils.Lerp(bankAngle, nextAngle, lerp);
+                camber = (float)MathUtils.Lerp(camber, Next.GetCamber(), lerp);
             }
 
-            return bankAngle;
+            return camber;
         }
     }
 }

@@ -439,7 +439,8 @@ namespace AssettoServer.Server.Ai
                              | CarStatusFlags.HighBeamsOff
                              | (Environment.TickCount64 < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
                              | (CurrentSpeed == 0 || Acceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
-                             | (_stoppedForObstacle && Environment.TickCount64 > _obstacleHonkStart && Environment.TickCount64 < _obstacleHonkEnd ? CarStatusFlags.Horn : 0),
+                             | (_stoppedForObstacle && Environment.TickCount64 > _obstacleHonkStart && Environment.TickCount64 < _obstacleHonkEnd ? CarStatusFlags.Horn : 0)
+                             | GetWiperSpeed(EntryCar.Server.CurrentWeather.RainIntensity),
                 Gear = 2
             });
         }
@@ -463,6 +464,17 @@ namespace AssettoServer.Server.Ai
             Status.PerformanceDelta = positionUpdate.PerformanceDelta;
             Status.Gas = positionUpdate.Gas;
             Status.NormalizedPosition = positionUpdate.NormalizedPosition;
+        }
+
+        private static CarStatusFlags GetWiperSpeed(float rainIntensity)
+        {
+            return rainIntensity switch
+            {
+                < 0.05f => 0,
+                < 0.25f => CarStatusFlags.WiperLevel1,
+                < 0.5f => CarStatusFlags.WiperLevel2,
+                _ => CarStatusFlags.WiperLevel3
+            };
         }
     }
 }

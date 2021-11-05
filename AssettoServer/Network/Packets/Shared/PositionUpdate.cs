@@ -17,6 +17,9 @@ namespace AssettoServer.Network.Packets.Shared
         Horn = 0x40,
         HazardsOn = 0x2000,
         HighBeamsOff = 0x4000,
+        WiperLevel1 = 0x200000,
+        WiperLevel2 = 0x400000,
+        WiperLevel3 = WiperLevel1 | WiperLevel2
     }
     public struct PositionUpdate : IIncomingNetworkPacket, IOutgoingNetworkPacket
     {

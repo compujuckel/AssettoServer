@@ -556,12 +556,15 @@ namespace AssettoServer.Network.Tcp
                 SendPacket(new MandatoryPitUpdate { MandatoryPit = car.Status.MandatoryPit, SessionId = car.SessionId });
                 if (car != EntryCar)
                     SendPacket(new TyreCompoundUpdate { SessionId = car.SessionId, CompoundName = car.Status.CurrentTyreCompound });
-                
-                /*SendPacket(new CSPCarVisibilityUpdate
+
+                if (Server.Configuration.Extra.AiParams.HideAiCars)
                 {
-                    SessionId = car.SessionId,
-                    Visible = !car.AiControlled
-                });*/
+                    SendPacket(new CSPCarVisibilityUpdate
+                    {
+                        SessionId = car.SessionId,
+                        Visible = car.AiControlled ? CSPCarVisibility.Invisible : CSPCarVisibility.Visible
+                    });
+                }
             }
 
             _ = Task.Delay(40000).ContinueWith(async t =>

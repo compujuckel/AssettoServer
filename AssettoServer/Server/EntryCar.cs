@@ -348,11 +348,14 @@ namespace AssettoServer.Server
                         SessionId = SessionId,
                         Name = $"Traffic {SessionId}"
                     });
-                    /*Server.BroadcastPacket(new CSPCarVisibilityUpdate
+                    if (Server.Configuration.Extra.AiParams.HideAiCars)
                     {
-                        SessionId = SessionId,
-                        Visible = false
-                    });*/
+                        Server.BroadcastPacket(new CSPCarVisibilityUpdate
+                        {
+                            SessionId = SessionId,
+                            Visible = CSPCarVisibility.Invisible
+                        });
+                    }
                 }
                 else
                 {
@@ -361,11 +364,15 @@ namespace AssettoServer.Server
                     {
                         Server.BroadcastPacket(new CarDisconnected {SessionId = SessionId});
                     }
-                    /*Server.BroadcastPacket(new CSPCarVisibilityUpdate
+
+                    if (Server.Configuration.Extra.AiParams.HideAiCars)
                     {
-                        SessionId = SessionId,
-                        Visible = true
-                    });*/
+                        Server.BroadcastPacket(new CSPCarVisibilityUpdate
+                        {
+                            SessionId = SessionId,
+                            Visible = CSPCarVisibility.Visible
+                        });
+                    }
 
                     AiReset();
                 }

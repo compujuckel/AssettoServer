@@ -221,13 +221,19 @@ namespace AssettoServer.Commands.Modules
         }
 
         [Command("setvis")]
-        public void SetVisibility(byte sessionid, bool visible)
+        public void SetVisibility(byte sessionid, byte visible)
         {
             Context.Client.SendPacket(new CSPCarVisibilityUpdate
             {
                 SessionId = sessionid,
-                Visible = visible
+                Visible = (CSPCarVisibility)visible
             });
+        }
+
+        [Command("hideaicars")]
+        public void HideAiCars(bool hide)
+        {
+            Context.Server.Configuration.Extra.AiParams.HideAiCars = hide;
         }
 
         [Command("setcolor")]

@@ -158,7 +158,6 @@ namespace AssettoServer.Server
                                         isPlayerFastEnough;
 
                     // Tie breaker: Multiple close states, so take the one with min distance and same direction
-                    // TODO what the fuck is this
                     if ((isTieBreaker && isCandidateSameDirection && (distance < minDistance || !isBestSameDirection))
                         || (!isTieBreaker && distance < minDistance))
                     {
@@ -174,37 +173,7 @@ namespace AssettoServer.Server
                 _aiStatesLock.ExitReadLock();
             }
         }
-
-        // TODO remove once the method above is not buggy anymore
-        public static CarStatus GetBestStateForPlayer(CarStatus target, List<CarStatus> candidates, float tieBreakerDistanceSquared)
-        {
-            CarStatus bestState = null;
-            float minDistance = float.MaxValue;
-
-            foreach (var aiState in candidates)
-            {
-                //if(!aiState.Initialized) continue;
-
-                float distance = Vector3.DistanceSquared(aiState.Position, target.Position);
-                bool isBestSameDirection = bestState != null && Vector3.Dot(bestState.Velocity, target.Velocity) > 0;
-                bool isCandidateSameDirection = Vector3.Dot(aiState.Velocity, target.Velocity) > 0;
-                bool isPlayerFastEnough = target.Velocity.LengthSquared() > 1;
-                bool isTieBreaker = minDistance < tieBreakerDistanceSquared && distance < tieBreakerDistanceSquared;
-
-                // Tie breaker: Multiple close states, so take the one with min distance and same direction
-                // TODO what the fuck is this
-                if ((isTieBreaker && isPlayerFastEnough && isCandidateSameDirection && (distance < minDistance || !isBestSameDirection))
-                    || (!isTieBreaker && distance < minDistance))
-                {
-                    bestState = aiState;
-                    minDistance = distance;
-                }
-            }
-
-            return bestState;
-        }
-
-
+        
         public bool IsPositionSafe(Vector3 position)
         {
             _aiStatesLock.EnterReadLock();

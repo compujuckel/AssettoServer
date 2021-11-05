@@ -22,9 +22,9 @@ namespace AssettoServer.Server.Ai
         //public float SideRight { get; set; }
         public float Camber { get; set; }
         //public float Direction { get; set; }
-        public Vector3 Normal { get; set; }
+        //public Vector3 Normal { get; set; }
         public float Length { get; set; }
-        public Vector3 ForwardVector { get; set; }
+        //public Vector3 ForwardVector { get; set; }
         //public float Tag { get; set; }
         //public float Grade { get; set; }
         

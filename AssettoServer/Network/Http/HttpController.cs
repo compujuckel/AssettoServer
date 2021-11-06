@@ -22,7 +22,7 @@ namespace AssettoServer.Network.Http
         {
             if (guid != null)
             {
-                using (SHA1Managed sha1 = new SHA1Managed())
+                using (var sha1 = SHA1.Create())
                 {
                     var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes("antarcticfurseal" + guid));
                     StringBuilder sb = new StringBuilder();

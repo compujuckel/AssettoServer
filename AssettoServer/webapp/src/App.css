@@ -1,0 +1,12 @@
+body {
+    background-color: #282C35;
+    color: white;
+    font-family: Tahoma, serif;
+    font-size: 0.8em;
+    overflow-wrap: anywhere;
+    margin: 0;
+}
+
+div {
+    box-sizing: border-box;
+}

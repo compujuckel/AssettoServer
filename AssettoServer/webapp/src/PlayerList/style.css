@@ -1,0 +1,44 @@
+.player-list {
+    max-width: 622px;
+    min-width: 200px;
+    display: flex;
+    border: 1px solid darkred;
+    padding: 5px;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 5px;
+}
+
+@media only screen and (max-width: 638px) {
+    [class*="player-list"] {
+        max-width: 312px;
+    }
+}
+
+.player-list .player-entry {
+    max-width: 300px;
+    width: 100%;
+    border: 1px solid darkred;
+    padding: 5px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 5px;
+}
+
+.player-list .empty {
+    flex-grow: 1;
+    max-width: 300px;
+    width: 100%;
+    border: 1px solid darkred;
+    padding: 5px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 5px;
+}
+
+.player-list .player-entry .buttons {
+    display: flex;
+    flex-direction: column;
+}

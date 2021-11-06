@@ -1,0 +1,12 @@
+.header .header-content {
+    display: flex;
+    padding: 5px;
+}
+
+.header::after {
+    content: '';
+    display: block;
+    height: 2px;
+    background-color: darkred;
+    width: 100%;
+}

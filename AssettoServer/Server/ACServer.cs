@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using AssettoServer.Commands;
 using AssettoServer.Network.Udp;
 using AssettoServer.Network.Tcp;
@@ -76,6 +77,8 @@ namespace AssettoServer.Server
         
         public TrafficMap TrafficMap { get; }
         public AiBehavior AiBehavior { get; }
+        
+        private List<PosixSignalRegistration> SignalHandlers { get; }
 
         public ACServer(ACServerConfiguration configuration)
         {
@@ -192,16 +195,30 @@ namespace AssettoServer.Server
                 }
             }
 
-            string blacklistPath = "blacklist.txt";
-            if (File.Exists(blacklistPath))
-            {
-                foreach (string guid in File.ReadAllLines(blacklistPath))
-                    Blacklist[guid] = true;
-            }
-            else
-                File.Create(blacklistPath);
+            LoadBlacklist();
+            LoadAdmins();
 
-            string adminsPath = "admins.txt";
+            Discord = new Discord(configuration.Extra);
+
+            InitializeChecksums();
+
+            SignalHandlers = new List<PosixSignalRegistration>()
+            {
+                PosixSignalRegistration.Create(PosixSignal.SIGINT, TerminateHandler),
+                PosixSignalRegistration.Create(PosixSignal.SIGQUIT, TerminateHandler),
+                PosixSignalRegistration.Create(PosixSignal.SIGTERM, TerminateHandler),
+                PosixSignalRegistration.Create(PosixSignal.SIGHUP, TerminateHandler),
+            };
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                SignalHandlers.Add(PosixSignalRegistration.Create((PosixSignal)10 /* SIGUSR1 */, ReloadHandler));
+            }
+        }
+
+        private void LoadAdmins()
+        {
+            const string adminsPath = "admins.txt";
             if (File.Exists(adminsPath))
             {
                 foreach (string guid in File.ReadAllLines(adminsPath))
@@ -209,10 +226,18 @@ namespace AssettoServer.Server
             }
             else
                 File.Create(adminsPath);
+        }
 
-            Discord = new Discord(configuration.Extra);
-
-            InitializeChecksums();
+        private void LoadBlacklist()
+        {
+            const string blacklistPath = "blacklist.txt";
+            if (File.Exists(blacklistPath))
+            {
+                foreach (string guid in File.ReadAllLines(blacklistPath))
+                    Blacklist[guid] = true;
+            }
+            else
+                File.Create(blacklistPath);
         }
 
         public async Task StartAsync()
@@ -261,6 +286,24 @@ namespace AssettoServer.Server
                 Log.Information("Failed to get IP geolocation parameters.");
                 GeoParams = new GeoParams();
             }
+        }
+
+        private void TerminateHandler(PosixSignalContext context)
+        {
+            Log.Information("Caught signal, server shutting down");
+            BroadcastPacket(new ChatMessage { SessionId = 255, Message = "*** Server shutting down ***" });
+                
+            // Allow some time for the chat messages to be sent
+            Thread.Sleep(250);
+        }
+        
+        private void ReloadHandler(PosixSignalContext context)
+        {
+            LoadBlacklist();
+            LoadAdmins();
+            
+            Log.Information("Reloaded blacklist and adminlist");
+            context.Cancel = true;
         }
 
         private void UpdateRealTime()

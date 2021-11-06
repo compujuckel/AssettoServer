@@ -19,7 +19,7 @@ namespace AssettoServer.Commands.Modules
     [RequireAdmin]
     public class AdminModule : ACModuleBase
     {
-        [Command("kick")]
+        [Command("kick", "kick_id")]
         public Task KickAsync(ACTcpClient player, [Remainder] string reason = null)
         {
             if (player.SessionId == Context.Client?.SessionId)
@@ -35,7 +35,7 @@ namespace AssettoServer.Commands.Modules
             return Task.CompletedTask;
         }
 
-        [Command("ban")]
+        [Command("ban", "ban_id")]
         public ValueTask BanAsync(ACTcpClient player, [Remainder] string reason = null)
         {
             if (player.SessionId == Context.Client?.SessionId)
@@ -131,18 +131,6 @@ namespace AssettoServer.Commands.Modules
             Context.Server.SendCurrentWeather();
         }
 
-        [Command("sendtcp")]
-        public void SendTcp(string filename)
-        {
-            Context.Server.SendRawFileTcp(filename);
-        }
-        
-        [Command("sendudp")]
-        public void SendUdp(string filename)
-        {
-            Context.Server.SendRawFileUdp(filename);
-        }
-
         [Command("setafktime")]
         public void SetAfkTime(int time)
         {
@@ -162,7 +150,7 @@ namespace AssettoServer.Commands.Modules
         }
 
         [Command("distance")]
-        public void SetUpdateRate([Remainder] ACTcpClient player)
+        public void GetDistance([Remainder] ACTcpClient player)
         {
             Reply(Vector3.Distance(Context.Client.EntryCar.Status.Position, player.EntryCar.Status.Position).ToString());
         }
@@ -181,7 +169,7 @@ namespace AssettoServer.Commands.Modules
         {
             EntryCar car = player.EntryCar;
 
-            Reply($"IP: {(player.TcpClient.Client.RemoteEndPoint as System.Net.IPEndPoint).Address}\nGUID: {player.Guid}\nPing: {car.Ping}ms");
+            Reply($"IP: {(player.TcpClient.Client.RemoteEndPoint as System.Net.IPEndPoint).Address}\nProfile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {car.Ping}ms");
             Reply($"Position: {car.Status.Position}\nVelocity: {(int)(car.Status.Velocity.Length() * 3.6)}kmh");
         }
 
@@ -190,6 +178,13 @@ namespace AssettoServer.Commands.Modules
         {
             player.SendPacket(new BallastUpdate { SessionId = player.SessionId, BallastKg = ballastKg, Restrictor = restrictor });
             Reply("Restrictor and ballast set.");
+        }
+        
+        // CSP uses this to detect if the player is admin
+        [Command("ballast")]
+        public void Ballast()
+        {
+            Reply("SYNTAX ERROR: Use 'ballast [driver numeric id] [kg]'");
         }
 
         [Command("netstats")]
@@ -204,48 +199,6 @@ namespace AssettoServer.Commands.Modules
         public void ChatLog(bool enable)
         {
             Context.Client.IsChatLogEnabled = enable;
-        }
-
-        [Command("setstatespawndistance")]
-        public void SetStateSpawnDistance(int distance)
-        {
-            Context.Server.Configuration.Extra.AiParams.StateSpawnDistance = distance;
-            Reply("State safety distance set");
-        }
-
-        [Command("setmaxaitargetcount")]
-        public void SetMaxAiTargetCount(int count)
-        {
-            Context.Server.Configuration.Extra.AiParams.MaxAiTargetCount = count;
-            Reply("Max AI target count set.");
-        }
-
-        [Command("setvis")]
-        public void SetVisibility(byte sessionid, byte visible)
-        {
-            Context.Client.SendPacket(new CSPCarVisibilityUpdate
-            {
-                SessionId = sessionid,
-                Visible = (CSPCarVisibility)visible
-            });
-        }
-
-        [Command("hideaicars")]
-        public void HideAiCars(bool hide)
-        {
-            Context.Server.Configuration.Extra.AiParams.HideAiCars = hide;
-        }
-
-        [Command("setcolor")]
-        public void SetColor(byte sessionid, string colorCode)
-        {
-            var color = ColorTranslator.FromHtml(colorCode);
-            
-            Context.Server.BroadcastPacket(new CSPCarColorUpdate
-            {
-                SessionId = sessionid,
-                Color = color
-            });
         }
     }
 }

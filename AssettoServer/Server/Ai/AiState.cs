@@ -145,6 +145,7 @@ namespace AssettoServer.Server.Ai
 
         public bool Move(float progress)
         {
+            bool recalculateTangents = false;
             while (progress > _currentVecLength)
             {
                 progress -= _currentVecLength;
@@ -157,9 +158,13 @@ namespace AssettoServer.Server.Ai
 
                 CurrentSplinePoint = MapView.Next(CurrentSplinePoint);
                 _currentVecLength = (MapView.Next(CurrentSplinePoint).Point - CurrentSplinePoint.Point).Length();
+                recalculateTangents = true;
             }
 
-            CalculateTangents();
+            if (recalculateTangents)
+            {
+                CalculateTangents();
+            }
 
             _currentVecProgress = progress;
 
@@ -357,11 +362,6 @@ namespace AssettoServer.Server.Ai
             return challengedAngle;
         }
 
-        private float GetTyreAngularSpeed(float speed, float wheelDiameter)
-        {
-            return (float) (speed / (Math.PI * wheelDiameter) * 6);
-        }
-
         private void SetTargetSpeed(float speed)
         {
             TargetSpeed = speed;
@@ -421,49 +421,29 @@ namespace AssettoServer.Server.Ai
 
             byte tyreAngularSpeed = (byte) Math.Min(byte.MaxValue, 100 + GetTyreAngularSpeed(CurrentSpeed, 0.65f));
 
-            UpdatePosition(new PositionUpdate()
-            {
-                Timestamp = (uint)(Environment.TickCount - EntryCar.Server.StartTime),
-                LastRemoteTimestamp = (uint)(Environment.TickCount - EntryCar.Server.StartTime),
-                Position = smoothPos.Position,
-                Rotation = rotation,
-                Velocity = smoothPos.Tangent * CurrentSpeed,
-                SteerAngle = 127,
-                WheelAngle = 127,
-                TyreAngularSpeedFL = tyreAngularSpeed,
-                TyreAngularSpeedFR = tyreAngularSpeed,
-                TyreAngularSpeedRL = tyreAngularSpeed,
-                TyreAngularSpeedRR = tyreAngularSpeed,
-                EngineRpm = (ushort) MathUtils.Lerp(800, 3000, CurrentSpeed / EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs),
-                StatusFlag = CarStatusFlags.LightsOn
-                             | CarStatusFlags.HighBeamsOff
-                             | (Environment.TickCount64 < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
-                             | (CurrentSpeed == 0 || Acceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
-                             | (_stoppedForObstacle && Environment.TickCount64 > _obstacleHonkStart && Environment.TickCount64 < _obstacleHonkEnd ? CarStatusFlags.Horn : 0)
-                             | GetWiperSpeed(EntryCar.Server.CurrentWeather.RainIntensity),
-                Gear = 2
-            });
+            Status.Timestamp = EntryCar.Server.CurrentTime;
+            Status.Position = smoothPos.Position;
+            Status.Rotation = rotation;
+            Status.Velocity = smoothPos.Tangent * CurrentSpeed;
+            Status.SteerAngle = 127;
+            Status.WheelAngle = 127;
+            Status.TyreAngularSpeed[0] = tyreAngularSpeed;
+            Status.TyreAngularSpeed[1] = tyreAngularSpeed;
+            Status.TyreAngularSpeed[2] = tyreAngularSpeed;
+            Status.TyreAngularSpeed[3] = tyreAngularSpeed;
+            Status.EngineRpm = (ushort)MathUtils.Lerp(800, 3000, CurrentSpeed / EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs);
+            Status.StatusFlag = CarStatusFlags.LightsOn
+                                | CarStatusFlags.HighBeamsOff
+                                | (Environment.TickCount64 < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
+                                | (CurrentSpeed == 0 || Acceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
+                                | (_stoppedForObstacle && Environment.TickCount64 > _obstacleHonkStart && Environment.TickCount64 < _obstacleHonkEnd ? CarStatusFlags.Horn : 0)
+                                | GetWiperSpeed(EntryCar.Server.CurrentWeather.RainIntensity);
+            Status.Gear = 2;
         }
-
-        private void UpdatePosition(PositionUpdate positionUpdate)
+        
+        private static float GetTyreAngularSpeed(float speed, float wheelDiameter)
         {
-            Status.Timestamp = positionUpdate.LastRemoteTimestamp;
-            Status.PakSequenceId = positionUpdate.PakSequenceId;
-            Status.Position = positionUpdate.Position;
-            Status.Rotation = positionUpdate.Rotation;
-            Status.Velocity = positionUpdate.Velocity;
-            Status.TyreAngularSpeed[0] = positionUpdate.TyreAngularSpeedFL;
-            Status.TyreAngularSpeed[1] = positionUpdate.TyreAngularSpeedFR;
-            Status.TyreAngularSpeed[2] = positionUpdate.TyreAngularSpeedRL;
-            Status.TyreAngularSpeed[3] = positionUpdate.TyreAngularSpeedRR;
-            Status.SteerAngle = positionUpdate.SteerAngle;
-            Status.WheelAngle = positionUpdate.WheelAngle;
-            Status.EngineRpm = positionUpdate.EngineRpm;
-            Status.Gear = positionUpdate.Gear;
-            Status.StatusFlag = positionUpdate.StatusFlag;
-            Status.PerformanceDelta = positionUpdate.PerformanceDelta;
-            Status.Gas = positionUpdate.Gas;
-            Status.NormalizedPosition = positionUpdate.NormalizedPosition;
+            return (float) (speed / (Math.PI * wheelDiameter) * 6);
         }
 
         private static CarStatusFlags GetWiperSpeed(float rainIntensity)

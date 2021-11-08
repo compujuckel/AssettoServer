@@ -4,13 +4,11 @@ using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
-using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using Humanizer;
 using Humanizer.Bytes;
 using Qmmands;
 using System;
-using System.Drawing;
 using System.Numerics;
 using System.Threading.Tasks;
 

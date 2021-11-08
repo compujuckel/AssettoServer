@@ -48,6 +48,16 @@ namespace AssettoServer.Server.Ai
                 ret = ret.Next;
             }
 
+            for (int i = 0; i > count; i--)
+            {
+                if (ret.Previous == null)
+                {
+                    return null;
+                }
+
+                ret = ret.Previous;
+            }
+
             return ret;
         }
 

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using AssettoServer.Server;
+using AssettoServer.Server.Weather;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AssettoServer.Network.Http
@@ -160,10 +161,11 @@ namespace AssettoServer.Network.Http
                 WrappedPort = _server.Configuration.HttpPort,
                 AmbientTemperature = _server.CurrentWeather.TemperatureAmbient,
                 RoadTemperature = _server.CurrentWeather.TemperatureRoad,
-                CurrentWeatherId = _server.CurrentWeather.Type.Graphics,
+                CurrentWeatherId = _server.CurrentWeather.Type.WeatherFxType == WeatherFxType.None ? _server.CurrentWeather.Type.Graphics : _server.CurrentWeather.Type.WeatherFxType.ToString(),
                 WindSpeed = (int)_server.CurrentWeather.WindSpeed,
                 WindDirection = _server.CurrentWeather.WindDirection,
                 Description = _server.Configuration.Extra.ServerDescription,
+                Grip = _server.CurrentWeather.TrackGrip * 100,
                 Features = _server.Features,
                 PoweredBy = "AssettoServer " + _server.Configuration.ServerVersion
             };

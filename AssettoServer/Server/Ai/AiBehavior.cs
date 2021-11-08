@@ -72,7 +72,6 @@ namespace AssettoServer.Server.Ai
             var targetPlayerSplinePos = _server.TrafficMap.WorldToSpline(playerCar.Status.Position);
 
             var forward = targetPlayerSplinePos.point.Next.Point - targetPlayerSplinePos.point.Point;
-            
             int direction = Vector3.Dot(forward, playerCar.Status.Velocity) > 0 ? 1 : -1;
             
             // Do not not spawn if a player is too far away from the AI spline, e.g. in pits or in a part of the map without traffic

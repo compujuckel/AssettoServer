@@ -198,5 +198,11 @@ namespace AssettoServer.Commands.Modules
         {
             Context.Client.IsChatLogEnabled = enable;
         }
+
+        [Command("setsplineheight")]
+        public void SetSplineHeight(float height)
+        {
+            Context.Server.Configuration.Extra.AiParams.SplineHeightOffset = height;
+        }
     }
 }

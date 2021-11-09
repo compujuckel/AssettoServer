@@ -420,7 +420,7 @@ namespace AssettoServer.Server.Ai
             byte tyreAngularSpeed = (byte) Math.Min(byte.MaxValue, 100 + GetTyreAngularSpeed(CurrentSpeed, 0.65f));
 
             Status.Timestamp = EntryCar.Server.CurrentTime;
-            Status.Position = smoothPos.Position;
+            Status.Position = smoothPos.Position with { Y = smoothPos.Position.Y + EntryCar.Server.Configuration.Extra.AiParams.SplineHeightOffset };
             Status.Rotation = rotation;
             Status.Velocity = smoothPos.Tangent * CurrentSpeed;
             Status.SteerAngle = 127;

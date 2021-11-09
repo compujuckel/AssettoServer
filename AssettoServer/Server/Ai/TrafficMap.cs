@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Supercluster.KDTree;
@@ -22,6 +23,11 @@ namespace AssettoServer.Server.Ai
 
             foreach (var point in splines.SelectMany(spline => spline.Points))
             {
+                if (PointsById.ContainsKey(point.Id))
+                {
+                    throw new InvalidOperationException("Traffic map has spline points with duplicate id");
+                }
+                
                 PointsById.Add(point.Id, point);
             }
             

@@ -17,7 +17,23 @@ namespace AssettoServer.Server.Ai
             _server = server;
         }
 
-        public TrafficMap FromFile(string filename)
+        public TrafficMap FromFiles(string folder)
+        {
+            List<TrafficSpline> splines = new List<TrafficSpline>();
+
+            int idOffset = 0;
+            foreach (var file in Directory.EnumerateFiles(folder, "fast_lane*.ai"))
+            {
+                var spline = FromFile(file, idOffset);
+                splines.Add(spline);
+
+                idOffset += spline.Points.Length;
+            }
+
+            return new TrafficMap("fast_lane.ai", splines);
+        }
+
+        public TrafficSpline FromFile(string filename, int idOffset = 0)
         {
             Log.Debug("Loading AI spline {0}", filename);
             using var reader = new BinaryReader(File.OpenRead(filename));
@@ -33,7 +49,7 @@ namespace AssettoServer.Server.Ai
             {
                 var p = new TrafficSplinePoint
                 {
-                    Id = i,
+                    Id = idOffset + i,
                     Point = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle())
                 };
 
@@ -99,18 +115,13 @@ namespace AssettoServer.Server.Ai
                 }
             }
 
-            List<TrafficSpline> splines = new List<TrafficSpline>()
-            {
-                new TrafficSpline("fast_lane.ai", points)
-            };
-            
             /*using (var writer = new StreamWriter("fast_lane.csv"))
             using (var csv = new CsvWriter(writer, new CultureInfo("de-DE", false)))
             {
                 csv.WriteRecords(points);
             }*/
 
-            return new TrafficMap(filename, splines);
+            return new TrafficSpline(filename, points);
         }
     }
 }

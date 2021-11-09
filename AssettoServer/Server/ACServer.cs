@@ -184,10 +184,10 @@ namespace AssettoServer.Server
                 {
                     TrafficMap = WavefrontObjParser.ParseFile(mapAiBasePath + "traffic_map.obj");
                 } 
-                else if (File.Exists(mapAiBasePath + "fast_lane.ai"))
+                else
                 {
                     var parser = new FastLaneParser(this);
-                    TrafficMap = parser.FromFile(mapAiBasePath + "fast_lane.ai");
+                    TrafficMap = parser.FromFiles(mapAiBasePath);
                 }
 
                 if (TrafficMap == null)

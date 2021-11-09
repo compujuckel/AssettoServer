@@ -17,54 +17,47 @@ namespace AssettoServer.Server.Ai
 
         public static void GetAdjacentLanesForMap(TrafficMap map, string path)
         {
-            if (File.Exists(path))
-            {
-                ParseCache(map, path);
-            }
-            else
-            {
-                DetectAdjacentLanes(map);
-                WriteCache(map, path);
-            }
+            if (File.Exists(path) && ParseCache(map, path)) return;
+            
+            DetectAdjacentLanes(map);
+            WriteCache(map, path);
         }
 
-        private static void ParseCache(TrafficMap map, string cacheFilePath)
+        private static bool ParseCache(TrafficMap map, string cacheFilePath)
         {
             Log.Information("Parsing existing lane cache...");
             
-            using var t = Operation.Time("Parsing existing lane cache");
-            
-            using (var reader = new BinaryReader(File.OpenRead(cacheFilePath)))
+            using var _ = Operation.Time("Parsing existing lane cache");
+
+            using var reader = new BinaryReader(File.OpenRead(cacheFilePath));
+            long fileLength = reader.BaseStream.Length;
+            int pointCount = reader.ReadInt32();
+            if (pointCount != map.Splines.Select(spline => spline.Points.Length).Sum())
             {
-                long fileLength = reader.BaseStream.Length;
-                int pointCount = reader.ReadInt32();
-                if (pointCount != map.Splines.Select(spline => spline.Points.Length).Sum())
+                Log.Error("Point count of lane cache differs from point count of traffic map. Cache disabled");
+                return false;
+            }
+
+            try
+            {
+                while (true)
                 {
-                    Log.Error("Point count of lane cache differs from point count of traffic map. Cache disabled");
-                    return;
-                }
+                    int idLeft = reader.ReadInt32();
+                    int idRight = reader.ReadInt32();
 
-                var allPoints = map.Splines.SelectMany(spline => spline.Points).ToList();
+                    var pointLeft = map.PointsById[idLeft];
+                    var pointRight = map.PointsById[idRight];
 
-                try
-                {
-                    while (true)
-                    {
-                        int idLeft = reader.ReadInt32();
-                        int idRight = reader.ReadInt32();
-
-                        var pointLeft = map.PointsById[idLeft];
-                        var pointRight = map.PointsById[idRight];
-
-                        pointLeft.Right = pointRight;
-                        pointRight.Left = pointLeft;
-                    }
-                }
-                catch (EndOfStreamException)
-                {
-                    
+                    pointLeft.Right = pointRight;
+                    pointRight.Left = pointLeft;
                 }
             }
+            catch (EndOfStreamException)
+            {
+                    
+            }
+
+            return true;
         }
 
         private static void WriteCache(TrafficMap map, string cacheFilePath)

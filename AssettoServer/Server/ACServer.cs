@@ -165,6 +165,12 @@ namespace AssettoServer.Server
 
             if (Configuration.Extra.EnableRealTime)
             {
+                /*
+                 * In theory TZConvert could be removed because .NET 6 supports IANA timezone names natively
+                 * In practice the native way is not supported in Windows 10 LTSC 2019, so keeping this in for now
+                 * https://docs.microsoft.com/en-us/windows/win32/intl/international-components-for-unicode--icu-
+                 * ("icu.dll" is required which was added in Version 1903)
+                 */
                 RealTimeZone = TZConvert.GetTimeZoneInfo(TrackParams.Timezone);
                 UpdateRealTime();
 

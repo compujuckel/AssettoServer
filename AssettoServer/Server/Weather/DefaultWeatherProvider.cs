@@ -7,16 +7,14 @@ namespace AssettoServer.Server.Weather
     public class DefaultWeatherProvider : IWeatherProvider
     {
         private readonly ACServer _server;
-        private readonly Random _random;
 
         private WeatherConfiguration _weatherConfiguration;
 
         public DefaultWeatherProvider(ACServer server)
         {
             _server = server;
-            _random = new Random();
 
-            int config = _random.Next(_server.Configuration.Weathers.Count);
+            int config = Random.Shared.Next(_server.Configuration.Weathers.Count);
             SetWeatherConfiguration(config);
         }
 
@@ -61,7 +59,7 @@ namespace AssettoServer.Server.Weather
 
         private float GetRandomFloatInRange(float min, float max)
         {
-            return (float) (_random.NextDouble() * (max - min) + min);
+            return (float) (Random.Shared.NextDouble() * (max - min) + min);
         }
     }
 }

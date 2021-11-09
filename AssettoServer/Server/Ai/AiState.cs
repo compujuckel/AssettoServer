@@ -43,8 +43,6 @@ namespace AssettoServer.Server.Ai
         public TrafficSplinePoint CurrentSplinePoint { get; private set; }
         public TrafficMapView MapView { get; private set; }
 
-        private Random _random = new Random();
-
         private static readonly ImmutableList<Color> CarColors = new List<Color>()
         {
             Color.FromArgb(13, 17, 22),
@@ -82,7 +80,7 @@ namespace AssettoServer.Server.Ai
             {
                 fastLaneOffset = EntryCar.Server.Configuration.Extra.AiParams.RightLaneOffsetMs;
             }
-            InitialMaxSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs + fastLaneOffset - (variation / 2) + (float)_random.NextDouble() * variation;
+            InitialMaxSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs + fastLaneOffset - (variation / 2) + (float)Random.Shared.NextDouble() * variation;
             CurrentSpeed = InitialMaxSpeed;
             TargetSpeed = InitialMaxSpeed;
             MaxSpeed = InitialMaxSpeed;
@@ -90,7 +88,7 @@ namespace AssettoServer.Server.Ai
 
         private void SetRandomColor()
         {
-            Color = CarColors[_random.Next(CarColors.Count)];
+            Color = CarColors[Random.Shared.Next(CarColors.Count)];
         }
 
         public void Teleport(TrafficSplinePoint point)
@@ -110,8 +108,8 @@ namespace AssettoServer.Server.Ai
             SetRandomSpeed();
             SetRandomColor();
             
-            SpawnProtectionEnds = Environment.TickCount64 + _random.Next(EntryCar.Server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, EntryCar.Server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
-            SafetyDistanceSquared = _random.Next(EntryCar.Server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, EntryCar.Server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
+            SpawnProtectionEnds = Environment.TickCount64 + Random.Shared.Next(EntryCar.Server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, EntryCar.Server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
+            SafetyDistanceSquared = Random.Shared.Next(EntryCar.Server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, EntryCar.Server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
             _stoppedForCollisionUntil = 0;
             _ignoreObstaclesUntil = 0;
             _obstacleHonkEnd = 0;
@@ -326,8 +324,8 @@ namespace AssettoServer.Server.Ai
             {
                 _stoppedForObstacle = true;
                 _stoppedForObstacleSince = Environment.TickCount64;
-                _obstacleHonkStart = _stoppedForObstacleSince + _random.Next(3000, 7000);
-                _obstacleHonkEnd = _obstacleHonkStart + _random.Next(500, 1500);
+                _obstacleHonkStart = _stoppedForObstacleSince + Random.Shared.Next(3000, 7000);
+                _obstacleHonkEnd = _obstacleHonkStart + Random.Shared.Next(500, 1500);
                 Log.Verbose("AI {0} stopped for obstacle", EntryCar.SessionId);
             }
             else if (CurrentSpeed > 0 && _stoppedForObstacle)
@@ -346,7 +344,7 @@ namespace AssettoServer.Server.Ai
 
         public void StopForCollision()
         {
-            _stoppedForCollisionUntil = Environment.TickCount64 + _random.Next(EntryCar.Server.Configuration.Extra.AiParams.MinCollisionStopTimeMilliseconds, EntryCar.Server.Configuration.Extra.AiParams.MaxCollisionStopTimeMilliseconds);
+            _stoppedForCollisionUntil = Environment.TickCount64 + Random.Shared.Next(EntryCar.Server.Configuration.Extra.AiParams.MinCollisionStopTimeMilliseconds, EntryCar.Server.Configuration.Extra.AiParams.MaxCollisionStopTimeMilliseconds);
         }
 
         public float GetAngleToCar(CarStatus car)

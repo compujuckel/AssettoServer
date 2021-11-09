@@ -13,7 +13,6 @@ namespace AssettoServer.Server.Weather
         private const int VoteDurationSeconds = 30;
 
         private readonly ACServer _server;
-        private readonly Random _random = new Random();
         private readonly List<WeatherFxType> _weathers;
         private readonly List<ACTcpClient> _alreadyVoted = new List<ACTcpClient>();
         private readonly List<WeatherChoice> _availableWeathers = new();
@@ -94,7 +93,7 @@ namespace AssettoServer.Server.Weather
             _server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = "Vote for next weather:" });
             for (int i = 0; i < NumChoices; i++)
             {
-                var nextWeather = weathersLeft[_random.Next(weathersLeft.Count)];
+                var nextWeather = weathersLeft[Random.Shared.Next(weathersLeft.Count)];
                 _availableWeathers.Add(new WeatherChoice { Weather = nextWeather, Votes = 0});
                 weathersLeft.Remove(nextWeather);
                 
@@ -108,7 +107,7 @@ namespace AssettoServer.Server.Weather
             int maxVotes = _availableWeathers.Max(w => w.Votes);
             var weathers = _availableWeathers.Where(w => w.Votes == maxVotes).Select(w => w.Weather).ToList();
 
-            var winner = weathers[_random.Next(weathers.Count)];
+            var winner = weathers[Random.Shared.Next(weathers.Count)];
             var winnerType = _server.WeatherTypeProvider.GetWeatherType(winner);
             
             _server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = $"Weather vote ended. Next weather: {winner}"});

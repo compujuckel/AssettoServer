@@ -10,7 +10,6 @@ namespace AssettoServer.Server.Ai
         private TrafficMap _map;
 
         private readonly ConcurrentDictionary<TrafficSplineJunction, bool> _evaluated = new();
-        private readonly Random _random = new();
 
         public TrafficMapView(TrafficMap map)
         {
@@ -30,7 +29,7 @@ namespace AssettoServer.Server.Ai
                 {
                     var junction = point.JunctionStart;
 
-                    bool result = _evaluated.GetOrAdd(junction, _ => _random.NextDouble() < junction.Probability);
+                    bool result = _evaluated.GetOrAdd(junction, _ => Random.Shared.NextDouble() < junction.Probability);
                     point = result ? junction.EndPoint : point.Next;
                 }
                 else
@@ -57,7 +56,7 @@ namespace AssettoServer.Server.Ai
                     }
                     else if (point.Previous == null)
                     {
-                        result = _random.NextDouble() < junction.Probability;
+                        result = Random.Shared.NextDouble() < junction.Probability;
                         _evaluated.TryAdd(junction, result);
                     }
                     

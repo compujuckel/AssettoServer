@@ -8,7 +8,6 @@ namespace AssettoServer.Server.Ai
     public class AiBehavior
     {
         private readonly ACServer _server;
-        private readonly Random _random = new();
 
         public AiBehavior(ACServer server)
         {
@@ -36,7 +35,7 @@ namespace AssettoServer.Server.Ai
             // 3    1/10
             
             int maxRand = GetTriangleNumber(max);
-            int rand = _random.Next(maxRand);
+            int rand = Random.Shared.Next(maxRand);
             int target = 0;
             for (int i = max; i < maxRand; i += (i - 1))
             {
@@ -80,8 +79,8 @@ namespace AssettoServer.Server.Ai
                 return null;
             }
             
-            int spawnDistance = _random.Next(_server.Configuration.Extra.AiParams.MinSpawnDistance, _server.Configuration.Extra.AiParams.MaxSpawnDistance);
-            var spawnPoint = targetPlayerSplinePos.point.Traverse(spawnDistance * direction)?.RandomLane(_random);
+            int spawnDistance = Random.Shared.Next(_server.Configuration.Extra.AiParams.MinSpawnDistance, _server.Configuration.Extra.AiParams.MaxSpawnDistance);
+            var spawnPoint = targetPlayerSplinePos.point.Traverse(spawnDistance * direction)?.RandomLane(Random.Shared);
             
             if (spawnPoint != null)
             {

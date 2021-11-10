@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -13,13 +11,11 @@ namespace AssettoServer.Server.Ai
 {
     public static class AdjacentLaneDetector
     {
-        private const float LaneWidth = 3.27f; // TODO configurable
-
-        public static void GetAdjacentLanesForMap(TrafficMap map, string path)
+        public static void GetAdjacentLanesForMap(TrafficMap map, string path, float laneWidth)
         {
             if (File.Exists(path) && ParseCache(map, path)) return;
             
-            DetectAdjacentLanes(map);
+            DetectAdjacentLanes(map, laneWidth);
             WriteCache(map, path);
         }
 
@@ -91,7 +87,7 @@ namespace AssettoServer.Server.Ai
             };
         }
 
-        private static void DetectAdjacentLanes(TrafficMap map)
+        private static void DetectAdjacentLanes(TrafficMap map, float laneWidth)
         {
             Log.Information("Adjacent lane detection...");
             
@@ -107,7 +103,7 @@ namespace AssettoServer.Server.Ai
                     {
                         float direction = (float) (Math.Atan2(point.Point.Z - point.Next.Point.Z, point.Next.Point.X - point.Point.X) * (180 / Math.PI) * -1);
 
-                        var leftVec = OffsetVec(point.Point, -direction + 90, LaneWidth);
+                        var leftVec = OffsetVec(point.Point, -direction + 90, laneWidth);
 
                         var found = map.WorldToSpline(leftVec);
 

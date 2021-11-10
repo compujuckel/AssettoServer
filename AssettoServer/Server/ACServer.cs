@@ -182,7 +182,7 @@ namespace AssettoServer.Server
                 string mapAiBasePath = "content/tracks/" + Configuration.Track + "/ai/";
                 if (File.Exists(mapAiBasePath + "traffic_map.obj"))
                 {
-                    TrafficMap = WavefrontObjParser.ParseFile(mapAiBasePath + "traffic_map.obj");
+                    TrafficMap = WavefrontObjParser.ParseFile(mapAiBasePath + "traffic_map.obj", Configuration.Extra.AiParams.LaneWidth);
                 } 
                 else
                 {

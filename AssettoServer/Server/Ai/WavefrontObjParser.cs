@@ -7,7 +7,7 @@ namespace AssettoServer.Server.Ai
 {
     public static class WavefrontObjParser
     {
-        public static TrafficMap ParseFile(string filename)
+        public static TrafficMap ParseFile(string filename, float laneWidth)
         {
             Log.Debug("Loading traffic map {0}", filename);
             
@@ -75,7 +75,7 @@ namespace AssettoServer.Server.Ai
                 Log.Debug("Spline {0} finished with {1} points", spline.Name, spline.Points.Length);
             }
 
-            return new TrafficMap(filename, splines);
+            return new TrafficMap(filename, splines, laneWidth);
         }
     }
 }

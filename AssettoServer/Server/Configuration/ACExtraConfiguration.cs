@@ -68,6 +68,7 @@ namespace AssettoServer.Server.Configuration
         public int MaxPlayerCount { get; set; } = 0;
         public bool HideAiCars { get; set; } = false;
         public float SplineHeightOffset { get; set; } = 0;
+        public float LaneWidth { get; set; } = 3.0f;
 
         [YamlIgnore] public float PlayerRadiusSquared => PlayerRadius * PlayerRadius;
         [YamlIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeout * 1000;

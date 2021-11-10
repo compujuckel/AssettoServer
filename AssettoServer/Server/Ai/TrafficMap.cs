@@ -15,7 +15,7 @@ namespace AssettoServer.Server.Ai
         
         public KDTree<float, TrafficSplinePoint> KdTree { get; }
 
-        public TrafficMap(string sourcePath, List<TrafficSpline> splines)
+        public TrafficMap(string sourcePath, List<TrafficSpline> splines, float laneWidth)
         {
             SourcePath = sourcePath;
             Splines = splines;
@@ -45,7 +45,7 @@ namespace AssettoServer.Server.Ai
                 return dist;
             });
             
-            AdjacentLaneDetector.GetAdjacentLanesForMap(this, SourcePath + ".lanes");
+            AdjacentLaneDetector.GetAdjacentLanesForMap(this, SourcePath + ".lanes", laneWidth);
             JunctionParser.Parse(this, SourcePath + ".junctions.csv");
         }
 

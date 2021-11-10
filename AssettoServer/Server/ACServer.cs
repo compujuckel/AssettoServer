@@ -565,7 +565,7 @@ namespace AssettoServer.Server
                     RainWater = (Half) CurrentWeather.RainWater
                 };
 
-                Log.Information("CSP Weather: {0}", weather);
+                Log.Verbose("CSP Weather: {0}", weather);
 
                 if (endpoint == null)
                 {

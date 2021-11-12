@@ -30,7 +30,7 @@ namespace AssettoServer.Server.Ai
                 idOffset += spline.Points.Length;
             }
 
-            return new TrafficMap("fast_lane.ai", splines, _server.Configuration.Extra.AiParams.LaneWidth);
+            return new TrafficMap(Path.Join(folder, "fast_lane.ai"), splines, _server.Configuration.Extra.AiParams.LaneWidth);
         }
 
         public TrafficSpline FromFile(string filename, int idOffset = 0)

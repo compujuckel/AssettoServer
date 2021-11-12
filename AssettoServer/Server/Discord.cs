@@ -110,7 +110,7 @@ namespace AssettoServer.Server
             string userSteamUrl = "https://steamcommunity.com/profiles/" + clientGuid;
             DiscordMessage message = new DiscordMessage
             {
-                Username = serverName,
+                Username = serverName.Substring(0, 80),
                 AvatarUrl = PictureUrl,
                 Embeds = new List<DiscordEmbed>
                 {

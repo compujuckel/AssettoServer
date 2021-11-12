@@ -66,7 +66,7 @@ namespace AssettoServer.Server
         internal long StartTime64 { get; } = Environment.TickCount64;
         internal long CurrentTime64 => Environment.TickCount64 - StartTime64;
 
-        private SemaphoreSlim ConnectSempahore { get; }
+        private SemaphoreSlim ConnectSemaphore { get; }
         private HttpClient HttpClient { get; }
         public IWeatherTypeProvider WeatherTypeProvider { get; }
         public IWeatherProvider WeatherProvider { get; }
@@ -102,7 +102,7 @@ namespace AssettoServer.Server
             }
                                 
             CurrentDaySeconds = (float)(Configuration.SunAngle * (50400.0 - 46800.0) / 16.0 + 46800.0);
-            ConnectSempahore = new SemaphoreSlim(1, 1);
+            ConnectSemaphore = new SemaphoreSlim(1, 1);
             ConnectedCars = new ConcurrentDictionary<int, EntryCar>();
             EndpointCars = new ConcurrentDictionary<IPEndPoint, EntryCar>();
             Blacklist = new ConcurrentDictionary<string, bool>();
@@ -201,9 +201,6 @@ namespace AssettoServer.Server
                 }
             }
 
-            LoadBlacklist();
-            LoadAdmins();
-
             Discord = new Discord(configuration.Extra);
 
             InitializeChecksums();
@@ -222,28 +219,48 @@ namespace AssettoServer.Server
             }
         }
 
-        private void LoadAdmins()
+        private async Task LoadAdmins()
         {
-            const string adminsPath = "admins.txt";
-            if (File.Exists(adminsPath))
+            try
             {
-                foreach (string guid in File.ReadAllLines(adminsPath))
-                    Admins[guid] = true;
+                await ConnectSemaphore.WaitAsync();
+                
+                const string adminsPath = "admins.txt";
+                if (File.Exists(adminsPath))
+                {
+                    Admins.Clear();
+                    foreach (string guid in await File.ReadAllLinesAsync(adminsPath))
+                        Admins[guid] = true;
+                }
+                else
+                    File.Create(adminsPath);
             }
-            else
-                File.Create(adminsPath);
+            finally
+            {
+                ConnectSemaphore.Release();
+            }
         }
 
-        private void LoadBlacklist()
+        private async Task LoadBlacklist()
         {
-            const string blacklistPath = "blacklist.txt";
-            if (File.Exists(blacklistPath))
+            try
             {
-                foreach (string guid in File.ReadAllLines(blacklistPath))
-                    Blacklist[guid] = true;
+                await ConnectSemaphore.WaitAsync();
+                
+                const string blacklistPath = "blacklist.txt";
+                if (File.Exists(blacklistPath))
+                {
+                    Blacklist.Clear();
+                    foreach (string guid in await File.ReadAllLinesAsync(blacklistPath))
+                        Blacklist[guid] = true;
+                }
+                else
+                    File.Create(blacklistPath);
             }
-            else
-                File.Create(blacklistPath);
+            finally
+            {
+                ConnectSemaphore.Release();
+            }
         }
 
         public async Task StartAsync()
@@ -252,6 +269,9 @@ namespace AssettoServer.Server
             CurrentSession.StartTime = DateTime.Now;
             CurrentSession.StartTimeTicks = CurrentTime;
 
+            await LoadBlacklist();
+            await LoadAdmins();
+            
             await InitializeGeoParams();
             await WeatherProvider.UpdateAsync();
 
@@ -305,10 +325,11 @@ namespace AssettoServer.Server
         
         private void ReloadHandler(PosixSignalContext context)
         {
-            LoadBlacklist();
-            LoadAdmins();
+            Log.Information("Reloading blacklist and adminlist...");
             
-            Log.Information("Reloaded blacklist and adminlist");
+            LoadBlacklist().ContinueWith(t => Log.Error(t.Exception, "Error reloading blacklist"), TaskContinuationOptions.OnlyOnFaulted);
+            LoadAdmins().ContinueWith(t => Log.Error(t.Exception, "Error reloading adminlist"), TaskContinuationOptions.OnlyOnFaulted);
+            
             context.Cancel = true;
         }
 
@@ -402,7 +423,7 @@ namespace AssettoServer.Server
         {
             try
             {
-                await ConnectSempahore.WaitAsync();
+                await ConnectSemaphore.WaitAsync();
 
                 if (ConnectedCars.Count >= Configuration.MaxClients)
                     return false;
@@ -438,7 +459,7 @@ namespace AssettoServer.Server
             }
             finally
             {
-                ConnectSempahore.Release();
+                ConnectSemaphore.Release();
             }
 
             return false;
@@ -455,9 +476,10 @@ namespace AssettoServer.Server
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
                 if (!reason.Equals(KickReason.ChecksumFailed))
                     Discord.SendAuditKickMessage(Configuration.Name, client, reasonStr, admin);
+                
+                await Task.Delay(250);
+                await client.DisconnectAsync();
             }
-
-            await client.DisconnectAsync();
         }
 
         public async ValueTask BanAsync(ACTcpClient client, KickReason reason, string reasonStr = null, ACTcpClient admin = null)
@@ -474,7 +496,8 @@ namespace AssettoServer.Server
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
 
                 Discord.SendAuditBanMessage(Configuration.Name, client, reasonStr, admin);
-                
+
+                await Task.Delay(250);
                 await client.DisconnectAsync();
             }
         }
@@ -902,7 +925,7 @@ namespace AssettoServer.Server
         {
             try
             {
-                await ConnectSempahore.WaitAsync();
+                await ConnectSemaphore.WaitAsync();
                 if (client.IsConnected && client.EntryCar?.Client == client && ConnectedCars.TryRemove(client.SessionId, out _))
                 {
                     Log.Information("{0} has disconnected.", client.Name);
@@ -929,7 +952,7 @@ namespace AssettoServer.Server
             }
             finally
             {
-                ConnectSempahore.Release();
+                ConnectSemaphore.Release();
             }
         }
 

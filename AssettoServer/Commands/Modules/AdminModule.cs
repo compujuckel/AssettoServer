@@ -22,11 +22,13 @@ namespace AssettoServer.Commands.Modules
         {
             if (player.SessionId == Context.Client?.SessionId)
                 Reply("You cannot kick yourself.");
-            if (player.IsAdministrator)
+            else if (player.IsAdministrator)
                 Reply("You cannot kick an administrator");
             else
             {
-                string kickMessage = reason == null ? $"{player.Name} ({player.Guid}) has been kicked." : $"{player.Name} has been kicked for: {reason}.";
+                Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
+                
+                string kickMessage = reason == null ? $"{player.Name} has been kicked." : $"{player.Name} has been kicked for: {reason}.";
                 return Context.Server.KickAsync(player, KickReason.None, kickMessage, true, Context.Client);
             }
 
@@ -42,7 +44,9 @@ namespace AssettoServer.Commands.Modules
                 Reply("You cannot ban an administrator.");
             else
             {
-                string kickMessage = reason == null ? $"{player.Name} has been banned." : $"{player.Name} ({player.Guid}) has been banned for: {reason}.";
+                Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
+                
+                string kickMessage = reason == null ? $"{player.Name} has been banned." : $"{player.Name} has been banned for: {reason}.";
                 return Context.Server.BanAsync(player, KickReason.Blacklisted, kickMessage, Context.Client);
             }
 

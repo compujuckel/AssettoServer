@@ -77,7 +77,7 @@ namespace AssettoServer.Server
         {
             Run(() =>
             {
-                if (IsEnabled && ChatHook.Url != null)
+                if (IsEnabled && ChatHook.Url != null && !messageContent.StartsWith("\t\t\t\t$CSP0:"))
                 {
                     DiscordMessage message = new DiscordMessage
                     {

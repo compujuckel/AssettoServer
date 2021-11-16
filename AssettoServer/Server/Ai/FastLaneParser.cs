@@ -27,6 +27,7 @@ namespace AssettoServer.Server.Ai
                 var spline = FromFile(file, idOffset);
                 splines.Add(spline);
 
+                Log.Debug("Parsed {0}, id range {1} - {2}", file, idOffset, idOffset + spline.Points.Length - 1);
                 idOffset += spline.Points.Length;
             }
 

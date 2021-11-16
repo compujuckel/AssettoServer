@@ -45,7 +45,14 @@ namespace AssettoServer.Server.Ai
                     var pointRight = map.PointsById[idRight];
 
                     pointLeft.Right = pointRight;
-                    pointRight.Left = pointLeft;
+                    if (pointLeft.IsSameDirection(pointRight))
+                    {
+                        pointRight.Left = pointLeft;
+                    }
+                    else
+                    {
+                        pointRight.Right = pointLeft;
+                    }
                 }
             }
             catch (EndOfStreamException)
@@ -103,17 +110,38 @@ namespace AssettoServer.Server.Ai
                     {
                         float direction = (float) (Math.Atan2(point.Point.Z - point.Next.Point.Z, point.Next.Point.X - point.Point.X) * (180 / Math.PI) * -1);
 
-                        var leftVec = OffsetVec(point.Point, -direction + 90, laneWidth);
+                        var targetVec = OffsetVec(point.Point, -direction + 90, laneWidth);
 
-                        var found = map.WorldToSpline(leftVec);
+                        var found = map.WorldToSpline(targetVec);
 
                         if (found.distanceSquared < 2 * 2)
                         {
-                            // TODO make sure lanes are facing in the same direction.
-                            // This probably breaks on right hand drive tracks
-                            
                             point.Left = found.point;
-                            found.point.Right = point;
+                            if (point.IsSameDirection(found.point))
+                            {
+                                found.point.Right = point;
+                            }
+                            else
+                            {
+                                found.point.Left = point;
+                            }
+                        }
+                        
+                        targetVec = OffsetVec(point.Point, -direction - 90, laneWidth);
+
+                        found = map.WorldToSpline(targetVec);
+
+                        if (found.distanceSquared < 2 * 2)
+                        {
+                            point.Right = found.point;
+                            if (point.IsSameDirection(found.point))
+                            {
+                                found.point.Left = point;
+                            }
+                            else
+                            {
+                                found.point.Right = point;
+                            }
                         }
                     }
 

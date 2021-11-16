@@ -61,29 +61,58 @@ namespace AssettoServer.Server.Ai
             return ret;
         }
 
-        public List<TrafficSplinePoint> GetLanes()
+        public List<TrafficSplinePoint> GetLanes(bool twoWayTraffic = false)
         {
             var ret = new List<TrafficSplinePoint>();
 
-            TrafficSplinePoint point = this;
-            while (point.Left != null)
-            {
-                point = point.Left;
-            }
-
+            TrafficSplinePoint point = Left;
             while (point != null)
             {
-                ret.Add(point);
-                point = point.Right;
+                if (IsSameDirection(point))
+                {
+                    ret.Add(point);
+                    point = point.Left;
+                }
+                else if (twoWayTraffic)
+                {
+                    ret.Add(point);
+                    point = point.Right;
+                }
+                else
+                {
+                    break;
+                }
             }
             
+            ret.Reverse();
+            ret.Add(this);
+
+            point = Right;
+            while (point != null)
+            {
+                if (IsSameDirection(point))
+                {
+                    ret.Add(point);
+                    point = point.Right;
+                }
+                else if (twoWayTraffic)
+                {
+                    ret.Add(point);
+                    point = point.Left;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
             return ret;
         }
 
-        public TrafficSplinePoint RandomLane(Random random)
+        public TrafficSplinePoint RandomLane(bool twoWayTraffic = false)
         {
-            var lanes = GetLanes();
-            return lanes[random.Next(lanes.Count)];
+            var lanes = GetLanes(twoWayTraffic);
+            return lanes[Random.Shared.Next(lanes.Count)];
         }
 
         public float GetCamber(float lerp = 0)
@@ -96,6 +125,21 @@ namespace AssettoServer.Server.Ai
             }
 
             return camber;
+        }
+        
+        public Vector3 GetForwardVector()
+        {
+            if (Next != null)
+            {
+                return Next.Point - Point;
+            }
+
+            return Vector3.Zero;
+        }
+
+        public bool IsSameDirection(TrafficSplinePoint point)
+        {
+            return Vector3.Dot(GetForwardVector(), point.GetForwardVector()) > 0;
         }
     }
 }

@@ -69,6 +69,7 @@ namespace AssettoServer.Server.Configuration
         public bool HideAiCars { get; set; } = false;
         public float SplineHeightOffset { get; set; } = 0;
         public float LaneWidth { get; set; } = 3.0f;
+        public bool TwoWayTraffic { get; set; } = false;
 
         [YamlIgnore] public float PlayerRadiusSquared => PlayerRadius * PlayerRadius;
         [YamlIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeout * 1000;

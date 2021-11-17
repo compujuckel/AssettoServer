@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
+using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Tcp;
-using AssettoServer.Server.Configuration;
 using Discord;
 using Discord.Webhook;
 using Serilog;
@@ -14,81 +14,92 @@ namespace AssettoServer.Server
     {
         private static readonly string[] SensitiveCharacters = {"\\", "*", "_", "~", "`", "|", ">", ":"};
         private string PictureUrl { get; }
-        private bool IsEnabled { get; }
         private DiscordWebhook AuditHook { get; }
         private DiscordWebhook ChatHook { get; }
 
 
-        public Discord(ACExtraConfiguration extraConfiguration)
+        public Discord(ACServer server)
         {
-            IsEnabled = extraConfiguration.UseDiscordWebHook;
-            PictureUrl = extraConfiguration.DiscordWebHookPictureUrl;
-
-            AuditHook = new DiscordWebhook
+            if (server.Configuration.Extra.UseDiscordWebHook)
             {
-                Url = extraConfiguration.DiscordWebHookAuditUrl
-            };
+                PictureUrl = server.Configuration.Extra.DiscordWebHookPictureUrl;
 
-            ChatHook = new DiscordWebhook
-            {
-                Url = extraConfiguration.DiscordWebHookChatUrl
-            };
+                string auditUrl = server.Configuration.Extra.DiscordWebHookAuditUrl;
+                if (!string.IsNullOrEmpty(auditUrl))
+                {
+                    AuditHook = new DiscordWebhook
+                    {
+                        Url = auditUrl
+                    };
+
+                    server.ClientKicked += OnClientKicked;
+                    server.ClientBanned += OnClientBanned;
+                }
+
+                string chatUrl = server.Configuration.Extra.DiscordWebHookChatUrl;
+                if (!string.IsNullOrEmpty(chatUrl))
+                {
+                    ChatHook = new DiscordWebhook
+                    {
+                        Url = chatUrl
+                    };
+
+                    server.ChatMessageReceived += OnChatMessageReceived;
+                }
+            }
         }
 
-        public void SendAuditKickMessage(string serverName, ACTcpClient client, string reason, ACTcpClient admin = null)
+        private void OnClientBanned(ACServer sender, ACTcpClient client, KickReason reason, string reasonStr, ACTcpClient admin)
         {
             Run(() =>
             {
-                if (IsEnabled && AuditHook.Url != null)
+                AuditHook.Send(PrepareAuditMessage(
+                        ":hammer: Ban alert",
+                        sender.Configuration.Name,
+                        client.Guid,
+                        client.Name,
+                        reasonStr,
+                        Color.Red,
+                        admin?.Name
+                        ));
+            });
+        }
+
+        private void OnClientKicked(ACServer sender, ACTcpClient client, KickReason reason, string reasonStr, ACTcpClient admin)
+        {
+            if (reason != KickReason.ChecksumFailed)
+            {
+                Run(() =>
                 {
                     AuditHook.Send(PrepareAuditMessage(
                         ":boot: Kick alert",
-                        serverName,
+                        sender.Configuration.Name,
                         client.Guid,
                         client.Name,
-                        reason,
+                        reasonStr,
                         Color.Yellow,
                         admin?.Name
                     ));
-                }
-            });
+                });
+            }
         }
 
-        public void SendAuditBanMessage(string serverName, ACTcpClient bannedClient, string reason, ACTcpClient admin = null)
+        private void OnChatMessageReceived(ACServer sender, ACTcpClient client, string message)
         {
-            Run(() =>
+            if (!message.StartsWith("\t\t\t\t$CSP0:"))
             {
-                if (IsEnabled && AuditHook.Url != null)
+                Run(() =>
                 {
-                    AuditHook.Send(PrepareAuditMessage(
-                        ":hammer: Ban alert",
-                        serverName,
-                        bannedClient.Guid,
-                        bannedClient.Name,
-                        reason,
-                        Color.Red,
-                        admin?.Name
-                    ));
-                }
-            });
-        }
-
-        public void SendChatMessage(string userName, string messageContent)
-        {
-            Run(() =>
-            {
-                if (IsEnabled && ChatHook.Url != null && !messageContent.StartsWith("\t\t\t\t$CSP0:"))
-                {
-                    DiscordMessage message = new DiscordMessage
+                    DiscordMessage msg = new DiscordMessage
                     {
                         AvatarUrl = PictureUrl,
-                        Username = userName,
-                        Content = Sanitize(messageContent)
+                        Username = client.Name,
+                        Content = Sanitize(message)
                     };
 
-                    ChatHook.Send(message);
-                }
-            });
+                    ChatHook.Send(msg);
+                });
+            }
         }
 
         private static void Run(Action action)
@@ -110,7 +121,7 @@ namespace AssettoServer.Server
             string userSteamUrl = "https://steamcommunity.com/profiles/" + clientGuid;
             DiscordMessage message = new DiscordMessage
             {
-                Username = serverName.Substring(0, 80),
+                Username = serverName.Substring(0, Math.Min(serverName.Length, 80)),
                 AvatarUrl = PictureUrl,
                 Embeds = new List<DiscordEmbed>
                 {

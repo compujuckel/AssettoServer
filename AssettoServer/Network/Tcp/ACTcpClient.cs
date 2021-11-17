@@ -52,6 +52,13 @@ namespace AssettoServer.Network.Tcp
         private long LastChatTime { get; set; }
         private SteamId? SteamId { get; set; }
 
+        public delegate void VoidHandler(ACTcpClient sender);
+        public delegate void ChatMessageHandler(ACTcpClient sender, ChatMessage message);
+
+        public event VoidHandler ChecksumPassed;
+        public event VoidHandler ChecksumFailed;
+        public event ChatMessageHandler ChatMessageReceived;
+
         internal ACTcpClient(ACServer server, TcpClient tcpClient)
         {
             Server = server;
@@ -426,18 +433,16 @@ namespace AssettoServer.Network.Tcp
             HasPassedChecksum = passedChecksum;
             if (!passedChecksum)
             {
+                ChecksumFailed?.Invoke(this);
+                
                 // Small delay is necessary, otherwise the client will not always show the "Checksum failed" screen
                 await Task.Delay(1000);
                 await Server.KickAsync(this, KickReason.ChecksumFailed, $"{Name} failed the checksum check and has been kicked.", false);
             }
             else
             {
-                if (Server.Configuration.Extra.EnableAi)
-                {
-                    EntryCar.SetAiControl(false);
-                    Server.AiBehavior.AdjustOverbooking();
-                }
-
+                ChecksumPassed?.Invoke(this);
+                
                 Server.BroadcastPacket(new CarConnected
                 {
                     SessionId = SessionId,
@@ -460,19 +465,8 @@ namespace AssettoServer.Network.Tcp
 
             ChatMessage chatMessage = reader.ReadPacket<ChatMessage>();
             chatMessage.SessionId = SessionId;
-
-            Log.Information("CHAT: {0} ({1}): {2}", Name, SessionId, chatMessage.Message);
-
-            if (!CommandUtilities.HasPrefix(chatMessage.Message, '/', out string commandStr))
-            {
-                Server.BroadcastPacket(chatMessage);
-                Server.Discord.SendChatMessage(Name, chatMessage.Message);
-            }
-            else
-            {
-                chatMessage.Message = commandStr;
-                await Server.ProcessCommandAsync(this, chatMessage);
-            }
+            
+            ChatMessageReceived?.Invoke(this, chatMessage);
         }
 
         private void OnTyreCompoundChange(PacketReader reader)

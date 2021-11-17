@@ -2,16 +2,65 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
+using AssettoServer.Network.Tcp;
+using Serilog;
 
 namespace AssettoServer.Server.Ai
 {
     public class AiBehavior
     {
         private readonly ACServer _server;
+        private long _lastAiUpdate = Environment.TickCount64;
+        private long _lastAiObstacleDetectionUpdate = Environment.TickCount64;
 
         public AiBehavior(ACServer server)
         {
             _server = server;
+
+            _server.ClientChecksumPassed += OnClientChecksumPassed;
+            _server.ClientDisconnected += OnClientDisconnected;
+            _server.Update += OnUpdate;
+        }
+
+        private void OnUpdate(object sender)
+        {
+            foreach (var entryCar in _server.EntryCars)
+            {
+                if (entryCar.AiControlled)
+                {
+                    entryCar.AiUpdate();
+                }
+            }
+            
+            if (Environment.TickCount64 - _lastAiUpdate > 500)
+            {
+                _lastAiUpdate = Environment.TickCount64;
+                Task.Run(Update)
+                    .ContinueWith(t => Log.Error(t.Exception, "Error in AI update"), TaskContinuationOptions.OnlyOnFaulted);
+            }
+
+            if (Environment.TickCount64 - _lastAiObstacleDetectionUpdate > 100)
+            {
+                _lastAiObstacleDetectionUpdate = Environment.TickCount64;
+                Task.Run(ObstacleDetection)
+                    .ContinueWith(t => Log.Error(t.Exception, "Error in AI obstacle detection"), TaskContinuationOptions.OnlyOnFaulted);
+            }
+        }
+
+        private void OnClientChecksumPassed(ACServer sender, ACTcpClient client)
+        {
+            client.EntryCar.SetAiControl(false);
+            AdjustOverbooking();
+        }
+
+        private void OnClientDisconnected(ACServer sender, ACTcpClient client)
+        {
+            if (client.EntryCar.AiMode == AiMode.Auto)
+            {
+                client.EntryCar.SetAiControl(true);
+                AdjustOverbooking();
+            }
         }
 
         private struct AiDistance

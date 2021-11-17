@@ -36,6 +36,8 @@ namespace AssettoServer.Network.Udp
         public ACUdpServer(ACServer server, int port) : base(IPAddress.Any, port)
         {
             Server = server;
+
+            Server.Update += _ => UpdateStatistics();
         }
 
         protected override void OnStarted()

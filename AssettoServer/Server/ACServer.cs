@@ -80,6 +80,19 @@ namespace AssettoServer.Server
         
         private List<PosixSignalRegistration> SignalHandlers { get; }
 
+        public delegate void ClientEventHandler(ACServer sender, ACTcpClient client);
+        public delegate void ClientAuditHandler(ACServer sender, ACTcpClient client, KickReason reason, string reasonStr, ACTcpClient admin);
+        public delegate void VoidHandler(ACServer sender);
+        public delegate void ChatMessageHandler(ACServer sender, ACTcpClient client, string message);
+        
+        public event ClientEventHandler ClientChecksumPassed;
+        public event ClientEventHandler ClientChecksumFailed;
+        public event ClientEventHandler ClientDisconnected;
+        public event ClientAuditHandler ClientKicked;
+        public event ClientAuditHandler ClientBanned;
+        public event VoidHandler Update;
+        public event ChatMessageHandler ChatMessageReceived;
+
         public ACServer(ACServerConfiguration configuration)
         {
             Log.Information("Starting server.");
@@ -100,7 +113,7 @@ namespace AssettoServer.Server
                 EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Count];
                 EntryCars[i].SetAiOverbooking(0);
             }
-                                
+            
             CurrentDaySeconds = (float)(Configuration.SunAngle * (50400.0 - 46800.0) / 16.0 + 46800.0);
             ConnectSemaphore = new SemaphoreSlim(1, 1);
             ConnectedCars = new ConcurrentDictionary<int, EntryCar>();
@@ -201,7 +214,7 @@ namespace AssettoServer.Server
                 }
             }
 
-            Discord = new Discord(configuration.Extra);
+            Discord = new Discord(this);
 
             InitializeChecksums();
 
@@ -474,8 +487,8 @@ namespace AssettoServer.Server
             {
                 Log.Information("{0} was kicked. Reason: {1}", client.Name, reasonStr ?? "No reason given.");
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
-                if (!reason.Equals(KickReason.ChecksumFailed))
-                    Discord.SendAuditKickMessage(Configuration.Name, client, reasonStr, admin);
+                
+                ClientKicked?.Invoke(this, client, reason, reasonStr, admin);
                 
                 await Task.Delay(250);
                 await client.DisconnectAsync();
@@ -495,7 +508,7 @@ namespace AssettoServer.Server
                 await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => p.Value).Select(p => p.Key));
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
 
-                Discord.SendAuditBanMessage(Configuration.Name, client, reasonStr, admin);
+                ClientBanned?.Invoke(this, client, reason, reasonStr, admin);
 
                 await Task.Delay(250);
                 await client.DisconnectAsync();
@@ -659,16 +672,7 @@ namespace AssettoServer.Server
             {
                 try
                 {
-                    if (Configuration.Extra.EnableAi)
-                    {
-                        foreach (EntryCar entryCar in EntryCars)
-                        {
-                            if (entryCar.AiControlled)
-                            {
-                                entryCar.AiUpdate();
-                            }
-                        }
-                    }
+                    Update?.Invoke(this);
                     
                     foreach (EntryCar fromCar in EntryCars)
                     {
@@ -821,16 +825,6 @@ namespace AssettoServer.Server
                         }
                     }
 
-                    if (Environment.TickCount64 - lastAiUpdate > 500)
-                    {
-                        lastAiUpdate = Environment.TickCount64;
-                        if (Configuration.Extra.EnableAi)
-                        {
-                            _ = Task.Run(AiBehavior.Update)
-                                .ContinueWith(t => Log.Error(t.Exception, "Error in AI update"), TaskContinuationOptions.OnlyOnFaulted);
-                        }
-                    }
-
                     if (Environment.TickCount64 - lastTimeUpdate > 1000)
                     {
                         if (Configuration.Extra.EnableRealTime)
@@ -859,16 +853,6 @@ namespace AssettoServer.Server
                         lastTimeUpdate = Environment.TickCount64;
                     }
 
-                    if (Environment.TickCount64 - lastAiObstacleDetectionUpdate > 100)
-                    {
-                        lastAiObstacleDetectionUpdate = Environment.TickCount64;
-                        if (Configuration.Extra.EnableAi)
-                        {
-                            _ = Task.Run(AiBehavior.ObstacleDetection)
-                                .ContinueWith(t => Log.Error(t.Exception, "Error in AI obstacle detection"), TaskContinuationOptions.OnlyOnFaulted);
-                        }
-                    }
-
                     if (CurrentSession.TimeLeft.TotalMilliseconds < 100)
                     {
                         CurrentSession.StartTime = DateTime.Now;
@@ -880,8 +864,6 @@ namespace AssettoServer.Server
                             Log.Information("Restarting session for {0}.", car.Client.Name);
                         }
                     }
-
-                    UdpServer.UpdateStatistics();
 
                     if (ConnectedCars.Count > 0)
                     {
@@ -939,11 +921,7 @@ namespace AssettoServer.Server
                     if (client.HasPassedChecksum)
                         BroadcastPacket(new CarDisconnected { SessionId = client.SessionId });
 
-                    if (Configuration.Extra.EnableAi && client.EntryCar.AiMode == AiMode.Auto)
-                    {
-                        client.EntryCar.SetAiControl(true);
-                        AiBehavior.AdjustOverbooking();
-                    }
+                    ClientDisconnected?.Invoke(this, client);
                 }
             }
             catch (Exception ex)
@@ -956,7 +934,7 @@ namespace AssettoServer.Server
             }
         }
 
-        internal async ValueTask ProcessCommandAsync(ACTcpClient client, ChatMessage message)
+        internal async Task ProcessCommandAsync(ACTcpClient client, ChatMessage message)
         {
             ACCommandContext context = new ACCommandContext(this, client, message);
             IResult result = await CommandService.ExecuteAsync(message.Message, context);
@@ -1046,12 +1024,41 @@ namespace AssettoServer.Server
                     Log.Information("Incoming TCP connection from {0}.", tcpClient.Client.RemoteEndPoint);
 
                     ACTcpClient acClient = new ACTcpClient(this, tcpClient);
+                    acClient.ChecksumFailed += OnClientChecksumFailed;
+                    acClient.ChecksumPassed += OnClientChecksumPassed;
+                    acClient.ChatMessageReceived += OnChatMessageReceived;
                     await acClient.StartAsync();
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Something went wrong while trying to accept TCP connection.");
                 }
+            }
+        }
+
+        private void OnClientChecksumPassed(ACTcpClient sender)
+        {
+            ClientChecksumPassed?.Invoke(this, sender);
+        }
+
+        private void OnClientChecksumFailed(ACTcpClient sender)
+        {
+            ClientChecksumFailed?.Invoke(this, sender);
+        }
+
+        private void OnChatMessageReceived(ACTcpClient sender, ChatMessage message)
+        {
+            Log.Information("CHAT: {0} ({1}): {2}", sender.Name, sender.SessionId, message.Message);
+
+            if (!CommandUtilities.HasPrefix(message.Message, '/', out string commandStr))
+            {
+                BroadcastPacket(message);
+                ChatMessageReceived?.Invoke(this, sender, message.Message);
+            }
+            else
+            {
+                message.Message = commandStr;
+                _ = ProcessCommandAsync(sender, message);
             }
         }
 

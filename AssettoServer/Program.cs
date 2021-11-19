@@ -6,15 +6,16 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using AssettoServer.Server.Plugin;
 using CommandLine;
 using Serilog;
 using Serilog.Events;
 
 namespace AssettoServer
 {
-    class Program
+    internal static class Program
     {
-        public class Options
+        private class Options
         {
             [Option('p', "preset", Required = false, HelpText = "Configuration preset")]
             public string Preset { get; set; } = "";
@@ -45,11 +46,18 @@ namespace AssettoServer
             Log.Information("Using preset {0}", options.Preset);
 
             string configDir = string.IsNullOrEmpty(options.Preset) ? "cfg" : Path.Join("presets", options.Preset);
+            
+            ACPluginLoader loader = new ACPluginLoader();
 
-            var config = new ACServerConfiguration().FromFiles(configDir);
+            var config = new ACServerConfiguration().FromFiles(configDir, loader);
             config.ServerVersion = version;
             
-            ACServer server = new ACServer(config);
+            ACServer server = new ACServer(config, loader);
+
+            foreach (var plugin in loader.LoadedPlugins)
+            {
+                plugin.Instance.Initialize(server);
+            }
 
             await server.StartAsync();
             await Task.Delay(-1);

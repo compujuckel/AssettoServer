@@ -299,7 +299,7 @@ namespace AssettoServer.Network.Tcp
                         else if (id == 0x43)
                             return;
                         else if (id == 0x47)
-                            await OnChatAsync(reader);
+                            OnChat(reader);
                         else if (id == 0x44)
                             await OnChecksumAsync(reader);
                         else if (id == 0xAB)
@@ -452,7 +452,7 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        private async Task OnChatAsync(PacketReader reader)
+        private void OnChat(PacketReader reader)
         {
             if (Environment.TickCount64 - LastChatTime < 1000)
                 return;

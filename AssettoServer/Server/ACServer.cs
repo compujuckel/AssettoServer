@@ -25,6 +25,7 @@ using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
+using AssettoServer.Server.Plugin;
 using AssettoServer.Server.TrackParams;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
@@ -47,7 +48,6 @@ namespace AssettoServer.Server
         public float CurrentDaySeconds { get; private set; }
         public GeoParams GeoParams { get; private set; }
         public IReadOnlyList<string> Features { get; private set; }
-        public Discord Discord { get; }
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
         internal ConcurrentDictionary<IPEndPoint, EntryCar> EndpointCars { get; }
@@ -78,6 +78,8 @@ namespace AssettoServer.Server
         public TrafficMap TrafficMap { get; }
         public AiBehavior AiBehavior { get; }
         
+        public ACPluginLoader PluginLoader { get; }
+        
         private List<PosixSignalRegistration> SignalHandlers { get; }
 
         public delegate void ClientEventHandler(ACServer sender, ACTcpClient client);
@@ -93,7 +95,7 @@ namespace AssettoServer.Server
         public event VoidHandler Update;
         public event ChatMessageHandler ChatMessageReceived;
 
-        public ACServer(ACServerConfiguration configuration)
+        public ACServer(ACServerConfiguration configuration, ACPluginLoader loader)
         {
             Log.Information("Starting server.");
 
@@ -122,6 +124,7 @@ namespace AssettoServer.Server
             Admins = new ConcurrentDictionary<string, bool>();
             UdpServer = new ACUdpServer(this, Configuration.UdpPort);
             HttpClient = new HttpClient();
+            PluginLoader = loader;
             CommandService = new CommandService(new CommandServiceConfiguration
             {
                 DefaultRunMode = RunMode.Parallel
@@ -130,7 +133,12 @@ namespace AssettoServer.Server
             CommandService.AddModules(Assembly.GetEntryAssembly());
             CommandService.AddTypeParser(new ACClientTypeParser());
             CommandService.CommandExecutionFailed += OnCommandExecutionFailed;
-            
+
+            foreach (var plugin in PluginLoader.LoadedPlugins)
+            { 
+                CommandService.AddModules(plugin.Assembly);
+            }
+
             var features = new List<string>();
             if (Configuration.Extra.UseSteamAuth)
                 features.Add("STEAM_TICKET");
@@ -213,8 +221,6 @@ namespace AssettoServer.Server
                     AiBehavior = new AiBehavior(this);
                 }
             }
-
-            Discord = new Discord(this);
 
             InitializeChecksums();
 

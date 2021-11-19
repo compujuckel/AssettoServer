@@ -5,8 +5,12 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
 using AssettoServer.Server.Ai;
+using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
+using YamlDotNet.Core;
+using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NodeTypeResolvers;
 
 namespace AssettoServer.Server.Configuration
 {
@@ -62,7 +66,7 @@ namespace AssettoServer.Server.Configuration
         public DynamicTrackConfiguration DynamicTrack { get; internal set; } = new DynamicTrackConfiguration();
         public string ServerVersion { get; set; }
 
-        public ACServerConfiguration FromFiles(string presetFolder)
+        public ACServerConfiguration FromFiles(string presetFolder, ACPluginLoader loader)
         {
             var parser = new FileIniDataParser();
             IniData data = parser.ReadFile(Path.Join(presetFolder, "server_cfg.ini"));
@@ -118,8 +122,35 @@ namespace AssettoServer.Server.Configuration
             if (File.Exists(extraCfgPath))
             {
                 using var stream = File.OpenText(extraCfgPath);
+
                 var deserializer = new DeserializerBuilder().Build();
-                extraCfg = deserializer.Deserialize<ACExtraConfiguration>(stream);
+
+                var yamlParser = new Parser(stream);
+                yamlParser.Expect<StreamStart>();
+                yamlParser.Accept<DocumentStart>();
+
+                extraCfg = deserializer.Deserialize<ACExtraConfiguration>(yamlParser);
+
+                foreach (var pluginName in extraCfg.EnablePlugins)
+                {
+                    loader.LoadPlugin(pluginName);
+                }
+                
+                var deserializerBuilder = new DeserializerBuilder().WithoutNodeTypeResolver(typeof(PreventUnknownTagsNodeTypeResolver));
+                foreach (var plugin in loader.LoadedPlugins)
+                {
+                    if (plugin.ConfigurationType != null)
+                    {
+                        deserializerBuilder.WithTagMapping("!" + plugin.ConfigurationType.Name, plugin.ConfigurationType);
+                    }
+                }
+                deserializer = deserializerBuilder.Build();
+
+                while (yamlParser.Accept<DocumentStart>())
+                {
+                    var pluginConfig = deserializer.Deserialize(yamlParser);
+                    loader.LoadConfiguration(pluginConfig);
+                }
             }
             else
             {

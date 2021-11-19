@@ -17,10 +17,6 @@ namespace AssettoServer.Server.Configuration
         public int OutsideNetworkBubbleRefreshRateHz { get; set; } = 4;
         public bool EnableServerDetails { get; set; } = true;
         public string ServerDescription { get; set; } = "";
-        public bool UseDiscordWebHook { get; set; } = false;
-        public string DiscordWebHookPictureUrl { get; set; } = "https://i.imgur.com/Sr8cBdY.png";
-        public string DiscordWebHookAuditUrl { get; set; }
-        public string DiscordWebHookChatUrl { get; set; }
         public string OwmApiKey { get; set; } = "";
         public bool EnableLiveWeather { get; set; } = false;
         public bool EnableWeatherVoting { get; set; } = false;
@@ -30,10 +26,9 @@ namespace AssettoServer.Server.Configuration
         public int WeatherUpdateIntervalMinutes { get; set; } = 600;
         public double RainTrackGripReduction { get; set; } = 0;
         public bool EnableAi { get; set; } = false;
-
         public AiParams AiParams { get; set; } = new AiParams();
-
         public List<string> NameFilters { get; set; } = new();
+        public List<string> EnablePlugins { get; set; } = new();
 
         [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60000;
         [YamlIgnore] public int WeatherUpdateIntervalMilliseconds => WeatherUpdateIntervalMinutes * 60000;

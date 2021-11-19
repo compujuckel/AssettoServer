@@ -9,15 +9,13 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.0-preview1" />
-    <PackageReference Include="CSharpDiscordWebhook" Version="2.2.0">
-      <NoWarn>NU1701</NoWarn>
-    </PackageReference>
     <PackageReference Include="CsvHelper" Version="27.1.1" />
     <PackageReference Include="Humanizer.Core" Version="2.11.10" />
     <PackageReference Include="ini-parser" Version="2.5.2">
       <NoWarn>NU1701</NoWarn>
     </PackageReference>
     <FrameworkReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
+    <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.0" />
     <PackageReference Include="NetCoreServer" Version="5.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />

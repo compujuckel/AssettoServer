@@ -5,6 +5,8 @@
     <TargetFramework>net6.0</TargetFramework>
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>10</LangVersion>
+    <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-x64'">..\out-linux-x64\</PublishDir>
+    <PublishDir Condition="'$(RuntimeIdentifier)' != 'linux-x64'">..\out-win-x64\</PublishDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,8 +38,6 @@
     <Reference Include="Facepunch.Steamworks.Posix" Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
       <HintPath>..\Facepunch\Facepunch.Steamworks.Posix.dll</HintPath>
     </Reference>
-
-
     <Reference Include="Facepunch.Steamworks.Win64" Condition="'$(RuntimeIdentifier)' != 'linux-x64'">
       <HintPath>..\Facepunch\Facepunch.Steamworks.Win64.dll</HintPath>
     </Reference>

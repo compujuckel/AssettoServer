@@ -5,10 +5,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <EnableDynamicLoading>true</EnableDynamicLoading>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-        <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-        <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+        <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-x64'">..\out-linux-x64\plugins\$(MSBuildProjectName)\</PublishDir>
+        <PublishDir Condition="'$(RuntimeIdentifier)' != 'linux-x64'">..\out-win-x64\plugins\$(MSBuildProjectName)\</PublishDir>
     </PropertyGroup>
 
     <ItemGroup>

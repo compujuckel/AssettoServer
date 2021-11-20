@@ -4,10 +4,16 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-x64'">..\out-linux-x64\plugins\$(MSBuildProjectName)\</PublishDir>
+        <PublishDir Condition="'$(RuntimeIdentifier)' != 'linux-x64'">..\out-win-x64\plugins\$(MSBuildProjectName)\</PublishDir>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\AssettoServer\AssettoServer.csproj" />
+      <ProjectReference Include="..\AssettoServer\AssettoServer.csproj">
+          <Private>false</Private>
+          <ExcludeAssets>runtime</ExcludeAssets>
+      </ProjectReference>
     </ItemGroup>
 
 </Project>

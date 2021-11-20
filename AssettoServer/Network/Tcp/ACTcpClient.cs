@@ -85,7 +85,7 @@ namespace AssettoServer.Network.Tcp
             return Task.CompletedTask;
         }
 
-        internal void SendPacket<TPacket>(TPacket packet) where TPacket : IOutgoingNetworkPacket
+        public void SendPacket<TPacket>(TPacket packet) where TPacket : IOutgoingNetworkPacket
         {
             try
             {

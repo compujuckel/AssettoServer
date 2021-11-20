@@ -63,18 +63,5 @@ namespace AssettoServer.Commands.Modules
             else
                 Reply("Incorrect administrator password.");
         }
-
-        [Command("w")]
-        public void VoteWeather(int choice)
-        {
-            if (Context.Server.WeatherProvider is VotingWeatherProvider provider)
-            {
-                provider.CountVote(Context.Client, choice);
-            }
-            else
-            {
-                Reply("Weather votes are disabled.");
-            }
-        }
     }
 }

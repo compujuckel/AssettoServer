@@ -189,19 +189,8 @@ namespace AssettoServer.Server
             {
                 WeatherImplementation = new VanillaWeatherImplementation(this);
             }
-
-            if (Configuration.Extra.EnableLiveWeather)
-            {
-                WeatherProvider = new LiveWeatherProvider(this);
-            }
-            else if (Configuration.Extra.EnableWeatherVoting)
-            {
-                WeatherProvider = new VotingWeatherProvider(this);
-            }
-            else
-            {
-                WeatherProvider = new DefaultWeatherProvider(this);
-            }
+            
+            WeatherProvider = new DefaultWeatherProvider(this);
 
             if (Configuration.Extra.EnableAi)
             {
@@ -750,12 +739,6 @@ namespace AssettoServer.Server
                                 }
                             }
                         }
-                    }
-
-                    if (Environment.TickCount64 - lastWeatherUpdate > Configuration.Extra.WeatherUpdateIntervalMilliseconds)
-                    {
-                        lastWeatherUpdate = Environment.TickCount64;
-                        _ = WeatherProvider.UpdateAsync(CurrentWeather);
                     }
 
                     if (Environment.TickCount64 - lastLobbyUpdate > 60_000)

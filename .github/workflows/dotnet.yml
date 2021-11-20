@@ -22,7 +22,7 @@ jobs:
     - name: Package (Linux)
       run: cd out-linux-x64 && tar -czf assetto-server-linux-x64.tar.gz * && cd ..
     - name: Package (Windows)
-      run: cd out-win-x64 && zip assetto-server-win-x64.zip * && cd ..
+      run: cd out-win-x64 && zip -r assetto-server-win-x64.zip * && cd ..
     - name: Release
       uses: softprops/action-gh-release@v1
       with:

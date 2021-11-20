@@ -15,11 +15,10 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 6.0.x
-        include-prerelease: true
     - name: Publish (Linux)
-      run: dotnet publish AssettoServer --output out-linux-x64 --runtime linux-x64 --no-self-contained -c Release
+      run: dotnet publish --runtime linux-x64 --no-self-contained -c Release
     - name: Publish (Windows)
-      run: dotnet publish AssettoServer --output out-win-x64 --runtime win-x64 --no-self-contained -c Release
+      run: dotnet publish --runtime win-x64 --no-self-contained -c Release
     - name: Package (Linux)
       run: cd out-linux-x64 && tar -czf assetto-server-linux-x64.tar.gz * && cd ..
     - name: Package (Windows)
@@ -27,7 +26,7 @@ jobs:
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
-        prerelease: yes
+        prerelease: true
         files: |
           out-linux-x64/assetto-server-linux-x64.tar.gz
           out-win-x64/assetto-server-win-x64.zip

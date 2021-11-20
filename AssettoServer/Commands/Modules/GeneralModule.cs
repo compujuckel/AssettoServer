@@ -22,7 +22,7 @@ namespace AssettoServer.Commands.Modules
 
         [Command("time")]
         public void Time()
-            => Reply($"It is currently {new DateTime().AddSeconds(Context.Server.CurrentDaySeconds):H:mm}.");
+            => Reply($"It is currently {TimeZoneInfo.ConvertTimeFromUtc(Context.Server.CurrentDateTime, Context.Server.TimeZone):H:mm}.");
 
 #if DEBUG
         [Command("test")]

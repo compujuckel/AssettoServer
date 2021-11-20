@@ -27,6 +27,7 @@ using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.TrackParams;
+using AssettoServer.Server.Weather.Implementation;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Serilog;
@@ -44,8 +45,8 @@ namespace AssettoServer.Server
         public ACServerConfiguration Configuration { get; }
         public SessionConfiguration CurrentSession { get; private set; }
         public WeatherData CurrentWeather { get; private set; }
-        public long? WeatherFxStartDate { get; private set; }
-        public float CurrentDaySeconds { get; private set; }
+        public DateTime CurrentDateTime { get; set; }
+        public TimeZoneInfo TimeZone { get; }
         public GeoParams GeoParams { get; private set; }
         public IReadOnlyList<string> Features { get; private set; }
 
@@ -70,8 +71,8 @@ namespace AssettoServer.Server
         private HttpClient HttpClient { get; }
         public IWeatherTypeProvider WeatherTypeProvider { get; }
         public IWeatherProvider WeatherProvider { get; }
+        public IWeatherImplementation WeatherImplementation { get; }
         private RainHelper RainHelper { get; }
-        private TimeZoneInfo RealTimeZone { get; }
         private ITrackParamsProvider TrackParamsProvider { get; }
         public TrackParams.TrackParams TrackParams { get; }
         
@@ -116,7 +117,6 @@ namespace AssettoServer.Server
                 EntryCars[i].SetAiOverbooking(0);
             }
             
-            CurrentDaySeconds = (float)(Configuration.SunAngle * (50400.0 - 46800.0) / 16.0 + 46800.0);
             ConnectSemaphore = new SemaphoreSlim(1, 1);
             ConnectedCars = new ConcurrentDictionary<int, EntryCar>();
             EndpointCars = new ConcurrentDictionary<IPEndPoint, EntryCar>();
@@ -158,18 +158,37 @@ namespace AssettoServer.Server
 
             if (TrackParams == null)
             {
-                Log.Error("No track params found for {0}. Live weather and realtime will be disabled.", Configuration.Track);
-
-                Configuration.Extra.EnableRealTime = false;
+                Log.Error("No track params found for {0}. Live weather will be disabled.", Configuration.Track);
+                
                 Configuration.Extra.EnableLiveWeather = false;
+                
+                TimeZone = TimeZoneInfo.Utc;
             }
-            else if (string.IsNullOrWhiteSpace(TrackParams.Timezone))
+            else
             {
-                Configuration.Extra.EnableRealTime = false;
+                /*
+                * In theory TZConvert could be removed because .NET 6 supports IANA timezone names natively
+                * In practice the native way is not supported in Windows 10 LTSC 2019, so keeping this in for now
+                * https://docs.microsoft.com/en-us/windows/win32/intl/international-components-for-unicode--icu-
+                * ("icu.dll" is required which was added in Version 1903)
+                */
+                TimeZone = TZConvert.GetTimeZoneInfo(TrackParams.Timezone);
             }
 
+            var startDate = new DateTime(DateTime.UtcNow.Date.Ticks);
+            CurrentDateTime = TimeZoneInfo.ConvertTimeToUtc(startDate + TimeSpan.FromSeconds(WeatherUtils.SecondsFromSunAngle(Configuration.SunAngle)), TimeZone);
+            
             WeatherTypeProvider = new DefaultWeatherTypeProvider();
             RainHelper = new RainHelper();
+
+            if (Configuration.Extra.EnableWeatherFx)
+            {
+                WeatherImplementation = new WeatherFxV1Implementation(this);
+            }
+            else
+            {
+                WeatherImplementation = new VanillaWeatherImplementation(this);
+            }
 
             if (Configuration.Extra.EnableLiveWeather)
             {
@@ -182,20 +201,6 @@ namespace AssettoServer.Server
             else
             {
                 WeatherProvider = new DefaultWeatherProvider(this);
-            }
-
-            if (Configuration.Extra.EnableRealTime)
-            {
-                /*
-                 * In theory TZConvert could be removed because .NET 6 supports IANA timezone names natively
-                 * In practice the native way is not supported in Windows 10 LTSC 2019, so keeping this in for now
-                 * https://docs.microsoft.com/en-us/windows/win32/intl/international-components-for-unicode--icu-
-                 * ("icu.dll" is required which was added in Version 1903)
-                 */
-                RealTimeZone = TZConvert.GetTimeZoneInfo(TrackParams.Timezone);
-                UpdateRealTime();
-
-                Log.Information("Enabled real time with time zone {0}", RealTimeZone.DisplayName);
             }
 
             if (Configuration.Extra.EnableAi)
@@ -350,13 +355,6 @@ namespace AssettoServer.Server
             LoadAdmins().ContinueWith(t => Log.Error(t.Exception, "Error reloading adminlist"), TaskContinuationOptions.OnlyOnFaulted);
             
             context.Cancel = true;
-        }
-
-        private void UpdateRealTime()
-        {
-            var realTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, RealTimeZone);
-            CurrentDaySeconds = (float)realTime.TimeOfDay.TotalSeconds;
-            WeatherFxStartDate = new DateTimeOffset(DateTime.SpecifyKind(realTime.Date, DateTimeKind.Utc)).ToUnixTimeSeconds();
         }
 
         private void InitializeChecksums()
@@ -530,7 +528,7 @@ namespace AssettoServer.Server
         public void SetWeather(WeatherData weather)
         {
             CurrentWeather = weather;
-            SendCurrentWeather();
+            WeatherImplementation.SendWeather();
         }
         
         public void SetCspWeather(WeatherFxType upcoming, int duration)
@@ -542,7 +540,7 @@ namespace AssettoServer.Server
             CurrentWeather.TransitionValueInternal = 0;
             CurrentWeather.TransitionDuration = duration * 1000;
 
-            SendCurrentWeather();
+            WeatherImplementation.SendWeather();
         }
 
         public void SendRawFileTcp(string filename)
@@ -579,67 +577,7 @@ namespace AssettoServer.Server
 
         public void SetTime(float time)
         {
-            CurrentDaySeconds = Math.Clamp(time, 0, 86400);
-            Configuration.SunAngle = (float)(16.0 * (time - 46800.0) / (50400.0 - 46800.0));
-
-            BroadcastPacket(new SunAngleUpdate { SunAngle = Configuration.SunAngle });
-        }
-
-        public void SendCurrentWeather(ACTcpClient endpoint = null)
-        {
-            if (Configuration.Extra.EnableWeatherFx)
-            {
-                var weather = new CSPWeatherUpdate
-                {
-                    UnixTimestamp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                    WeatherType = (byte) CurrentWeather.Type.WeatherFxType,
-                    UpcomingWeatherType = (byte) CurrentWeather.UpcomingType.WeatherFxType,
-                    TransitionValue = CurrentWeather.TransitionValue,
-                    TemperatureAmbient = (Half) CurrentWeather.TemperatureAmbient,
-                    TemperatureRoad = (Half) CurrentWeather.TemperatureRoad,
-                    TrackGrip = (Half) CurrentWeather.TrackGrip,
-                    WindDirectionDeg = (Half) CurrentWeather.WindDirection,
-                    WindSpeed = (Half) CurrentWeather.WindSpeed,
-                    Humidity = (Half) CurrentWeather.Humidity,
-                    Pressure = (Half) CurrentWeather.Pressure,
-                    RainIntensity = (Half) CurrentWeather.RainIntensity,
-                    RainWetness = (Half) CurrentWeather.RainWetness,
-                    RainWater = (Half) CurrentWeather.RainWater
-                };
-
-                Log.Verbose("CSP Weather: {0}", weather);
-
-                if (endpoint == null)
-                {
-                    BroadcastPacketUdp(weather);
-                }
-                else
-                {
-                    endpoint.SendPacketUdp(weather);
-                }
-            }
-            else
-            {
-                var weather = new WeatherUpdate
-                {
-                    Ambient = (byte) CurrentWeather.TemperatureAmbient,
-                    Graphics = CurrentWeather.Type.Graphics,
-                    Road = (byte) CurrentWeather.TemperatureRoad,
-                    WindDirection = (short) CurrentWeather.WindDirection,
-                    WindSpeed = (short) CurrentWeather.WindSpeed
-                };
-                
-                Log.Information("Weather: {0}", weather);
-
-                if (endpoint == null)
-                {
-                    BroadcastPacket(weather);
-                }
-                else
-                {
-                    endpoint.SendPacket(weather);
-                }
-            }
+            CurrentDateTime = TimeZoneInfo.ConvertTimeToUtc(TimeZoneInfo.ConvertTimeFromUtc(CurrentDateTime, TimeZone).Date + TimeSpan.FromSeconds(time), TimeZone);
         }
 
         public void BroadcastPacket<TPacket>(TPacket packet, ACTcpClient sender = null) where TPacket : IOutgoingNetworkPacket
@@ -668,8 +606,6 @@ namespace AssettoServer.Server
             long lastLobbyUpdate = 0;
             long lastTimeUpdate = Environment.TickCount64;
             long lastWeatherUpdate = Environment.TickCount64;
-            long lastAiUpdate = Environment.TickCount64;
-            long lastAiObstacleDetectionUpdate = Environment.TickCount64;
             float networkDistanceSquared = (float)Math.Pow(Configuration.Extra.NetworkBubbleDistance, 2);
             int outsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
 
@@ -835,26 +771,15 @@ namespace AssettoServer.Server
                     {
                         if (Configuration.Extra.EnableRealTime)
                         {
-                            UpdateRealTime();
+                            CurrentDateTime = DateTime.UtcNow;
                         }
                         else
                         {
-                            CurrentDaySeconds += (Environment.TickCount64 - lastTimeUpdate) / 1000.0f * Configuration.TimeOfDayMultiplier;
-                            if (CurrentDaySeconds <= 0)
-                                CurrentDaySeconds = 0;
-                            else if (CurrentDaySeconds >= 86400)
-                                CurrentDaySeconds = 0;
+                            CurrentDateTime += TimeSpan.FromMilliseconds((Environment.TickCount64 - lastTimeUpdate) * Configuration.TimeOfDayMultiplier);
                         }
 
-                        if (Configuration.Extra.EnableWeatherFx)
-                        {
-                            RainHelper.Update(CurrentWeather, Configuration.DynamicTrack.BaseGrip, Configuration.Extra.RainTrackGripReduction, Environment.TickCount64 - lastTimeUpdate);
-                            SendCurrentWeather();
-                        }
-                        else
-                        {
-                            SetTime(CurrentDaySeconds);
-                        }
+                        RainHelper.Update(CurrentWeather, Configuration.DynamicTrack.BaseGrip, Configuration.Extra.RainTrackGripReduction, Environment.TickCount64 - lastTimeUpdate);
+                        WeatherImplementation.SendWeather();
 
                         lastTimeUpdate = Environment.TickCount64;
                     }

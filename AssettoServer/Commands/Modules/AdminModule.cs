@@ -123,14 +123,14 @@ namespace AssettoServer.Commands.Modules
             Context.Server.CurrentWeather.RainIntensity = intensity;
             Context.Server.CurrentWeather.RainWetness = wetness;
             Context.Server.CurrentWeather.RainWater = water;
-            Context.Server.SendCurrentWeather();
+            Context.Server.WeatherImplementation.SendWeather();
         }
 
         [Command("setgrip")]
         public void SetGrip(float grip)
         {
             Context.Server.CurrentWeather.TrackGrip = grip;
-            Context.Server.SendCurrentWeather();
+            Context.Server.WeatherImplementation.SendWeather();
         }
 
         [Command("setafktime")]

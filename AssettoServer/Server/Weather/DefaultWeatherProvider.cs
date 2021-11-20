@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
+using Serilog;
 
 namespace AssettoServer.Server.Weather
 {
@@ -25,10 +26,17 @@ namespace AssettoServer.Server.Weather
             
             _weatherConfiguration = _server.Configuration.Weathers[id];
 
-            var weatherType = _server.WeatherTypeProvider.GetWeatherType(_weatherConfiguration.WeatherFxParams.Type) with
+            if (_weatherConfiguration.WeatherFxParams.StartTime != null
+                || _weatherConfiguration.WeatherFxParams.TimeMultiplier != null)
             {
-                Graphics = _weatherConfiguration.Graphics,
-            };
+                Log.Warning("Do not use WeatherFX start times or time multipliers. Use the original config values instead");
+            }
+
+            DateTimeOffset offset = _weatherConfiguration.WeatherFxParams.StartDate.HasValue ? DateTimeOffset.FromUnixTimeSeconds(_weatherConfiguration.WeatherFxParams.StartDate.Value) : DateTime.UtcNow.Date;
+
+            _server.CurrentDateTime = TimeZoneInfo.ConvertTimeToUtc(offset.DateTime + TimeZoneInfo.ConvertTimeFromUtc(_server.CurrentDateTime, _server.TimeZone).TimeOfDay, _server.TimeZone);
+
+            var weatherType = _server.WeatherTypeProvider.GetWeatherType(_weatherConfiguration.WeatherFxParams.Type);
 
             _server.SetWeather(new WeatherData
             {

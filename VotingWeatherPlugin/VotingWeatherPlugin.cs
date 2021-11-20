@@ -1,9 +1,10 @@
 ﻿using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Server.Weather;
 
 namespace VotingWeatherPlugin;
 
-public class VotingWeatherPlugin : IAssettoServerPlugin<VotingWeatherConfiguration>
+public class VotingWeatherPlugin : IAssettoServerPlugin<VotingWeatherConfiguration>, IWeatherPlugin
 {
     public VotingWeather Instance { get; private set; }
     
@@ -18,5 +19,4 @@ public class VotingWeatherPlugin : IAssettoServerPlugin<VotingWeatherConfigurati
     {
         _configuration = configuration;
     }
-    
 }

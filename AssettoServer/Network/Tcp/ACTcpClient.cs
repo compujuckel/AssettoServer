@@ -15,6 +15,7 @@ using AssettoServer.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Weather;
 using Qmmands;
 using Steamworks;
 using Serilog;
@@ -254,7 +255,7 @@ namespace AssettoServer.Network.Tcp
                                 ResultScreenTime = cfg.ResultScreenTime,
                                 ServerName = cfg.Name,
                                 SessionId = SessionId,
-                                SunAngle = cfg.SunAngle,
+                                SunAngle = WeatherUtils.SunAngleFromSeconds((float)TimeZoneInfo.ConvertTimeFromUtc(Server.CurrentDateTime, Server.TimeZone).TimeOfDay.TotalSeconds),
                                 TrackConfig = cfg.TrackConfig,
                                 TrackName = cfg.Track,
                                 TyreConsumptionRate = cfg.TyreConsumptionRate,
@@ -543,7 +544,7 @@ namespace AssettoServer.Network.Tcp
                 SendPacket(new WelcomeMessage { Message = cfg.WelcomeMessage });
 
             SendPacket(new DriverInfoUpdate { ConnectedCars = connectedCars });
-            Server.SendCurrentWeather(this);
+            Server.WeatherImplementation.SendWeather(this);
 
             foreach (EntryCar car in connectedCars)
             {

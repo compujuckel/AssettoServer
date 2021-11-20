@@ -25,18 +25,6 @@ namespace AssettoServer.Server.Weather
 
             var weatherType = _server.WeatherTypeProvider.GetWeatherType(response.WeatherType);
 
-            if (_server.WeatherFxStartDate.HasValue)
-            {
-                weatherType = weatherType with
-                {
-                    Graphics = new WeatherFxParams()
-                    {
-                        Type = weatherType.WeatherFxType,
-                        StartDate = _server.WeatherFxStartDate
-                    }.ToString()
-                };
-            }
-
             if (last == null)
             {
                 _server.SetWeather(new WeatherData
@@ -44,7 +32,7 @@ namespace AssettoServer.Server.Weather
                     Type = weatherType,
                     UpcomingType = weatherType,
                     TemperatureAmbient = response.TemperatureAmbient,
-                    TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(_server.CurrentDaySeconds, response.TemperatureAmbient, weatherType.TemperatureCoefficient),
+                    TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(TimeZoneInfo.ConvertTimeFromUtc(_server.CurrentDateTime, _server.TimeZone).TimeOfDay.TotalSeconds, response.TemperatureAmbient, weatherType.TemperatureCoefficient),
                     Pressure = response.Pressure,
                     Humidity = response.Humidity,
                     WindSpeed = response.WindSpeed,
@@ -63,7 +51,7 @@ namespace AssettoServer.Server.Weather
                     UpcomingType = weatherType,
                     TransitionDuration = 120000.0,
                     TemperatureAmbient = response.TemperatureAmbient,
-                    TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(_server.CurrentDaySeconds, response.TemperatureAmbient, weatherType.TemperatureCoefficient),
+                    TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(TimeZoneInfo.ConvertTimeFromUtc(_server.CurrentDateTime, _server.TimeZone).TimeOfDay.TotalSeconds, response.TemperatureAmbient, weatherType.TemperatureCoefficient),
                     Pressure = response.Pressure,
                     Humidity = response.Humidity,
                     WindSpeed = response.WindSpeed,

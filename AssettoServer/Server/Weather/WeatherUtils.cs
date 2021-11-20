@@ -28,5 +28,15 @@ namespace AssettoServer.Server.Weather
             return ambientTemperature * (1d + 5.33332 * (weatherCoefficient == 0d ? 1d : weatherCoefficient) * (1d - time) *
                 (Math.Exp(-6d * time) * Math.Sin(6d * time) + 0.25) * Math.Sin(0.9 * time));
         }
+
+        public static float SecondsFromSunAngle(float sunAngle)
+        {
+            return (float)(sunAngle * (50400.0 - 46800.0) / 16.0 + 46800.0);
+        }
+
+        public static float SunAngleFromSeconds(float seconds)
+        {
+            return (float)(16.0 * (seconds - 46800.0) / (50400.0 - 46800.0));
+        }
     }
 }

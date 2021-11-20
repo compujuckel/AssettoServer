@@ -1,15 +1,15 @@
 ﻿using AssettoServer.Server;
+using AssettoServer.Server.Weather;
+using AssettoServer.Server.Weather.Implementation;
 
 namespace VotingWeatherPlugin;
 
-public class VotingWeather
+public class VotingWeather : WeatherFxV1Implementation
 {
-    private ACServer _server;
     private VotingWeatherConfiguration _configuration;
 
-    public VotingWeather(ACServer server, VotingWeatherConfiguration configuration)
+    public VotingWeather(ACServer server, VotingWeatherConfiguration configuration) : base(server)
     {
-        _server = server;
         _configuration = configuration;
     }
 }

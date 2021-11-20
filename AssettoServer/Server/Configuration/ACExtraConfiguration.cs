@@ -23,15 +23,15 @@ namespace AssettoServer.Server.Configuration
         public List<WeatherFxType> VotingBlacklistedWeathers { get; set; } = new List<WeatherFxType>() { WeatherFxType.None };
         public bool EnableRealTime { get; set; } = false;
         public bool EnableWeatherFx { get; set; } = false;
-        public int WeatherUpdateIntervalMinutes { get; set; } = 600;
+        public int WeatherUpdateIntervalMinutes { get; set; } = 10;
         public double RainTrackGripReduction { get; set; } = 0;
         public bool EnableAi { get; set; } = false;
         public AiParams AiParams { get; set; } = new AiParams();
         public List<string> NameFilters { get; set; } = new();
         public List<string> EnablePlugins { get; set; } = new();
 
-        [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60000;
-        [YamlIgnore] public int WeatherUpdateIntervalMilliseconds => WeatherUpdateIntervalMinutes * 60000;
+        [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
+        [YamlIgnore] public int WeatherUpdateIntervalMilliseconds => WeatherUpdateIntervalMinutes * 60_000;
     }
 
     public class AiParams

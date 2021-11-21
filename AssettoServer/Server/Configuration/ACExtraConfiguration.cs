@@ -17,13 +17,8 @@ namespace AssettoServer.Server.Configuration
         public int OutsideNetworkBubbleRefreshRateHz { get; set; } = 4;
         public bool EnableServerDetails { get; set; } = true;
         public string ServerDescription { get; set; } = "";
-        public string OwmApiKey { get; set; } = "";
-        public bool EnableLiveWeather { get; set; } = false;
-        public bool EnableWeatherVoting { get; set; } = false;
-        public List<WeatherFxType> VotingBlacklistedWeathers { get; set; } = new List<WeatherFxType>() { WeatherFxType.None };
         public bool EnableRealTime { get; set; } = false;
         public bool EnableWeatherFx { get; set; } = false;
-        public int WeatherUpdateIntervalMinutes { get; set; } = 10;
         public double RainTrackGripReduction { get; set; } = 0;
         public bool EnableAi { get; set; } = false;
         public AiParams AiParams { get; set; } = new AiParams();
@@ -31,7 +26,6 @@ namespace AssettoServer.Server.Configuration
         public List<string> EnablePlugins { get; set; } = new();
 
         [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
-        [YamlIgnore] public int WeatherUpdateIntervalMilliseconds => WeatherUpdateIntervalMinutes * 60_000;
     }
 
     public class AiParams

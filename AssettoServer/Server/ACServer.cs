@@ -70,7 +70,7 @@ namespace AssettoServer.Server
         private SemaphoreSlim ConnectSemaphore { get; }
         private HttpClient HttpClient { get; }
         public IWeatherTypeProvider WeatherTypeProvider { get; }
-        public IWeatherProvider WeatherProvider { get; }
+        public DefaultWeatherProvider WeatherProvider { get; }
         public IWeatherImplementation WeatherImplementation { get; }
         private RainHelper RainHelper { get; }
         private ITrackParamsProvider TrackParamsProvider { get; }
@@ -158,10 +158,7 @@ namespace AssettoServer.Server
 
             if (TrackParams == null)
             {
-                Log.Error("No track params found for {0}. Live weather will be disabled.", Configuration.Track);
-                
-                Configuration.Extra.EnableLiveWeather = false;
-                
+                Log.Error("No track params found for {0}. Features requiring track coordinates or time zone will not work", Configuration.Track);
                 TimeZone = TimeZoneInfo.Utc;
             }
             else
@@ -286,7 +283,6 @@ namespace AssettoServer.Server
             await LoadAdmins();
             
             await InitializeGeoParams();
-            await WeatherProvider.UpdateAsync();
 
             InitializeSteam();
             _ = Task.Factory.StartNew(AcceptTcpConnectionsAsync, TaskCreationOptions.LongRunning);
@@ -530,38 +526,6 @@ namespace AssettoServer.Server
             CurrentWeather.TransitionDuration = duration * 1000;
 
             WeatherImplementation.SendWeather();
-        }
-
-        public void SendRawFileTcp(string filename)
-        {
-            try
-            {
-                byte[] file = File.ReadAllBytes(filename);
-                BroadcastPacket(new RawPacket()
-                {
-                    Content = file
-                });
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Could not send file");
-            }
-        }
-        
-        public void SendRawFileUdp(string filename)
-        {
-            try
-            {
-                byte[] file = File.ReadAllBytes(filename);
-                BroadcastPacketUdp(new RawPacket()
-                {
-                    Content = file
-                });
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Could not send file");
-            }
         }
 
         public void SetTime(float time)

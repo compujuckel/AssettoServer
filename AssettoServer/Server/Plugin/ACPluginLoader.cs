@@ -76,8 +76,6 @@ public class ACPluginLoader
         {
             if (plugin.ConfigurationType != null && plugin.ConfigurationType.IsInstanceOfType(configuration))
             {
-                Log.Debug("Found config section for {0} of type {1}", plugin.Name, configuration);
-
                 var genericType = typeof(IAssettoServerPlugin<>).MakeGenericType(new[] { plugin.ConfigurationType });
                 var method = genericType.GetMethod("SetConfiguration");
 

@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
 using Serilog;
 
 namespace AssettoServer.Server.Weather
 {
-    public class DefaultWeatherProvider : IWeatherProvider
+    public class DefaultWeatherProvider
     {
         private readonly ACServer _server;
 
@@ -53,11 +52,6 @@ namespace AssettoServer.Server.Weather
             });
 
             return true;
-        }
-        
-        public Task UpdateAsync(WeatherData last = null)
-        {
-            return Task.CompletedTask;
         }
 
         private float GetFloatWithVariation(float baseValue, float variation)

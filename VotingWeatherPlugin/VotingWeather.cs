@@ -34,7 +34,7 @@ public class VotingWeather
 
     private void OnUpdate(ACServer sender)
     {
-        if (Environment.TickCount64 - _lastVote > _configuration.VotingIntervalMinutes * 60_000)
+        if (Environment.TickCount64 - _lastVote > _configuration.VotingIntervalMilliseconds)
         {
             _lastVote = Environment.TickCount64;
             _ = UpdateAsync();
@@ -89,7 +89,7 @@ public class VotingWeather
         }
 
         _votingOpen = true;
-        await Task.Delay(_configuration.VotingDurationSeconds * 1000);
+        await Task.Delay(_configuration.VotingDurationMilliseconds);
         _votingOpen = false;
 
         int maxVotes = _availableWeathers.Max(w => w.Votes);

@@ -92,22 +92,14 @@ namespace AssettoServer.Commands.Modules
         [Command("setweather")]
         public void SetWeather(int weatherId)
         {
-            if (Context.Server.WeatherProvider is DefaultWeatherProvider provider)
+            if (Context.Server.WeatherProvider.SetWeatherConfiguration(weatherId))
             {
-                if (provider.SetWeatherConfiguration(weatherId))
-                {
-                    Reply("Weather has been set.");
-                }
-                else
-                {
-                    Reply("There is no weather with this id.");
-                }
+                Reply("Weather configuration has been set.");
             }
             else
             {
-                Reply("Setting a weather configuration is not supported.");
+                Reply("There is no weather configuration with this id.");
             }
-
         }
 
         [Command("setcspweather")]

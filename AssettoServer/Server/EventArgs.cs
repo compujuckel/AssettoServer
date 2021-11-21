@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
@@ -18,7 +20,21 @@ public class ClientAuditEventArgs : EventArgs
     public ACTcpClient Admin { get; init; }
 }
 
-public class ChatEventArgs : EventArgs
+public class ClientHandshakeEventArgs : CancelEventArgs
+{
+    public HandshakeRequest HandshakeRequest { get; init; }
+
+    public CancelTypeEnum CancelType { get; set; }
+    public string AuthFailedReason { get; set; }
+
+    public enum CancelTypeEnum
+    {
+        Blacklisted,
+        AuthFailed
+    }
+}
+
+public class ChatEventArgs : CancelEventArgs
 {
     public ACTcpClient Client { get; init; }
     public string Message { get; init; }

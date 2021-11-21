@@ -83,6 +83,7 @@ namespace AssettoServer.Server
         
         private List<PosixSignalRegistration> SignalHandlers { get; }
 
+        public event EventHandler<ClientHandshakeEventArgs> ClientHandshakeStarted; 
         public event EventHandler<ClientEventArgs> ClientChecksumPassed;
         public event EventHandler<ClientEventArgs> ClientChecksumFailed;
         public event EventHandler<ClientEventArgs> ClientDisconnected;
@@ -486,7 +487,7 @@ namespace AssettoServer.Server
             }
         }
 
-        public async ValueTask BanAsync(ACTcpClient client, KickReason reason, string reasonStr = null, ACTcpClient admin = null)
+        public async Task BanAsync(ACTcpClient client, KickReason reason, string reasonStr = null, ACTcpClient admin = null)
         {
             if (reasonStr != null)
                 BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
@@ -915,6 +916,7 @@ namespace AssettoServer.Server
                     Log.Information("Incoming TCP connection from {0}.", tcpClient.Client.RemoteEndPoint);
 
                     ACTcpClient acClient = new ACTcpClient(this, tcpClient);
+                    acClient.HandshakeStarted += OnHandshakeStarted;
                     acClient.ChecksumFailed += OnClientChecksumFailed;
                     acClient.ChecksumPassed += OnClientChecksumPassed;
                     acClient.ChatMessageReceived += OnChatMessageReceived;
@@ -925,6 +927,11 @@ namespace AssettoServer.Server
                     Log.Error(ex, "Something went wrong while trying to accept TCP connection.");
                 }
             }
+        }
+
+        private void OnHandshakeStarted(object sender, ClientHandshakeEventArgs args)
+        {
+            ClientHandshakeStarted?.Invoke(this, args);
         }
 
         private void OnClientChecksumPassed(object sender, EventArgs args)
@@ -953,14 +960,17 @@ namespace AssettoServer.Server
 
             if (!CommandUtilities.HasPrefix(args.ChatMessage.Message, '/', out string commandStr))
             {
-                BroadcastPacket(args.ChatMessage);
-
                 var outArgs = new ChatEventArgs
                 {
                     Client = client,
                     Message = args.ChatMessage.Message
                 };
                 ChatMessageReceived?.Invoke(this, outArgs);
+
+                if (!outArgs.Cancel)
+                {
+                    BroadcastPacket(args.ChatMessage);
+                }
             }
             else
             {

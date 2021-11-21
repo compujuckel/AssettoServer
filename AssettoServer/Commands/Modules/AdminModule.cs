@@ -36,7 +36,7 @@ namespace AssettoServer.Commands.Modules
         }
 
         [Command("ban", "ban_id")]
-        public ValueTask BanAsync(ACTcpClient player, [Remainder] string reason = null)
+        public Task BanAsync(ACTcpClient player, [Remainder] string reason = null)
         {
             if (player.SessionId == Context.Client?.SessionId)
                 Reply("You cannot ban yourself.");
@@ -50,7 +50,7 @@ namespace AssettoServer.Commands.Modules
                 return Context.Server.BanAsync(player, KickReason.Blacklisted, kickMessage, Context.Client);
             }
 
-            return ValueTask.CompletedTask;
+            return Task.CompletedTask;
         }
 
         [Command("unban")]

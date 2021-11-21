@@ -53,6 +53,7 @@ namespace AssettoServer.Network.Tcp
         private long LastChatTime { get; set; }
         private SteamId? SteamId { get; set; }
 
+        public event EventHandler<ClientHandshakeEventArgs> HandshakeStarted;
         public event EventHandler ChecksumPassed;
         public event EventHandler ChecksumFailed;
         public event EventHandler<ChatMessageEventArgs> ChatMessageReceived;
@@ -207,10 +208,19 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new NoSlotsAvailableResponse());
                         else
                         {
-                            if (!HasValidUserName(handshakeRequest.Name, Server.Configuration.Extra.NameFilters))
+                            var args = new ClientHandshakeEventArgs
                             {
-                                Log.Information("Kicking Player '{0}' for having an invalid name.", handshakeRequest.Name);
-                                SendPacket(new AuthFailedResponse("Invalid username. Change your Online Name in Settings > Content Manager > Drive > Online Name."));
+                                HandshakeRequest = handshakeRequest
+                            };
+                            HandshakeStarted?.Invoke(this, args);
+
+                            if (args.Cancel)
+                            {
+                                if(args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.Blacklisted)
+                                    SendPacket(new BlacklistedResponse());
+                                else if(args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.AuthFailed)
+                                    SendPacket(new AuthFailedResponse(args.AuthFailedReason));
+
                                 return;
                             }
 

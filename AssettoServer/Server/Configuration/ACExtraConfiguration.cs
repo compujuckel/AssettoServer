@@ -22,7 +22,6 @@ namespace AssettoServer.Server.Configuration
         public double RainTrackGripReduction { get; set; } = 0;
         public bool EnableAi { get; set; } = false;
         public AiParams AiParams { get; set; } = new AiParams();
-        public List<string> NameFilters { get; set; } = new();
         public List<string> EnablePlugins { get; set; } = new();
 
         [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;

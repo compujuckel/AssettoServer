@@ -46,7 +46,6 @@ namespace AssettoServer.Server.Configuration
         public int MaxSpawnProtectionTime { get; set; } = 8;
         public int MinCollisionStopTime { get; set; } = 1;
         public int MaxCollisionStopTime { get; set; } = 3;
-        public float AiSplineHeightOffset { get; set; }
         public float MaxSpeed { get; set; } = 80;
         public float RightLaneOffset { get; set; } = 10;
         public float MaxSpeedVariation { get; set; } = 0.15f;

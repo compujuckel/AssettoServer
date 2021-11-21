@@ -221,27 +221,6 @@ namespace AssettoServer.Server
             return (closestState, minDistanceSquared);
         }
 
-        public bool HasInitializedAiStates()
-        {
-            _aiStatesLock.EnterReadLock();
-            try
-            {
-                foreach (var aiState in _aiStates)
-                {
-                    if (aiState.Initialized)
-                    {
-                        return true;
-                    }
-                }
-            }
-            finally
-            {
-                _aiStatesLock.ExitReadLock();
-            }
-
-            return false;
-        }
-
         public (AiState aiState, float distanceSquared) FindClosestAiObstacle(AiState targetState)
         {
             _aiStatesLock.EnterReadLock();

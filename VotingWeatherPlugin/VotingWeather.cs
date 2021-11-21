@@ -32,7 +32,7 @@ public class VotingWeather
         _server.Update += OnUpdate;
     }
 
-    private void OnUpdate(ACServer sender)
+    private void OnUpdate(object sender, EventArgs args)
     {
         if (Environment.TickCount64 - _lastVote > _configuration.VotingIntervalMilliseconds)
         {

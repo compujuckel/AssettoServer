@@ -83,18 +83,13 @@ namespace AssettoServer.Server
         
         private List<PosixSignalRegistration> SignalHandlers { get; }
 
-        public delegate void ClientEventHandler(ACServer sender, ACTcpClient client);
-        public delegate void ClientAuditHandler(ACServer sender, ACTcpClient client, KickReason reason, string reasonStr, ACTcpClient admin);
-        public delegate void VoidHandler(ACServer sender);
-        public delegate void ChatMessageHandler(ACServer sender, ACTcpClient client, string message);
-        
-        public event ClientEventHandler ClientChecksumPassed;
-        public event ClientEventHandler ClientChecksumFailed;
-        public event ClientEventHandler ClientDisconnected;
-        public event ClientAuditHandler ClientKicked;
-        public event ClientAuditHandler ClientBanned;
-        public event VoidHandler Update;
-        public event ChatMessageHandler ChatMessageReceived;
+        public event EventHandler<ClientEventArgs> ClientChecksumPassed;
+        public event EventHandler<ClientEventArgs> ClientChecksumFailed;
+        public event EventHandler<ClientEventArgs> ClientDisconnected;
+        public event EventHandler<ClientAuditEventArgs> ClientKicked;
+        public event EventHandler<ClientAuditEventArgs> ClientBanned;
+        public event EventHandler Update;
+        public event EventHandler<ChatEventArgs> ChatMessageReceived;
 
         public ACServer(ACServerConfiguration configuration, ACPluginLoader loader)
         {
@@ -476,8 +471,15 @@ namespace AssettoServer.Server
             {
                 Log.Information("{0} was kicked. Reason: {1}", client.Name, reasonStr ?? "No reason given.");
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
-                
-                ClientKicked?.Invoke(this, client, reason, reasonStr, admin);
+
+                var args = new ClientAuditEventArgs
+                {
+                    Client = client,
+                    Reason = reason,
+                    ReasonStr = reasonStr,
+                    Admin = admin
+                };
+                ClientKicked?.Invoke(this, args);
                 
                 await Task.Delay(250);
                 await client.DisconnectAsync();
@@ -497,7 +499,14 @@ namespace AssettoServer.Server
                 await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => p.Value).Select(p => p.Key));
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
 
-                ClientBanned?.Invoke(this, client, reason, reasonStr, admin);
+                var args = new ClientAuditEventArgs
+                {
+                    Client = client,
+                    Reason = reason,
+                    ReasonStr = reasonStr,
+                    Admin = admin
+                };
+                ClientBanned?.Invoke(this, args);
 
                 await Task.Delay(250);
                 await client.DisconnectAsync();
@@ -567,7 +576,7 @@ namespace AssettoServer.Server
             {
                 try
                 {
-                    Update?.Invoke(this);
+                    Update?.Invoke(this, EventArgs.Empty);
                     
                     foreach (EntryCar fromCar in EntryCars)
                     {
@@ -799,7 +808,11 @@ namespace AssettoServer.Server
                     if (client.HasPassedChecksum)
                         BroadcastPacket(new CarDisconnected { SessionId = client.SessionId });
 
-                    ClientDisconnected?.Invoke(this, client);
+                    var args = new ClientEventArgs
+                    {
+                        Client = client
+                    };
+                    ClientDisconnected?.Invoke(this, args);
                 }
             }
             catch (Exception ex)
@@ -914,29 +927,46 @@ namespace AssettoServer.Server
             }
         }
 
-        private void OnClientChecksumPassed(ACTcpClient sender)
+        private void OnClientChecksumPassed(object sender, EventArgs args)
         {
-            ClientChecksumPassed?.Invoke(this, sender);
-        }
-
-        private void OnClientChecksumFailed(ACTcpClient sender)
-        {
-            ClientChecksumFailed?.Invoke(this, sender);
-        }
-
-        private void OnChatMessageReceived(ACTcpClient sender, ChatMessage message)
-        {
-            Log.Information("CHAT: {0} ({1}): {2}", sender.Name, sender.SessionId, message.Message);
-
-            if (!CommandUtilities.HasPrefix(message.Message, '/', out string commandStr))
+            var outArgs = new ClientEventArgs
             {
-                BroadcastPacket(message);
-                ChatMessageReceived?.Invoke(this, sender, message.Message);
+                Client = (ACTcpClient)sender
+            };
+            ClientChecksumPassed?.Invoke(this, outArgs);
+        }
+
+        private void OnClientChecksumFailed(object sender, EventArgs args)
+        {
+            var outArgs = new ClientEventArgs
+            {
+                Client = (ACTcpClient)sender
+            };
+            ClientChecksumFailed?.Invoke(this, outArgs);
+        }
+
+        private void OnChatMessageReceived(object sender, ChatMessageEventArgs args)
+        {
+            var client = (ACTcpClient)sender;
+            
+            Log.Information("CHAT: {0} ({1}): {2}", client.Name, client.SessionId, args.ChatMessage.Message);
+
+            if (!CommandUtilities.HasPrefix(args.ChatMessage.Message, '/', out string commandStr))
+            {
+                BroadcastPacket(args.ChatMessage);
+
+                var outArgs = new ChatEventArgs
+                {
+                    Client = client,
+                    Message = args.ChatMessage.Message
+                };
+                ChatMessageReceived?.Invoke(this, outArgs);
             }
             else
             {
+                var message = args.ChatMessage;
                 message.Message = commandStr;
-                _ = ProcessCommandAsync(sender, message);
+                _ = ProcessCommandAsync(client, message);
             }
         }
 

@@ -37,7 +37,7 @@ namespace AssettoServer.Network.Udp
         {
             Server = server;
 
-            Server.Update += _ => UpdateStatistics();
+            Server.Update += (_, _) => UpdateStatistics();
         }
 
         protected override void OnStarted()

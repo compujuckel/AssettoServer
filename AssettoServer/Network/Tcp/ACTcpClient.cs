@@ -53,12 +53,9 @@ namespace AssettoServer.Network.Tcp
         private long LastChatTime { get; set; }
         private SteamId? SteamId { get; set; }
 
-        public delegate void VoidHandler(ACTcpClient sender);
-        public delegate void ChatMessageHandler(ACTcpClient sender, ChatMessage message);
-
-        public event VoidHandler ChecksumPassed;
-        public event VoidHandler ChecksumFailed;
-        public event ChatMessageHandler ChatMessageReceived;
+        public event EventHandler ChecksumPassed;
+        public event EventHandler ChecksumFailed;
+        public event EventHandler<ChatMessageEventArgs> ChatMessageReceived;
 
         internal ACTcpClient(ACServer server, TcpClient tcpClient)
         {
@@ -434,7 +431,7 @@ namespace AssettoServer.Network.Tcp
             HasPassedChecksum = passedChecksum;
             if (!passedChecksum)
             {
-                ChecksumFailed?.Invoke(this);
+                ChecksumFailed?.Invoke(this, EventArgs.Empty);
                 
                 // Small delay is necessary, otherwise the client will not always show the "Checksum failed" screen
                 await Task.Delay(1000);
@@ -442,7 +439,7 @@ namespace AssettoServer.Network.Tcp
             }
             else
             {
-                ChecksumPassed?.Invoke(this);
+                ChecksumPassed?.Invoke(this, EventArgs.Empty);
                 
                 Server.BroadcastPacket(new CarConnected
                 {
@@ -466,8 +463,12 @@ namespace AssettoServer.Network.Tcp
 
             ChatMessage chatMessage = reader.ReadPacket<ChatMessage>();
             chatMessage.SessionId = SessionId;
-            
-            ChatMessageReceived?.Invoke(this, chatMessage);
+
+            var args = new ChatMessageEventArgs
+            {
+                ChatMessage = chatMessage
+            };
+            ChatMessageReceived?.Invoke(this, args);
         }
 
         private void OnTyreCompoundChange(PacketReader reader)

@@ -26,7 +26,7 @@ public class LiveWeatherProvider
         _server.Update += OnUpdate;
     }
 
-    private void OnUpdate(ACServer sender)
+    private void OnUpdate(object sender, EventArgs args)
     {
         if (Environment.TickCount64 - _lastWeatherUpdate > _configuration.UpdateIntervalMilliseconds)
         {

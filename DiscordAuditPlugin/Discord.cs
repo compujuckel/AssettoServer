@@ -11,6 +11,7 @@ namespace DiscordAuditPlugin;
 public class Discord
 {
     private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":" };
+    private readonly ACServer _server;
     
     private DiscordWebhook AuditHook { get; }
     private DiscordWebhook ChatHook { get; }
@@ -18,6 +19,7 @@ public class Discord
 
     public Discord(ACServer server, DiscordConfiguration configuration)
     {
+        _server = server;
         Configuration = configuration;
         
         if (!string.IsNullOrEmpty(Configuration.AuditUrl))
@@ -42,52 +44,52 @@ public class Discord
         }
     }
 
-    private void OnClientBanned(ACServer sender, ACTcpClient client, KickReason reason, string reasonStr, ACTcpClient admin)
+    private void OnClientBanned(object sender, ClientAuditEventArgs args)
     {
         Run(() =>
         {
             AuditHook.Send(PrepareAuditMessage(
                 ":hammer: Ban alert",
-                sender.Configuration.Name,
-                client.Guid,
-                client.Name,
-                reasonStr,
+                _server.Configuration.Name,
+                args.Client.Guid,
+                args.Client.Name,
+                args.ReasonStr,
                 Color.Red,
-                admin?.Name
+                args.Admin?.Name
             ));
         });
     }
 
-    private void OnClientKicked(ACServer sender, ACTcpClient client, KickReason reason, string reasonStr, ACTcpClient admin)
+    private void OnClientKicked(object sender, ClientAuditEventArgs args)
     {
-        if (reason != KickReason.ChecksumFailed)
+        if (args.Reason != KickReason.ChecksumFailed)
         {
             Run(() =>
             {
                 AuditHook.Send(PrepareAuditMessage(
                     ":boot: Kick alert",
-                    sender.Configuration.Name,
-                    client.Guid,
-                    client.Name,
-                    reasonStr,
+                    _server.Configuration.Name,
+                    args.Client.Guid,
+                    args.Client.Name,
+                    args.ReasonStr,
                     Color.Yellow,
-                    admin?.Name
+                    args.Admin?.Name
                 ));
             });
         }
     }
 
-    private void OnChatMessageReceived(ACServer sender, ACTcpClient client, string message)
+    private void OnChatMessageReceived(object sender, ChatEventArgs args)
     {
-        if (!message.StartsWith("\t\t\t\t$CSP0:"))
+        if (!args.Message.StartsWith("\t\t\t\t$CSP0:"))
         {
             Run(() =>
             {
                 DiscordMessage msg = new DiscordMessage
                 {
                     AvatarUrl = Configuration.PictureUrl,
-                    Username = client.Name,
-                    Content = Sanitize(message)
+                    Username = args.Client.Name,
+                    Content = Sanitize(args.Message)
                 };
 
                 ChatHook.Send(msg);

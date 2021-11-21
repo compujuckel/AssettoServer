@@ -23,7 +23,7 @@ namespace AssettoServer.Server.Ai
             _server.Update += OnUpdate;
         }
 
-        private void OnUpdate(object sender)
+        private void OnUpdate(object sender, EventArgs args)
         {
             foreach (var entryCar in _server.EntryCars)
             {
@@ -48,17 +48,17 @@ namespace AssettoServer.Server.Ai
             }
         }
 
-        private void OnClientChecksumPassed(ACServer sender, ACTcpClient client)
+        private void OnClientChecksumPassed(object sender, ClientEventArgs args)
         {
-            client.EntryCar.SetAiControl(false);
+            args.Client.EntryCar.SetAiControl(false);
             AdjustOverbooking();
         }
 
-        private void OnClientDisconnected(ACServer sender, ACTcpClient client)
+        private void OnClientDisconnected(object sender, ClientEventArgs args)
         {
-            if (client.EntryCar.AiMode == AiMode.Auto)
+            if (args.Client.EntryCar.AiMode == AiMode.Auto)
             {
-                client.EntryCar.SetAiControl(true);
+                args.Client.EntryCar.SetAiControl(true);
                 AdjustOverbooking();
             }
         }

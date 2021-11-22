@@ -1,6 +1,5 @@
 ﻿using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
-using AssettoServer.Server.Weather;
 
 namespace VotingWeatherPlugin;
 
@@ -13,6 +12,7 @@ public class VotingWeatherPlugin : IAssettoServerPlugin<VotingWeatherConfigurati
     public void Initialize(ACServer server)
     {
         Instance = new VotingWeather(server, _configuration);
+        _ = Instance.LoopAsync();
     }
 
     public void SetConfiguration(VotingWeatherConfiguration configuration)

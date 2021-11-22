@@ -17,5 +17,6 @@ public class LiveWeatherPlugin : IAssettoServerPlugin<LiveWeatherConfiguration>
     public void Initialize(ACServer server)
     {
         Instance = new LiveWeatherProvider(server, _configuration);
+        _ = Instance.LoopAsync();
     }
 }

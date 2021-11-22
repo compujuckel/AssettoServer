@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using Serilog;
 
@@ -19,7 +20,7 @@ public class WordFilter
         _server.ChatMessageReceived += OnChatMessageReceived;
     }
 
-    private void OnClientHandshakeStarted(object sender, ClientHandshakeEventArgs args)
+    private void OnClientHandshakeStarted(ACTcpClient sender, ClientHandshakeEventArgs args)
     {
         if (_configuration.ProhibitedUsernamePatterns.Any(regex => Regex.Match(args.HandshakeRequest.Name, regex, RegexOptions.IgnoreCase).Success))
         {
@@ -29,18 +30,18 @@ public class WordFilter
         }
     }
 
-    private void OnChatMessageReceived(object sender, ChatEventArgs args)
+    private void OnChatMessageReceived(ACTcpClient sender, ChatEventArgs args)
     {
         if (_configuration.BannableChatPatterns.Any(regex => Regex.Match(args.Message, regex, RegexOptions.IgnoreCase).Success))
         {
             args.Cancel = true;
-            Log.Information("Chat message from {0} ({1}) filtered and banned: {2}", args.Client.Name, args.Client.SessionId, args.Message);
-            _server.BanAsync(args.Client, KickReason.Blacklisted, "Prohibited language");
+            Log.Information("Chat message from {0} ({1}) filtered and banned: {2}", sender.Name, sender.SessionId, args.Message);
+            _server.BanAsync(sender, KickReason.Blacklisted, "Prohibited language");
         }
         else if (_configuration.ProhibitedChatPatterns.Any(regex => Regex.Match(args.Message, regex, RegexOptions.IgnoreCase).Success))
         {
             args.Cancel = true;
-            Log.Information("Chat message from {0} ({1}) filtered: {2}", args.Client.Name, args.Client.SessionId, args.Message);
+            Log.Information("Chat message from {0} ({1}) filtered: {2}", sender.Name, sender.SessionId, args.Message);
         }
     }
 }

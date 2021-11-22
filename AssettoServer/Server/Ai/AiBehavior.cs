@@ -48,17 +48,17 @@ namespace AssettoServer.Server.Ai
             }
         }
 
-        private void OnClientChecksumPassed(object sender, ClientEventArgs args)
+        private void OnClientChecksumPassed(ACTcpClient sender, EventArgs args)
         {
-            args.Client.EntryCar.SetAiControl(false);
+            sender.EntryCar.SetAiControl(false);
             AdjustOverbooking();
         }
 
-        private void OnClientDisconnected(object sender, ClientEventArgs args)
+        private void OnClientDisconnected(ACTcpClient sender, EventArgs args)
         {
-            if (args.Client.EntryCar.AiMode == AiMode.Auto)
+            if (sender.EntryCar.AiMode == AiMode.Auto)
             {
-                args.Client.EntryCar.SetAiControl(true);
+                sender.EntryCar.SetAiControl(true);
                 AdjustOverbooking();
             }
         }
@@ -164,7 +164,7 @@ namespace AssettoServer.Server.Ai
             int targetAiCount = Math.Min(playerCount * Math.Min(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount, aiCount), _server.Configuration.Extra.AiParams.MaxAiTargetCount);
 
             int overbooking = (int) Math.Max(1, Math.Ceiling((float) targetAiCount / aiCount));
-            _server.ChatLog.Debug("Overbooking update, #Players {0} #AIs {1} #Target {2} -> {3}", playerCount, aiCount, targetAiCount, overbooking);
+            Log.Debug("Overbooking update, #Players {0} #AIs {1} #Target {2} -> {3}", playerCount, aiCount, targetAiCount, overbooking);
             
             SetAiOverbooking(overbooking);
         }

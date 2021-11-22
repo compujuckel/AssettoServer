@@ -2,6 +2,7 @@
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Weather;
+using Serilog;
 
 namespace VotingWeatherPlugin;
 
@@ -28,17 +29,23 @@ public class VotingWeather
         _configuration = configuration;
         
         _weathers = Enum.GetValues<WeatherFxType>().Except(_configuration.BlacklistedWeathers).ToList();
-
-        _server.Update += OnUpdate;
     }
 
-    private void OnUpdate(object sender, EventArgs args)
+    internal async Task LoopAsync()
     {
-        if (Environment.TickCount64 - _lastVote > _configuration.VotingIntervalMilliseconds)
+        while (true)
         {
-            _lastVote = Environment.TickCount64;
-            _ = UpdateAsync();
+            try
+            {
+                await Task.Delay(_configuration.VotingIntervalMilliseconds - _configuration.VotingDurationMilliseconds);
+                await UpdateAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error during voting weather update");
+            }
         }
+        // ReSharper disable once FunctionNeverReturns
     }
 
     internal void CountVote(ACTcpClient client, int choice)

@@ -31,7 +31,6 @@ namespace AssettoServer.Network.Tcp
         public string NationCode { get; private set; }
         public bool IsAdministrator { get; internal set; }
         public string Guid { get; internal set; }
-        public bool IsChatLogEnabled { get; set; }
 
         internal TcpClient TcpClient { get; }
         internal NetworkStream TcpStream { get; }
@@ -53,10 +52,10 @@ namespace AssettoServer.Network.Tcp
         private long LastChatTime { get; set; }
         private SteamId? SteamId { get; set; }
 
-        public event EventHandler<ClientHandshakeEventArgs> HandshakeStarted;
-        public event EventHandler ChecksumPassed;
-        public event EventHandler ChecksumFailed;
-        public event EventHandler<ChatMessageEventArgs> ChatMessageReceived;
+        public event EventHandler<ACTcpClient, ClientHandshakeEventArgs> HandshakeStarted;
+        public event EventHandler<ACTcpClient, EventArgs> ChecksumPassed;
+        public event EventHandler<ACTcpClient, EventArgs> ChecksumFailed;
+        public event EventHandler<ACTcpClient, ChatMessageEventArgs> ChatMessageReceived;
 
         internal ACTcpClient(ACServer server, TcpClient tcpClient)
         {

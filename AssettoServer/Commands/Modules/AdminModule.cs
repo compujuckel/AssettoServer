@@ -189,12 +189,6 @@ namespace AssettoServer.Commands.Modules
                 $"Received: {udpServer.DatagramsReceivedPerSecond} packets/s ({ByteSize.FromBytes(udpServer.BytesReceivedPerSecond).Per(TimeSpan.FromSeconds(1)).Humanize("#.##")})");
         }
 
-        [Command("chatlog")]
-        public void ChatLog(bool enable)
-        {
-            Context.Client.IsChatLogEnabled = enable;
-        }
-
         [Command("setsplineheight")]
         public void SetSplineHeight(float height)
         {

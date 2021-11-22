@@ -23,16 +23,23 @@ public class LiveWeatherProvider
             throw new InvalidOperationException("No track params set for track");
 
         _liveWeatherProvider = new OpenWeatherMapWeatherProvider(_configuration.OpenWeatherMapApiKey);
-        _server.Update += OnUpdate;
     }
 
-    private void OnUpdate(object sender, EventArgs args)
+    internal async Task LoopAsync()
     {
-        if (Environment.TickCount64 - _lastWeatherUpdate > _configuration.UpdateIntervalMilliseconds)
+        while (true)
         {
-            _lastWeatherUpdate = Environment.TickCount64;
-            _ = UpdateAsync();
+            try
+            {
+                await UpdateAsync();
+                await Task.Delay(_configuration.UpdateIntervalMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error during live weather update");
+            }
         }
+        // ReSharper disable once FunctionNeverReturns
     }
 
     private async Task UpdateAsync()

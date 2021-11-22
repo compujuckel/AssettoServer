@@ -31,7 +31,6 @@ using AssettoServer.Server.Weather.Implementation;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Serilog;
-using Serilog.Core;
 using Qmmands;
 using Steamworks;
 using Newtonsoft.Json;
@@ -41,7 +40,6 @@ namespace AssettoServer.Server
 {
     public class ACServer
     {
-        public ILogger ChatLog { get; }
         public ACServerConfiguration Configuration { get; }
         public SessionConfiguration CurrentSession { get; private set; }
         public WeatherData CurrentWeather { get; private set; }
@@ -61,6 +59,7 @@ namespace AssettoServer.Server
         internal TcpListener TcpListener { get; set; }
         internal ACUdpServer UdpServer { get; }
         internal IWebHost HttpServer { get; private set; }
+        internal KunosLobbyRegistration KunosLobbyRegistration { get; }
 
         internal int StartTime { get; } = Environment.TickCount;
         internal int CurrentTime => Environment.TickCount - StartTime;
@@ -83,24 +82,18 @@ namespace AssettoServer.Server
         
         private List<PosixSignalRegistration> SignalHandlers { get; }
 
-        public event EventHandler<ClientHandshakeEventArgs> ClientHandshakeStarted; 
-        public event EventHandler<ClientEventArgs> ClientChecksumPassed;
-        public event EventHandler<ClientEventArgs> ClientChecksumFailed;
-        public event EventHandler<ClientEventArgs> ClientDisconnected;
-        public event EventHandler<ClientAuditEventArgs> ClientKicked;
-        public event EventHandler<ClientAuditEventArgs> ClientBanned;
-        public event EventHandler Update;
-        public event EventHandler<ChatEventArgs> ChatMessageReceived;
+        public event EventHandler<ACTcpClient, ClientHandshakeEventArgs> ClientHandshakeStarted; 
+        public event EventHandler<ACTcpClient, EventArgs> ClientChecksumPassed;
+        public event EventHandler<ACTcpClient, EventArgs> ClientChecksumFailed;
+        public event EventHandler<ACTcpClient, EventArgs> ClientDisconnected;
+        public event EventHandler<ACTcpClient, ClientAuditEventArgs> ClientKicked;
+        public event EventHandler<ACTcpClient, ClientAuditEventArgs> ClientBanned;
+        public event EventHandler<ACServer, EventArgs> Update;
+        public event EventHandler<ACTcpClient, ChatEventArgs> ChatMessageReceived;
 
         public ACServer(ACServerConfiguration configuration, ACPluginLoader loader)
         {
             Log.Information("Starting server.");
-
-            ChatLog = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.Sink((ILogEventSink)Log.Logger)
-                .WriteTo.ChatLog(this)
-                .CreateLogger();
 
             Configuration = configuration;
             EntryCars = Configuration.EntryCars.ToImmutableList();
@@ -120,6 +113,7 @@ namespace AssettoServer.Server
             Admins = new ConcurrentDictionary<string, bool>();
             UdpServer = new ACUdpServer(this, Configuration.UdpPort);
             HttpClient = new HttpClient();
+            KunosLobbyRegistration = new KunosLobbyRegistration(this); 
             PluginLoader = loader;
             CommandService = new CommandService(new CommandServiceConfiguration
             {
@@ -225,7 +219,7 @@ namespace AssettoServer.Server
             }
         }
 
-        private async Task LoadAdmins()
+        private async Task LoadAdminsAsync()
         {
             try
             {
@@ -247,7 +241,7 @@ namespace AssettoServer.Server
             }
         }
 
-        private async Task LoadBlacklist()
+        private async Task LoadBlacklistAsync()
         {
             try
             {
@@ -275,8 +269,8 @@ namespace AssettoServer.Server
             CurrentSession.StartTime = DateTime.Now;
             CurrentSession.StartTimeTicks = CurrentTime;
 
-            await LoadBlacklist();
-            await LoadAdmins();
+            await LoadBlacklistAsync();
+            await LoadAdminsAsync();
             
             await InitializeGeoParams();
 
@@ -286,13 +280,13 @@ namespace AssettoServer.Server
 
             HttpServer = WebHost.CreateDefaultBuilder()
                 .UseSerilog()
-                .UseStartup(context => new Startup(this))
+                .UseStartup(_ => new Startup(this))
                 .UseUrls($"http://*:{Configuration.HttpPort}")
                 .Build();
             await HttpServer.StartAsync();
             
             if (Configuration.RegisterToLobby)
-                await RegisterToLobbyAsync();
+                _ = KunosLobbyRegistration.LoopAsync();
             
             _ = Task.Factory.StartNew(UpdateAsync, TaskCreationOptions.LongRunning);
         }
@@ -332,8 +326,8 @@ namespace AssettoServer.Server
         {
             Log.Information("Reloading blacklist and adminlist...");
             
-            LoadBlacklist().ContinueWith(t => Log.Error(t.Exception, "Error reloading blacklist"), TaskContinuationOptions.OnlyOnFaulted);
-            LoadAdmins().ContinueWith(t => Log.Error(t.Exception, "Error reloading adminlist"), TaskContinuationOptions.OnlyOnFaulted);
+            LoadBlacklistAsync().ContinueWith(t => Log.Error(t.Exception, "Error reloading blacklist"), TaskContinuationOptions.OnlyOnFaulted);
+            LoadAdminsAsync().ContinueWith(t => Log.Error(t.Exception, "Error reloading adminlist"), TaskContinuationOptions.OnlyOnFaulted);
             
             context.Cancel = true;
         }
@@ -475,12 +469,11 @@ namespace AssettoServer.Server
 
                 var args = new ClientAuditEventArgs
                 {
-                    Client = client,
                     Reason = reason,
                     ReasonStr = reasonStr,
                     Admin = admin
                 };
-                ClientKicked?.Invoke(this, args);
+                ClientKicked?.Invoke(client, args);
                 
                 await Task.Delay(250);
                 await client.DisconnectAsync();
@@ -502,12 +495,11 @@ namespace AssettoServer.Server
 
                 var args = new ClientAuditEventArgs
                 {
-                    Client = client,
                     Reason = reason,
                     ReasonStr = reasonStr,
                     Admin = admin
                 };
-                ClientBanned?.Invoke(this, args);
+                ClientBanned?.Invoke(client, args);
 
                 await Task.Delay(250);
                 await client.DisconnectAsync();
@@ -566,9 +558,7 @@ namespace AssettoServer.Server
             int sleepMs = 1000 / Configuration.RefreshRateHz;
             long nextTick = Environment.TickCount64;
             byte[] buffer = new byte[2048];
-            long lastLobbyUpdate = 0;
             long lastTimeUpdate = Environment.TickCount64;
-            long lastWeatherUpdate = Environment.TickCount64;
             float networkDistanceSquared = (float)Math.Pow(Configuration.Extra.NetworkBubbleDistance, 2);
             int outsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
 
@@ -603,8 +593,6 @@ namespace AssettoServer.Server
 
                                             fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
                                         }
-                                        
-                                        //Log.Debug("sending PositionUpdate {0}", fromCar.Status.PakSequenceId);
 
                                         toClient.SendPacketUdp(new PositionUpdate
                                         {
@@ -715,15 +703,6 @@ namespace AssettoServer.Server
                         }
                     }
 
-                    if (Environment.TickCount64 - lastLobbyUpdate > 60_000)
-                    {
-                        lastLobbyUpdate = Environment.TickCount64;
-                        if (Configuration.RegisterToLobby)
-                        {
-                            _ = PingLobbyAsync();
-                        }
-                    }
-
                     if (Environment.TickCount64 - lastTimeUpdate > 1000)
                     {
                         if (Configuration.Extra.EnableRealTime)
@@ -808,12 +787,8 @@ namespace AssettoServer.Server
 
                     if (client.HasPassedChecksum)
                         BroadcastPacket(new CarDisconnected { SessionId = client.SessionId });
-
-                    var args = new ClientEventArgs
-                    {
-                        Client = client
-                    };
-                    ClientDisconnected?.Invoke(this, args);
+                    
+                    ClientDisconnected?.Invoke(client, EventArgs.Empty);
                 }
             }
             catch (Exception ex)
@@ -848,60 +823,6 @@ namespace AssettoServer.Server
             return Task.CompletedTask;
         }
 
-        private async Task RegisterToLobbyAsync()
-        {
-            ACServerConfiguration cfg = Configuration;
-            Dictionary<string, object> queryParamsDict = new Dictionary<string, object>
-            {
-                ["name"] = cfg.Name,
-                ["port"] = cfg.UdpPort,
-                ["tcp_port"] = cfg.TcpPort,
-                ["max_clients"] = cfg.MaxClients,
-                ["track"] = cfg.FullTrackName,
-                ["cars"] = string.Join(',', cfg.EntryCars.Select(c => c.Model).Distinct()),
-                ["timeofday"] = (int)cfg.SunAngle,
-                ["sessions"] = string.Join(',', cfg.Sessions.Select(s => s.Type)),
-                ["durations"] = string.Join(',', cfg.Sessions.Select(s => s.Type == 3 ? s.Laps : s.Time * 60)),
-                ["password"] = string.IsNullOrEmpty(cfg.Password) ? "0" : cfg.Password,
-                ["version"] = "202",
-                ["pickup"] = "1",
-                ["autoclutch"] = cfg.AutoClutchAllowed ? "1" : "0",
-                ["abs"] = cfg.ABSAllowed,
-                ["tc"] = cfg.TractionControlAllowed,
-                ["stability"] = cfg.StabilityAllowed ? "1" : "0",
-                ["legal_tyres"] = cfg.LegalTyres,
-                ["fixed_setup"] = "0",
-                ["timed"] = "0",
-                ["extra"] = cfg.HasExtraLap ? "1" : "0",
-                ["pit"] = "0",
-                ["inverted"] = cfg.InvertedGridPositions
-            };
-
-            Log.Information("Registering server to lobby.");
-            string queryString = string.Join('&', queryParamsDict.Select(p => $"{p.Key}={p.Value}"));
-            HttpResponseMessage response = await HttpClient.GetAsync($"http://93.57.10.21/lobby.ashx/register?{queryString}");
-            if (!response.IsSuccessStatusCode)
-                Log.Information("Failed to register to lobby.");
-        }
-
-        private async Task PingLobbyAsync()
-        {
-            Dictionary<string, object> queryParamsDict = new Dictionary<string, object>
-            {
-                ["session"] = CurrentSession.Type,
-                ["timeleft"] = (int)CurrentSession.TimeLeft.TotalSeconds,
-                ["port"] = Configuration.UdpPort,
-                ["clients"] = ConnectedCars.Count,
-                ["track"] = Configuration.FullTrackName,
-                ["pickup"] = "1"
-            };
-
-            string queryString = string.Join('&', queryParamsDict.Select(p => $"{p.Key}={p.Value}"));
-            HttpResponseMessage response = await HttpClient.GetAsync($"http://93.57.10.21/lobby.ashx/ping?{queryString}");
-            if (!response.IsSuccessStatusCode)
-                Log.Information("Failed to send lobby ping update.");
-        }
-
         private async Task AcceptTcpConnectionsAsync()
         {
             Log.Information("Starting TCP server on port {0}.", Configuration.TcpPort);
@@ -929,30 +850,22 @@ namespace AssettoServer.Server
             }
         }
 
-        private void OnHandshakeStarted(object sender, ClientHandshakeEventArgs args)
+        private void OnHandshakeStarted(ACTcpClient sender, ClientHandshakeEventArgs args)
         {
-            ClientHandshakeStarted?.Invoke(this, args);
+            ClientHandshakeStarted?.Invoke(sender, args);
         }
 
-        private void OnClientChecksumPassed(object sender, EventArgs args)
+        private void OnClientChecksumPassed(ACTcpClient sender, EventArgs args)
         {
-            var outArgs = new ClientEventArgs
-            {
-                Client = (ACTcpClient)sender
-            };
-            ClientChecksumPassed?.Invoke(this, outArgs);
+            ClientChecksumPassed?.Invoke(sender, args);
         }
 
-        private void OnClientChecksumFailed(object sender, EventArgs args)
+        private void OnClientChecksumFailed(ACTcpClient sender, EventArgs args)
         {
-            var outArgs = new ClientEventArgs
-            {
-                Client = (ACTcpClient)sender
-            };
-            ClientChecksumFailed?.Invoke(this, outArgs);
+            ClientChecksumFailed?.Invoke(sender, args);
         }
 
-        private void OnChatMessageReceived(object sender, ChatMessageEventArgs args)
+        private void OnChatMessageReceived(ACTcpClient sender, ChatMessageEventArgs args)
         {
             var client = (ACTcpClient)sender;
             
@@ -962,10 +875,9 @@ namespace AssettoServer.Server
             {
                 var outArgs = new ChatEventArgs
                 {
-                    Client = client,
                     Message = args.ChatMessage.Message
                 };
-                ChatMessageReceived?.Invoke(this, outArgs);
+                ChatMessageReceived?.Invoke(sender, outArgs);
 
                 if (!outArgs.Cancel)
                 {

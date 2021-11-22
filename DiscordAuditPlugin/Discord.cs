@@ -44,15 +44,15 @@ public class Discord
         }
     }
 
-    private void OnClientBanned(object sender, ClientAuditEventArgs args)
+    private void OnClientBanned(ACTcpClient sender, ClientAuditEventArgs args)
     {
         Run(() =>
         {
             AuditHook.Send(PrepareAuditMessage(
                 ":hammer: Ban alert",
                 _server.Configuration.Name,
-                args.Client.Guid,
-                args.Client.Name,
+                sender.Guid,
+                sender.Name,
                 args.ReasonStr,
                 Color.Red,
                 args.Admin?.Name
@@ -60,7 +60,7 @@ public class Discord
         });
     }
 
-    private void OnClientKicked(object sender, ClientAuditEventArgs args)
+    private void OnClientKicked(ACTcpClient sender, ClientAuditEventArgs args)
     {
         if (args.Reason != KickReason.ChecksumFailed)
         {
@@ -69,8 +69,8 @@ public class Discord
                 AuditHook.Send(PrepareAuditMessage(
                     ":boot: Kick alert",
                     _server.Configuration.Name,
-                    args.Client.Guid,
-                    args.Client.Name,
+                    sender.Guid,
+                    sender.Name,
                     args.ReasonStr,
                     Color.Yellow,
                     args.Admin?.Name
@@ -79,7 +79,7 @@ public class Discord
         }
     }
 
-    private void OnChatMessageReceived(object sender, ChatEventArgs args)
+    private void OnChatMessageReceived(ACTcpClient sender, ChatEventArgs args)
     {
         if (!args.Message.StartsWith("\t\t\t\t$CSP0:"))
         {
@@ -88,7 +88,7 @@ public class Discord
                 DiscordMessage msg = new DiscordMessage
                 {
                     AvatarUrl = Configuration.PictureUrl,
-                    Username = args.Client.Name,
+                    Username = sender.Name,
                     Content = Sanitize(args.Message)
                 };
 

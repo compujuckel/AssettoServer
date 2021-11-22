@@ -30,13 +30,14 @@ namespace AssettoServer
             var options = Parser.Default.ParseArguments<Options>(args).Value;
             if (options == null) return;
 
-            string logPrefix = string.IsNullOrEmpty(options.Preset) ? "" : $"{options.Preset}-";
+            string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                 .WriteTo.Console()
-                .WriteTo.File($"logs/{logPrefix}{DateTime.Now:MMddyyyy_HHmmss}.txt")
+                .WriteTo.File($"logs/{logPrefix}-.txt",
+                    rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
             var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;

@@ -834,7 +834,6 @@ namespace AssettoServer.Server
                 try
                 {
                     TcpClient tcpClient = await TcpListener.AcceptTcpClientAsync();
-                    Log.Information("Incoming TCP connection from {0}.", tcpClient.Client.RemoteEndPoint);
 
                     ACTcpClient acClient = new ACTcpClient(this, tcpClient);
                     acClient.HandshakeStarted += OnHandshakeStarted;

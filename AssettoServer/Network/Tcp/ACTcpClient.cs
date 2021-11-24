@@ -364,7 +364,7 @@ namespace AssettoServer.Network.Tcp
             bool validated = false;
 
             SteamServer.OnValidateAuthTicketResponse += tickedValidateResponse;
-            Task timeoutTask = Task.Delay(2000);
+            Task timeoutTask = Task.Delay(5000);
             Task beginAuthTask = Task.Run(() =>
             {
                 if (!SteamServer.BeginAuthSession(sessionTicket, steamId))

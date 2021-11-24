@@ -898,9 +898,9 @@ namespace AssettoServer.Server
             {
                 var serverInit = new SteamServerInit("assettocorsa", "Assetto Corsa")
                 {
-                    GamePort = 9600,
+                    GamePort = (ushort)Configuration.UdpPort,
                     Secure = true,
-                    QueryPort = 28016
+                    QueryPort = 0xffff // MASTERSERVERUPDATERPORT_USEGAMESOCKETSHARE 
                 };
 
                 try

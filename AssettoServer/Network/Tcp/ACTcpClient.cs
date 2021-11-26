@@ -178,7 +178,7 @@ namespace AssettoServer.Network.Tcp
 
                         Name = handshakeRequest.Name?.Trim();
 
-                        Log.Information("{0} ({1}) is attempting to connect ({2}).", handshakeRequest.Name, handshakeRequest.Guid, handshakeRequest.RequestedCar);
+                        Log.Information("{0} ({1} - {2}) is attempting to connect ({3}).", handshakeRequest.Name, handshakeRequest.Guid, TcpClient.Client.RemoteEndPoint, handshakeRequest.RequestedCar);
                         
                         List<string> cspFeatures;
                         if(!string.IsNullOrEmpty(handshakeRequest.Features))

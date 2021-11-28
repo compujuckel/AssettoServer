@@ -278,6 +278,8 @@ namespace AssettoServer.Server
             _ = Task.Factory.StartNew(AcceptTcpConnectionsAsync, TaskCreationOptions.LongRunning);
             UdpServer.Start();
 
+            Log.Information("Starting HTTP server on port {0}", Configuration.HttpPort);
+            
             HttpServer = WebHost.CreateDefaultBuilder()
                 .UseSerilog()
                 .UseStartup(_ => new Startup(this))
@@ -825,7 +827,7 @@ namespace AssettoServer.Server
 
         private async Task AcceptTcpConnectionsAsync()
         {
-            Log.Information("Starting TCP server on port {0}.", Configuration.TcpPort);
+            Log.Information("Starting TCP server on port {0}", Configuration.TcpPort);
             TcpListener = new TcpListener(IPAddress.Any, Configuration.TcpPort);
             TcpListener.Start();
 

@@ -191,12 +191,12 @@ namespace AssettoServer.Server.Configuration
                 var weatherConfiguration = new WeatherConfiguration
                 {
                     Graphics = weather["GRAPHICS"],
-                    BaseTemperatureAmbient = int.Parse(weather["BASE_TEMPERATURE_AMBIENT"]),
-                    BaseTemperatureRoad = int.Parse(weather["BASE_TEMPERATURE_ROAD"]),
-                    VariationAmbient = int.Parse(weather["VARIATION_AMBIENT"]),
-                    VariationRoad = int.Parse(weather["VARIATION_ROAD"]),
-                    WindBaseSpeedMin = int.Parse(weather["WIND_BASE_SPEED_MIN"]),
-                    WindBaseSpeedMax = int.Parse(weather["WIND_BASE_SPEED_MAX"]),
+                    BaseTemperatureAmbient = float.Parse(weather["BASE_TEMPERATURE_AMBIENT"]),
+                    BaseTemperatureRoad = float.Parse(weather["BASE_TEMPERATURE_ROAD"]),
+                    VariationAmbient = float.Parse(weather["VARIATION_AMBIENT"]),
+                    VariationRoad = float.Parse(weather["VARIATION_ROAD"]),
+                    WindBaseSpeedMin = float.Parse(weather["WIND_BASE_SPEED_MIN"]),
+                    WindBaseSpeedMax = float.Parse(weather["WIND_BASE_SPEED_MAX"]),
                     WindBaseDirection = int.Parse(weather["WIND_BASE_DIRECTION"]),
                     WindVariationDirection = int.Parse(weather["WIND_VARIATION_DIRECTION"]),
                     WeatherFxParams = WeatherFxParams.FromString(weather["GRAPHICS"])

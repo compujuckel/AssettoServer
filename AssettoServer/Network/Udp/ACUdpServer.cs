@@ -42,7 +42,7 @@ namespace AssettoServer.Network.Udp
 
         protected override void OnStarted()
         {
-            Log.Information("Starting UDP server on port {0}.", Server.Configuration.UdpPort);
+            Log.Information("Starting UDP server on port {0}", Server.Configuration.UdpPort);
             ReceiveAsync();
         }
 

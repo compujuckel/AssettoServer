@@ -37,12 +37,14 @@ namespace AssettoServer.Server.Weather
 
             var weatherType = _server.WeatherTypeProvider.GetWeatherType(_weatherConfiguration.WeatherFxParams.Type);
 
+            float ambient = GetFloatWithVariation(_weatherConfiguration.BaseTemperatureAmbient, _weatherConfiguration.VariationAmbient);
+            
             _server.SetWeather(new WeatherData
             {
                 Type = weatherType,
                 UpcomingType = weatherType,
-                TemperatureAmbient = GetFloatWithVariation(_weatherConfiguration.BaseTemperatureAmbient, _weatherConfiguration.VariationAmbient),
-                TemperatureRoad = GetFloatWithVariation(_weatherConfiguration.BaseTemperatureRoad, _weatherConfiguration.VariationRoad),
+                TemperatureAmbient = ambient,
+                TemperatureRoad = GetFloatWithVariation(ambient + _weatherConfiguration.BaseTemperatureRoad, _weatherConfiguration.VariationRoad),
                 WindSpeed = GetRandomFloatInRange(_weatherConfiguration.WindBaseSpeedMin, _weatherConfiguration.WindBaseSpeedMax),
                 WindDirection = (int) Math.Round(GetFloatWithVariation(_weatherConfiguration.WindBaseDirection, _weatherConfiguration.WindVariationDirection)),
                 RainIntensity = weatherType.RainIntensity,

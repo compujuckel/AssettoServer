@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 using CsvHelper.Configuration.Attributes;
+using Serilog;
 
 namespace AssettoServer.Server.Ai
 {
@@ -64,18 +65,22 @@ namespace AssettoServer.Server.Ai
         public List<TrafficSplinePoint> GetLanes(bool twoWayTraffic = false)
         {
             var ret = new List<TrafficSplinePoint>();
+            const int maxCount = 10;
+            int count = 0;
 
             TrafficSplinePoint point = Left;
-            while (point != null)
+            while (point != null && count < maxCount)
             {
                 if (IsSameDirection(point))
                 {
                     ret.Add(point);
+                    count++;
                     point = point.Left;
                 }
                 else if (twoWayTraffic)
                 {
                     ret.Add(point);
+                    count++;
                     point = point.Right;
                 }
                 else
@@ -88,22 +93,29 @@ namespace AssettoServer.Server.Ai
             ret.Add(this);
 
             point = Right;
-            while (point != null)
+            while (point != null && count < maxCount)
             {
                 if (IsSameDirection(point))
                 {
                     ret.Add(point);
+                    count++;
                     point = point.Right;
                 }
                 else if (twoWayTraffic)
                 {
                     ret.Add(point);
+                    count++;
                     point = point.Left;
                 }
                 else
                 {
                     break;
                 }
+            }
+
+            if (count >= maxCount)
+            {
+                Log.Warning("Possible loop at spline point {0}", Id);
             }
 
             return ret;

@@ -623,8 +623,8 @@ namespace AssettoServer.Server
                                         });
                                     }
                                 }
-                            
-                                if(fromCar.Status.Position.Y < -500 && Environment.TickCount64 - fromCar.LastFallCheckTime > 1000)
+
+                                if (fromCar.Status.Velocity.Y < -75 && Environment.TickCount64 - fromCar.LastFallCheckTime > 1000)
                                 {
                                     fromCar.LastFallCheckTime = Environment.TickCount64;
                                     fromCar.Client?.SendCurrentSession();

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
 using System.Numerics;
-using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
 using SerilogTimings;
@@ -11,79 +8,6 @@ namespace AssettoServer.Server.Ai
 {
     public static class AdjacentLaneDetector
     {
-        public static void GetAdjacentLanesForMap(TrafficMap map, string path, float laneWidth)
-        {
-            if (File.Exists(path) && ParseCache(map, path)) return;
-            
-            DetectAdjacentLanes(map, laneWidth);
-            WriteCache(map, path);
-        }
-
-        private static bool ParseCache(TrafficMap map, string cacheFilePath)
-        {
-            Log.Information("Parsing existing lane cache...");
-            
-            using var _ = Operation.Time("Parsing existing lane cache");
-
-            using var reader = new BinaryReader(File.OpenRead(cacheFilePath));
-            long fileLength = reader.BaseStream.Length;
-            int pointCount = reader.ReadInt32();
-            if (pointCount != map.Splines.Select(spline => spline.Points.Length).Sum())
-            {
-                Log.Error("Point count of lane cache differs from point count of traffic map. Cache disabled");
-                return false;
-            }
-
-            try
-            {
-                while (true)
-                {
-                    int idLeft = reader.ReadInt32();
-                    int idRight = reader.ReadInt32();
-
-                    var pointLeft = map.PointsById[idLeft];
-                    var pointRight = map.PointsById[idRight];
-
-                    pointLeft.Right = pointRight;
-                    if (pointLeft.IsSameDirection(pointRight))
-                    {
-                        pointRight.Left = pointLeft;
-                    }
-                    else
-                    {
-                        pointRight.Right = pointLeft;
-                    }
-                }
-            }
-            catch (EndOfStreamException)
-            {
-                    
-            }
-
-            return true;
-        }
-
-        private static void WriteCache(TrafficMap map, string cacheFilePath)
-        {
-            Log.Information("Writing lane cache to file");
-            
-            using (var writer = new BinaryWriter(File.OpenWrite(cacheFilePath)))
-            {
-                writer.Write(map.Splines.Select(spline => spline.Points.Length).Sum());
-                foreach (var spline in map.Splines)
-                {
-                    foreach (var point in spline.Points)
-                    {
-                        if (point.Right != null)
-                        {
-                            writer.Write(point.Id);
-                            writer.Write(point.Right.Id);
-                        }
-                    }
-                }
-            }
-        }
-
         private static Vector3 OffsetVec(Vector3 pos, float angle, float offset)
         {
             return new()
@@ -94,14 +18,12 @@ namespace AssettoServer.Server.Ai
             };
         }
 
-        private static void DetectAdjacentLanes(TrafficMap map, float laneWidth)
+        public static void DetectAdjacentLanes(TrafficMap map, float laneWidth)
         {
             Log.Information("Adjacent lane detection...");
             
             using var t = Operation.Time("Adjacent lane detection");
 
-            int i = 0;
-            
             foreach (var spline in map.Splines)
             {
                 Parallel.ForEach(spline.Points, point =>
@@ -143,13 +65,6 @@ namespace AssettoServer.Server.Ai
                                 found.point.Right = point;
                             }
                         }
-                    }
-
-                    Interlocked.Increment(ref i);
-
-                    if (i % 1000 == 0)
-                    {
-                        Log.Debug("Detecting adjacent lanes, progress {0}/{1} points, {2}%", i, spline.Points.Length, Math.Round((double)i / spline.Points.Length * 100.0));
                     }
                 });
             }

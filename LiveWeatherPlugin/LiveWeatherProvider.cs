@@ -10,8 +10,6 @@ public class LiveWeatherProvider
     private readonly LiveWeatherConfiguration _configuration;
     private readonly OpenWeatherMapWeatherProvider _liveWeatherProvider;
 
-    private long _lastWeatherUpdate;
-
     public LiveWeatherProvider(ACServer server, LiveWeatherConfiguration configuration)
     {
         _server = server;

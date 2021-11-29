@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Numerics;
-using CsvHelper;
 using Serilog;
 
 namespace AssettoServer.Server.Ai
@@ -22,7 +21,8 @@ namespace AssettoServer.Server.Ai
             List<TrafficSpline> splines = new List<TrafficSpline>();
 
             int idOffset = 0;
-            foreach (var file in Directory.EnumerateFiles(folder, "fast_lane*.ai"))
+            // List of files should be ordered to guarantee consistent IDs for junctions etc.
+            foreach (var file in Directory.EnumerateFiles(folder, "fast_lane*.ai").OrderBy(f => f))
             {
                 var spline = FromFile(file, idOffset);
                 splines.Add(spline);

@@ -45,7 +45,7 @@ namespace AssettoServer.Server.Ai
                 return dist;
             });
             
-            AdjacentLaneDetector.GetAdjacentLanesForMap(this, SourcePath + ".lanes", laneWidth);
+            AdjacentLaneDetector.DetectAdjacentLanes(this, laneWidth);
             JunctionParser.Parse(this, SourcePath + ".junctions.csv");
         }
 

@@ -66,21 +66,18 @@ namespace AssettoServer.Server.Ai
         {
             var ret = new List<TrafficSplinePoint>();
             const int maxCount = 10;
-            int count = 0;
 
             TrafficSplinePoint point = Left;
-            while (point != null && count < maxCount)
+            while (point != null && ret.Count < maxCount)
             {
                 if (IsSameDirection(point))
                 {
                     ret.Add(point);
-                    count++;
                     point = point.Left;
                 }
                 else if (twoWayTraffic)
                 {
                     ret.Add(point);
-                    count++;
                     point = point.Right;
                 }
                 else
@@ -93,18 +90,16 @@ namespace AssettoServer.Server.Ai
             ret.Add(this);
 
             point = Right;
-            while (point != null && count < maxCount)
+            while (point != null && ret.Count < maxCount)
             {
                 if (IsSameDirection(point))
                 {
                     ret.Add(point);
-                    count++;
                     point = point.Right;
                 }
                 else if (twoWayTraffic)
                 {
                     ret.Add(point);
-                    count++;
                     point = point.Left;
                 }
                 else
@@ -113,9 +108,9 @@ namespace AssettoServer.Server.Ai
                 }
             }
 
-            if (count >= maxCount)
+            if (ret.Count >= maxCount)
             {
-                Log.Warning("Possible loop at spline point {0}", Id);
+                Log.Error("Possible loop at AI spline point {0}", Id);
             }
 
             return ret;

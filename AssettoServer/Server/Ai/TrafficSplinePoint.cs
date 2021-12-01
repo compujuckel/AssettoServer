@@ -13,8 +13,6 @@ namespace AssettoServer.Server.Ai
         
         public float Speed { get; set; }
         public float MaxCorneringSpeed { get; set; }
-        public float TargetSpeed { get; set; }
-        public float BrakingDistance { get; set; }
         //public float Gas { get; set; }
         //public float Brake { get; set; }
         //public float ObsoleteLatG { get; set; }

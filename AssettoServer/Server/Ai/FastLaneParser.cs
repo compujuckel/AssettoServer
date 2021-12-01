@@ -82,8 +82,7 @@ namespace AssettoServer.Server.Ai
                 /*points[i].Tag*/ _ = reader.ReadSingle();
                 /*points[i].Grade*/ _ = reader.ReadSingle();
 
-                points[i].MaxCorneringSpeed = PhysicsUtils.CalculateMaxCorneringSpeed(points[i].Radius);
-                points[i].TargetSpeed = points[i].MaxCorneringSpeed;
+                points[i].MaxCorneringSpeed = PhysicsUtils.CalculateMaxCorneringSpeed(points[i].Radius) * _server.Configuration.Extra.AiParams.CorneringSpeedFactor;
             }
 
             for (var i = 0; i < detailCount; i++)
@@ -92,31 +91,7 @@ namespace AssettoServer.Server.Ai
                 points[i].Next = points[i == detailCount - 1 ? 0 : i + 1];
             }
 
-            foreach (var point in points)
-            {
-                if (point.MaxCorneringSpeed < _server.Configuration.Extra.AiParams.MaxSpeedMs)
-                {
-                    float brakingDistance = PhysicsUtils.CalculateBrakingDistance(_server.Configuration.Extra.AiParams.MaxSpeedMs - point.MaxCorneringSpeed, -_server.Configuration.Extra.AiParams.DefaultDeceleration);
-
-                    point.BrakingDistance = brakingDistance;
-
-                    float distanceTraveled = 0;
-                    var currentPoint = point;
-                    while (distanceTraveled < brakingDistance)
-                    {
-                        currentPoint.TargetSpeed = Math.Min(currentPoint.TargetSpeed, point.MaxCorneringSpeed);
-
-                        if (currentPoint.MaxCorneringSpeed > _server.Configuration.Extra.AiParams.MaxSpeedMs)
-                        {
-                            distanceTraveled += currentPoint.Previous.Length;
-                        }
-
-                        currentPoint = currentPoint.Previous;
-                    }
-                }
-            }
-
-            /*using (var writer = new StreamWriter("fast_lane.csv"))
+            /*using (var writer = new StreamWriter(Path.GetFileName(filename) + ".csv"))
             using (var csv = new CsvWriter(writer, new CultureInfo("de-DE", false)))
             {
                 csv.WriteRecords(points);

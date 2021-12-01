@@ -48,7 +48,7 @@ namespace AssettoServer.Server.Configuration
         public float MaxSpeed { get; set; } = 80;
         public float RightLaneOffset { get; set; } = 10;
         public float MaxSpeedVariation { get; set; } = 0.15f;
-        public float DefaultDeceleration { get; set; } = -8.5f;
+        public float DefaultDeceleration { get; set; } = 8.5f;
         public float DefaultAcceleration { get; set; } = 2.5f;
         public int MaxAiTargetCount { get; set; } = 300;
         public int AiPerPlayerTargetCount { get; set; } = 10;
@@ -57,6 +57,9 @@ namespace AssettoServer.Server.Configuration
         public float SplineHeightOffset { get; set; } = 0;
         public float LaneWidth { get; set; } = 3.0f;
         public bool TwoWayTraffic { get; set; } = false;
+        public float CorneringSpeedFactor { get; set; } = 1;
+        public float CorneringBrakeDistanceFactor { get; set; } = 1;
+        public float CorneringBrakeForceFactor { get; set; } = 1;
 
         [YamlIgnore] public float PlayerRadiusSquared => PlayerRadius * PlayerRadius;
         [YamlIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeout * 1000;

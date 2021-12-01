@@ -39,6 +39,11 @@ public partial class EntryCar
         }
     }
 
+    public int GetAiStateCount()
+    {
+        return _aiStates.Count;
+    }
+
     public void RemoveUnsafeStates()
     {
         _aiStatesLock.EnterReadLock();

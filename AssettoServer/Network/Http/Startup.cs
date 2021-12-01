@@ -20,6 +20,9 @@ namespace AssettoServer.Network.Http
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton(_server);
+            services.AddMetrics(_server.Metrics);
+            services.AddAppMetricsCollectors();
+            services.AddMetricsEndpoints();
             
             var mvcBuilder = services.AddControllers().AddNewtonsoftJson();
             foreach (var plugin in _server.PluginLoader.LoadedPlugins)
@@ -37,6 +40,8 @@ namespace AssettoServer.Network.Http
             }
 
             app.UseRouting();
+            app.UseMetricsEndpoint();
+            app.UseMetricsTextEndpoint();
 
             app.UseEndpoints(endpoints =>
             {

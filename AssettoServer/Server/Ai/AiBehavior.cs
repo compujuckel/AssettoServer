@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using App.Metrics;
+using App.Metrics.Gauge;
+using App.Metrics.Timer;
 using AssettoServer.Network.Tcp;
 using Serilog;
 
@@ -13,6 +16,26 @@ namespace AssettoServer.Server.Ai
         private readonly ACServer _server;
         private long _lastAiUpdate = Environment.TickCount64;
         private long _lastAiObstacleDetectionUpdate = Environment.TickCount64;
+
+        private readonly GaugeOptions _aiStateCountMetric = new GaugeOptions
+        {
+            Name = "AiStateCount",
+            MeasurementUnit = Unit.Items
+        };
+        private readonly TimerOptions _updateDurationMetric = new TimerOptions
+        {
+            Name = "AiBehavior.Update",
+            MeasurementUnit = Unit.Calls,
+            DurationUnit = TimeUnit.Milliseconds,
+            RateUnit = TimeUnit.Milliseconds
+        };
+        private readonly TimerOptions _obstacleDetectionDurationMetric = new TimerOptions
+        {
+            Name = "AiBehavior.ObstacleDetection",
+            MeasurementUnit = Unit.Calls,
+            DurationUnit = TimeUnit.Milliseconds,
+            RateUnit = TimeUnit.Milliseconds
+        };
 
         public AiBehavior(ACServer server)
         {
@@ -147,6 +170,8 @@ namespace AssettoServer.Server.Ai
 
         public void ObstacleDetection()
         {
+            using var timer = _server.Metrics.Measure.Timer.Time(_obstacleDetectionDurationMetric);
+            
             foreach (var entryCar in _server.EntryCars)
             {
                 if (entryCar.AiControlled)
@@ -181,6 +206,8 @@ namespace AssettoServer.Server.Ai
         
         public void Update()
         {
+            using var timer = _server.Metrics.Measure.Timer.Time(_updateDurationMetric);
+            
             foreach (var entryCar in _server.EntryCars)
             {
                 if (entryCar.AiControlled)
@@ -188,6 +215,8 @@ namespace AssettoServer.Server.Ai
                     entryCar.RemoveUnsafeStates();
                 }
             }
+            
+            _server.Metrics.Measure.Gauge.SetValue(_aiStateCountMetric, _server.EntryCars.Sum(entryCar => entryCar.GetAiStateCount()));
 
             var playerCars = _server.EntryCars.Where(car => !car.AiControlled
                                                             && car.Client != null

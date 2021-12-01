@@ -175,21 +175,20 @@ namespace AssettoServer.Server.Ai
 
         private float GetMaxTargetSpeed()
         {
-            float maxBrakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed, 
+            float maxBrakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - EntryCar.Server.TrafficMap.MinCorneringSpeed, 
                                         EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeForceFactor) 
                                     * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
 
             float distanceTravelled = 0;
             var point = CurrentSplinePoint;
             float maxSpeed = float.MaxValue;
-            while (point?.Next != null && distanceTravelled < maxBrakingDistance)
+            while (distanceTravelled < maxBrakingDistance)
             {
-                //var nextPoint = MapView.Next(point);
-                //float distance = (point.Point - nextPoint.Point).Length();
-                // TODO this is wrong for junctions, but calculating length on the fly is much more expensive
                 var nextPoint = point.Next;
-                float distance = point.Length;
-                distanceTravelled += distance;
+                if (nextPoint == null)
+                    break;
+                
+                distanceTravelled += point.Length;
                 
                 float brakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - nextPoint.MaxCorneringSpeed, 
                                          EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeForceFactor) 

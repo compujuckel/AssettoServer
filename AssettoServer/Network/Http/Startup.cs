@@ -41,7 +41,6 @@ namespace AssettoServer.Network.Http
 
             app.UseRouting();
             app.UseMetricsEndpoint();
-            app.UseMetricsTextEndpoint();
 
             app.UseEndpoints(endpoints =>
             {

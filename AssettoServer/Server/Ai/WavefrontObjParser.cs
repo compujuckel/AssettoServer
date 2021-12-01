@@ -33,7 +33,12 @@ namespace AssettoServer.Server.Ai
                         if (points != null)
                         {
                             objectStartIndex = objectStartIndex + points.Count;
-                            var spline = new TrafficSpline(currentSplineName, points.ToArray());
+                            var spline = new TrafficSpline
+                            {
+                                Name = currentSplineName,
+                                Points = points.ToArray(),
+                                MinCorneringSpeed = 0 // TODO
+                            };
                             splines.Add(spline);
                             Log.Debug("Spline {0} finished with {1} points", spline.Name, spline.Points.Length);
                         }
@@ -70,7 +75,12 @@ namespace AssettoServer.Server.Ai
 
             if (points != null)
             {
-                var spline = new TrafficSpline(currentSplineName, points.ToArray());
+                var spline = new TrafficSpline
+                {
+                    Name = currentSplineName,
+                    Points = points.ToArray(),
+                    MinCorneringSpeed = 0 // TODO
+                };
                 splines.Add(spline);
                 Log.Debug("Spline {0} finished with {1} points", spline.Name, spline.Points.Length);
             }

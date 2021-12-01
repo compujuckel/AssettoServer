@@ -27,7 +27,7 @@ namespace AssettoServer.Server.Ai
                 var spline = FromFile(file, idOffset);
                 splines.Add(spline);
 
-                Log.Debug("Parsed {0}, id range {1} - {2}", file, idOffset, idOffset + spline.Points.Length - 1);
+                Log.Debug("Parsed {0}, id range {1} - {2} minSpeed {3}", file, idOffset, idOffset + spline.Points.Length - 1, spline.MinCorneringSpeed);
                 idOffset += spline.Points.Length;
             }
 
@@ -38,6 +38,8 @@ namespace AssettoServer.Server.Ai
         {
             Log.Debug("Loading AI spline {0}", filename);
             using var reader = new BinaryReader(File.OpenRead(filename));
+
+            float minCorneringSpeed = float.MaxValue;
 
             reader.ReadInt32(); // Version
             int detailCount = reader.ReadInt32();
@@ -83,12 +85,16 @@ namespace AssettoServer.Server.Ai
                 /*points[i].Grade*/ _ = reader.ReadSingle();
 
                 points[i].MaxCorneringSpeed = PhysicsUtils.CalculateMaxCorneringSpeed(points[i].Radius) * _server.Configuration.Extra.AiParams.CorneringSpeedFactor;
+                
+                minCorneringSpeed = Math.Min(minCorneringSpeed, points[i].MaxCorneringSpeed);
             }
 
             for (var i = 0; i < detailCount; i++)
             {
                 points[i].Previous = points[i == 0 ? detailCount - 1 : i - 1];
                 points[i].Next = points[i == detailCount - 1 ? 0 : i + 1];
+
+                points[i].Length = Vector3.Distance(points[i].Point, points[i].Next.Point);
             }
 
             /*using (var writer = new StreamWriter(Path.GetFileName(filename) + ".csv"))
@@ -97,7 +103,12 @@ namespace AssettoServer.Server.Ai
                 csv.WriteRecords(points);
             }*/
 
-            return new TrafficSpline(filename, points);
+            return new TrafficSpline
+            {
+                Name = filename,
+                Points = points,
+                MinCorneringSpeed = minCorneringSpeed
+            };
         }
     }
 }

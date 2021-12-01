@@ -293,14 +293,7 @@ namespace AssettoServer.Server
             HttpServer = WebHost.CreateDefaultBuilder()
                 .ConfigureKestrel(options => options.AllowSynchronousIO = true)
                 .ConfigureMetrics(Metrics)
-                .UseMetrics(options =>
-                {
-                    options.EndpointOptions = endpointsOptions =>
-                    {
-                        endpointsOptions.MetricsTextEndpointOutputFormatter = Metrics.OutputMetricsFormatters.OfType<MetricsPrometheusTextOutputFormatter>().First();
-                        endpointsOptions.MetricsEndpointOutputFormatter = Metrics.OutputMetricsFormatters.OfType<MetricsPrometheusProtobufOutputFormatter>().First();
-                    };
-                })
+                .UseMetrics(options => { options.EndpointOptions = endpointsOptions => { endpointsOptions.MetricsEndpointOutputFormatter = Metrics.OutputMetricsFormatters.OfType<MetricsPrometheusTextOutputFormatter>().First(); }; })
                 .UseSerilog()
                 .UseStartup(_ => new Startup(this))
                 .UseUrls($"http://*:{Configuration.HttpPort}")

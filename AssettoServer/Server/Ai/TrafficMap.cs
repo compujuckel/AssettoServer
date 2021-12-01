@@ -10,16 +10,16 @@ namespace AssettoServer.Server.Ai
     {
         public string SourcePath { get; }
         public List<TrafficSpline> Splines { get; }
-        
         public Dictionary<int, TrafficSplinePoint> PointsById { get; }
-        
         public KDTree<float, TrafficSplinePoint> KdTree { get; }
-
+        public float MinCorneringSpeed { get; }
+        
         public TrafficMap(string sourcePath, List<TrafficSpline> splines, float laneWidth)
         {
             SourcePath = sourcePath;
             Splines = splines;
             PointsById = new Dictionary<int, TrafficSplinePoint>();
+            MinCorneringSpeed = Splines.Min(s => s.MinCorneringSpeed);
 
             foreach (var point in splines.SelectMany(spline => spline.Points))
             {

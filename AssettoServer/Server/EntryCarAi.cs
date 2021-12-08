@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Threading;
 using AssettoServer.Network.Packets.Outgoing;
@@ -39,9 +40,19 @@ public partial class EntryCar
         }
     }
 
-    public int GetAiStateCount()
+    public int GetActiveAiStateCount()
     {
-        return _aiStates.Count;
+        if (!AiControlled) return 0;
+        
+        _aiStatesLock.EnterReadLock();
+        try
+        {
+            return _aiStates.Count(aiState => aiState.Initialized);
+        }
+        finally
+        {
+            _aiStatesLock.ExitReadLock();
+        }
     }
 
     public void RemoveUnsafeStates()

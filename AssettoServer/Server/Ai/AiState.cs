@@ -189,14 +189,17 @@ namespace AssettoServer.Server.Ai
                     break;
                 
                 distanceTravelled += point.Length;
-                
-                float brakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - nextPoint.MaxCorneringSpeed, 
-                                         EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeForceFactor) 
-                                     * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
 
-                if (brakingDistance > distanceTravelled)
+                if (nextPoint.MaxCorneringSpeed < CurrentSpeed)
                 {
-                    maxSpeed = Math.Min(nextPoint.MaxCorneringSpeed, maxSpeed);
+                    float brakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - nextPoint.MaxCorneringSpeed,
+                                                EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeForceFactor)
+                                            * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
+
+                    if (brakingDistance > distanceTravelled)
+                    {
+                        maxSpeed = Math.Min(nextPoint.MaxCorneringSpeed, maxSpeed);
+                    }
                 }
 
                 point = nextPoint;

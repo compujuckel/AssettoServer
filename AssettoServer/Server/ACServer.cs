@@ -101,6 +101,7 @@ namespace AssettoServer.Server
             Log.Information("Starting server.");
 
             Metrics = new MetricsBuilder()
+                .Configuration.Configure(options => { options.DefaultContextLabel = "AssettoServer"; })
                 .OutputMetrics.AsPrometheusPlainText()
                 .OutputMetrics.AsPrometheusProtobuf()
                 .Build();

@@ -188,7 +188,7 @@ namespace AssettoServer.Server.Ai
 
             int targetAiCount = Math.Min(playerCount * Math.Min(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount, aiCount), _server.Configuration.Extra.AiParams.MaxAiTargetCount);
 
-            int overbooking = (int) Math.Max(1, Math.Ceiling((float) targetAiCount / aiCount));
+            int overbooking = (int) Math.Ceiling((float) targetAiCount / aiCount);
             Log.Debug("Overbooking update, #Players {0} #AIs {1} #Target {2} -> {3}", playerCount, aiCount, targetAiCount, overbooking);
             
             SetAiOverbooking(overbooking);
@@ -216,7 +216,7 @@ namespace AssettoServer.Server.Ai
                 }
             }
             
-            _server.Metrics.Measure.Gauge.SetValue(_aiStateCountMetric, _server.EntryCars.Sum(entryCar => entryCar.GetAiStateCount()));
+            _server.Metrics.Measure.Gauge.SetValue(_aiStateCountMetric, _server.EntryCars.Sum(entryCar => entryCar.GetActiveAiStateCount()));
 
             var playerCars = _server.EntryCars.Where(car => !car.AiControlled
                                                             && car.Client != null

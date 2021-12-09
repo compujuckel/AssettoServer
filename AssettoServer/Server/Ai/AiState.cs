@@ -14,7 +14,8 @@ namespace AssettoServer.Server.Ai
     {
         public CarStatus Status = new CarStatus();
         public EntryCar EntryCar { get; internal set; }
-        public bool Initialized { get; set; }
+        public bool Initialized { get; private set; }
+        public bool Active { get; private set; }
         public TrafficSplinePoint CurrentSplinePoint { get; private set; }
         public TrafficMapView MapView { get; private set; }
         public long SpawnProtectionEnds { get; set; }
@@ -68,6 +69,17 @@ namespace AssettoServer.Server.Ai
         {
             EntryCar = entryCar;
             MapView = EntryCar.Server.TrafficMap.NewView();
+        }
+
+        public void SetActive(bool active)
+        {
+            Active = active;
+            Initialized = false;
+        }
+
+        public void ForceRespawn()
+        {
+            Initialized = false;
         }
 
         private void SetRandomSpeed()
@@ -184,25 +196,22 @@ namespace AssettoServer.Server.Ai
             float maxSpeed = float.MaxValue;
             while (distanceTravelled < maxBrakingDistance)
             {
-                var nextPoint = point.Next;
-                if (nextPoint == null)
-                    break;
-                
                 distanceTravelled += point.Length;
+                point = point.Next;
+                if (point == null)
+                    break;
 
-                if (nextPoint.MaxCorneringSpeed < CurrentSpeed)
+                if (point.MaxCorneringSpeed < CurrentSpeed)
                 {
-                    float brakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - nextPoint.MaxCorneringSpeed,
+                    float brakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - point.MaxCorneringSpeed,
                                                 EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeForceFactor)
                                             * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
 
                     if (brakingDistance > distanceTravelled)
                     {
-                        maxSpeed = Math.Min(nextPoint.MaxCorneringSpeed, maxSpeed);
+                        maxSpeed = Math.Min(point.MaxCorneringSpeed, maxSpeed);
                     }
                 }
-
-                point = nextPoint;
             }
 
             return maxSpeed;
@@ -295,7 +304,7 @@ namespace AssettoServer.Server.Ai
 
         public void DetectObstacles()
         {
-            if (CurrentSplinePoint == null) return;
+            if (!Active || !Initialized || CurrentSplinePoint == null) return;
             
             if (Environment.TickCount64 < _ignoreObstaclesUntil)
             {
@@ -428,7 +437,7 @@ namespace AssettoServer.Server.Ai
 
         public void Update()
         {
-            if (!Initialized)
+            if (!Active || !Initialized)
                 return;
             
             long dt = Environment.TickCount64 - _lastTick;

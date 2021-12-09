@@ -16,6 +16,8 @@ namespace AssettoServer.Server.Ai
         private readonly ACServer _server;
         private long _lastAiUpdate = Environment.TickCount64;
         private long _lastAiObstacleDetectionUpdate = Environment.TickCount64;
+        
+        public ILookup<TrafficSplinePoint, AiState> AiStatesBySplinePoint { get; private set; }
 
         private readonly GaugeOptions _aiStateCountMetric = new GaugeOptions
         {
@@ -179,6 +181,12 @@ namespace AssettoServer.Server.Ai
         public void ObstacleDetection()
         {
             using var timer = _server.Metrics.Measure.Timer.Time(_obstacleDetectionDurationMetric);
+            
+            AiStatesBySplinePoint = _server.EntryCars
+                .Where(car => car.AiControlled)
+                .SelectMany(car => car.AiStates)
+                .Where(state => state.Active && state.Initialized)
+                .ToLookup(state => state.CurrentSplinePoint, state => state);
             
             foreach (var entryCar in _server.EntryCars)
             {

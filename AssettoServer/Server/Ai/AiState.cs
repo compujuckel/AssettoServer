@@ -185,12 +185,15 @@ namespace AssettoServer.Server.Ai
             return EntryCar.CanSpawnAiState(spawnPoint, this);
         }
 
-        private float GetMaxTargetSpeed()
+        private (AiState ClosestAiState, float ClosestAiStateDistance, float MaxSpeed) SplineLookahead()
         {
-            float maxBrakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - EntryCar.Server.TrafficMap.MinCorneringSpeed, 
+            float maxCornerBrakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - EntryCar.Server.TrafficMap.MinCorneringSpeed, 
                                         EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeForceFactor) 
                                     * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
-
+            float maxBrakingDistance = Math.Max(maxCornerBrakingDistance, 50);
+            
+            AiState closestAiState = null;
+            float closestAiStateDistance = float.MaxValue;
             float distanceTravelled = 0;
             var point = CurrentSplinePoint;
             float maxSpeed = float.MaxValue;
@@ -200,6 +203,12 @@ namespace AssettoServer.Server.Ai
                 point = point.Next;
                 if (point == null)
                     break;
+
+                if (closestAiState == null && EntryCar.Server.AiBehavior.AiStatesBySplinePoint.Contains(point))
+                {
+                    closestAiState = EntryCar.Server.AiBehavior.AiStatesBySplinePoint[point].First();
+                    closestAiStateDistance = Vector3.Distance(Status.Position, closestAiState.Status.Position);
+                }
 
                 if (point.MaxCorneringSpeed < CurrentSpeed)
                 {
@@ -214,33 +223,7 @@ namespace AssettoServer.Server.Ai
                 }
             }
 
-            return maxSpeed;
-        }
-
-        private (AiState aiState, float distance) FindClosestAiObstacle()
-        {
-            AiState closestState = null;
-            float minDistance = float.MaxValue;
-            foreach (var entryCar in EntryCar.Server.EntryCars)
-            {
-                if (entryCar.AiControlled)
-                {
-                    var ret = entryCar.FindClosestAiObstacle(this);
-
-                    if (ret.distanceSquared < minDistance)
-                    {
-                        closestState = ret.aiState;
-                        minDistance = ret.distanceSquared;
-                    }
-                }
-            }
-
-            if (closestState != null)
-            {
-                return (closestState, (float)Math.Sqrt(minDistance));
-            }
-
-            return (null, float.MaxValue);
+            return (closestAiState, closestAiStateDistance, maxSpeed);
         }
 
         private (EntryCar entryCar, float distance) FindClosestPlayerObstacle()
@@ -321,15 +304,15 @@ namespace AssettoServer.Server.Ai
             float targetSpeed = InitialMaxSpeed;
             bool hasObstacle = false;
 
-            var aiObstacle = FindClosestAiObstacle();
+            var splineLookahead = SplineLookahead();
             var playerObstacle = FindClosestPlayerObstacle();
 
-            if (playerObstacle.distance < 10 || aiObstacle.distance < 10)
+            if (playerObstacle.distance < 10 || splineLookahead.ClosestAiStateDistance < 10)
             {
                 targetSpeed = 0;
                 hasObstacle = true;
             }
-            else if (playerObstacle.distance < aiObstacle.distance && playerObstacle.entryCar != null)
+            else if (playerObstacle.distance < splineLookahead.ClosestAiStateDistance && playerObstacle.entryCar != null)
             {
                 float playerSpeed = playerObstacle.entryCar.Status.Velocity.Length();
 
@@ -345,27 +328,27 @@ namespace AssettoServer.Server.Ai
                     hasObstacle = true;
                 }
             }
-            else if (aiObstacle.aiState != null)
+            else if (splineLookahead.ClosestAiState != null)
             {
                 // AI in front has obstacle
-                if (aiObstacle.aiState.TargetSpeed < aiObstacle.aiState.MaxSpeed)
+                if (splineLookahead.ClosestAiState.TargetSpeed < splineLookahead.ClosestAiState.MaxSpeed)
                 {
-                    if ((aiObstacle.aiState.CurrentSpeed < CurrentSpeed || aiObstacle.aiState.CurrentSpeed == 0)
-                        && aiObstacle.distance < PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - aiObstacle.aiState.CurrentSpeed, EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration) * 2 + 20)
+                    if ((splineLookahead.ClosestAiState.CurrentSpeed < CurrentSpeed || splineLookahead.ClosestAiState.CurrentSpeed == 0)
+                        && splineLookahead.ClosestAiStateDistance < PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - splineLookahead.ClosestAiState.CurrentSpeed, EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration) * 2 + 20)
                     {
-                        targetSpeed = Math.Max(WalkingSpeed, aiObstacle.aiState.CurrentSpeed);
+                        targetSpeed = Math.Max(WalkingSpeed, splineLookahead.ClosestAiState.CurrentSpeed);
                         hasObstacle = true;
                     }
                 }
                 // AI in front is in clean air, so we just adapt our max speed
-                else if(Math.Pow(aiObstacle.distance, 2) < SafetyDistanceSquared)
+                else if(Math.Pow(splineLookahead.ClosestAiStateDistance, 2) < SafetyDistanceSquared)
                 {
-                    MaxSpeed = Math.Max(WalkingSpeed, aiObstacle.aiState.CurrentSpeed);
+                    MaxSpeed = Math.Max(WalkingSpeed, splineLookahead.ClosestAiState.CurrentSpeed);
                     targetSpeed = MaxSpeed;
                 }
             }
 
-            targetSpeed = Math.Min(GetMaxTargetSpeed(), targetSpeed);
+            targetSpeed = Math.Min(splineLookahead.MaxSpeed, targetSpeed);
             
             if (CurrentSpeed == 0 && !_stoppedForObstacle)
             {

@@ -20,7 +20,7 @@ namespace AssettoServer.Network.Packets.Outgoing
             foreach(EntryCar car in ConnectedCars)
             {
                 writer.Write(car.SessionId);
-                writer.WriteUTF32String(car.AiControlled ? $"Traffic {car.SessionId}" : car.Client.Name);
+                writer.WriteUTF32String(car.AiControlled ? car.AiName : car.Client.Name);
             }
         }
     }

@@ -23,9 +23,12 @@ public partial class EntryCar
     public byte[] AiPakSequenceIds { get; init; }
     public AiState[] LastSeenAiState { get; init; }
     public ImmutableList<AiState> AiStates { get; private set; }
+    public string AiName { get; private set; }
 
     public void AiInit(int maxAiStates)
     {
+        AiName = $"{Server.Configuration.Extra.AiParams.NamePrefix} {SessionId}";
+        
         var builder = ImmutableList.CreateBuilder<AiState>();
         for (var i = 0; i < maxAiStates; i++)
         {
@@ -161,7 +164,7 @@ public partial class EntryCar
                 Server.BroadcastPacket(new CarConnected
                 {
                     SessionId = SessionId,
-                    Name = $"Traffic {SessionId}"
+                    Name = AiName
                 });
                 if (Server.Configuration.Extra.AiParams.HideAiCars)
                 {

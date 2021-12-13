@@ -60,6 +60,7 @@ namespace AssettoServer.Server.Configuration
         public float CorneringSpeedFactor { get; set; } = 1;
         public float CorneringBrakeDistanceFactor { get; set; } = 1;
         public float CorneringBrakeForceFactor { get; set; } = 1;
+        public string NamePrefix { get; set; } = "Traffic";
 
         [YamlIgnore] public float PlayerRadiusSquared => PlayerRadius * PlayerRadius;
         [YamlIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeout * 1000;

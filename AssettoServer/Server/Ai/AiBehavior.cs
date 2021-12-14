@@ -161,7 +161,7 @@ namespace AssettoServer.Server.Ai
                 return null;
             }
             
-            int spawnDistance = Random.Shared.Next(_server.Configuration.Extra.AiParams.MinSpawnDistance, _server.Configuration.Extra.AiParams.MaxSpawnDistance);
+            int spawnDistance = Random.Shared.Next(_server.Configuration.Extra.AiParams.MinSpawnDistancePoints, _server.Configuration.Extra.AiParams.MaxSpawnDistancePoints);
             var spawnPoint = targetPlayerSplinePos.point.Traverse(spawnDistance * direction)?.RandomLane(_server.Configuration.Extra.AiParams.TwoWayTraffic);
             
             if (spawnPoint != null)
@@ -255,7 +255,7 @@ namespace AssettoServer.Server.Ai
             {
                 foreach (var playerCar in playerCars)
                 {
-                    var offsetPosition = playerCar.Status.Position + Vector3.Normalize(playerCar.Status.Velocity) * _server.Configuration.Extra.AiParams.PlayerPositionOffset;
+                    var offsetPosition = playerCar.Status.Position + Vector3.Normalize(playerCar.Status.Velocity) * _server.Configuration.Extra.AiParams.PlayerPositionOffsetMeters;
                     
                     distances.Add(new AiDistance()
                     {

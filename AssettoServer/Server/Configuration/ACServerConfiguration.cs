@@ -126,8 +126,8 @@ namespace AssettoServer.Server.Configuration
                 var deserializer = new DeserializerBuilder().Build();
 
                 var yamlParser = new Parser(stream);
-                yamlParser.Expect<StreamStart>();
-                yamlParser.Accept<DocumentStart>();
+                yamlParser.Consume<StreamStart>();
+                yamlParser.Accept<DocumentStart>(out _);
 
                 extraCfg = deserializer.Deserialize<ACExtraConfiguration>(yamlParser);
 
@@ -146,7 +146,7 @@ namespace AssettoServer.Server.Configuration
                 }
                 deserializer = deserializerBuilder.Build();
 
-                while (yamlParser.Accept<DocumentStart>())
+                while (yamlParser.Accept<DocumentStart>(out _))
                 {
                     var pluginConfig = deserializer.Deserialize(yamlParser);
                     loader.LoadConfiguration(pluginConfig);

@@ -84,7 +84,7 @@ namespace AssettoServer.Server.Ai
 
         private void SetRandomSpeed()
         {
-            float variation = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs * EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedVariation;
+            float variation = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs * EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedVariationPercent;
 
             float fastLaneOffset = 0;
             if (CurrentSplinePoint != null && CurrentSplinePoint.Left != null)
@@ -461,7 +461,7 @@ namespace AssettoServer.Server.Ai
             byte tyreAngularSpeed = (byte) Math.Min(byte.MaxValue, 100 + GetTyreAngularSpeed(CurrentSpeed, 0.65f));
 
             Status.Timestamp = EntryCar.Server.CurrentTime;
-            Status.Position = smoothPos.Position with { Y = smoothPos.Position.Y + EntryCar.Server.Configuration.Extra.AiParams.SplineHeightOffset };
+            Status.Position = smoothPos.Position with { Y = smoothPos.Position.Y + EntryCar.Server.Configuration.Extra.AiParams.SplineHeightOffsetMeters };
             Status.Rotation = rotation;
             Status.Velocity = smoothPos.Tangent * CurrentSpeed;
             Status.SteerAngle = 127;

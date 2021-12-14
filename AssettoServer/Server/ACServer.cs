@@ -194,7 +194,7 @@ namespace AssettoServer.Server
                 string mapAiBasePath = "content/tracks/" + Configuration.Track + "/ai/";
                 if (File.Exists(mapAiBasePath + "traffic_map.obj"))
                 {
-                    TrafficMap = WavefrontObjParser.ParseFile(mapAiBasePath + "traffic_map.obj", Configuration.Extra.AiParams.LaneWidth);
+                    TrafficMap = WavefrontObjParser.ParseFile(mapAiBasePath + "traffic_map.obj", Configuration.Extra.AiParams.LaneWidthMeters);
                 } 
                 else
                 {
@@ -740,7 +740,7 @@ namespace AssettoServer.Server
                                 CurrentDateTime += TimeSpan.FromMilliseconds((Environment.TickCount64 - lastTimeUpdate) * Configuration.TimeOfDayMultiplier);
                             }
 
-                            RainHelper.Update(CurrentWeather, Configuration.DynamicTrack.BaseGrip, Configuration.Extra.RainTrackGripReduction, Environment.TickCount64 - lastTimeUpdate);
+                            RainHelper.Update(CurrentWeather, Configuration.DynamicTrack.BaseGrip, Configuration.Extra.RainTrackGripReductionPercent, Environment.TickCount64 - lastTimeUpdate);
                             WeatherImplementation.SendWeather();
 
                             lastTimeUpdate = Environment.TickCount64;

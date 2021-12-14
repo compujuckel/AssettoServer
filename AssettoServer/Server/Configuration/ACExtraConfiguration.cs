@@ -6,77 +6,126 @@ namespace AssettoServer.Server.Configuration
 {
     public class ACExtraConfiguration
     {
+        [YamlMember(Description = "Enable Steam ticket validation. Requires CSP 0.1.75+ and a recent version of Content Manager")]
         public bool UseSteamAuth { get; set; } = false;
+        [YamlMember(Description = "Enable AFK autokick")]
         public bool EnableAntiAfk { get; set; } = true;
+        [YamlMember(Description = "Maximum allowed AFK time before kick")]
         public int MaxAfkTimeMinutes { get; set; } = 10;
+        [YamlMember(Description = "Players might try to get around the AFK kick by doing inputs once in a while without actually driving. Set this to MininumSpeed to autokick players idling")]
         public AfkKickBehavior AfkKickBehavior { get; set; } = AfkKickBehavior.PlayerInput;
+        [YamlMember(Description = "Maximum ping before autokick")]
         public int MaxPing { get; set; } = 500;
+        [YamlMember(Description = "Maximum ping duration before autokick")]
         public int MaxPingSeconds { get; set; } = 10;
+        [YamlMember(Description = "Force headlights on for all cars")]
         public bool ForceLights { get; set; }
+        [YamlMember(Description = "Distance for network optimizations. Players outside of this range will send less updates to reduce network traffic")]
         public float NetworkBubbleDistance { get; set; } = 500;
+        [YamlMember(Description = "Refresh rate for players outside of the network bubble")]
         public int OutsideNetworkBubbleRefreshRateHz { get; set; } = 4;
+        [YamlMember(Description = "Enable server details in CM. Required for server description")]
         public bool EnableServerDetails { get; set; } = true;
+        [YamlMember(Description = "Server description shown in Content Manager. EnableServerDetails must be on")]
         public string ServerDescription { get; set; } = "";
+        [YamlMember(Description = "Link server time to real map time. For correct timezones there must be an entry for the map here: https://github.com/ac-custom-shaders-patch/acc-extension-config/blob/master/config/data_track_params.ini")]
         public bool EnableRealTime { get; set; } = false;
+        [YamlMember(Description = "Enable new CSP weather handling. Allows rain and smooth weather transitions. Requires CSP 0.1.76+")]
         public bool EnableWeatherFx { get; set; } = false;
-        public double RainTrackGripReduction { get; set; } = 0;
+        [YamlMember(Description = "Reduce track grip when the track is wet. This is much worse than proper CSP rain physics but allows you to run clients with public/Patreon CSP at the same time")]
+        public double RainTrackGripReductionPercent { get; set; } = 0;
+        [YamlMember(Description = "Enable AI traffic")]
         public bool EnableAi { get; set; } = false;
-        public AiParams AiParams { get; set; } = new AiParams();
+        [YamlMember(Description = "List of plugins to enable")]
         public List<string> EnablePlugins { get; set; } = new();
+        public AiParams AiParams { get; set; } = new AiParams();
+        [YamlMember(Description = "")]
 
         [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
     }
 
     public class AiParams
     {
-        public float PlayerRadius { get; set; } = 200.0f;
-        public float PlayerPositionOffset { get; set; } = 100.0f;
-        public long PlayerAfkTimeout { get; set; } = 10;
-        public float MaxPlayerDistanceToAiSpline { get; set; } = 7;
-        public int MinSpawnDistance { get; set; } = 100;
-        public int MaxSpawnDistance { get; set; } = 400;
-        public int MinAiSafetyDistance { get; set; } = 20;
-        public int MaxAiSafetyDistance { get; set; } = 70;
-        public float StateSpawnDistance { get; set; } = 1000;
-        public float MinStateDistance { get; set; } = 200;
-        public float StateTieBreakerDistance { get; set; } = 250;
-        public float SpawnSafetyDistanceToPlayer { get; set; } = 100;
-        public int MinSpawnProtectionTime { get; set; } = 4;
-        public int MaxSpawnProtectionTime { get; set; } = 8;
-        public int MinCollisionStopTime { get; set; } = 1;
-        public int MaxCollisionStopTime { get; set; } = 3;
-        public float MaxSpeed { get; set; } = 80;
-        public float RightLaneOffset { get; set; } = 10;
-        public float MaxSpeedVariation { get; set; } = 0.15f;
+        [YamlMember(Description = "Radius around a player in which AI cars won't despawn")]
+        public float PlayerRadiusMeters { get; set; } = 200.0f;
+        [YamlMember(Description = "Offset the player radius in direction of the velocity of the player so AI cars will despawn earlier behind a player")]
+        public float PlayerPositionOffsetMeters { get; set; } = 100.0f;
+        [YamlMember(Description = "AFK timeout for players. Players who are AFK longer than this won't spawn AI cars")]
+        public long PlayerAfkTimeoutSeconds { get; set; } = 10;
+        [YamlMember(Description = "Maximum distance to the AI spline for a player to spawn AI cars. This helps with parts of the map without traffic so AI cars won't spawn far away from players")]
+        public float MaxPlayerDistanceToAiSplineMeters { get; set; } = 7;
+        [YamlMember(Description = "Minimum amount of spline points in front of a player where AI cars will spawn")]
+        public int MinSpawnDistancePoints { get; set; } = 100;
+        [YamlMember(Description = "Maximum amount of spline points in front of a player where AI cars will spawn")]
+        public int MaxSpawnDistancePoints { get; set; } = 400;
+        [YamlMember(Description = "Minimum distance between AI cars")]
+        public int MinAiSafetyDistanceMeters { get; set; } = 20;
+        [YamlMember(Description = "Maximum distance between AI cars")]
+        public int MaxAiSafetyDistanceMeters { get; set; } = 70;
+        [YamlMember(Description = "Minimum spawn distance for AI states of the same car slot. If you set this too low you risk AI states despawning or AI states becoming invisible for some players when multiple states are close together")]
+        public float StateSpawnDistanceMeters { get; set; } = 1000;
+        [YamlMember(Description = "Minimum distance between AI states of the same car slot. If states get closer than this one of them will be forced to despawn")]
+        public float MinStateDistanceMeters { get; set; } = 200;
+        [YamlMember(Description = "")]
+        public float StateTieBreakerDistanceMeters { get; set; } = 250;
+        [YamlMember(Description = "Minimum spawn distance to players")]
+        public float SpawnSafetyDistanceToPlayerMeters { get; set; } = 100;
+        [YamlMember(Description = "Minimum time in which a newly spawned AI car cannot despawn")]
+        public int MinSpawnProtectionTimeSeconds { get; set; } = 4;
+        [YamlMember(Description = "Maximum time in which a newly spawned AI car cannot despawn")]
+        public int MaxSpawnProtectionTimeSeconds { get; set; } = 8;
+        [YamlMember(Description = "Minimum time an AI car will stop/slow down after a collision")]
+        public int MinCollisionStopTimeSeconds { get; set; } = 1;
+        [YamlMember(Description = "Maximum time an AI car will stop/slow down after a collision")]
+        public int MaxCollisionStopTimeSeconds { get; set; } = 3;
+        [YamlMember(Description = "Default maximum AI speed. This is not an absolute maximum and can be overridden with RightLaneOffsetKph and MaxSpeedVariationPercent")]
+        public float MaxSpeedKph { get; set; } = 80;
+        [YamlMember(Description = "Speed offset for right lanes. Will be added to MaxSpeedKph")]
+        public float RightLaneOffsetKph { get; set; } = 10;
+        [YamlMember(Description = "Maximum speed variation")]
+        public float MaxSpeedVariationPercent { get; set; } = 0.15f;
+        [YamlMember(Description = "Default AI car deceleration for obstacle/collision detection (m/s^2)")]
         public float DefaultDeceleration { get; set; } = 8.5f;
+        [YamlMember(Description = "Default AI car acceleration for obstacle/collision detection (m/s^2)")]
         public float DefaultAcceleration { get; set; } = 2.5f;
+        [YamlMember(Description = "Maximum AI car target count for AI slot overbooking. This is not an absolute maximum and might be slightly higher")]
         public int MaxAiTargetCount { get; set; } = 300;
+        [YamlMember(Description = "Number of AI cars per player the server will try to keep")]
         public int AiPerPlayerTargetCount { get; set; } = 10;
+        [YamlMember(Description = "Soft player limit, the server will stop accepting new players when this many players are reached. Use this to ensure a minimum amount of AI cars. 0 to disable.")]
         public int MaxPlayerCount { get; set; } = 0;
+        [YamlMember(Description = "Hide AI car nametags and make them invisible on the minimap. CSP 0.1.76+ required, still buggy")]
         public bool HideAiCars { get; set; } = false;
-        public float SplineHeightOffset { get; set; } = 0;
-        public float LaneWidth { get; set; } = 3.0f;
+        [YamlMember(Description = "AI spline height offset. Use this if the AI spline is too close to the ground")]
+        public float SplineHeightOffsetMeters { get; set; } = 0;
+        [YamlMember(Description = "Lane width for adjacent lane detection")]
+        public float LaneWidthMeters { get; set; } = 3.0f;
+        [YamlMember(Description = "Enable two way traffic. This will allow AI cars to spawn in lanes with the opposite direction of travel to the player.")]
         public bool TwoWayTraffic { get; set; } = false;
+        [YamlMember(Description = "AI cornering speed factor. Lower = AI cars will drive slower around corners.")]
         public float CorneringSpeedFactor { get; set; } = 1;
+        [YamlMember(Description = "AI cornering brake distance factor. Lower = AI cars will brake earlier for corners.")]
         public float CorneringBrakeDistanceFactor { get; set; } = 1;
+        [YamlMember(Description = "AI cornering brake force factor. This is multiplied with DefaultDeceleration. Lower = AI cars will brake less hard for corners.")]
         public float CorneringBrakeForceFactor { get; set; } = 1;
+        [YamlMember(Description = "Name prefix for AI cars. Names will be in the form of '<NamePrefix> <SessionId>'")]
         public string NamePrefix { get; set; } = "Traffic";
 
-        [YamlIgnore] public float PlayerRadiusSquared => PlayerRadius * PlayerRadius;
-        [YamlIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeout * 1000;
-        [YamlIgnore] public float MaxPlayerDistanceToAiSplineSquared => MaxPlayerDistanceToAiSpline * MaxPlayerDistanceToAiSpline;
-        [YamlIgnore] public int MinAiSafetyDistanceSquared => MinAiSafetyDistance * MinAiSafetyDistance;
-        [YamlIgnore] public int MaxAiSafetyDistanceSquared => MaxAiSafetyDistance * MaxAiSafetyDistance;
-        [YamlIgnore] public float StateSpawnDistanceSquared => StateSpawnDistance * StateSpawnDistance;
-        [YamlIgnore] public float MinStateDistanceSquared => MinStateDistance * MinStateDistance;
-        [YamlIgnore] public float StateTieBreakerDistanceSquared => StateTieBreakerDistance * StateTieBreakerDistance;
-        [YamlIgnore] public float SpawnSafetyDistanceToPlayerSquared => SpawnSafetyDistanceToPlayer * SpawnSafetyDistanceToPlayer;
-        [YamlIgnore] public int MinSpawnProtectionTimeMilliseconds => MinSpawnProtectionTime * 1000;
-        [YamlIgnore] public int MaxSpawnProtectionTimeMilliseconds => MaxSpawnProtectionTime * 1000;
-        [YamlIgnore] public int MinCollisionStopTimeMilliseconds => MinCollisionStopTime * 1000;
-        [YamlIgnore] public int MaxCollisionStopTimeMilliseconds => MaxCollisionStopTime * 1000;
-        [YamlIgnore] public float MaxSpeedMs => MaxSpeed / 3.6f;
-        [YamlIgnore] public float RightLaneOffsetMs => RightLaneOffset / 3.6f;
+        [YamlIgnore] public float PlayerRadiusSquared => PlayerRadiusMeters * PlayerRadiusMeters;
+        [YamlIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeoutSeconds * 1000;
+        [YamlIgnore] public float MaxPlayerDistanceToAiSplineSquared => MaxPlayerDistanceToAiSplineMeters * MaxPlayerDistanceToAiSplineMeters;
+        [YamlIgnore] public int MinAiSafetyDistanceSquared => MinAiSafetyDistanceMeters * MinAiSafetyDistanceMeters;
+        [YamlIgnore] public int MaxAiSafetyDistanceSquared => MaxAiSafetyDistanceMeters * MaxAiSafetyDistanceMeters;
+        [YamlIgnore] public float StateSpawnDistanceSquared => StateSpawnDistanceMeters * StateSpawnDistanceMeters;
+        [YamlIgnore] public float MinStateDistanceSquared => MinStateDistanceMeters * MinStateDistanceMeters;
+        [YamlIgnore] public float StateTieBreakerDistanceSquared => StateTieBreakerDistanceMeters * StateTieBreakerDistanceMeters;
+        [YamlIgnore] public float SpawnSafetyDistanceToPlayerSquared => SpawnSafetyDistanceToPlayerMeters * SpawnSafetyDistanceToPlayerMeters;
+        [YamlIgnore] public int MinSpawnProtectionTimeMilliseconds => MinSpawnProtectionTimeSeconds * 1000;
+        [YamlIgnore] public int MaxSpawnProtectionTimeMilliseconds => MaxSpawnProtectionTimeSeconds * 1000;
+        [YamlIgnore] public int MinCollisionStopTimeMilliseconds => MinCollisionStopTimeSeconds * 1000;
+        [YamlIgnore] public int MaxCollisionStopTimeMilliseconds => MaxCollisionStopTimeSeconds * 1000;
+        [YamlIgnore] public float MaxSpeedMs => MaxSpeedKph / 3.6f;
+        [YamlIgnore] public float RightLaneOffsetMs => RightLaneOffsetKph / 3.6f;
     }
 
     public enum AfkKickBehavior

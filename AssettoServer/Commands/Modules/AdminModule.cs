@@ -192,7 +192,7 @@ namespace AssettoServer.Commands.Modules
         [Command("setsplineheight")]
         public void SetSplineHeight(float height)
         {
-            Context.Server.Configuration.Extra.AiParams.SplineHeightOffset = height;
+            Context.Server.Configuration.Extra.AiParams.SplineHeightOffsetMeters = height;
         }
     }
 }

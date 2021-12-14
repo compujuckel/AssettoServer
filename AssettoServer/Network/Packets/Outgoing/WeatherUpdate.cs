@@ -23,5 +23,10 @@ namespace AssettoServer.Network.Packets.Outgoing
             writer.Write(WindSpeed);
             writer.Write(WindDirection);
         }
+
+        public override string ToString()
+        {
+            return $"{nameof(Ambient)}: {Ambient}, {nameof(Road)}: {Road}, {nameof(Graphics)}: {Graphics}, {nameof(WindSpeed)}: {WindSpeed}, {nameof(WindDirection)}: {WindDirection}";
+        }
     }
 }

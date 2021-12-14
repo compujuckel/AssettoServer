@@ -5,6 +5,18 @@ VisualStudioVersion = 16.0.30420.98
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServer", "AssettoServer\AssettoServer.csproj", "{7FDA59D8-BF5B-4B50-8F61-37611D087D24}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServerTest", "AssettoServerTest\AssettoServerTest.csproj", "{4671C846-7ED4-4082-AE33-C90959348762}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordAuditPlugin", "DiscordAuditPlugin\DiscordAuditPlugin.csproj", "{9C7F1530-DF2D-41D4-A6F1-857955106869}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SamplePlugin", "SamplePlugin\SamplePlugin.csproj", "{DAF372D3-E030-4911-8537-A55325B4F6B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VotingWeatherPlugin", "VotingWeatherPlugin\VotingWeatherPlugin.csproj", "{1C5C55F2-C818-4277-9DBE-0EAFF35F59AA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiveWeatherPlugin", "LiveWeatherPlugin\LiveWeatherPlugin.csproj", "{02FEF3DC-BCEC-4888-9B4E-BDE31DD6E58D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WordFilterPlugin", "WordFilterPlugin\WordFilterPlugin.csproj", "{C16217E0-D82B-43EF-A5E0-836ED135AA8C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +27,30 @@ Global
 		{7FDA59D8-BF5B-4B50-8F61-37611D087D24}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7FDA59D8-BF5B-4B50-8F61-37611D087D24}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7FDA59D8-BF5B-4B50-8F61-37611D087D24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4671C846-7ED4-4082-AE33-C90959348762}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4671C846-7ED4-4082-AE33-C90959348762}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4671C846-7ED4-4082-AE33-C90959348762}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4671C846-7ED4-4082-AE33-C90959348762}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C7F1530-DF2D-41D4-A6F1-857955106869}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C7F1530-DF2D-41D4-A6F1-857955106869}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C7F1530-DF2D-41D4-A6F1-857955106869}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C7F1530-DF2D-41D4-A6F1-857955106869}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DAF372D3-E030-4911-8537-A55325B4F6B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DAF372D3-E030-4911-8537-A55325B4F6B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DAF372D3-E030-4911-8537-A55325B4F6B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DAF372D3-E030-4911-8537-A55325B4F6B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C5C55F2-C818-4277-9DBE-0EAFF35F59AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C5C55F2-C818-4277-9DBE-0EAFF35F59AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C5C55F2-C818-4277-9DBE-0EAFF35F59AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C5C55F2-C818-4277-9DBE-0EAFF35F59AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02FEF3DC-BCEC-4888-9B4E-BDE31DD6E58D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02FEF3DC-BCEC-4888-9B4E-BDE31DD6E58D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02FEF3DC-BCEC-4888-9B4E-BDE31DD6E58D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02FEF3DC-BCEC-4888-9B4E-BDE31DD6E58D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C16217E0-D82B-43EF-A5E0-836ED135AA8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C16217E0-D82B-43EF-A5E0-836ED135AA8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C16217E0-D82B-43EF-A5E0-836ED135AA8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C16217E0-D82B-43EF-A5E0-836ED135AA8C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

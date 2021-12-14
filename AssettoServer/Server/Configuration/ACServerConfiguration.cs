@@ -1,14 +1,16 @@
-﻿using AssettoServer.Server.Configuration;
+﻿using System;
 using IniParser;
 using IniParser.Model;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using AssettoServer.Server.Ai;
+using AssettoServer.Server.Plugin;
+using AssettoServer.Server.Weather;
+using YamlDotNet.Core;
+using YamlDotNet.Core.Events;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NodeTypeResolvers;
 
 namespace AssettoServer.Server.Configuration
 {
@@ -62,11 +64,12 @@ namespace AssettoServer.Server.Configuration
         public ACExtraConfiguration Extra { get; internal set; }
         public CMContentConfiguration ContentConfiguration { get; internal set; }
         public DynamicTrackConfiguration DynamicTrack { get; internal set; } = new DynamicTrackConfiguration();
+        public string ServerVersion { get; set; }
 
-        public ACServerConfiguration FromFiles()
+        public ACServerConfiguration FromFiles(string presetFolder, ACPluginLoader loader)
         {
             var parser = new FileIniDataParser();
-            IniData data = parser.ReadFile("cfg/server_cfg.ini");
+            IniData data = parser.ReadFile(Path.Join(presetFolder, "server_cfg.ini"));
             var server = data["SERVER"];
             Name = server["NAME"];
             Track = server["TRACK"];
@@ -114,20 +117,54 @@ namespace AssettoServer.Server.Configuration
                 DynamicTrack.TotalLapCount = float.Parse(dynTrack["LAP_GAIN"]);
             }
 
-            string extraCfgPath = "cfg/extra_cfg.json";
-            ACExtraConfiguration extraCfg = new ACExtraConfiguration();
+            string extraCfgPath = Path.Join(presetFolder, "extra_cfg.yml");
+            ACExtraConfiguration extraCfg;
             if (File.Exists(extraCfgPath))
-                extraCfg = JsonConvert.DeserializeObject<ACExtraConfiguration>(File.ReadAllText(extraCfgPath));
+            {
+                using var stream = File.OpenText(extraCfgPath);
 
-            File.WriteAllText(extraCfgPath, JsonConvert.SerializeObject(extraCfg, Formatting.Indented));
+                var deserializer = new DeserializerBuilder().Build();
+
+                var yamlParser = new Parser(stream);
+                yamlParser.Consume<StreamStart>();
+                yamlParser.Accept<DocumentStart>(out _);
+
+                extraCfg = deserializer.Deserialize<ACExtraConfiguration>(yamlParser);
+
+                foreach (var pluginName in extraCfg.EnablePlugins)
+                {
+                    loader.LoadPlugin(pluginName);
+                }
+                
+                var deserializerBuilder = new DeserializerBuilder().WithoutNodeTypeResolver(typeof(PreventUnknownTagsNodeTypeResolver));
+                foreach (var plugin in loader.LoadedPlugins)
+                {
+                    if (plugin.ConfigurationType != null)
+                    {
+                        deserializerBuilder.WithTagMapping("!" + plugin.ConfigurationType.Name, plugin.ConfigurationType);
+                    }
+                }
+                deserializer = deserializerBuilder.Build();
+
+                while (yamlParser.Accept<DocumentStart>(out _))
+                {
+                    var pluginConfig = deserializer.Deserialize(yamlParser);
+                    loader.LoadConfiguration(pluginConfig);
+                }
+            }
+            else
+            {
+                using var stream = File.CreateText(extraCfgPath);
+                var serializer = new SerializerBuilder().Build();
+                extraCfg = new ACExtraConfiguration();
+                serializer.Serialize(stream, extraCfg);
+            }
 
             Extra = extraCfg;
 
             if(Extra.EnableServerDetails)
             {
-                Name = Name + " ℹ" + HttpPort;
-
-                string cmContentPath = "cfg/cm_content/content.json";
+                string cmContentPath = Path.Join(presetFolder, "cm_content/content.json");
                 CMContentConfiguration cmContent = new CMContentConfiguration();
                 // Only load if the file already exists, otherwise this will fail if the content directory does not exist
                 if (File.Exists(cmContentPath))
@@ -140,7 +177,7 @@ namespace AssettoServer.Server.Configuration
                 }
             }
 
-            string welcomeMessagePath = server["WELCOME_MESSAGE"];
+            string welcomeMessagePath = Path.Join(presetFolder, server["WELCOME_MESSAGE"]);
             if (File.Exists(welcomeMessagePath))
                 WelcomeMessage = File.ReadAllText(welcomeMessagePath);
 
@@ -154,14 +191,15 @@ namespace AssettoServer.Server.Configuration
                 var weatherConfiguration = new WeatherConfiguration
                 {
                     Graphics = weather["GRAPHICS"],
-                    BaseTemperatureAmbient = int.Parse(weather["BASE_TEMPERATURE_AMBIENT"]),
-                    BaseTemperatureRoad = int.Parse(weather["BASE_TEMPERATURE_ROAD"]),
-                    VariationAmbient = int.Parse(weather["VARIATION_AMBIENT"]),
-                    VariationRoad = int.Parse(weather["VARIATION_ROAD"]),
-                    WindBaseSpeedMin = int.Parse(weather["WIND_BASE_SPEED_MIN"]),
-                    WindBaseSpeedMax = int.Parse(weather["WIND_BASE_SPEED_MAX"]),
+                    BaseTemperatureAmbient = float.Parse(weather["BASE_TEMPERATURE_AMBIENT"]),
+                    BaseTemperatureRoad = float.Parse(weather["BASE_TEMPERATURE_ROAD"]),
+                    VariationAmbient = float.Parse(weather["VARIATION_AMBIENT"]),
+                    VariationRoad = float.Parse(weather["VARIATION_ROAD"]),
+                    WindBaseSpeedMin = float.Parse(weather["WIND_BASE_SPEED_MIN"]),
+                    WindBaseSpeedMax = float.Parse(weather["WIND_BASE_SPEED_MAX"]),
                     WindBaseDirection = int.Parse(weather["WIND_BASE_DIRECTION"]),
-                    WindVariationDirection = int.Parse(weather["WIND_VARIATION_DIRECTION"])
+                    WindVariationDirection = int.Parse(weather["WIND_VARIATION_DIRECTION"]),
+                    WeatherFxParams = WeatherFxParams.FromString(weather["GRAPHICS"])
                 };
 
                 weathers.Add(weatherConfiguration);
@@ -207,7 +245,7 @@ namespace AssettoServer.Server.Configuration
             Sessions = sessions;
 
             var entryCarsParser = new FileIniDataParser();
-            IniData entryData = entryCarsParser.ReadFile("cfg/entry_list.ini");
+            IniData entryData = entryCarsParser.ReadFile(Path.Join(presetFolder, "entry_list.ini"));
 
             List<EntryCar> entryCars = new List<EntryCar>();
             for(int i = 0; i < MaxClients; i++)
@@ -216,13 +254,21 @@ namespace AssettoServer.Server.Configuration
                 if (entry.Count == 0)
                     break;
 
+                AiMode aiMode = AiMode.Disabled;
+                Enum.TryParse(entry["AI"], true, out aiMode);
+                
                 entryCars.Add(new EntryCar
                 {
                     Model = entry["MODEL"],
                     Skin = entry["SKIN"],
                     SpectatorMode = int.Parse(entry["SPECTATOR_MODE"] ?? "0"),
                     Ballast = int.Parse(entry["BALLAST"]),
-                    Restrictor = int.Parse(entry["RESTRICTOR"])
+                    Restrictor = int.Parse(entry["RESTRICTOR"]),
+                    AiMode = aiMode,
+                    AiControlled = aiMode != AiMode.Disabled,
+                    AiPakSequenceIds = new byte[MaxClients],
+                    LastSeenAiState = new AiState[MaxClients],
+                    LastSeenAiSpawn = new byte[MaxClients]
                 });
             }
 

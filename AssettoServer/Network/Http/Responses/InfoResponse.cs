@@ -40,5 +40,6 @@ namespace AssettoServer.Network.Http
         [JsonProperty("tport")]
         public int TPort { get; set; }
         public string Track { get; set; }
+        public string PoweredBy { get; set; }
     }
 }

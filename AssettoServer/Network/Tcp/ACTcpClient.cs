@@ -1,28 +1,24 @@
-﻿using AssettoServer.Network;
-using AssettoServer.Network.Packets;
+﻿using AssettoServer.Network.Packets;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Weather;
 using Qmmands;
-using Serilog;
 using Steamworks;
-using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Runtime.CompilerServices;
-using System.Runtime.ExceptionServices;
-using System.Security;
-using System.Text;
-using System.Threading;
-using System.Threading.Channels;
-using System.Threading.Tasks;
+using Serilog;
 
 namespace AssettoServer.Network.Tcp
 {
@@ -47,16 +43,25 @@ namespace AssettoServer.Network.Tcp
         internal IPEndPoint UdpEndpoint { get; private set; }
         internal bool HasAssociatedUdp { get; private set; }
 
+        private ThreadLocal<byte[]> UdpSendBuffer { get; }
         private Memory<byte> TcpSendBuffer { get; }
         private SemaphoreSlim TcpSendSemaphore { get; }
         private Channel<IOutgoingNetworkPacket> OutgoingPacketChannel { get; }
         private CancellationTokenSource DisconnectTokenSource { get; }
         private Task SendLoopTask { get; set; }
         private long LastChatTime { get; set; }
+        private SteamId? SteamId { get; set; }
+
+        public event EventHandler<ACTcpClient, ClientHandshakeEventArgs> HandshakeStarted;
+        public event EventHandler<ACTcpClient, EventArgs> ChecksumPassed;
+        public event EventHandler<ACTcpClient, EventArgs> ChecksumFailed;
+        public event EventHandler<ACTcpClient, ChatMessageEventArgs> ChatMessageReceived;
 
         internal ACTcpClient(ACServer server, TcpClient tcpClient)
         {
             Server = server;
+
+            UdpSendBuffer = new ThreadLocal<byte[]>(() => new byte[2048]);
 
             TcpClient = tcpClient;
             tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
@@ -71,55 +76,74 @@ namespace AssettoServer.Network.Tcp
 
         internal Task StartAsync()
         {
-            SendLoopTask = Task.Factory.StartNew(SendLoopAsync, TaskCreationOptions.LongRunning);
-            _ = Task.Factory.StartNew(ReceiveLoopAsync, TaskCreationOptions.LongRunning);
+            SendLoopTask = Task.Factory.StartNew(SendLoopAsync);
+            _ = Task.Factory.StartNew(ReceiveLoopAsync);
 
             return Task.CompletedTask;
         }
 
-        internal void SendPacket<TPacket>(TPacket packet) where TPacket : IOutgoingNetworkPacket
+        public void SendPacket<TPacket>(TPacket packet) where TPacket : IOutgoingNetworkPacket
         {
             try
             {
                 if (!OutgoingPacketChannel.Writer.TryWrite(packet) && !(packet is SunAngleUpdate))
-                    Server.Log.Warning("Failed to queue packet {0} for {1}. Perhaps the outgoing packet channel is full?", typeof(TPacket).Name, Name);
+                    Log.Warning("Failed to queue packet {0} for {1}. Perhaps the outgoing packet channel is full?", typeof(TPacket).Name, Name);
             }
             catch (Exception ex)
             {
-                Server.Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
+                Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
+            }
+        }
+        
+        internal void SendPacketUdp<TPacket>(TPacket packet) where TPacket : IOutgoingNetworkPacket
+        {
+            try
+            {
+                byte[] buffer = UdpSendBuffer.Value;
+                PacketWriter writer = new PacketWriter(buffer);
+                int bytesWritten = writer.WritePacket(packet);
+
+                Server.UdpServer.Send(UdpEndpoint, buffer, 0, bytesWritten);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
             }
         }
 
         private async Task SendLoopAsync()
         {
-            while (!DisconnectTokenSource.IsCancellationRequested)
+            while (await OutgoingPacketChannel.Reader.WaitToReadAsync(DisconnectTokenSource.Token))
             {
                 IOutgoingNetworkPacket packet = default;
 
                 try
                 {
-                    packet = await OutgoingPacketChannel.Reader.ReadAsync(DisconnectTokenSource.Token);
-                    if (!(packet is SunAngleUpdate))
+                    while (OutgoingPacketChannel.Reader.TryRead(out packet))
                     {
-                        if (packet is AuthFailedResponse authResponse)
-                            Server.Log.Debug("Sending {0} ({1})", packet.GetType().Name, authResponse.Reason);
-                        else if (packet is ChatMessage chatMessage && chatMessage.SessionId == 255)
-                            Server.Log.Debug("Sending {0} ({1}) to {2}", packet.GetType().Name, chatMessage.Message, Name);
-                        else
-                            Server.Log.Debug("Sending {0} to {1}", packet.GetType().Name, Name);
+                        if (!(packet is SunAngleUpdate))
+                        {
+                            if (packet is AuthFailedResponse authResponse)
+                                Log.Debug("Sending {0} ({1})", packet.GetType().Name, authResponse.Reason);
+                            else if (packet is ChatMessage chatMessage && chatMessage.SessionId == 255)
+                                Log.Verbose("Sending {0} ({1}) to {2}", packet.GetType().Name, chatMessage.Message, Name);
+                            else
+                                Log.Verbose("Sending {0} to {1}", packet.GetType().Name, Name);
+                        }
+
+                        PacketWriter writer = new PacketWriter(TcpStream, TcpSendBuffer);
+                        writer.WritePacket(packet);
+
+                        await writer.SendAsync(DisconnectTokenSource.Token);
                     }
-
-                    PacketWriter writer = new PacketWriter(TcpStream, TcpSendBuffer);
-                    writer.WritePacket(packet);
-
-                    await writer.SendAsync(DisconnectTokenSource.Token);
                 }
                 catch (ChannelClosedException) { }
                 catch (ObjectDisposedException) { }
                 catch (OperationCanceledException) { }
                 catch (Exception ex)
                 {
-                    Server.Log.Error(ex, "Error sending {0} to {1}.", packet?.GetType().Name ?? "(no packet)", Name);
+                    Log.Error(ex, "Error sending {0} to {1}.", packet?.GetType().Name ?? "(no packet)", Name);
+                    _ = DisconnectAsync();
                 }
             }
         }
@@ -136,9 +160,12 @@ namespace AssettoServer.Network.Tcp
                     PacketReader reader = new PacketReader(stream, buffer);
                     reader.SliceBuffer(await reader.ReadPacketAsync());
 
+                    if (reader.Buffer.Length == 0)
+                        return;
+                    
                     byte id = reader.Read<byte>();
                     if (id != 0x82)
-                        Server.Log.Debug("Received TCP packet with ID {0:X}", id);
+                        Log.Verbose("Received TCP packet with ID {0:X}", id);
 
                     if (!HasStartedHandshake && id != 0x3D)
                         return;
@@ -151,7 +178,18 @@ namespace AssettoServer.Network.Tcp
 
                         Name = handshakeRequest.Name?.Trim();
 
-                        Server.Log.Information("{0} ({1}) is attempting to connect ({2}).", handshakeRequest.Name, handshakeRequest.Guid, handshakeRequest.RequestedCar);
+                        Log.Information("{0} ({1} - {2}) is attempting to connect ({3}).", handshakeRequest.Name, handshakeRequest.Guid, TcpClient.Client.RemoteEndPoint, handshakeRequest.RequestedCar);
+                        
+                        List<string> cspFeatures;
+                        if(!string.IsNullOrEmpty(handshakeRequest.Features))
+                        {
+                            Log.Debug("{0} supports extra CSP features: {1}", handshakeRequest.Name, handshakeRequest.Features);
+                            cspFeatures = handshakeRequest.Features.Split(',').ToList();
+                        }
+                        else
+                        {
+                            cspFeatures = new List<string>();
+                        }
 
                         if (id != 0x3D || handshakeRequest.ClientVersion != 202)
                             SendPacket(new UnsupportedProtocolResponse());
@@ -163,30 +201,45 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new SessionClosedResponse());
                         //else if (handshakeRequest.Password.Length > 0 && handshakeRequest.Password != Server.Configuration.AdminPassword)
                         //    await SendPacketAsync(new AuthFailedResponse("Incorrect admin password."));
+                        else if ((Server.Configuration.Extra.EnableWeatherFx && !cspFeatures.Contains("WEATHERFX_V1"))
+                                 || (Server.Configuration.Extra.UseSteamAuth && !cspFeatures.Contains("STEAM_TICKET")))
+                            SendPacket(new AuthFailedResponse("Content Manager version not supported. Please update Content Manager to v0.8.2329.38887 or above."));
                         else if (Server.Configuration.Extra.UseSteamAuth && !await ValidateSessionTicketAsync(handshakeRequest.SessionTicket, handshakeRequest.Guid))
                             SendPacket(new AuthFailedResponse("Steam authentication failed."));
                         else if (string.IsNullOrEmpty(handshakeRequest.Guid) || !(handshakeRequest.Guid?.Length >= 6))
                             SendPacket(new AuthFailedResponse("Invalid Guid."));
-                        else if (string.IsNullOrEmpty(handshakeRequest.Name) || handshakeRequest.Name == null || handshakeRequest.Name.Length < 1)
-                            SendPacket(new AuthFailedResponse("Username is not allowed."));
-                        else if (handshakeRequest.Name == "RLD!")
-                            SendPacket(new AuthFailedResponse("The name \"RLD!\" is not allowed."));
                         else if (!await Server.TrySecureSlotAsync(this, handshakeRequest))
                             SendPacket(new NoSlotsAvailableResponse());
                         else
                         {
-                            if (Name.Equals("player", StringComparison.OrdinalIgnoreCase))
-                                Name += handshakeRequest.Guid[^6..];
+                            var args = new ClientHandshakeEventArgs
+                            {
+                                HandshakeRequest = handshakeRequest
+                            };
+                            HandshakeStarted?.Invoke(this, args);
+
+                            if (args.Cancel)
+                            {
+                                if(args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.Blacklisted)
+                                    SendPacket(new BlacklistedResponse());
+                                else if(args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.AuthFailed)
+                                    SendPacket(new AuthFailedResponse(args.AuthFailedReason));
+
+                                return;
+                            }
 
                             EntryCar.SetActive();
                             Team = handshakeRequest.Team;
                             NationCode = handshakeRequest.Nation;
                             Guid = handshakeRequest.Guid;
 
+                            // Gracefully despawn AI cars
+                            EntryCar.SetAiOverbooking(0);
+
                             if (handshakeRequest.Password == Server.Configuration.AdminPassword)
                                 IsAdministrator = true;
 
-                            Server.Log.Information("{0} ({1}, {2} ({3})) has connected.", Name, Guid, SessionId, EntryCar.Model + "-" + EntryCar.Skin);
+                            Log.Information("{0} ({1}, {2} ({3})) has connected.", Name, Guid, SessionId, EntryCar.Model + "-" + EntryCar.Skin);
 
                             ACServerConfiguration cfg = Server.Configuration;
                             HandshakeResponse handshakeResponse = new HandshakeResponse
@@ -213,7 +266,7 @@ namespace AssettoServer.Network.Tcp
                                 ResultScreenTime = cfg.ResultScreenTime,
                                 ServerName = cfg.Name,
                                 SessionId = SessionId,
-                                SunAngle = cfg.SunAngle,
+                                SunAngle = WeatherUtils.SunAngleFromSeconds((float)TimeZoneInfo.ConvertTimeFromUtc(Server.CurrentDateTime, Server.TimeZone).TimeOfDay.TotalSeconds),
                                 TrackConfig = cfg.TrackConfig,
                                 TrackName = cfg.Track,
                                 TyreConsumptionRate = cfg.TyreConsumptionRate,
@@ -238,7 +291,7 @@ namespace AssettoServer.Network.Tcp
                             {
                                 if (EntryCar.Client == this && IsConnected && !HasSentFirstUpdate)
                                 {
-                                    Server.Log.Information("{0} has taken over 10 minutes to spawn in and will be disconnected.", Name);
+                                    Log.Information("{0} has taken over 10 minutes to spawn in and will be disconnected.", Name);
                                     await DisconnectAsync();
                                 }
                             });
@@ -258,19 +311,19 @@ namespace AssettoServer.Network.Tcp
                         else if (id == 0x43)
                             return;
                         else if (id == 0x47)
-                            await OnChatAsync(reader);
+                            OnChat(reader);
                         else if (id == 0x44)
                             await OnChecksumAsync(reader);
                         else if (id == 0xAB)
                         {
                             id = reader.Read<byte>();
-                            Server.Log.Debug("Received extended TCP packet with ID {0:X}", id);
+                            Log.Verbose("Received extended TCP packet with ID {0:X}", id);
 
                             if (id == 0x00)
                                 OnSpectateCar(reader);
                         }
-                        //else if (id == 0x82)
-                        //    await OnClientEvent(reader);
+                        else if (id == 0x82)
+                            OnClientEvent(reader);
                     }
                 }
             }
@@ -278,12 +331,17 @@ namespace AssettoServer.Network.Tcp
             catch (IOException) { }
             catch (Exception ex)
             {
-                Server.Log.Error(ex, "Error receiving TCP packet from {0}.", Name);
+                Log.Error(ex, "Error receiving TCP packet from {0}.", Name);
             }
             finally
             {
                 await DisconnectAsync();
             }
+        }
+
+        private static bool HasValidUserName(string name, List<string> nameFilters)
+        {
+            return !string.IsNullOrEmpty(name) && nameFilters.All(regex => !Regex.Match(name, regex, RegexOptions.IgnoreCase).Success);
         }
 
         private async ValueTask<bool> ValidateSessionTicketAsync(byte[] sessionTicket, string guid)
@@ -297,9 +355,12 @@ namespace AssettoServer.Network.Tcp
                 if (arg1 == steamId)
                 {
                     if (arg3 != AuthResponse.OK)
-                        Server.Log.Information("Steam auth ticket verification failed ({0}) for {1}.", arg3, Name);
+                        Log.Information("Steam auth ticket verification failed ({0}) for {1}.", arg3, Name);
                     else
-                        Server.Log.Information("Steam auth ticket verification succeeded for {0}.", Name);
+                    {
+                        SteamId = arg1;
+                        Log.Information("Steam auth ticket verification succeeded for {0}.", Name);
+                    }
 
                     taskCompletionSource.SetResult(arg3 == AuthResponse.OK);
                 }
@@ -308,7 +369,7 @@ namespace AssettoServer.Network.Tcp
             bool validated = false;
 
             SteamServer.OnValidateAuthTicketResponse += tickedValidateResponse;
-            Task timeoutTask = Task.Delay(2000);
+            Task timeoutTask = Task.Delay(5000);
             Task beginAuthTask = Task.Run(() =>
             {
                 if (!SteamServer.BeginAuthSession(sessionTicket, steamId))
@@ -319,7 +380,7 @@ namespace AssettoServer.Network.Tcp
 
             if (finishedTask == timeoutTask)
             {
-                Server.Log.Warning("Steam auth ticket verification timed out for {0}.", Name);
+                Log.Warning("Steam auth ticket verification timed out for {0}.", Name);
             }
             else
             {
@@ -333,10 +394,22 @@ namespace AssettoServer.Network.Tcp
         private void OnClientEvent(PacketReader reader)
         {
             ClientEvent clientEvent = reader.ReadPacket<ClientEvent>();
-            if (clientEvent.Type == 0xC)
+
+            foreach (var evt in clientEvent.ClientEvents)
             {
-                clientEvent.SessionId = SessionId;
-                Server.BroadcastPacket(clientEvent);
+                if (evt.Type == ClientEvent.ClientEventType.PlayerCollision)
+                {
+                    var targetCar = Server.EntryCars[evt.TargetSessionId];
+
+                    if (targetCar.AiControlled)
+                    {
+                        var targetAiState = targetCar.GetClosestAiState(EntryCar.Status.Position);
+                        if (targetAiState.distanceSquared < 25 * 25)
+                        {
+                            targetAiState.aiState.StopForCollision();
+                        }
+                    }
+                }
             }
         }
 
@@ -363,7 +436,7 @@ namespace AssettoServer.Network.Tcp
                 for (int i = 0; i < allChecksums.Length; i++)
                     if (!allChecksums[i].Value.AsSpan().SequenceEqual(fullChecksum.AsSpan().Slice(i * 16, 16)))
                     {
-                        Server.Log.Information("{0} failed checksum for file {1}.", Name, allChecksums[i].Key);
+                        Log.Information("{0} failed checksum for file {1}.", Name, allChecksums[i].Key);
                         passedChecksum = false;
                         break;
                     }
@@ -372,10 +445,16 @@ namespace AssettoServer.Network.Tcp
             HasPassedChecksum = passedChecksum;
             if (!passedChecksum)
             {
+                ChecksumFailed?.Invoke(this, EventArgs.Empty);
+                
+                // Small delay is necessary, otherwise the client will not always show the "Checksum failed" screen
+                await Task.Delay(1000);
                 await Server.KickAsync(this, KickReason.ChecksumFailed, $"{Name} failed the checksum check and has been kicked.", false);
             }
             else
             {
+                ChecksumPassed?.Invoke(this, EventArgs.Empty);
+                
                 Server.BroadcastPacket(new CarConnected
                 {
                     SessionId = SessionId,
@@ -385,25 +464,25 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        private async Task OnChatAsync(PacketReader reader)
+        private void OnChat(PacketReader reader)
         {
             if (Environment.TickCount64 - LastChatTime < 1000)
                 return;
             LastChatTime = Environment.TickCount64;
 
-            EntryCar?.SetActive();
+            if (Server.Configuration.Extra.AfkKickBehavior == AfkKickBehavior.PlayerInput)
+            {
+                EntryCar?.SetActive();
+            }
+
             ChatMessage chatMessage = reader.ReadPacket<ChatMessage>();
             chatMessage.SessionId = SessionId;
 
-            Server.Log.Information("{0} ({1}): {2}", Name, SessionId, chatMessage.Message);
-
-            if (!CommandUtilities.HasPrefix(chatMessage.Message, '/', out string commandStr))
-                Server.BroadcastPacket(chatMessage);
-            else
+            var args = new ChatMessageEventArgs
             {
-                chatMessage.Message = commandStr;
-                await Server.ProcessCommandAsync(this, chatMessage);
-            }
+                ChatMessage = chatMessage
+            };
+            ChatMessageReceived?.Invoke(this, args);
         }
 
         private void OnTyreCompoundChange(PacketReader reader)
@@ -474,26 +553,28 @@ namespace AssettoServer.Network.Tcp
             HasSentFirstUpdate = true;
 
             ACServerConfiguration cfg = Server.Configuration;
-            List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null).ToList();
+            List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
-            if (cfg.WelcomeMessage.Length > 0)
+            if (!string.IsNullOrEmpty(cfg.WelcomeMessage))
                 SendPacket(new WelcomeMessage { Message = cfg.WelcomeMessage });
 
             SendPacket(new DriverInfoUpdate { ConnectedCars = connectedCars });
-            SendPacket(new WeatherUpdate
-            {
-                Ambient = (byte)Server.CurrentWeather.BaseTemperatureAmbient,
-                Graphics = Server.CurrentWeather.Graphics,
-                Road = (byte)Server.CurrentWeather.BaseTemperatureRoad,
-                WindDirection = (short)Server.CurrentWeather.WindBaseDirection,
-                WindSpeed = (short)Server.CurrentWeather.WindBaseSpeedMin
-            });
+            Server.WeatherImplementation.SendWeather(this);
 
             foreach (EntryCar car in connectedCars)
             {
-                SendPacket(new MandatoryPitUpdate { MandatoryPit = car.Status.MandatoryPit, SessionId = car.Client.SessionId });
+                SendPacket(new MandatoryPitUpdate { MandatoryPit = car.Status.MandatoryPit, SessionId = car.SessionId });
                 if (car != EntryCar)
                     SendPacket(new TyreCompoundUpdate { SessionId = car.SessionId, CompoundName = car.Status.CurrentTyreCompound });
+
+                if (Server.Configuration.Extra.AiParams.HideAiCars)
+                {
+                    SendPacket(new CSPCarVisibilityUpdate
+                    {
+                        SessionId = car.SessionId,
+                        Visible = car.AiControlled ? CSPCarVisibility.Invisible : CSPCarVisibility.Visible
+                    });
+                }
             }
 
             _ = Task.Delay(40000).ContinueWith(async t =>
@@ -520,27 +601,34 @@ namespace AssettoServer.Network.Tcp
         {
             try
             {
-                if (!DisconnectTokenSource.IsCancellationRequested)
-                    Server.Log.Debug("Disconnecting {0} ({1}).", Name, TcpClient?.Client?.RemoteEndPoint);
+                if (!DisconnectTokenSource.IsCancellationRequested && !string.IsNullOrEmpty(Name))
+                    Log.Debug("Disconnecting {0} ({1}).", Name, TcpClient?.Client?.RemoteEndPoint);
 
                 await Task.WhenAny(Task.Delay(2000), SendLoopTask);
                 OutgoingPacketChannel.Writer.TryComplete();
-                DisconnectTokenSource.Cancel();
+                try
+                {
+                    DisconnectTokenSource.Cancel();
+                    DisconnectTokenSource.Dispose();
+                }
+                catch (ObjectDisposedException) { }
 
                 if (IsConnected)
                     await Server.DisconnectClientAsync(this);
 
                 CloseConnection();
+
+                if (SteamId != null)
+                    SteamServer.EndSession(SteamId.Value);
             }
             catch (Exception ex)
             {
-                Server.Log.Error(ex, "Error disconnecting {0}.", Name);
+                Log.Error(ex, "Error disconnecting {0}.", Name);
             }
         }
 
         private void CloseConnection()
         {
-
             try
             {
                 TcpStream.Dispose();

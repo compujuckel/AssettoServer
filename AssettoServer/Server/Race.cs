@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace AssettoServer.Server
 {
@@ -139,7 +140,7 @@ namespace AssettoServer.Server
             }
             catch (Exception ex)
             {
-                Server.Log.Error(ex, "Error while running race.");
+                Log.Error(ex, "Error while running race.");
             }
             finally
             {
@@ -216,7 +217,7 @@ namespace AssettoServer.Server
                 Server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = $"{winnerName} just beat {loserName} in a race." });
             }
 
-            Server.Log.Information("Ending race between {0} and {1}.", ChallengerName, ChallengedName);
+            Log.Information("Ending race between {0} and {1}.", ChallengerName, ChallengedName);
         }
 
         private void SendMessage(string message)

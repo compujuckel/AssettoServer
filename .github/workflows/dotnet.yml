@@ -1,10 +1,8 @@
 name: .NET
-
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    tags:        
+      - 'v*'
 
 jobs:
   build:
@@ -16,16 +14,19 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 6.0.x
     - name: Publish (Linux)
-      run: dotnet publish --output out-linux-x64 --runtime linux-x64 --no-self-contained
+      run: dotnet publish --runtime linux-x64 --no-self-contained -c Release
     - name: Publish (Windows)
-      run: dotnet publish --output out-win-x64 --runtime win-x64 --no-self-contained
-    - uses: actions/upload-artifact@v2
+      run: dotnet publish --runtime win-x64 --no-self-contained -c Release
+    - name: Package (Linux)
+      run: cd out-linux-x64 && tar -czf assetto-server-linux-x64.tar.gz * && cd ..
+    - name: Package (Windows)
+      run: cd out-win-x64 && zip -r assetto-server-win-x64.zip * && cd ..
+    - name: Release
+      uses: softprops/action-gh-release@v1
       with:
-        name: assetto-server-linux-x64
-        path: out-linux-x64
-    - uses: actions/upload-artifact@v2
-      with:
-        name: assetto-server-win-x64
-        path: out-win-x64
+        prerelease: true
+        files: |
+          out-linux-x64/assetto-server-linux-x64.tar.gz
+          out-win-x64/assetto-server-win-x64.zip

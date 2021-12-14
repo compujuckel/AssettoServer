@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using AssettoServer.Server.Weather;
 
 namespace AssettoServer.Commands.Modules
 {
@@ -21,7 +22,7 @@ namespace AssettoServer.Commands.Modules
 
         [Command("time")]
         public void Time()
-            => Reply($"It is currently {new DateTime().AddSeconds(Context.Server.CurrentDayTime):H:mm}.");
+            => Reply($"It is currently {TimeZoneInfo.ConvertTimeFromUtc(Context.Server.CurrentDateTime, Context.Server.TimeZone):H:mm}.");
 
 #if DEBUG
         [Command("test")]

@@ -20,6 +20,7 @@ namespace AssettoServer.Network.Http
         public bool IsConnected { get; set; }
     }
 
+    [JsonObject(NamingStrategyType = typeof(DefaultNamingStrategy))]
     public class EntryListResponse
     {
         public IEnumerable<string> Features { get; set; }

@@ -4,7 +4,7 @@ using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
-using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Weather;
 using Humanizer;
 using Humanizer.Bytes;
 using Qmmands;
@@ -17,24 +17,26 @@ namespace AssettoServer.Commands.Modules
     [RequireAdmin]
     public class AdminModule : ACModuleBase
     {
-        [Command("kick")]
+        [Command("kick", "kick_id")]
         public Task KickAsync(ACTcpClient player, [Remainder] string reason = null)
         {
             if (player.SessionId == Context.Client?.SessionId)
                 Reply("You cannot kick yourself.");
-            if (player.IsAdministrator)
+            else if (player.IsAdministrator)
                 Reply("You cannot kick an administrator");
             else
             {
-                string kickMessage = reason == null ? $"{player.Name} ({player.Guid}) has been kicked." : $"{player.Name} has been kicked for: {reason}.";
-                return Context.Server.KickAsync(player, KickReason.None, kickMessage);
+                Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
+                
+                string kickMessage = reason == null ? $"{player.Name} has been kicked." : $"{player.Name} has been kicked for: {reason}.";
+                return Context.Server.KickAsync(player, KickReason.None, kickMessage, true, Context.Client);
             }
 
             return Task.CompletedTask;
         }
 
-        [Command("ban")]
-        public ValueTask BanAsync(ACTcpClient player, [Remainder] string reason = null)
+        [Command("ban", "ban_id")]
+        public Task BanAsync(ACTcpClient player, [Remainder] string reason = null)
         {
             if (player.SessionId == Context.Client?.SessionId)
                 Reply("You cannot ban yourself.");
@@ -42,11 +44,13 @@ namespace AssettoServer.Commands.Modules
                 Reply("You cannot ban an administrator.");
             else
             {
-                string kickMessage = reason == null ? $"{player.Name} has been banned." : $"{player.Name} ({player.Guid}) has been banned for: {reason}.";
-                return Context.Server.BanAsync(player, KickReason.Blacklisted, kickMessage);
+                Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
+                
+                string kickMessage = reason == null ? $"{player.Name} has been banned." : $"{player.Name} has been banned for: {reason}.";
+                return Context.Server.BanAsync(player, KickReason.Blacklisted, kickMessage, Context.Client);
             }
 
-            return ValueTask.CompletedTask;
+            return Task.CompletedTask;
         }
 
         [Command("unban")]
@@ -88,14 +92,37 @@ namespace AssettoServer.Commands.Modules
         [Command("setweather")]
         public void SetWeather(int weatherId)
         {
-            var allWeathers = Context.Server.Configuration.Weathers;
-            if (weatherId >= 0 && weatherId < allWeathers.Count)
+            if (Context.Server.WeatherProvider.SetWeatherConfiguration(weatherId))
             {
-                WeatherConfiguration newWeather = allWeathers[weatherId];
-                Context.Server.SetWeather(newWeather);
-                Reply("Weather has been set.");
+                Reply("Weather configuration has been set.");
             }
-            else Reply("There is no weather with this ID.");
+            else
+            {
+                Reply("There is no weather configuration with this id.");
+            }
+        }
+
+        [Command("setcspweather")]
+        public void SetCspWeather(int upcoming, int duration)
+        {
+            Context.Server.SetCspWeather((WeatherFxType)upcoming, duration);
+            Reply("Weather has been set.");
+        }
+
+        [Command("setrain")]
+        public void SetRain(float intensity, float wetness, float water)
+        {
+            Context.Server.CurrentWeather.RainIntensity = intensity;
+            Context.Server.CurrentWeather.RainWetness = wetness;
+            Context.Server.CurrentWeather.RainWater = water;
+            Context.Server.WeatherImplementation.SendWeather();
+        }
+
+        [Command("setgrip")]
+        public void SetGrip(float grip)
+        {
+            Context.Server.CurrentWeather.TrackGrip = grip;
+            Context.Server.WeatherImplementation.SendWeather();
         }
 
         [Command("setafktime")]
@@ -117,7 +144,7 @@ namespace AssettoServer.Commands.Modules
         }
 
         [Command("distance")]
-        public void SetUpdateRate([Remainder] ACTcpClient player)
+        public void GetDistance([Remainder] ACTcpClient player)
         {
             Reply(Vector3.Distance(Context.Client.EntryCar.Status.Position, player.EntryCar.Status.Position).ToString());
         }
@@ -136,7 +163,7 @@ namespace AssettoServer.Commands.Modules
         {
             EntryCar car = player.EntryCar;
 
-            Reply($"IP: {(player.TcpClient.Client.RemoteEndPoint as System.Net.IPEndPoint).Address}\nGUID: {player.Guid}\nPing: {car.Ping}ms");
+            Reply($"IP: {(player.TcpClient.Client.RemoteEndPoint as System.Net.IPEndPoint).Address}\nProfile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {car.Ping}ms");
             Reply($"Position: {car.Status.Position}\nVelocity: {(int)(car.Status.Velocity.Length() * 3.6)}kmh");
         }
 
@@ -146,6 +173,13 @@ namespace AssettoServer.Commands.Modules
             player.SendPacket(new BallastUpdate { SessionId = player.SessionId, BallastKg = ballastKg, Restrictor = restrictor });
             Reply("Restrictor and ballast set.");
         }
+        
+        // CSP uses this to detect if the player is admin
+        [Command("ballast")]
+        public void Ballast()
+        {
+            Reply("SYNTAX ERROR: Use 'ballast [driver numeric id] [kg]'");
+        }
 
         [Command("netstats")]
         public void NetStats()
@@ -153,6 +187,12 @@ namespace AssettoServer.Commands.Modules
             ACUdpServer udpServer = Context.Server.UdpServer;
             Reply($"Sent: {udpServer.DatagramsSentPerSecond} packets/s ({ByteSize.FromBytes(udpServer.BytesSentPerSecond).Per(TimeSpan.FromSeconds(1)).Humanize("#.##")})\n" +
                 $"Received: {udpServer.DatagramsReceivedPerSecond} packets/s ({ByteSize.FromBytes(udpServer.BytesReceivedPerSecond).Per(TimeSpan.FromSeconds(1)).Humanize("#.##")})");
+        }
+
+        [Command("setsplineheight")]
+        public void SetSplineHeight(float height)
+        {
+            Context.Server.Configuration.Extra.AiParams.SplineHeightOffsetMeters = height;
         }
     }
 }

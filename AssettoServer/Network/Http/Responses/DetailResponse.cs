@@ -21,6 +21,9 @@ namespace AssettoServer.Network.Http
         public int WindSpeed { get; set; }
         public int WindDirection { get; set; }
         public string Description { get; set; }
+        public float Grip { get; set; }
+        public float GripTransfer { get; set; }
+        public IEnumerable<string> Features { get; set; }
     }
 
     public class DetailResponseAssists

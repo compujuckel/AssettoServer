@@ -73,8 +73,10 @@ namespace AssettoServer.Server.Ai
 
         public void SetActive(bool active)
         {
+            if (Active == active) return;
+            
             Active = active;
-            Initialized = false;
+            ForceRespawn();
         }
 
         public void ForceRespawn()
@@ -441,7 +443,7 @@ namespace AssettoServer.Server.Ai
             if (!Move(_currentVecProgress + moveMeters))
             {
                 Log.Debug("Car {0} reached spline end, despawning", EntryCar.SessionId);
-                Initialized = false;
+                ForceRespawn();
                 return;
             }
 

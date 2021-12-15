@@ -47,6 +47,7 @@ public partial class EntryCar
             foreach (var targetAiState in AiStates)
             {
                 if (aiState != targetAiState
+                    && targetAiState.Active
                     && targetAiState.Initialized
                     && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < Server.Configuration.Extra.AiParams.MinStateDistanceSquared
                     && Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0)

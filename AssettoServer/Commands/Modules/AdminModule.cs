@@ -11,6 +11,7 @@ using Qmmands;
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
+using AssettoServer.Server.Ai;
 
 namespace AssettoServer.Commands.Modules
 {
@@ -193,6 +194,20 @@ namespace AssettoServer.Commands.Modules
         public void SetSplineHeight(float height)
         {
             Context.Server.Configuration.Extra.AiParams.SplineHeightOffsetMeters = height;
+        }
+
+        [Command("setaioverbooking")]
+        public void SetAiOverbooking(int count)
+        {
+            if (Context.Server.AiBehavior != null)
+            {
+                Context.Server.AiBehavior.SetAiOverbooking(count);
+                Reply($"AI overbooking set to {count}");
+            }
+            else
+            {
+                Reply("AI not enabled");
+            }
         }
     }
 }

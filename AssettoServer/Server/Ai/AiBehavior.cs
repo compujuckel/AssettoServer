@@ -43,11 +43,6 @@ namespace AssettoServer.Server.Ai
         {
             _server = server;
 
-            foreach (var entryCar in _server.EntryCars)
-            {
-                entryCar.AiInit(_server.Configuration.Extra.EnableAi ? _server.EntryCars.Count : 0);
-            }
-
             _server.ClientChecksumPassed += OnClientChecksumPassed;
             _server.ClientDisconnected += OnClientDisconnected;
             _server.Update += OnUpdate;
@@ -59,10 +54,7 @@ namespace AssettoServer.Server.Ai
             {
                 if (entryCar.AiControlled)
                 {
-                    foreach (var aiState in entryCar.AiStates)
-                    {
-                        aiState.Update();
-                    }
+                    entryCar.AiUpdate();
                 }
             }
             
@@ -192,10 +184,7 @@ namespace AssettoServer.Server.Ai
             {
                 if (entryCar.AiControlled)
                 {
-                    foreach (var aiState in entryCar.AiStates)
-                    {
-                        aiState.DetectObstacles();
-                    }
+                    entryCar.AiObstacleDetection();
                 }
             }
         }
@@ -235,7 +224,7 @@ namespace AssettoServer.Server.Ai
                 }
             }
             
-            _server.Metrics.Measure.Gauge.SetValue(_aiStateCountMetric, _server.EntryCars.Where(car => car.AiControlled).Sum(car => car.AiStates.Count(s => s.Active)));
+            _server.Metrics.Measure.Gauge.SetValue(_aiStateCountMetric, _server.EntryCars.Sum(entryCar => entryCar.GetActiveAiStateCount()));
 
             var playerCars = _server.EntryCars.Where(car => !car.AiControlled
                                                             && car.Client != null
@@ -243,11 +232,7 @@ namespace AssettoServer.Server.Ai
                                                             && Environment.TickCount64 - car.LastActiveTime < _server.Configuration.Extra.AiParams.PlayerAfkTimeoutMilliseconds
             ).ToList();
 
-            var allStates = _server.EntryCars
-                .Where(car => car.AiControlled)
-                .SelectMany(car => car.AiStates)
-                .Where(state => state.Active)
-                .ToList();
+            var allStates = _server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.GetAiStatesCopy()).ToList();
             var initializedAiStates = allStates.Where(state => state.Initialized);
             var distances = new List<AiDistance>();
 
@@ -266,7 +251,7 @@ namespace AssettoServer.Server.Ai
                 }
             }
 
-            var uninitializedAiStates = allStates.Where(state => !state.Initialized);
+            var uninitializedAiStates = allStates.Where(state => !state.Initialized).ToList();
 
             // Find all AIs that are at least <PlayerRadius> meters away from all players. Highest distance AI will be teleported
             var outOfRangeAiStates = uninitializedAiStates.Concat(from distance in distances

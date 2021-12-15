@@ -14,8 +14,7 @@ namespace AssettoServer.Server.Ai
     {
         public CarStatus Status = new CarStatus();
         public EntryCar EntryCar { get; internal set; }
-        public bool Initialized { get; private set; }
-        public bool Active { get; private set; }
+        public bool Initialized { get; set; }
         public TrafficSplinePoint CurrentSplinePoint { get; private set; }
         public TrafficMapView MapView { get; private set; }
         public long SpawnProtectionEnds { get; set; }
@@ -69,19 +68,6 @@ namespace AssettoServer.Server.Ai
         {
             EntryCar = entryCar;
             MapView = EntryCar.Server.TrafficMap.NewView();
-        }
-
-        public void SetActive(bool active)
-        {
-            if (Active == active) return;
-            
-            Active = active;
-            ForceRespawn();
-        }
-
-        public void ForceRespawn()
-        {
-            Initialized = false;
         }
 
         private void SetRandomSpeed()
@@ -289,7 +275,7 @@ namespace AssettoServer.Server.Ai
 
         public void DetectObstacles()
         {
-            if (!Active || !Initialized || CurrentSplinePoint == null) return;
+            if (CurrentSplinePoint == null) return;
             
             if (Environment.TickCount64 < _ignoreObstaclesUntil)
             {
@@ -422,7 +408,7 @@ namespace AssettoServer.Server.Ai
 
         public void Update()
         {
-            if (!Active || !Initialized)
+            if (!Initialized)
                 return;
             
             long dt = Environment.TickCount64 - _lastTick;
@@ -443,7 +429,7 @@ namespace AssettoServer.Server.Ai
             if (!Move(_currentVecProgress + moveMeters))
             {
                 Log.Debug("Car {0} reached spline end, despawning", EntryCar.SessionId);
-                ForceRespawn();
+                Initialized = false;
                 return;
             }
 

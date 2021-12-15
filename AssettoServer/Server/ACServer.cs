@@ -114,6 +114,7 @@ namespace AssettoServer.Server
                 EntryCars[i].SessionId = (byte)i;
                 EntryCars[i].Server = this;
                 EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Count];
+                EntryCars[i].SetAiOverbooking(0);
             }
             
             ConnectSemaphore = new SemaphoreSlim(1, 1);

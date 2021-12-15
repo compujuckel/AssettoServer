@@ -275,7 +275,7 @@ namespace AssettoServer.Server.Ai
 
         public void DetectObstacles()
         {
-            if (CurrentSplinePoint == null) return;
+            if (!Initialized || CurrentSplinePoint == null) return;
             
             if (Environment.TickCount64 < _ignoreObstaclesUntil)
             {

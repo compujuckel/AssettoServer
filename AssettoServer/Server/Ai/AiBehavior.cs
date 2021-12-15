@@ -176,8 +176,8 @@ namespace AssettoServer.Server.Ai
             
             AiStatesBySplinePoint = _server.EntryCars
                 .Where(car => car.AiControlled)
-                .SelectMany(car => car.AiStates)
-                .Where(state => state.Active && state.Initialized)
+                .SelectMany(car => car.GetAiStatesCopy())
+                .Where(state => state.Initialized)
                 .ToLookup(state => state.CurrentSplinePoint, state => state);
             
             foreach (var entryCar in _server.EntryCars)

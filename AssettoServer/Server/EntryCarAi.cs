@@ -31,6 +31,7 @@ public partial class EntryCar
     public void AiInit()
     {
         AiName = $"{Server.Configuration.Extra.AiParams.NamePrefix} {SessionId}";
+        SetAiOverbooking(0);
     }
     
     public List<AiState> GetAiStatesCopy()
@@ -204,50 +205,7 @@ public partial class EntryCar
 
         return (closestState, minDistanceSquared);
     }
-
-    public (AiState aiState, float distanceSquared) FindClosestAiObstacle(AiState targetState)
-    {
-        _aiStatesLock.EnterReadLock();
-        try
-        {
-            AiState closestState = null;
-            int minDistance = int.MaxValue;
-            foreach (var aiState in _aiStates)
-            {
-                if (aiState == targetState) continue;
-
-                if (Vector3.DistanceSquared(aiState.Status.Position, targetState.Status.Position) < 200 * 200
-                    && targetState.GetAngleToCar(aiState.Status) is > 165 and < 195)
-                {
-                    var point = targetState.CurrentSplinePoint;
-                    for (int distance = 0; distance < 100 && point != null; distance++)
-                    {
-                        if (point == aiState.CurrentSplinePoint && distance < minDistance)
-                        {
-                            minDistance = distance;
-                            closestState = aiState;
-                            break;
-                        }
-
-                        point = targetState.MapView.Next(point);
-                    }
-                }
-            }
-
-            if (closestState != null)
-            {
-                float distanceSquared = Vector3.DistanceSquared(targetState.Status.Position, closestState.Status.Position);
-                return (closestState, distanceSquared);
-            }
-        }
-        finally
-        {
-            _aiStatesLock.ExitReadLock();
-        }
-
-        return (null, float.MaxValue);
-    }
-
+    
     public bool CanSpawnAiState(Vector3 spawnPoint, AiState aiState)
     {
         _aiStatesLock.EnterUpgradeableReadLock();

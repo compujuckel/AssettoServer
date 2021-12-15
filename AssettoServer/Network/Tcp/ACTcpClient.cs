@@ -339,11 +339,6 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        private static bool HasValidUserName(string name, List<string> nameFilters)
-        {
-            return !string.IsNullOrEmpty(name) && nameFilters.All(regex => !Regex.Match(name, regex, RegexOptions.IgnoreCase).Success);
-        }
-
         private async ValueTask<bool> ValidateSessionTicketAsync(byte[] sessionTicket, string guid)
         {
             if (sessionTicket == null || !ulong.TryParse(guid, out ulong steamId))

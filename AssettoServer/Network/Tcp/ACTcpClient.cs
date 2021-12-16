@@ -353,16 +353,15 @@ namespace AssettoServer.Network.Tcp
                         Log.Information("Steam auth ticket verification failed ({0}) for {1}.", arg3, Name);
                     else
                     {
-                        if (guid != arg1.ToString())
-                        {
-                            Log.Warning("Possible Steamid spoofing attempt for {1} ({2}) - handshake: {3}, ticket: {4}", Name, SessionId, guid, arg1.ToString());
-                        }
-                        
                         SteamId = arg1;
                         Log.Information("Steam auth ticket verification succeeded for {0}.", Name);
                     }
 
                     taskCompletionSource.SetResult(arg3 == AuthResponse.OK);
+                }
+                else
+                {
+                    Log.Warning("Possible Steamid spoofing attempt for {1} ({2}) - handshake: {3}, ticket: {4}", Name, SessionId, guid, arg1.ToString());
                 }
             }
 

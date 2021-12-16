@@ -345,7 +345,7 @@ namespace AssettoServer.Network.Tcp
                 return false;
 
             TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
-            void tickedValidateResponse(SteamId arg1, SteamId arg2, AuthResponse arg3)
+            void ticketValidateResponse(SteamId arg1, SteamId arg2, AuthResponse arg3)
             {
                 if (arg1 == steamId)
                 {
@@ -353,6 +353,11 @@ namespace AssettoServer.Network.Tcp
                         Log.Information("Steam auth ticket verification failed ({0}) for {1}.", arg3, Name);
                     else
                     {
+                        if (guid != arg1.ToString())
+                        {
+                            Log.Warning("Possible Steamid spoofing attempt for {1} ({2}) - handshake: {3}, ticket: {4}", Name, SessionId, guid, arg1.ToString());
+                        }
+                        
                         SteamId = arg1;
                         Log.Information("Steam auth ticket verification succeeded for {0}.", Name);
                     }
@@ -363,7 +368,7 @@ namespace AssettoServer.Network.Tcp
 
             bool validated = false;
 
-            SteamServer.OnValidateAuthTicketResponse += tickedValidateResponse;
+            SteamServer.OnValidateAuthTicketResponse += ticketValidateResponse;
             Task timeoutTask = Task.Delay(5000);
             Task beginAuthTask = Task.Run(() =>
             {
@@ -382,7 +387,7 @@ namespace AssettoServer.Network.Tcp
                 validated = await taskCompletionSource.Task;
             }
 
-            SteamServer.OnValidateAuthTicketResponse -= tickedValidateResponse;
+            SteamServer.OnValidateAuthTicketResponse -= ticketValidateResponse;
             return validated;
         }
 

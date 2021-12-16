@@ -1,4 +1,4 @@
-# AssettoServer
+# AssettoServer [![Build status](https://github.com/compujuckel/AssettoServer/actions/workflows/dotnet.yml/badge.svg)](https://github.com/compujuckel/AssettoServer/actions/workflows/dotnet.yml) [![Discord](https://discordapp.com/api/guilds/890676433746268231/widget.png?style=shield)](https://discord.gg/uXEXRcSkyz)
 
 ## About
 AssettoServer is a custom game server for Assetto Corsa developed with freeroam in mind. It greatly improves upon the default game server by fixing various security issues and providing new features like AI traffic and dynamic weather.

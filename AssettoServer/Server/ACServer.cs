@@ -309,22 +309,31 @@ namespace AssettoServer.Server
 
         private async Task InitializeGeoParams()
         {
-            HttpResponseMessage response = await HttpClient.GetAsync("http://ip-api.com/json");
-            if (response.IsSuccessStatusCode)
+            try
             {
-                string jsonString = await response.Content.ReadAsStringAsync();
-                Dictionary<string, string> json = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
-                GeoParams = new GeoParams
+                HttpResponseMessage response = await HttpClient.GetAsync("http://ip-api.com/json");
+
+                if (response.IsSuccessStatusCode)
                 {
-                    Ip = json["query"],
-                    City = json["city"],
-                    Country = json["country"],
-                    CountryCode = json["countryCode"]
-                };
+                    string jsonString = await response.Content.ReadAsStringAsync();
+                    Dictionary<string, string> json = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
+                    GeoParams = new GeoParams
+                    {
+                        Ip = json["query"],
+                        City = json["city"],
+                        Country = json["country"],
+                        CountryCode = json["countryCode"]
+                    };
+                }
+                else
+                {
+                    Log.Error("Failed to get IP geolocation parameters");
+                    GeoParams = new GeoParams();
+                }
             }
-            else
+            catch (HttpRequestException e)
             {
-                Log.Information("Failed to get IP geolocation parameters.");
+                Log.Error(e, "Failed to get IP geolocation parameters");
                 GeoParams = new GeoParams();
             }
         }

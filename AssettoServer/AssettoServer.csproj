@@ -5,6 +5,9 @@
     <TargetFramework>net6.0</TargetFramework>
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>10</LangVersion>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <DebugType>embedded</DebugType>
     <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-x64'">..\out-linux-x64\</PublishDir>
     <PublishDir Condition="'$(RuntimeIdentifier)' != 'linux-x64'">..\out-win-x64\</PublishDir>
   </PropertyGroup>
@@ -38,12 +41,29 @@
     <PackageReference Include="YamlDotNet" Version="11.2.1" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
+    <ContentWithTargetPath Include="Redist/libsteam_api.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libsteam_api.so</TargetPath>
+    </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Redist/steam_appid.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>steam_appid.txt</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+  <ItemGroup Condition="'$(RuntimeIdentifier)' != 'linux-x64'">
+    <ContentWithTargetPath Include="Redist/steam_api64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>steam_api64.dll</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+  
   <ItemGroup>
     <Reference Include="Facepunch.Steamworks.Posix" Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
-      <HintPath>..\Facepunch\Facepunch.Steamworks.Posix.dll</HintPath>
+      <HintPath>..\Redist\Facepunch.Steamworks.Posix.dll</HintPath>
     </Reference>
     <Reference Include="Facepunch.Steamworks.Win64" Condition="'$(RuntimeIdentifier)' != 'linux-x64'">
-      <HintPath>..\Facepunch\Facepunch.Steamworks.Win64.dll</HintPath>
+      <HintPath>..\Redist\Facepunch.Steamworks.Win64.dll</HintPath>
     </Reference>
   </ItemGroup>
 

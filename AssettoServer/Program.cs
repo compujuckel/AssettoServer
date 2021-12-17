@@ -40,7 +40,7 @@ namespace AssettoServer
                     rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
-            var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
+            var version = FileVersionInfo.GetVersionInfo(Environment.ProcessPath).ProductVersion;
             version = version.Substring(version.IndexOf('+') + 1);
             
             Log.Information("AssettoServer {0}", version);

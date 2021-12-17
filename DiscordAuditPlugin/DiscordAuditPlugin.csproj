@@ -5,6 +5,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
         <EnableDynamicLoading>true</EnableDynamicLoading>
+        <SelfContained>false</SelfContained>
+        <DebugType>embedded</DebugType>
         <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-x64'">..\out-linux-x64\plugins\$(MSBuildProjectName)\</PublishDir>
         <PublishDir Condition="'$(RuntimeIdentifier)' != 'linux-x64'">..\out-win-x64\plugins\$(MSBuildProjectName)\</PublishDir>
     </PropertyGroup>

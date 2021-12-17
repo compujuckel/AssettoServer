@@ -10,7 +10,7 @@ namespace DiscordAuditPlugin;
 
 public class Discord
 {
-    private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":" };
+    private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":", "@" };
     private readonly ACServer _server;
     
     private DiscordWebhook AuditHook { get; }

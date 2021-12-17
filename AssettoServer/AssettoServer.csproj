@@ -39,6 +39,7 @@
     </PackageReference>
     <PackageReference Include="TimeZoneConverter" Version="3.5.0" />
     <PackageReference Include="YamlDotNet" Version="11.2.1" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.244" PrivateAssets="all" Condition="!Exists('packages.config')" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
@@ -66,11 +67,4 @@
       <HintPath>..\Redist\Facepunch.Steamworks.Win64.dll</HintPath>
     </Reference>
   </ItemGroup>
-
-  <Target Name="SetSourceRevisionId" BeforeTargets="InitializeSourceControlInformation">
-    <Exec Command="git describe --long --tags --always --dirty --abbrev=8" ConsoleToMSBuild="True" IgnoreExitCode="False">
-      <Output PropertyName="SourceRevisionId" TaskParameter="ConsoleOutput" />
-    </Exec>
-  </Target>
-
 </Project>

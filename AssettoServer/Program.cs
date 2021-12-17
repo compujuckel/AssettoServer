@@ -40,18 +40,18 @@ namespace AssettoServer
                     rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
-            var version = FileVersionInfo.GetVersionInfo(Environment.ProcessPath).ProductVersion;
-            version = version.Substring(version.IndexOf('+') + 1);
-            
-            Log.Information("AssettoServer {0}", version);
-            Log.Information("Using preset {0}", options.Preset);
+            Log.Information("AssettoServer {0}", ThisAssembly.AssemblyInformationalVersion);
+            if (!string.IsNullOrEmpty(options.Preset))
+            {
+                Log.Information("Using preset {0}", options.Preset);
+            }
 
             string configDir = string.IsNullOrEmpty(options.Preset) ? "cfg" : Path.Join("presets", options.Preset);
             
             ACPluginLoader loader = new ACPluginLoader();
 
             var config = new ACServerConfiguration().FromFiles(configDir, loader);
-            config.ServerVersion = version;
+            config.ServerVersion = ThisAssembly.AssemblyInformationalVersion;
             
             ACServer server = new ACServer(config, loader);
 

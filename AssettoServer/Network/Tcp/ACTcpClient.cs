@@ -31,10 +31,10 @@ namespace AssettoServer.Network.Tcp
         public string NationCode { get; private set; }
         public bool IsAdministrator { get; internal set; }
         public string Guid { get; internal set; }
-
+        public EntryCar EntryCar { get; set; }
+        
         internal TcpClient TcpClient { get; }
         internal NetworkStream TcpStream { get; }
-        internal EntryCar EntryCar { get; set; }
         internal bool HasSentFirstUpdate { get; private set; }
         internal bool HasStartedHandshake { get; private set; }
         internal bool HasPassedChecksum { get; private set; }

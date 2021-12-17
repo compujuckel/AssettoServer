@@ -52,10 +52,14 @@ namespace AssettoServer.Server
         public GeoParams GeoParams { get; private set; }
         public IReadOnlyList<string> Features { get; private set; }
         public IMetricsRoot Metrics { get; }
+        public int StartTime { get; } = Environment.TickCount;
+        public int CurrentTime => Environment.TickCount - StartTime;
+        public long StartTime64 { get; } = Environment.TickCount64;
+        public long CurrentTime64 => Environment.TickCount64 - StartTime64;
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
         internal ConcurrentDictionary<IPEndPoint, EntryCar> EndpointCars { get; }
-        internal ImmutableList<EntryCar> EntryCars { get; }
+        public ImmutableList<EntryCar> EntryCars { get; }
         internal ConcurrentDictionary<string, bool> Blacklist { get; }
         internal ConcurrentDictionary<string, bool> Admins { get; }
         internal IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; }
@@ -65,11 +69,6 @@ namespace AssettoServer.Server
         internal ACUdpServer UdpServer { get; }
         internal IWebHost HttpServer { get; private set; }
         internal KunosLobbyRegistration KunosLobbyRegistration { get; }
-
-        internal int StartTime { get; } = Environment.TickCount;
-        internal int CurrentTime => Environment.TickCount - StartTime;
-        internal long StartTime64 { get; } = Environment.TickCount64;
-        internal long CurrentTime64 => Environment.TickCount64 - StartTime64;
 
         private SemaphoreSlim ConnectSemaphore { get; }
         private HttpClient HttpClient { get; }
@@ -903,9 +902,7 @@ namespace AssettoServer.Server
 
         private void OnChatMessageReceived(ACTcpClient sender, ChatMessageEventArgs args)
         {
-            var client = (ACTcpClient)sender;
-            
-            Log.Information("CHAT: {0} ({1}): {2}", client.Name, client.SessionId, args.ChatMessage.Message);
+            Log.Information("CHAT: {0} ({1}): {2}", sender.Name, sender.SessionId, args.ChatMessage.Message);
 
             if (!CommandUtilities.HasPrefix(args.ChatMessage.Message, '/', out string commandStr))
             {
@@ -924,7 +921,7 @@ namespace AssettoServer.Server
             {
                 var message = args.ChatMessage;
                 message.Message = commandStr;
-                _ = ProcessCommandAsync(client, message);
+                _ = ProcessCommandAsync(sender, message);
             }
         }
 

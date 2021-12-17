@@ -15,7 +15,6 @@ namespace AssettoServer.Server
 
         public bool ForceLights { get; internal set; }
         public int HighPingSeconds { get; internal set; }
-        public int LightFlashCount { get; internal set; }
 
         public long LastActiveTime { get; internal set; }
         public bool HasSentAfkWarning { get; internal set; }
@@ -35,15 +34,15 @@ namespace AssettoServer.Server
         public int Restrictor { get; internal set; }
 
         internal long[] OtherCarsLastSentUpdateTime { get; set; }
-        internal Race CurrentRace { get; set; }
         internal EntryCar TargetCar { get; set; }
         internal long LastFallCheckTime{ get; set;}
 
-        private long LastLightFlashTime { get; set; }
-        private long LastRaceChallengeTime { get; set; }
+        public event EventHandler<EntryCar, PositionUpdateEventArgs> PositionUpdateReceived;
+        public event EventHandler<EntryCar, EventArgs> ResetInvoked;
 
         internal void Reset()
         {
+            ResetInvoked?.Invoke(this, EventArgs.Empty);
             IsSpectator = false;
             SpectatorMode = 0;
             LastActiveTime = 0;
@@ -56,7 +55,6 @@ namespace AssettoServer.Server
             Ping = 0;
             ForceLights = false;
             Status = new CarStatus();
-            CurrentRace = null;
             TargetCar = null;
         }
 
@@ -83,6 +81,8 @@ namespace AssettoServer.Server
 
         internal void UpdatePosition(PositionUpdate positionUpdate)
         {
+            PositionUpdateReceived?.Invoke(this, new PositionUpdateEventArgs { PositionUpdate = positionUpdate});
+            
             HasUpdateToSend = true;
             LastRemoteTimestamp = positionUpdate.LastRemoteTimestamp;
 
@@ -91,35 +91,6 @@ namespace AssettoServer.Server
                 && (Server.Configuration.Extra.AfkKickBehavior != AfkKickBehavior.MinimumSpeed || positionUpdate.Velocity.LengthSquared() > afkMinSpeed * afkMinSpeed))
             {
                 SetActive();
-            }
-
-            long currentTick = Environment.TickCount64;
-            if(((Status.StatusFlag & CarStatusFlags.LightsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.LightsOn) != 0) || ((Status.StatusFlag & CarStatusFlags.HighBeamsOff) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HighBeamsOff) != 0))
-            {
-                LastLightFlashTime = currentTick;
-                LightFlashCount++;
-            }
-
-            if ((Status.StatusFlag & CarStatusFlags.HazardsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HazardsOn) != 0)
-            {
-                if (CurrentRace != null && !CurrentRace.HasStarted && !CurrentRace.LineUpRequired)
-                    _ = CurrentRace.StartAsync();
-            }
-
-            if (currentTick - LastLightFlashTime > 3000 && LightFlashCount > 0)
-            {
-                LightFlashCount = 0;
-            }
-
-            if (LightFlashCount == 3)
-            {
-                LightFlashCount = 0;
-
-                if(currentTick - LastRaceChallengeTime > 20000)
-                {
-                    Task.Run(ChallengeNearbyCar);
-                    LastRaceChallengeTime = currentTick;
-                }
             }
 
             /*if (!AiControlled && Status.StatusFlag != positionUpdate.StatusFlag)
@@ -144,90 +115,6 @@ namespace AssettoServer.Server
             Status.PerformanceDelta = positionUpdate.PerformanceDelta;
             Status.Gas = positionUpdate.Gas;
             Status.NormalizedPosition = positionUpdate.NormalizedPosition;
-        }
-
-        internal void ChallengeCar(EntryCar car, bool lineUpRequired = true)
-        {
-            void Reply(string message)
-                => Client.SendPacket(new ChatMessage { SessionId = 255, Message = message });
-
-            Race currentRace = CurrentRace;
-            if (currentRace != null)
-            {
-                if (currentRace.HasStarted)
-                    Reply("You are currently in a race.");
-                else
-                    Reply("You have a pending race request.");
-            }
-            else
-            {
-                if (car == this)
-                    Reply("You cannot challenge yourself to a race.");
-                else
-                {
-                    currentRace = car.CurrentRace;
-                    if (currentRace != null)
-                    {
-                        if (currentRace.HasStarted)
-                            Reply("This car is currently in a race.");
-                        else
-                            Reply("This car has a pending race request.");
-                    }
-                    else
-                    {
-                        currentRace = new Race(Server, this, car, lineUpRequired);
-                        CurrentRace = currentRace;
-                        car.CurrentRace = currentRace;
-
-                        Client.SendPacket(new ChatMessage { SessionId = 255, Message = $"You have challenged {car.Client.Name} to a race." });
-
-                        if (lineUpRequired)
-                            car.Client.SendPacket(new ChatMessage { SessionId = 255, Message = $"{Client.Name} has challenged you to a race. Send /accept within 10 seconds to accept." });
-                        else
-                            car.Client.SendPacket(new ChatMessage { SessionId = 255, Message = $"{Client.Name} has challenged you to a race. Flash your hazard lights or send /accept within 10 seconds to accept." });
-
-                        _ = Task.Delay(10000).ContinueWith(t =>
-                        {
-                            if (!currentRace.HasStarted)
-                            {
-                                CurrentRace = null;
-                                car.CurrentRace = null;
-
-                                ChatMessage timeoutMessage = new ChatMessage { SessionId = 255, Message = $"Race request has timed out." };
-                                Client.SendPacket(timeoutMessage);
-                                car.Client.SendPacket(timeoutMessage);
-                            }
-                        });
-                    }
-                }
-            }
-        }
-
-        private void ChallengeNearbyCar()
-        {
-            EntryCar bestMatch = null;
-            float distanceSquared = 30 * 30;
-
-            foreach(EntryCar car in Server.EntryCars)
-            {
-                ACTcpClient carClient = car.Client;
-                if(carClient != null && car != this)
-                {
-                    float challengedAngle = (float)(Math.Atan2(Status.Position.X - car.Status.Position.X, Status.Position.Z - car.Status.Position.Z) * 180 / Math.PI);
-                    if (challengedAngle < 0)
-                        challengedAngle += 360;
-                    float challengedRot = car.Status.GetRotationAngle();
-
-                    challengedAngle += challengedRot;
-                    challengedAngle %= 360;
-
-                    if (challengedAngle > 110 && challengedAngle < 250 && Vector3.DistanceSquared(car.Status.Position, Status.Position) < distanceSquared)
-                        bestMatch = car;
-                }
-            }
-
-            if (bestMatch != null)
-                ChallengeCar(bestMatch, false);
         }
     }
 }

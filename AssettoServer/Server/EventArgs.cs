@@ -39,3 +39,8 @@ public class ChatMessageEventArgs : EventArgs
 {
     public ChatMessage ChatMessage { get; init; }
 }
+
+public class PositionUpdateEventArgs : EventArgs
+{
+    public PositionUpdate PositionUpdate { get; init; }
+}

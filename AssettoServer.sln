@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiveWeatherPlugin", "LiveWe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WordFilterPlugin", "WordFilterPlugin\WordFilterPlugin.csproj", "{C16217E0-D82B-43EF-A5E0-836ED135AA8C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaceChallengePlugin", "RaceChallengePlugin\RaceChallengePlugin.csproj", "{2F522CD8-2890-4E00-97DB-4E2E1B407677}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{C16217E0-D82B-43EF-A5E0-836ED135AA8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C16217E0-D82B-43EF-A5E0-836ED135AA8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C16217E0-D82B-43EF-A5E0-836ED135AA8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F522CD8-2890-4E00-97DB-4E2E1B407677}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F522CD8-2890-4E00-97DB-4E2E1B407677}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F522CD8-2890-4E00-97DB-4E2E1B407677}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F522CD8-2890-4E00-97DB-4E2E1B407677}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

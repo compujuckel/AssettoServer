@@ -39,14 +39,33 @@ It is possible to specify the SteamIDs of players that should be administrator o
 
 ### AI Traffic
 
-It is possible to load one or more AI splines to provide AI traffic. Place `fast_lane.ai` in the maps `ai/` folder and enable traffic in `extra_cfg.yml`. The default AI settings have been tuned for Shutoko Revival Project, other maps will require different settings.
+It is possible to load one or more AI splines to provide AI traffic. Place `fast_lane.ai` in the maps `ai/` folder and set `EnableAi` to `true` in `extra_cfg.yml`.  
+The default AI settings have been tuned for Shutoko Revival Project, other maps will require different settings.
+
+To allow AI to take a car slot you have to add a new parameter to the `entry_list.ini`, for example:
+```ini
+[CAR_0]
+MODEL=ktyu_c8_lav_s1
+SKIN=04_gunmetal_grey/ADAn
+BALLAST=0
+RESTRICTOR=0
+AI=auto
+```
+
+Possible values for the `AI` parameter are
+* `auto` - AI will take the slot when it is empty
+* `fixed` - AI will always take the car slot. It won't be possible for players to join in this slot
+* `none` - AI will never take the slot (default)
+
+When using `AI=auto` slots it is highly recommended to specify a `MaxPlayerCount` in `extra_cfg.yml` to make sure there is always a minimum amount of AI cars available.
+
 
 ### Dynamic Weather
 
 The server supports CSPs WeatherFX v1 which allows dynamic weather, smooth weather transitions and RainFX. CSP 0.1.76+ is required for this feature.
 
 Two plugins are included that utilize dynamic weather:
-* `LiveWeatherPlugin` for getting realtime weather from openweathermaps.org
+* `LiveWeatherPlugin` for getting realtime weather from openweathermap.org
 * `VotingWeatherPlugin` for letting players vote for weather changes
 
 ### Anti AFK system

@@ -5,10 +5,20 @@ AssettoServer is a custom game server for Assetto Corsa developed with freeroam 
 
 This is a fork of https://github.com/Niewiarowski/AssettoServer.
 
+## Installation
+
+### Windows
+* Install the ASP.NET 6 Runtime (select "Hosting Bundle"): https://dotnet.microsoft.com/en-us/download/dotnet/6.0/runtime
+* Download `assetto-server-win-x64.zip` from the [latest stable release](https://github.com/compujuckel/AssettoServer/releases) and extract it whereever you want.
+
+### Linux
+* Follow the ASP.NET 6 Runtime installation instructions for your distro: https://docs.microsoft.com/en-us/dotnet/core/install/linux
+* Download `assetto-server-linux-x64.tar.gz` from the [latest stable release](https://github.com/compujuckel/AssettoServer/releases) and extract it whereever you want.
+
 ## Usage
 
-You can download pre-built binaries from the [Releases page](https://github.com/compujuckel/AssettoServer/releases).  
-The same folder structure and configuration as in the original server is used, so you can use Content Manager to prepare a server config.
+The easiest way to get started is creating your server configuration with Content Manager.  
+After that just click "Pack" to create an archive with all required configs and data files. Extract this archive into the server root folder.
 
 ## Features
 

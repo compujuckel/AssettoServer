@@ -195,12 +195,10 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new UnsupportedProtocolResponse());
                         else if (Server.IsGuidBlacklisted(handshakeRequest.Guid))
                             SendPacket(new BlacklistedResponse());
-                        else if (Server.Configuration.Password?.Length > 0 && handshakeRequest.Password != Server.Configuration.Password)
+                        else if (Server.Configuration.Password?.Length > 0 && handshakeRequest.Password != Server.Configuration.Password && handshakeRequest.Password != Server.Configuration.AdminPassword)
                             SendPacket(new WrongPasswordResponse());
                         else if (!Server.CurrentSession.IsOpen)
                             SendPacket(new SessionClosedResponse());
-                        //else if (handshakeRequest.Password.Length > 0 && handshakeRequest.Password != Server.Configuration.AdminPassword)
-                        //    await SendPacketAsync(new AuthFailedResponse("Incorrect admin password."));
                         else if ((Server.Configuration.Extra.EnableWeatherFx && !cspFeatures.Contains("WEATHERFX_V1"))
                                  || (Server.Configuration.Extra.UseSteamAuth && !cspFeatures.Contains("STEAM_TICKET")))
                             SendPacket(new AuthFailedResponse("Content Manager version not supported. Please update Content Manager to v0.8.2329.38887 or above."));

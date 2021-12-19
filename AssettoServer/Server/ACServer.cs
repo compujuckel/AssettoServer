@@ -323,6 +323,8 @@ namespace AssettoServer.Server
                         Country = json["country"],
                         CountryCode = json["countryCode"]
                     };
+                    
+                    Log.Information("Server invite link: {0}", $"https://acstuff.ru/s/q:race/online/join?ip={GeoParams.Ip}&httpPort={Configuration.HttpPort}");
                 }
                 else
                 {
@@ -334,6 +336,13 @@ namespace AssettoServer.Server
             {
                 Log.Error(e, "Failed to get IP geolocation parameters");
                 GeoParams = new GeoParams();
+            }
+
+            if (Configuration.Extra.GeoParamsCountryOverride != null)
+            {
+                GeoParams.City = null;
+                GeoParams.Country = Configuration.Extra.GeoParamsCountryOverride[0];
+                GeoParams.CountryCode = Configuration.Extra.GeoParamsCountryOverride[1];
             }
         }
 

@@ -36,10 +36,11 @@ namespace AssettoServer.Server.Configuration
         public double RainTrackGripReductionPercent { get; set; } = 0;
         [YamlMember(Description = "Enable AI traffic")]
         public bool EnableAi { get; set; } = false;
+        [YamlMember(Description = "Override the country shown in CM. Please do not use this unless the autodetected country is wrong")]
+        public List<string> GeoParamsCountryOverride { get; set; } = null;
         [YamlMember(Description = "List of plugins to enable")]
         public List<string> EnablePlugins { get; set; } = new();
         public AiParams AiParams { get; set; } = new AiParams();
-        [YamlMember(Description = "")]
 
         [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
     }

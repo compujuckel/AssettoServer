@@ -9,13 +9,13 @@ This is a fork of https://github.com/Niewiarowski/AssettoServer.
 
 ### Windows
 * Install the ASP.NET 6 Runtime (select "Hosting Bundle"): https://dotnet.microsoft.com/en-us/download/dotnet/6.0/runtime
-* Download `assetto-server-win-x64.zip` from the [latest stable release](https://github.com/compujuckel/AssettoServer/releases) and extract it whereever you want.  
+* Download `assetto-server-win-x64.zip` from the [latest stable release](https://github.com/compujuckel/AssettoServer/releases/latest) and extract it whereever you want.  
   **DO NOT EXTRACT TO YOUR ASSETTO CORSA FOLDER.** AC and AssettoServer use different versions of the Steam SDK that will conflict with each other.
   If you still feel the need to extract to your AC folder delete the steam_api64.dll from the server first, but this will cause Steam Auth to be broken.
 
 ### Linux
 * Follow the ASP.NET 6 Runtime installation instructions for your distro: https://docs.microsoft.com/en-us/dotnet/core/install/linux
-* Download `assetto-server-linux-x64.tar.gz` from the [latest stable release](https://github.com/compujuckel/AssettoServer/releases) and extract it whereever you want.
+* Download `assetto-server-linux-x64.tar.gz` from the [latest stable release](https://github.com/compujuckel/AssettoServer/releases/latest) and extract it whereever you want.
 
 ## Usage
 

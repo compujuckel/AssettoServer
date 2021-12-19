@@ -255,8 +255,11 @@ namespace AssettoServer.Server.Configuration
                     break;
 
                 AiMode aiMode = AiMode.Disabled;
-                Enum.TryParse(entry["AI"], true, out aiMode);
-                
+                if (Extra.EnableAi)
+                {
+                    Enum.TryParse(entry["AI"], true, out aiMode);
+                }
+
                 entryCars.Add(new EntryCar
                 {
                     Model = entry["MODEL"],

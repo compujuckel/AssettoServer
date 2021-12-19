@@ -93,10 +93,16 @@ public class OpenWeatherMapWeatherProvider
     public async Task<LiveWeatherProviderResponse> GetWeatherAsync(double lat, double lon)
     {
         HttpResponseMessage response = await _httpClient.GetAsync($"https://api.openweathermap.org/data/2.5/weather?appid={_apiKey}&units=metric&lat={lat}&lon={lon}");
-            
-        if (!response.IsSuccessStatusCode) return null;
-            
+
         JObject json = JObject.Parse(await response.Content.ReadAsStringAsync());
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var code = (int)json.SelectToken("cod");
+            var message = (string)json.SelectToken("message");
+            throw new OpenWeatherMapException($"OpenWeatherMap returned error {code}: {message}");
+        }
+
         LiveWeatherProviderResponse weather = new LiveWeatherProviderResponse
         {
             WeatherType = TranslateIdToWeatherType((OpenWeatherType)(int)json.SelectToken("weather[0].id")),

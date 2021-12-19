@@ -31,6 +31,9 @@ namespace AssettoServer.Server.Ai
                 idOffset += spline.Points.Length;
             }
 
+            if (splines.Count == 0) 
+                throw new InvalidOperationException($"No AI splines found. Please put at least one AI spline (fast_lane.ai) into {Path.GetFullPath(folder)}");
+
             return new TrafficMap(Path.Join(folder, "fast_lane.ai"), splines, _server.Configuration.Extra.AiParams.LaneWidthMeters);
         }
 

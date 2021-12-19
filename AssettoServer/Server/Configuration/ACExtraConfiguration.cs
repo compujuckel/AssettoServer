@@ -104,7 +104,7 @@ namespace AssettoServer.Server.Configuration
         public bool TwoWayTraffic { get; set; } = false;
         [YamlMember(Description = "AI cornering speed factor. Lower = AI cars will drive slower around corners.")]
         public float CorneringSpeedFactor { get; set; } = 1;
-        [YamlMember(Description = "AI cornering brake distance factor. Lower = AI cars will brake earlier for corners.")]
+        [YamlMember(Description = "AI cornering brake distance factor. Lower = AI cars will brake later for corners.")]
         public float CorneringBrakeDistanceFactor { get; set; } = 1;
         [YamlMember(Description = "AI cornering brake force factor. This is multiplied with DefaultDeceleration. Lower = AI cars will brake less hard for corners.")]
         public float CorneringBrakeForceFactor { get; set; } = 1;

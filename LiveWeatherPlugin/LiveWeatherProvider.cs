@@ -30,11 +30,14 @@ public class LiveWeatherProvider
             try
             {
                 await UpdateAsync();
-                await Task.Delay(_configuration.UpdateIntervalMilliseconds);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error during live weather update");
+            }
+            finally
+            {
+                await Task.Delay(_configuration.UpdateIntervalMilliseconds);
             }
         }
         // ReSharper disable once FunctionNeverReturns

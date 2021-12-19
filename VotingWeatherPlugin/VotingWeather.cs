@@ -37,12 +37,15 @@ public class VotingWeather
         {
             try
             {
-                await Task.Delay(_configuration.VotingIntervalMilliseconds - _configuration.VotingDurationMilliseconds);
                 await UpdateAsync();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error during voting weather update");
+            }
+            finally
+            {
+                await Task.Delay(_configuration.VotingIntervalMilliseconds - _configuration.VotingDurationMilliseconds);
             }
         }
         // ReSharper disable once FunctionNeverReturns

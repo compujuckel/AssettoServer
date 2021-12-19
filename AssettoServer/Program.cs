@@ -40,6 +40,8 @@ namespace AssettoServer
                     rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
+            AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+
             Log.Information("AssettoServer {0}", ThisAssembly.AssemblyInformationalVersion);
             if (!string.IsNullOrEmpty(options.Preset))
             {
@@ -62,6 +64,12 @@ namespace AssettoServer
 
             await server.StartAsync();
             await Task.Delay(-1);
+        }
+
+        static void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)
+        {
+            Log.Fatal((Exception)args.ExceptionObject, "Unhandled exception occurred");
+            Environment.Exit(1);
         }
     }
 }

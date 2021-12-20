@@ -65,6 +65,7 @@ namespace AssettoServer.Network.Tcp
 
             TcpClient = tcpClient;
             tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
+            tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
 
             TcpStream = tcpClient.GetStream();
 
@@ -87,7 +88,10 @@ namespace AssettoServer.Network.Tcp
             try
             {
                 if (!OutgoingPacketChannel.Writer.TryWrite(packet) && !(packet is SunAngleUpdate))
-                    Log.Warning("Failed to queue packet {0} for {1}. Perhaps the outgoing packet channel is full?", typeof(TPacket).Name, Name);
+                {
+                    Log.Warning("TCP packet queue is full for {0}, disconnecting", Name);
+                    _ = DisconnectAsync();
+                }
             }
             catch (Exception ex)
             {

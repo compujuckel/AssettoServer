@@ -9,7 +9,7 @@ namespace AssettoServer.Server.Configuration
     public class DynamicTrackConfiguration
     {
         public bool Enabled { get; internal set; }
-        public float BaseGrip { get; internal set; }
+        public float BaseGrip { get; internal set; } = 1;
         public float TotalLapCount { get; internal set; }
         public float GripPerLap { get; internal set; }
     }

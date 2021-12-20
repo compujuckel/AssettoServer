@@ -7,6 +7,7 @@ using System.IO;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
+using Serilog;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
@@ -64,7 +65,7 @@ namespace AssettoServer.Server.Configuration
         public ACExtraConfiguration Extra { get; internal set; }
         public CMContentConfiguration ContentConfiguration { get; internal set; }
         public DynamicTrackConfiguration DynamicTrack { get; internal set; } = new DynamicTrackConfiguration();
-        public string ServerVersion { get; set; }
+        public string ServerVersion { get; internal set; }
 
         public ACServerConfiguration FromFiles(string presetFolder, ACPluginLoader loader)
         {
@@ -179,7 +180,13 @@ namespace AssettoServer.Server.Configuration
 
             string welcomeMessagePath = Path.Join(presetFolder, server["WELCOME_MESSAGE"]);
             if (File.Exists(welcomeMessagePath))
+            {
                 WelcomeMessage = File.ReadAllText(welcomeMessagePath);
+            }
+            else
+            {
+                Log.Warning("Welcome message not found at {0}", Path.GetFullPath(welcomeMessagePath));
+            }
 
             List<WeatherConfiguration> weathers = new List<WeatherConfiguration>();
             for(int i = 0; ; i++)

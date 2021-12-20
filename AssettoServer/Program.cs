@@ -1,10 +1,7 @@
 ﻿using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using System;
-using System.Diagnostics;
 using System.Globalization;
-using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
 using AssettoServer.Server.Plugin;
 using CommandLine;
@@ -19,6 +16,12 @@ namespace AssettoServer
         {
             [Option('p', "preset", Required = false, HelpText = "Configuration preset")]
             public string Preset { get; set; } = "";
+
+            [Option('c', Required = false, HelpText = "Path to server configuration")]
+            public string ServerCfgPath { get; set; } = "";
+
+            [Option('e', Required = false, HelpText = "Path to entry list")]
+            public string EntryListPath { get; set; } = "";
         }
         
         static async Task Main(string[] args)
@@ -48,11 +51,9 @@ namespace AssettoServer
                 Log.Information("Using preset {0}", options.Preset);
             }
 
-            string configDir = string.IsNullOrEmpty(options.Preset) ? "cfg" : Path.Join("presets", options.Preset);
-            
             ACPluginLoader loader = new ACPluginLoader();
 
-            var config = new ACServerConfiguration().FromFiles(configDir, loader);
+            var config = new ACServerConfiguration().FromFiles(options.Preset, options.ServerCfgPath, options.EntryListPath, loader);
             config.ServerVersion = ThisAssembly.AssemblyInformationalVersion;
             
             ACServer server = new ACServer(config, loader);

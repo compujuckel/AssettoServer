@@ -194,7 +194,7 @@ namespace AssettoServer.Server.Configuration
             {
                 WelcomeMessage = File.ReadAllText(welcomeMessagePath);
             }
-            else
+            else if(!string.IsNullOrEmpty(welcomeMessagePath))
             {
                 Log.Warning("Welcome message not found at {0}", Path.GetFullPath(welcomeMessagePath));
             }

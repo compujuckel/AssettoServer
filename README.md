@@ -19,6 +19,17 @@ This is a fork of https://github.com/Niewiarowski/AssettoServer.
 
 ## Usage
 
+### Through Content Manager (AssettoServer 0.0.44 or later)
+
+* Open your AC server folder in Explorer, e.g. `C:\Program Files (x86)\Steam\steamapps\common\assettocorsa\server`
+* Rename `acServer.exe` to something else
+* Extract `assetto-server-win-x64.zip` into this directory
+* Rename `AssettoServer.exe` to `acServer.exe`
+
+Now you can run servers through CM just like you would with the original server. Keep in mind that not all features of the original server are supported yet, so some of the server settings in CM will either have no effect or the features will just not work.
+
+### Dedicated server
+
 The easiest way to get started is creating your server configuration with Content Manager.  
 After that just click "Pack" to create an archive with all required configs and data files. Extract this archive into the server root folder.
 

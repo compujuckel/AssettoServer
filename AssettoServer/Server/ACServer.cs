@@ -146,10 +146,15 @@ namespace AssettoServer.Server
             if(Configuration.Extra.EnableWeatherFx)
                 features.Add("WEATHERFX_V1");
 
+            if (Configuration.Extra.EnableClientMessages)
+            {
+                features.Add("CLIENT_MESSAGES");
+                CSPClientMessageOutgoing.ChatEncoded = false;
+            }
+
             features.Add("SPECTATING_AWARE");
             features.Add("LOWER_CLIENTS_SENDING_RATE");
             features.Add("CLIENTS_EXCHANGE_V1");
-            features.Add("CLIENT_MESSAGES");
 
             Features = features;
 

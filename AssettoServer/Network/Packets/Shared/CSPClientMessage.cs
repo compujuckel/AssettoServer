@@ -6,10 +6,9 @@ namespace AssettoServer.Network.Packets.Shared;
 public struct CSPClientMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
 {
     public byte SessionId;
-    public short Type;
+    public ushort Type;
     public byte[] Data;
-
-
+    
     public void ToWriter(ref PacketWriter writer)
     {
         writer.Write(0xAB);
@@ -21,7 +20,8 @@ public struct CSPClientMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
 
     public void FromReader(PacketReader reader)
     {
-        Type = reader.Read<short>();
-        reader.ReadBytes(Data); // TODO
+        Type = reader.Read<ushort>();
+        Data = new byte[reader.Buffer.Length - reader.ReadPosition];
+        reader.ReadBytes(Data);
     }
 }

@@ -323,6 +323,8 @@ namespace AssettoServer.Network.Tcp
 
                             if (id == 0x00)
                                 OnSpectateCar(reader);
+                            else if (id == 0x03)
+                                OnClientMessage(reader);
                         }
                         else if (id == 0x82)
                             OnClientEvent(reader);

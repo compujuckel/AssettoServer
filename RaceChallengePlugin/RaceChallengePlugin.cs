@@ -6,7 +6,7 @@ namespace RaceChallengePlugin;
 public class RaceChallengePlugin : IAssettoServerPlugin
 {
     internal static readonly Dictionary<int, EntryCarRace> Instances = new();
-    
+
     public void Initialize(ACServer server)
     {
         foreach (var entryCar in server.EntryCars)

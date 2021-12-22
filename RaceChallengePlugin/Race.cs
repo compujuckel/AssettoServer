@@ -7,11 +7,11 @@ namespace RaceChallengePlugin;
 
 public class Race
 {
-    public ACServer Server { get; }
-    public EntryCar Challenger { get; }
-    public EntryCar Challenged { get; }
-    public EntryCar Leader { get; private set; }
-    public EntryCar Follower { get; private set; }
+    private ACServer Server { get; }
+    private EntryCar Challenger { get; }
+    private EntryCar Challenged { get; }
+    private EntryCar Leader { get; set; }
+    private EntryCar Follower { get; set; }
 
     public bool HasStarted { get; private set; }
     public bool LineUpRequired { get; }
@@ -20,12 +20,18 @@ public class Race
     private Vector3 LastLeaderPosition { get; set; }
     private string ChallengerName { get; }
     private string ChallengedName { get; }
+    private long LastPointCheckTime { get; set; }
+    private long LastPointBroadcastTime { get; set; }
+    private long ChallengerPoints { get; set; }
+    private long ChallengedPoints { get; set; }
 
     public Race(ACServer server, EntryCar challenger, EntryCar challenged, bool lineUpRequired = true)
     {
         Server = server;
         Challenger = challenger;
+        ChallengerPoints = 3000;
         Challenged = challenged;
+        ChallengedPoints = 3000;
         LineUpRequired = lineUpRequired;
 
         ChallengerName = Challenger.Client.Name;
@@ -34,20 +40,20 @@ public class Race
 
     public Task StartAsync()
     {
-        if (!HasStarted)
-        {
-            HasStarted = true;
-            _ = Task.Run(RaceAsync);
-        }
+        if (HasStarted) return Task.CompletedTask;
 
+        HasStarted = true;
+        _ = Task.Run(RaceAsync);
         return Task.CompletedTask;
     }
 
     private async Task RaceAsync()
     {
+        LastPointCheckTime = Server.CurrentTime64;
+        LastPointBroadcastTime = Server.CurrentTime64;
         try
         {
-            if(Challenger.Client == null || Challenged.Client == null)
+            if (Challenger.Client == null || Challenged.Client == null)
             {
                 SendMessage("Opponent has disconnected.");
                 return;
@@ -73,19 +79,21 @@ public class Race
             }
 
             byte signalStage = 0;
-            while(signalStage < 3)
+            while (signalStage < 4)
             {
-                if(!AreLinedUp())
+                if (!AreLinedUp())
                 {
                     SendMessage("You went out of line. The race has been cancelled.");
                     return;
                 }
 
                 if (signalStage == 0)
-                    _ = SendTimedMessageAsync("Ready...");
+                    _ = SendTimedMessageAsync("3...");
                 else if (signalStage == 1)
-                    _ = SendTimedMessageAsync("Set...");
+                    _ = SendTimedMessageAsync("2...");
                 else if (signalStage == 2)
+                    _ = SendTimedMessageAsync("1...");
+                else if (signalStage == 3)
                 {
                     _ = SendTimedMessageAsync("Go!");
                     break;
@@ -97,13 +105,13 @@ public class Race
 
             while (true)
             {
-                if(Challenger.Client == null)
+                if (Challenger.Client == null)
                 {
                     Leader = Challenged;
                     Follower = Challenger;
                     return;
                 }
-                else if(Challenged.Client == null)
+                else if (Challenged.Client == null)
                 {
                     Leader = Challenger;
                     Follower = Challenged;
@@ -113,22 +121,43 @@ public class Race
                 UpdateLeader();
 
                 Vector3 leaderPosition = Leader.Status.Position;
+                Vector3 followerPosition = Follower.Status.Position;
                 if (Vector3.DistanceSquared(LastLeaderPosition, leaderPosition) > 40000)
                 {
-                    Console.WriteLine("teleport");
                     Leader = Follower;
                     Follower = Leader;
                     return;
                 }
+
                 LastLeaderPosition = leaderPosition;
 
-                if (Vector3.DistanceSquared(Leader.Status.Position, Follower.Status.Position) > 562500)
+                if (Server.CurrentTime64 - LastPointCheckTime >= 1000)
                 {
-                    Console.WriteLine("too far");
-                    return;
+                    var distanceBetweenPlayersSquared = Vector3.DistanceSquared(leaderPosition, followerPosition);
+                    long pointsToBeSubtractedFromFollower = distanceBetweenPlayersSquared switch
+                    {
+                        <= 75 * 75 => 2,
+                        > 75 * 75 and <= 300 * 300 => 50,
+                        > 300 * 300 and <= 500 * 500 => 100,
+                        _ => 1000
+                    };
+
+                    if (Follower == Challenger)
+                        ChallengerPoints -= pointsToBeSubtractedFromFollower;
+                    else
+                        ChallengedPoints -= pointsToBeSubtractedFromFollower;
+
+                    LastPointCheckTime = Server.CurrentTime64;
                 }
 
-                if(Server.CurrentTime64 - LastOvertakeTime > 60000)
+                if (Server.CurrentTime64 - LastPointBroadcastTime >= 10000)
+                {
+                    SendMessage(ChallengedName + " points: " + ChallengedPoints);
+                    SendMessage(ChallengerName + " points: " + ChallengerPoints);
+                    LastPointBroadcastTime = Server.CurrentTime64;
+                }
+
+                if (ChallengerPoints <= 0 || ChallengedPoints <= 0)
                     return;
 
                 await Task.Delay(250);
@@ -136,7 +165,7 @@ public class Race
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while running race.");
+            Log.Error(ex, "Error while running race");
         }
         finally
         {
@@ -156,7 +185,7 @@ public class Race
             isFirstUpdate = true;
         }
 
-        float challengerAngle = (float)(Math.Atan2(Challenged.Status.Position.X - Challenger.Status.Position.X, Challenged.Status.Position.Z - Challenger.Status.Position.Z) * 180 / Math.PI);
+        float challengerAngle = (float) (Math.Atan2(Challenged.Status.Position.X - Challenger.Status.Position.X, Challenged.Status.Position.Z - Challenger.Status.Position.Z) * 180 / Math.PI);
         if (challengerAngle < 0)
             challengerAngle += 360;
         float challengerRot = Challenger.Status.GetRotationAngle();
@@ -164,7 +193,7 @@ public class Race
         challengerAngle += challengerRot;
         challengerAngle %= 360;
 
-        float challengedAngle = (float)(Math.Atan2(Challenger.Status.Position.X - Challenged.Status.Position.X, Challenger.Status.Position.Z - Challenged.Status.Position.Z) * 180 / Math.PI);
+        float challengedAngle = (float) (Math.Atan2(Challenger.Status.Position.X - Challenged.Status.Position.X, Challenger.Status.Position.Z - Challenged.Status.Position.Z) * 180 / Math.PI);
         if (challengedAngle < 0)
             challengedAngle += 360;
         float challengedRot = Challenged.Status.GetRotationAngle();
@@ -172,48 +201,45 @@ public class Race
         challengedAngle += challengedRot;
         challengedAngle %= 360;
 
-        float challengerSpeed = (float)Math.Max(0.07716061728, Challenger.Status.Velocity.LengthSquared());
-        float challengedSpeed = (float)Math.Max(0.07716061728, Challenged.Status.Velocity.LengthSquared());
+        float challengerSpeed = (float) Math.Max(0.07716061728, Challenger.Status.Velocity.LengthSquared());
+        float challengedSpeed = (float) Math.Max(0.07716061728, Challenged.Status.Velocity.LengthSquared());
 
         float distanceSquared = Vector3.DistanceSquared(Challenger.Status.Position, Challenged.Status.Position);
 
         EntryCar oldLeader = Leader;
 
-        if ((challengerAngle > 90 && challengerAngle < 275) && Leader != Challenger && challengerSpeed > challengedSpeed && distanceSquared < 2500)
+        if (challengerAngle is > 90 and < 275 && Leader != Challenger && challengerSpeed > challengedSpeed && distanceSquared < 2500)
         {
             Leader = Challenger;
             Follower = Challenged;
         }
-        else if ((challengedAngle > 90 && challengedAngle < 275) && Leader != Challenged && challengedSpeed > challengerSpeed && distanceSquared < 2500)
+        else if (challengedAngle is > 90 and < 275 && Leader != Challenged && challengedSpeed > challengerSpeed && distanceSquared < 2500)
         {
             Leader = Challenged;
             Follower = Challenger;
         }
 
-        if(oldLeader != Leader)
-        {
-            if (!isFirstUpdate)
-                SendMessage($"{Leader.Client?.Name} has overtaken {oldLeader.Client?.Name}");
+        if (oldLeader == Leader) return;
 
-            LastOvertakeTime = Server.CurrentTime64;
-            LastLeaderPosition = Leader.Status.Position;
-        }
+        if (!isFirstUpdate)
+            SendMessage($"{Leader.Client?.Name} has overtaken {oldLeader.Client?.Name}");
+
+        LastOvertakeTime = Server.CurrentTime64;
+        LastLeaderPosition = Leader.Status.Position;
     }
 
     private void FinishRace()
     {
         Challenger.GetRace().CurrentRace = null;
         Challenged.GetRace().CurrentRace = null;
+        Log.Information("Ended race between {0} and {1}", ChallengerName, ChallengedName);
 
-        if (Leader != null)
-        {
-            string winnerName = Challenger == Leader ? ChallengerName : ChallengedName;
-            string loserName = Challenger == Leader ? ChallengedName : ChallengerName;
+        if (Leader == null) return;
 
-            Server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = $"{winnerName} just beat {loserName} in a race." });
-        }
+        string winnerName = Challenger == Leader ? ChallengerName : ChallengedName;
+        string loserName = Challenger == Leader ? ChallengedName : ChallengerName;
 
-        Log.Information("Ending race between {0} and {1}.", ChallengerName, ChallengedName);
+        Server.BroadcastPacket(new ChatMessage {SessionId = 255, Message = $"{winnerName} just beat {loserName} in a race."});
     }
 
     private void SendMessage(string message)
@@ -231,16 +257,12 @@ public class Race
         Console.WriteLine("Distance: {0}", Math.Sqrt(distanceSquared));
 
         if (!LineUpRequired)
-        {
             return distanceSquared <= 900;
-        }
-        else
-        {
-            if (distanceSquared > 100)
-                return false;
-        }
 
-        float angle = (float)(Math.Atan2(Challenged.Status.Position.X - Challenger.Status.Position.X, Challenged.Status.Position.Z - Challenger.Status.Position.Z) * 180 / Math.PI);
+        if (distanceSquared > 100)
+            return false;
+
+        float angle = (float) (Math.Atan2(Challenged.Status.Position.X - Challenger.Status.Position.X, Challenged.Status.Position.Z - Challenger.Status.Position.Z) * 180 / Math.PI);
         if (angle < 0)
             angle += 360;
         float challengerRot = Challenger.Status.GetRotationAngle();
@@ -249,10 +271,10 @@ public class Race
         angle %= 360;
 
         Console.WriteLine("Challenger angle: {0}", angle);
-        if (!((angle <= 105 && angle >= 75) || (angle >= 255 && angle <= 285)))
+        if (angle is not (<= 105 and >= 75 or >= 255 and <= 285))
             return false;
 
-        angle = (float)(Math.Atan2(Challenger.Status.Position.X - Challenged.Status.Position.X, Challenger.Status.Position.Z - Challenged.Status.Position.Z) * 180 / Math.PI);
+        angle = (float) (Math.Atan2(Challenger.Status.Position.X - Challenged.Status.Position.X, Challenger.Status.Position.Z - Challenged.Status.Position.Z) * 180 / Math.PI);
         if (angle < 0)
             angle += 360;
         float challengedRot = Challenged.Status.GetRotationAngle();
@@ -261,24 +283,21 @@ public class Race
         angle %= 360;
 
         Console.WriteLine("Challenged angle: {0}", angle);
-        if (!((angle <= 105 && angle >= 75) || (angle >= 255 && angle <= 285)))
+        if (angle is not (<= 105 and >= 75 or >= 255 and <= 285))
             return false;
 
         float challengerDirection = Challenger.Status.GetRotationAngle();
         float challengedDirection = Challenged.Status.GetRotationAngle();
 
-        float anglediff = (challengerDirection - challengedDirection + 180 + 360) % 360 - 180;
-        Console.WriteLine("Direction difference: {0}", anglediff);
-        if (Math.Abs(anglediff) > 5)
-            return false;
+        float angleDiff = (challengerDirection - challengedDirection + 180 + 360) % 360 - 180;
+        Console.WriteLine("Direction difference: {0}", angleDiff);
 
-        return true;
+        return !(Math.Abs(angleDiff) > 5);
     }
 
-    private void SendMessage(EntryCar car, string message)
+    private static void SendMessage(EntryCar car, string message)
     {
-        if (car.Client != null)
-            car.Client.SendPacket(new ChatMessage { SessionId = 255, Message = message });
+        car.Client?.SendPacket(new ChatMessage {SessionId = 255, Message = message});
     }
 
     private async Task SendTimedMessageAsync(string message)
@@ -286,7 +305,7 @@ public class Race
         bool isChallengerHighPing = Challenger.Ping > Challenged.Ping;
         EntryCar highPingCar, lowPingCar;
 
-        if(isChallengerHighPing)
+        if (isChallengerHighPing)
         {
             highPingCar = Challenger;
             lowPingCar = Challenged;

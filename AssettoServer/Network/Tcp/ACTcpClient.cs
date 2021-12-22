@@ -347,23 +347,39 @@ namespace AssettoServer.Network.Tcp
                 return false;
 
             TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
-            void ticketValidateResponse(SteamId arg1, SteamId arg2, AuthResponse arg3)
+            void ticketValidateResponse(SteamId playerSteamId, SteamId ownerSteamId, AuthResponse arg3)
             {
-                if (arg1 == steamId)
+                if (playerSteamId == steamId)
                 {
                     if (arg3 != AuthResponse.OK)
                         Log.Information("Steam auth ticket verification failed ({0}) for {1}.", arg3, Name);
                     else
                     {
-                        SteamId = arg1;
+                        if (playerSteamId != ownerSteamId)
+                        {
+                            if (Server.IsGuidBlacklisted(ownerSteamId.ToString()))
+                            {
+                                Log.Information("{0} is using Steam family sharing and game owner {1} is blacklisted", Name, ownerSteamId);
+                                taskCompletionSource.SetResult(false);
+                                return;
+                            }
+                        }
+
+                        foreach (int appid in Server.Configuration.Extra.ValidateDlcOwnership)
+                        {
+                            if (SteamServer.UserHasLicenseForApp(playerSteamId, appid) != UserHasLicenseForAppResult.HasLicense)
+                            {
+                                Log.Information("{0} does not own required DLC {1}", Name, appid);
+                                taskCompletionSource.SetResult(false);
+                                return;
+                            }
+                        }
+                        
+                        SteamId = playerSteamId;
                         Log.Information("Steam auth ticket verification succeeded for {0}.", Name);
                     }
 
                     taskCompletionSource.SetResult(arg3 == AuthResponse.OK);
-                }
-                else
-                {
-                    Log.Warning("Possible Steamid spoofing attempt for {1} ({2}) - handshake: {3}, ticket: {4}", Name, SessionId, guid, arg1.ToString());
                 }
             }
 

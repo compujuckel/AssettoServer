@@ -174,6 +174,15 @@ namespace AssettoServer.Server.Configuration
 
             Extra = extraCfg;
 
+            if (Extra.RainTrackGripReductionPercent is < 0 or > 1)
+            {
+                throw new ArgumentException("RainTrackGripReductionPercent must be in the range 0..1");
+            }
+            if (Extra.AiParams.MaxSpeedVariationPercent is < 0 or > 1)
+            {
+                throw new ArgumentException("MaxSpeedVariationPercent must be in the range 0..1");
+            }
+
             if(Extra.EnableServerDetails)
             {
                 string cmContentPath = Path.Join(configBaseFolder, "cm_content/content.json");

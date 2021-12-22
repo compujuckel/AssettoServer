@@ -9,7 +9,7 @@ Enable the plugin in `extra_cfg.yml`
 EnablePlugins:
 - WordFilterPlugin
 ```
-Example configuration (append to `extra_cfg.yml`)  
+Example configuration (add to bottom of `extra_cfg.yml`)  
 **All patterns are regular expressions. If you don't know what regular expressions are I'd highly recommend reading about them first.**
 ```yaml
 ---

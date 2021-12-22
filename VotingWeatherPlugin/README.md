@@ -8,7 +8,9 @@ Enable the plugin in `extra_cfg.yml`
 EnablePlugins:
 - VotingWeatherPlugin
 ```
-Example configuration (append to `extra_cfg.yml`)
+
+Example configuration (add to bottom of `extra_cfg.yml`)  
+For a list of weather types that can be used with `BlacklistedWeathers` see [WeatherFX Types](https://github.com/compujuckel/AssettoServer/wiki/WeatherFX-Types)
 ```yaml
 ---
 !VotingWeatherConfiguration
@@ -20,7 +22,6 @@ VotingDurationSeconds: 30
 VotingIntervalMinutes: 10
 # Weather types that can't be voted on
 BlacklistedWeathers:
-- None
 - Cold
 - Hot
 - Windy

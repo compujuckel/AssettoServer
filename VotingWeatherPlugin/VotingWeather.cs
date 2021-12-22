@@ -11,11 +11,10 @@ public class VotingWeather
     private readonly ACServer _server;
     private readonly VotingWeatherConfiguration _configuration;
     private readonly List<WeatherFxType> _weathers;
-    private readonly List<ACTcpClient> _alreadyVoted = new List<ACTcpClient>();
+    private readonly List<ACTcpClient> _alreadyVoted = new();
     private readonly List<WeatherChoice> _availableWeathers = new();
 
     private bool _votingOpen = false;
-    private long _lastVote = Environment.TickCount64;
 
     private class WeatherChoice
     {
@@ -27,6 +26,11 @@ public class VotingWeather
     {
         _server = server;
         _configuration = configuration;
+
+        if (!_configuration.BlacklistedWeathers.Contains(WeatherFxType.None))
+        {
+            _configuration.BlacklistedWeathers.Add(WeatherFxType.None);
+        }
         
         _weathers = Enum.GetValues<WeatherFxType>().Except(_configuration.BlacklistedWeathers).ToList();
     }

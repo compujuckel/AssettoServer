@@ -10,7 +10,7 @@ Enable the plugin in `extra_cfg.yml`
 EnablePlugins:
   - DiscordAuditPlugin
 ```
-Example configuration (append to `extra_cfg.yml`)
+Example configuration (add to bottom of `extra_cfg.yml`)
 ```yaml
 ---
 !DiscordConfiguration

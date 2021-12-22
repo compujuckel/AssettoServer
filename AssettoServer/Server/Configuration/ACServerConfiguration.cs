@@ -22,8 +22,8 @@ namespace AssettoServer.Server.Configuration
         public string AdminPassword { get; internal set; }
         public int MaxClients { get; internal set; }
 
-        public int UdpPort { get; internal set; }
-        public int TcpPort { get; internal set; }
+        public ushort UdpPort { get; internal set; }
+        public ushort TcpPort { get; internal set; }
         public int HttpPort { get; internal set; }
 
         public byte RefreshRateHz { get; internal set; }
@@ -89,8 +89,8 @@ namespace AssettoServer.Server.Configuration
             FullTrackName = string.IsNullOrEmpty(TrackConfig) ? Track : Track + "-" + TrackConfig;
             Password = server["PASSWORD"];
             AdminPassword = server["ADMIN_PASSWORD"];
-            UdpPort = int.Parse(server["UDP_PORT"]);
-            TcpPort = int.Parse(server["TCP_PORT"]);
+            UdpPort = ushort.Parse(server["UDP_PORT"]);
+            TcpPort = ushort.Parse(server["TCP_PORT"]);
             HttpPort = int.Parse(server["HTTP_PORT"]);
             MaxBallastKg = int.Parse(server["MAX_BALLAST_KG"]);
             RefreshRateHz = byte.Parse(server["CLIENT_SEND_INTERVAL_HZ"]);

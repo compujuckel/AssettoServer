@@ -36,7 +36,6 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Serilog;
 using Qmmands;
-using Steamworks;
 using Newtonsoft.Json;
 using TimeZoneConverter;
 
@@ -69,6 +68,7 @@ namespace AssettoServer.Server
         internal ACUdpServer UdpServer { get; }
         internal IWebHost HttpServer { get; private set; }
         internal KunosLobbyRegistration KunosLobbyRegistration { get; }
+        internal Steam Steam { get; }
 
         private SemaphoreSlim ConnectSemaphore { get; }
         private HttpClient HttpClient { get; }
@@ -227,6 +227,13 @@ namespace AssettoServer.Server
             {
                 SignalHandlers.Add(PosixSignalRegistration.Create((PosixSignal)10 /* SIGUSR1 */, ReloadHandler));
             }
+
+
+            Steam = new Steam(this);
+            if (Configuration.Extra.UseSteamAuth)
+            {
+                Steam.Initialize();
+            }
         }
 
         private async Task LoadAdminsAsync()
@@ -283,8 +290,7 @@ namespace AssettoServer.Server
             await LoadAdminsAsync();
             
             await InitializeGeoParams();
-
-            InitializeSteam();
+            
             _ = Task.Factory.StartNew(AcceptTcpConnectionsAsync, TaskCreationOptions.LongRunning);
             UdpServer.Start();
 
@@ -932,64 +938,6 @@ namespace AssettoServer.Server
                 message.Message = commandStr;
                 _ = ProcessCommandAsync(sender, message);
             }
-        }
-
-        private void InitializeSteam()
-        {
-            if (Configuration.Extra.UseSteamAuth)
-            {
-                var serverInit = new SteamServerInit("assettocorsa", "Assetto Corsa")
-                {
-                    GamePort = (ushort)Configuration.UdpPort,
-                    Secure = true,
-                    QueryPort = 0xffff // MASTERSERVERUPDATERPORT_USEGAMESOCKETSHARE 
-                };
-
-                try
-                {
-                    SteamServer.Init(244210, serverInit);
-                }
-                catch { }
-
-                try
-                {
-                    //SteamServer.Init(244210, serverInit);
-                    SteamServer.LogOnAnonymous();
-                    SteamServer.OnSteamServersDisconnected += SteamServer_OnSteamServersDisconnected;
-                    SteamServer.OnSteamServersConnected += SteamServer_OnSteamServersConnected;
-                }
-                catch (Exception ex)
-                {
-                    Log.Fatal(ex, "Error trying to initialize SteamServer.");
-                }
-            }
-        }
-
-        private void SteamServer_OnSteamServersConnected()
-        {
-            Log.Information("Connected to Steam Servers.");
-        }
-
-        private void SteamServer_OnSteamServersDisconnected(Result obj)
-        {
-            Log.Fatal("Disconnected from Steam Servers.");
-            SteamServer.OnSteamServersConnected -= SteamServer_OnSteamServersConnected;
-            SteamServer.OnSteamServersDisconnected -= SteamServer_OnSteamServersDisconnected;
-
-            try
-            {
-                SteamServer.LogOff();
-            }
-            catch { }
-
-            try
-            {
-                SteamServer.Shutdown();
-            }
-            catch { }
-
-            InitializeSteam();
-
         }
     }
 }

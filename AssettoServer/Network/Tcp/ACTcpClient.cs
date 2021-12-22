@@ -323,6 +323,8 @@ namespace AssettoServer.Network.Tcp
 
                             if (id == 0x00)
                                 OnSpectateCar(reader);
+                            else if (id == 0x03)
+                                OnCspClientMessage(reader);
                         }
                         else if (id == 0x82)
                             OnClientEvent(reader);
@@ -422,6 +424,15 @@ namespace AssettoServer.Network.Tcp
             else
                 EntryCar.TargetCar = null;
 
+        }
+
+        private void OnCspClientMessage(PacketReader reader)
+        {
+            CSPClientMessage clientMessage = reader.ReadPacket<CSPClientMessage>();
+            clientMessage.SessionId = SessionId;
+            
+            Log.Debug("Client Message, type: {0} data: {1}", clientMessage.Type, Convert.ToHexString(clientMessage.Data));
+            Server.BroadcastPacket(clientMessage, this);
         }
 
         private async ValueTask OnChecksumAsync(PacketReader reader)

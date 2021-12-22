@@ -40,6 +40,8 @@ namespace AssettoServer.Server.Configuration
         public List<string> GeoParamsCountryOverride { get; set; } = null;
         [YamlMember(Description = "List of plugins to enable")]
         public List<string> EnablePlugins { get; set; } = new();
+        [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.76+")]
+        public bool EnableClientMessages { get; set; } = false;
         public AiParams AiParams { get; set; } = new AiParams();
 
         [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;

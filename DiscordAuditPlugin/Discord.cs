@@ -81,7 +81,7 @@ public class Discord
 
     private void OnChatMessageReceived(ACTcpClient sender, ChatEventArgs args)
     {
-        if (!args.Message.StartsWith("\t\t\t\t$CSP0:"))
+        if (!args.Message.StartsWith("\t\t\t\t$CSP0:") && !string.IsNullOrWhiteSpace(args.Message))
         {
             Run(() =>
             {

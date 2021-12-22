@@ -424,6 +424,12 @@ namespace AssettoServer.Network.Tcp
 
         }
 
+        private void OnClientMessage(PacketReader reader)
+        {
+            CSPClientMessage clientMessage = reader.ReadPacket<CSPClientMessage>();
+            Log.Debug("Client Message, type: {0} data: {1}", clientMessage.Type, Convert.ToHexString(clientMessage.Data));
+        }
+
         private async ValueTask OnChecksumAsync(PacketReader reader)
         {
             bool passedChecksum = false;

@@ -134,13 +134,9 @@ public class Race
                 if (Server.CurrentTime64 - LastPointCheckTime >= 1000)
                 {
                     var distanceBetweenPlayersSquared = Vector3.DistanceSquared(leaderPosition, followerPosition);
-                    long pointsToBeSubtractedFromFollower = distanceBetweenPlayersSquared switch
-                    {
-                        <= 75 * 75 => 2,
-                        > 75 * 75 and <= 300 * 300 => 50,
-                        > 300 * 300 and <= 500 * 500 => 100,
-                        _ => 1000
-                    };
+                    long pointsToBeSubtractedFromFollower = distanceBetweenPlayersSquared <= 75 * 75
+                        ? 2
+                        : Convert.ToInt64(distanceBetweenPlayersSquared * 0.003);
 
                     if (Follower == Challenger)
                         ChallengerPoints -= pointsToBeSubtractedFromFollower;

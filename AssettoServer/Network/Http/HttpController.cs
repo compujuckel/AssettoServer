@@ -172,5 +172,16 @@ namespace AssettoServer.Network.Http
             
             return responseObj;
         }
+
+        [HttpGet("/api/scripts/{scriptId:int}")]
+        public ActionResult<string> GetScript(int scriptId)
+        {
+            if (scriptId < _server.CSPLuaClientScriptProvider.Scripts.Count)
+            {
+                return _server.CSPLuaClientScriptProvider.Scripts[scriptId];
+            }
+
+            return NotFound();
+        }
     }
 }

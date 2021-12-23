@@ -45,6 +45,8 @@ namespace AssettoServer.Server
     public class ACServer
     {
         public ACServerConfiguration Configuration { get; }
+        public CSPServerExtraOptions CSPServerExtraOptions { get; }
+        public CSPLuaClientScriptProvider CSPLuaClientScriptProvider { get; }
         public SessionConfiguration CurrentSession { get; private set; }
         public WeatherData CurrentWeather { get; private set; }
         public DateTime CurrentDateTime { get; set; }
@@ -68,7 +70,7 @@ namespace AssettoServer.Server
         internal TcpListener TcpListener { get; set; }
         internal ACUdpServer UdpServer { get; }
         internal IWebHost HttpServer { get; private set; }
-        internal KunosLobbyRegistration KunosLobbyRegistration { get; }
+        internal Dictionary<int, CSPLuaMessageType> CSPLuaMessageTypes { get; } = new();
 
         private SemaphoreSlim ConnectSemaphore { get; }
         private HttpClient HttpClient { get; }
@@ -78,6 +80,7 @@ namespace AssettoServer.Server
         private RainHelper RainHelper { get; }
         private ITrackParamsProvider TrackParamsProvider { get; }
         public TrackParams.TrackParams TrackParams { get; }
+        private KunosLobbyRegistration KunosLobbyRegistration { get; }
         
         public TrafficMap TrafficMap { get; }
         public AiBehavior AiBehavior { get; }
@@ -115,6 +118,9 @@ namespace AssettoServer.Server
                 EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Count];
                 EntryCars[i].AiInit();
             }
+
+            CSPServerExtraOptions = new CSPServerExtraOptions(Configuration.WelcomeMessage);
+            CSPLuaClientScriptProvider = new CSPLuaClientScriptProvider(this);
             
             ConnectSemaphore = new SemaphoreSlim(1, 1);
             ConnectedCars = new ConcurrentDictionary<int, EntryCar>();
@@ -310,6 +316,11 @@ namespace AssettoServer.Server
                 _ = KunosLobbyRegistration.LoopAsync();
             
             _ = Task.Factory.StartNew(UpdateAsync, TaskCreationOptions.LongRunning);
+            
+            foreach (var plugin in PluginLoader.LoadedPlugins)
+            {
+                plugin.Instance.Initialize(this);
+            }
         }
 
         private async Task InitializeGeoParams()
@@ -819,6 +830,19 @@ namespace AssettoServer.Server
                     Log.Error(ex, "Something went wrong while trying to do a tick update.");
                 }
             }
+        }
+
+        public void RegisterCspLuaMessageType(ushort type, Func<IIncomingNetworkPacket> factoryMethod, Action<ACTcpClient, IIncomingNetworkPacket> handler)
+        {
+            if (CSPLuaMessageTypes.ContainsKey(type))
+                throw new ArgumentException($"Type {type} already registered");
+            
+            CSPLuaMessageTypes.Add(type, new CSPLuaMessageType
+            {
+                MessageType = type,
+                FactoryMethod = factoryMethod,
+                Handler = handler
+            });
         }
 
         internal async Task DisconnectClientAsync(ACTcpClient client)

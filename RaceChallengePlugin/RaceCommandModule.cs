@@ -1,5 +1,5 @@
 ﻿using AssettoServer.Commands;
-using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Commands.Attributes;
 using AssettoServer.Network.Tcp;
 using Qmmands;
 
@@ -22,15 +22,17 @@ public class RaceCommandModule : ACModuleBase
         else
             await currentRace.StartAsync();
     }
-
+    
     [Command("healthupdate")]
-    public void HealthUpdate(byte rivalId, float ownHealth, float rivalHealth)
+    [RequireAdmin]
+    public void HealthUpdate(RaceChallengeEvent eventType, int eventData, float ownHealth, float rivalHealth)
     {
-        var packet = new RaceHealthUpdate
+        var packet = new RaceChallengeUpdate
         {
+            EventType = eventType,
+            EventData = eventData,
             OwnHealth = ownHealth,
             RivalHealth = rivalHealth,
-            RivalId = rivalId
         };
 
         Context.Client.SendPacket(packet);

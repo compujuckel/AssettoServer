@@ -18,4 +18,10 @@
         </ProjectReference>
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="lua\racechallenge.lua">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

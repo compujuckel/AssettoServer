@@ -76,17 +76,16 @@ end
 
 function script.drawUI(dt)
   ac.debug("lastEvent", lastEvent)
-  ac.debug("time", ac.getSimState().timeToSessionStart * -1)
   ac.debug("rivalId", rivalId)
 
   local currentTime = GetSessionTime()
   local raceTimeElapsed = raceStartTime - currentTime
-  local text = math.ceil(raceTimeElapsed / 1000)
 
   if lastEvent == EventType.RaceCountdown then
     DrawHealthHud(0)
 
-    if text <= 3 and text >= 1 then
+    if raceTimeElapsed > -3000 and raceTimeElapsed < 0 then
+      local text = math.ceil(raceTimeElapsed / 1000) * -1
       DrawTextCentered(text)
     end
   end

@@ -269,7 +269,7 @@ namespace AssettoServer.Network.Tcp
                                 TrackConfig = cfg.TrackConfig,
                                 TrackName = cfg.Track,
                                 TyreConsumptionRate = cfg.TyreConsumptionRate,
-                                UdpPort = (ushort)cfg.UdpPort,
+                                UdpPort = cfg.UdpPort,
                                 CurrentSession = Server.CurrentSession,
                                 ChecksumCount = (byte)Server.TrackChecksums.Count,
                                 ChecksumPaths = Server.TrackChecksums.Keys,
@@ -377,7 +377,7 @@ namespace AssettoServer.Network.Tcp
             if (reader.Buffer.Length == fullChecksum.Length + 1)
             {
                 reader.ReadBytes(fullChecksum);
-                passedChecksum = Server.CarChecksums.TryGetValue(EntryCar.Model, out byte[] modelChecksum) && fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(modelChecksum);
+                passedChecksum = !Server.CarChecksums.TryGetValue(EntryCar.Model, out byte[] modelChecksum) || fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(modelChecksum);
 
                 KeyValuePair<string, byte[]>[] allChecksums = Server.TrackChecksums.ToArray();
                 for (int i = 0; i < allChecksums.Length; i++)

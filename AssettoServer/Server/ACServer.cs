@@ -158,8 +158,27 @@ namespace AssettoServer.Server
 
             if (TrackParams == null)
             {
-                Log.Error("No track params found for {0}. Features requiring track coordinates or time zone will not work", Configuration.Track);
-                TimeZone = TimeZoneInfo.Utc;
+                if (Configuration.Extra.IgnoreConfigurationErrors.MissingTrackParams)
+                {
+                    Log.Warning("Using UTC as default time zone");
+                    TimeZone = TimeZoneInfo.Utc;
+                }
+                else
+                {
+                    throw new ConfigurationException($"No track params found for {Configuration.Track}. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-track-params");
+                }
+            }
+            else if (string.IsNullOrEmpty(TrackParams.Timezone))
+            {
+                if (Configuration.Extra.IgnoreConfigurationErrors.MissingTrackParams)
+                {
+                    Log.Warning("Using UTC as default time zone");
+                    TimeZone = TimeZoneInfo.Utc;
+                }
+                else
+                {
+                    throw new ConfigurationException($"No time zone found for {Configuration.Track}. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-track-params");
+                }
             }
             else
             {
@@ -288,6 +307,20 @@ namespace AssettoServer.Server
 
             await LoadBlacklistAsync();
             await LoadAdminsAsync();
+
+            if (!Configuration.Extra.UseSteamAuth && !Admins.IsEmpty)
+            {
+                const string errorMsg =
+                    "Admin whitelist is enabled but Steam auth is disabled. This is unsafe because it allows players to gain admin rights by SteamID spoofing. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#unsafe-admin-whitelist";
+                if (Configuration.Extra.IgnoreConfigurationErrors.UnsafeAdminWhitelist)
+                {
+                    Log.Warning(errorMsg);
+                }
+                else
+                {
+                    throw new ConfigurationException(errorMsg);
+                }
+            }
             
             await InitializeGeoParams();
             
@@ -375,56 +408,63 @@ namespace AssettoServer.Server
         {
             Log.Information("Initializing checksums...");
 
-            using (MD5 md5 = MD5.Create())
+            using var md5 = MD5.Create();
+            var checksums = new Dictionary<string, byte[]>();
+
+            byte[] createChecksum(string filePath)
             {
-                Dictionary<string, byte[]> checksums = new Dictionary<string, byte[]>();
-
-                byte[] createChecksum(string filePath)
+                if (File.Exists(filePath))
                 {
-                    if (File.Exists(filePath))
-                    {
-                        using (FileStream fileStream = File.OpenRead(filePath))
-                            return md5.ComputeHash(fileStream);
-                    }
-
-                    return null;
+                    using var fileStream = File.OpenRead(filePath);
+                    return md5.ComputeHash(fileStream);
                 }
 
-                void addChecksum(string filePath, string name)
-                {
-                    byte[] checksum = createChecksum(filePath);
-                    if (checksum != null)
-                        checksums[name] = checksum;
-                }
-
-                void checksumDirectory(string directory)
-                {
-                    foreach (string dir in Directory.GetDirectories(directory))
-                        checksumDirectory(dir);
-
-                    string[] allFiles = Directory.GetFiles(directory);
-                    foreach (string file in allFiles)
-                    {
-                        string name = Path.GetFileName(file);
-
-                        if (name == "surfaces.ini" || name.StartsWith("models_"))
-                            addChecksum(file, file.Replace("\\", "/"));
-                    }
-                }
-
-                createChecksum("system/data/surfaces.ini");
-                checksumDirectory("content/tracks/" + (string.IsNullOrEmpty(Configuration.TrackConfig) ? Configuration.Track : Configuration.Track + "/" + Configuration.TrackConfig));
-
-                TrackChecksums = checksums;
-                checksums = new Dictionary<string, byte[]>();
-
-                foreach (EntryCar car in Configuration.EntryCars)
-                    addChecksum($"content/cars/{car.Model}/data.acd", car.Model);
-
-                CarChecksums = checksums;
-
-                Log.Information("Initialized {0} checksums.", CarChecksums.Count + TrackChecksums.Count);
+                return null;
             }
+
+            void addChecksum(string filePath, string name)
+            {
+                byte[] checksum = createChecksum(filePath);
+                if (checksum != null)
+                {
+                    checksums[name] = checksum;
+                }
+            }
+
+            void checksumDirectory(string directory)
+            {
+                foreach (string dir in Directory.GetDirectories(directory))
+                    checksumDirectory(dir);
+
+                string[] allFiles = Directory.GetFiles(directory);
+                foreach (string file in allFiles)
+                {
+                    string name = Path.GetFileName(file);
+
+                    if (name == "surfaces.ini" || name.StartsWith("models_"))
+                        addChecksum(file, file.Replace("\\", "/"));
+                }
+            }
+
+            createChecksum("system/data/surfaces.ini");
+            checksumDirectory("content/tracks/" + (string.IsNullOrEmpty(Configuration.TrackConfig) ? Configuration.Track : Configuration.Track + "/" + Configuration.TrackConfig));
+
+            TrackChecksums = checksums;
+            checksums = new Dictionary<string, byte[]>();
+
+            foreach (EntryCar car in Configuration.EntryCars)
+            {
+                addChecksum($"content/cars/{car.Model}/data.acd", car.Model);
+                if (!Configuration.Extra.IgnoreConfigurationErrors.MissingCarChecksums && !checksums.ContainsKey(car.Model))
+                {
+                    throw new ConfigurationException($"No data.acd found for {car.Model}. This will allow players to cheat using modified data. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-car-checksums");
+                }
+            }
+
+
+            CarChecksums = checksums;
+
+            Log.Information("Initialized {0} checksums.", CarChecksums.Count + TrackChecksums.Count);
         }
 
         public bool IsGuidBlacklisted(string guid)

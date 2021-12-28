@@ -42,9 +42,19 @@ namespace AssettoServer.Server.Configuration
         public List<string> GeoParamsCountryOverride { get; set; } = null;
         [YamlMember(Description = "List of plugins to enable")]
         public List<string> EnablePlugins { get; set; } = new();
+        [YamlMember(Description = "Ignore some common configuration errors. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors")]
+        public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; set; } = new();
         public AiParams AiParams { get; set; } = new AiParams();
 
         [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
+    }
+
+    public class IgnoreConfigurationErrors
+    {
+        public bool MissingCarChecksums { get; set; } = false;
+        public bool MissingTrackParams { get; set; } = false;
+        public bool WrongServerDetails { get; set; } = false;
+        public bool UnsafeAdminWhitelist { get; set; } = false;
     }
 
     public class AiParams

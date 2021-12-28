@@ -4,6 +4,7 @@ using IniParser.Model;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
@@ -174,13 +175,27 @@ namespace AssettoServer.Server.Configuration
 
             Extra = extraCfg;
 
+            if (Regex.IsMatch(Name, @"x:\w+$"))
+            {
+                const string errorMsg =
+                    "Server details are configured via ID in server name. This interferes with native AssettoServer server details. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#wrong-server-details";
+                if (Extra.IgnoreConfigurationErrors.WrongServerDetails)
+                {
+                    Log.Warning(errorMsg);
+                }
+                else
+                {
+                    throw new ConfigurationException(errorMsg);
+                }
+            }
+
             if (Extra.RainTrackGripReductionPercent is < 0 or > 1)
             {
-                throw new ArgumentException("RainTrackGripReductionPercent must be in the range 0..1");
+                throw new ConfigurationException("RainTrackGripReductionPercent must be in the range 0..1");
             }
             if (Extra.AiParams.MaxSpeedVariationPercent is < 0 or > 1)
             {
-                throw new ArgumentException("MaxSpeedVariationPercent must be in the range 0..1");
+                throw new ConfigurationException("MaxSpeedVariationPercent must be in the range 0..1");
             }
 
             if(Extra.EnableServerDetails)

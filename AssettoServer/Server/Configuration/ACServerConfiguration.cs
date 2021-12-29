@@ -4,6 +4,7 @@ using IniParser.Model;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Plugin;
@@ -313,11 +314,36 @@ namespace AssettoServer.Server.Configuration
                     AiControlled = aiMode != AiMode.Disabled,
                     AiPakSequenceIds = new byte[MaxClients],
                     LastSeenAiState = new AiState[MaxClients],
-                    LastSeenAiSpawn = new byte[MaxClients]
+                    LastSeenAiSpawn = new byte[MaxClients],
+                    AiSplineHeightOffsetMeters = Extra.AiParams.SplineHeightOffsetMeters
                 });
             }
 
             EntryCars = entryCars;
+            
+            foreach (var carOverrides in Extra.AiParams.CarSpecificOverrides)
+            {
+                var matchedCars = EntryCars.Where(c => c.Model == carOverrides.Model).ToList();
+                foreach (var car in matchedCars)
+                {
+                    car.AiDisableColorChanges = carOverrides.DisableColorChanges;
+                    
+                    if (carOverrides.SplineHeightOffsetMeters.HasValue)
+                        car.AiSplineHeightOffsetMeters = carOverrides.SplineHeightOffsetMeters.Value;
+                    if (carOverrides.EngineIdleRpm.HasValue)
+                        car.AiIdleEngineRpm = carOverrides.EngineIdleRpm.Value;
+                    if (carOverrides.EngineMaxRpm.HasValue)
+                        car.AiMaxEngineRpm = carOverrides.EngineMaxRpm.Value;
+                }
+                
+                foreach (var skinOverrides in carOverrides.SkinSpecificOverrides)
+                {
+                    foreach (var car in matchedCars.Where(c => c.Skin == skinOverrides.Skin))
+                    {
+                        car.AiDisableColorChanges = skinOverrides.DisableColorChanges;
+                    }
+                }
+            }
 
             return this;
         }

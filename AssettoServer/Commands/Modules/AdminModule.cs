@@ -193,7 +193,10 @@ namespace AssettoServer.Commands.Modules
         [Command("setsplineheight")]
         public void SetSplineHeight(float height)
         {
-            Context.Server.Configuration.Extra.AiParams.SplineHeightOffsetMeters = height;
+            foreach (var entryCar in Context.Server.EntryCars)
+            {
+                entryCar.AiSplineHeightOffsetMeters = height;
+            }
         }
 
         [Command("setaioverbooking")]

@@ -123,6 +123,8 @@ namespace AssettoServer.Server.Configuration
         public float CorneringBrakeForceFactor { get; set; } = 1;
         [YamlMember(Description = "Name prefix for AI cars. Names will be in the form of '<NamePrefix> <SessionId>'")]
         public string NamePrefix { get; set; } = "Traffic";
+        [YamlMember(Description = "Override some settings for specific car models/skins")]
+        public List<CarSpecificOverrides> CarSpecificOverrides { get; set; } = new();
 
         [YamlIgnore] public float PlayerRadiusSquared => PlayerRadiusMeters * PlayerRadiusMeters;
         [YamlIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeoutSeconds * 1000;
@@ -139,6 +141,30 @@ namespace AssettoServer.Server.Configuration
         [YamlIgnore] public int MaxCollisionStopTimeMilliseconds => MaxCollisionStopTimeSeconds * 1000;
         [YamlIgnore] public float MaxSpeedMs => MaxSpeedKph / 3.6f;
         [YamlIgnore] public float RightLaneOffsetMs => RightLaneOffsetKph / 3.6f;
+    }
+
+    public class CarSpecificOverrides
+    {
+        [YamlMember(Description = "Car model to match for these overrides")]
+        public string Model { get; set; }
+        [YamlMember(Description = "AI spline height offset. Use this if the AI spline is too close to the ground")]
+        public float? SplineHeightOffsetMeters { get; set; }
+        [YamlMember(Description = "AI engine idle RPM")]
+        public int? EngineIdleRpm { get; set; }
+        [YamlMember(Description = "AI engine max RPM")]
+        public int? EngineMaxRpm { get; set; }
+        [YamlMember(Description = "Disallow random color changes after respawn")]
+        public bool DisableColorChanges { get; set; } = false;
+        [YamlMember(Description = "Override some settings for specific skins of this car model")]
+        public List<SkinSpecificOverrides> SkinSpecificOverrides { get; set; } = new();
+    }
+
+    public class SkinSpecificOverrides
+    {
+        [YamlMember(Description = "Skin to match for these overrides")]
+        public string Skin { get; set; }
+        [YamlMember(Description = "Disallow random color changes after respawn")]
+        public bool DisableColorChanges { get; set; } = false;
     }
 
     public enum AfkKickBehavior

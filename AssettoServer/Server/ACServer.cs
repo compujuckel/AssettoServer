@@ -755,11 +755,14 @@ namespace AssettoServer.Server
                                             fromCar.LastSeenAiState[toCar.SessionId] = aiState;
                                             fromCar.LastSeenAiSpawn[toCar.SessionId] = aiState.SpawnCounter;
 
-                                            toClient.SendPacket(new CSPCarColorUpdate
+                                            if (!fromCar.AiDisableColorChanges)
                                             {
-                                                SessionId = fromCar.SessionId,
-                                                Color = aiState.Color
-                                            });
+                                                toClient.SendPacket(new CSPCarColorUpdate
+                                                {
+                                                    SessionId = fromCar.SessionId,
+                                                    Color = aiState.Color
+                                                });
+                                            }
                                         }
 
                                         var status = aiState.Status;

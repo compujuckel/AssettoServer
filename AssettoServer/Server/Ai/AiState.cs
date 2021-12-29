@@ -449,7 +449,7 @@ namespace AssettoServer.Server.Ai
             byte tyreAngularSpeed = (byte) Math.Min(byte.MaxValue, 100 + GetTyreAngularSpeed(CurrentSpeed, 0.65f));
 
             Status.Timestamp = EntryCar.Server.CurrentTime;
-            Status.Position = smoothPos.Position with { Y = smoothPos.Position.Y + EntryCar.Server.Configuration.Extra.AiParams.SplineHeightOffsetMeters };
+            Status.Position = smoothPos.Position with { Y = smoothPos.Position.Y + EntryCar.AiSplineHeightOffsetMeters };
             Status.Rotation = rotation;
             Status.Velocity = smoothPos.Tangent * CurrentSpeed;
             Status.SteerAngle = 127;
@@ -458,7 +458,7 @@ namespace AssettoServer.Server.Ai
             Status.TyreAngularSpeed[1] = tyreAngularSpeed;
             Status.TyreAngularSpeed[2] = tyreAngularSpeed;
             Status.TyreAngularSpeed[3] = tyreAngularSpeed;
-            Status.EngineRpm = (ushort)MathUtils.Lerp(800, 3000, CurrentSpeed / EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs);
+            Status.EngineRpm = (ushort)MathUtils.Lerp(EntryCar.AiIdleEngineRpm, EntryCar.AiMaxEngineRpm, CurrentSpeed / EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs);
             Status.StatusFlag = CarStatusFlags.LightsOn
                                 | CarStatusFlags.HighBeamsOff
                                 | (Environment.TickCount64 < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)

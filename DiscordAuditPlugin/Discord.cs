@@ -2,8 +2,7 @@
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using Discord;
-using Discord.Webhook;
+using CSharpDiscordWebhook.NET.Discord;
 using Serilog;
 
 namespace DiscordAuditPlugin;
@@ -26,7 +25,7 @@ public class Discord
         {
             AuditHook = new DiscordWebhook
             {
-                Url = Configuration.AuditUrl
+                Uri = new Uri(Configuration.AuditUrl)
             };
 
             server.ClientKicked += OnClientKicked;
@@ -37,7 +36,7 @@ public class Discord
         {
             ChatHook = new DiscordWebhook
             {
-                Url = Configuration.ChatUrl
+                Uri = new Uri(Configuration.ChatUrl)
             };
 
             server.ChatMessageReceived += OnChatMessageReceived;
@@ -46,36 +45,30 @@ public class Discord
 
     private void OnClientBanned(ACTcpClient sender, ClientAuditEventArgs args)
     {
-        Run(() =>
-        {
-            AuditHook.Send(PrepareAuditMessage(
-                ":hammer: Ban alert",
-                _server.Configuration.Name,
-                sender.Guid,
-                sender.Name,
-                args.ReasonStr,
-                Color.Red,
-                args.Admin?.Name
-            ));
-        });
+        AuditHook.SendAsync(PrepareAuditMessage(
+            ":hammer: Ban alert",
+            _server.Configuration.Name,
+            sender.Guid,
+            sender.Name,
+            args.ReasonStr,
+            Color.Red,
+            args.Admin?.Name
+        )).ContinueWith(t => Log.Error(t.Exception, "Error in Discord webhook"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
     private void OnClientKicked(ACTcpClient sender, ClientAuditEventArgs args)
     {
         if (args.Reason != KickReason.ChecksumFailed)
         {
-            Run(() =>
-            {
-                AuditHook.Send(PrepareAuditMessage(
-                    ":boot: Kick alert",
-                    _server.Configuration.Name,
-                    sender.Guid,
-                    sender.Name,
-                    args.ReasonStr,
-                    Color.Yellow,
-                    args.Admin?.Name
-                ));
-            });
+            AuditHook.SendAsync(PrepareAuditMessage(
+                ":boot: Kick alert",
+                _server.Configuration.Name,
+                sender.Guid,
+                sender.Name,
+                args.ReasonStr,
+                Color.Yellow,
+                args.Admin?.Name
+            )).ContinueWith(t => Log.Error(t.Exception, "Error in Discord webhook"), TaskContinuationOptions.OnlyOnFaulted);
         }
     }
 
@@ -83,24 +76,16 @@ public class Discord
     {
         if (!args.Message.StartsWith("\t\t\t\t$CSP0:") && !string.IsNullOrWhiteSpace(args.Message))
         {
-            Run(() =>
+            DiscordMessage msg = new DiscordMessage
             {
-                DiscordMessage msg = new DiscordMessage
-                {
-                    AvatarUrl = Configuration.PictureUrl,
-                    Username = sender.Name,
-                    Content = Sanitize(args.Message)
-                };
+                AvatarUrl = Configuration.PictureUrl,
+                Username = sender.Name,
+                Content = Sanitize(args.Message)
+            };
 
-                ChatHook.Send(msg);
-            });
+            ChatHook.SendAsync(msg)
+                .ContinueWith(t => Log.Error(t.Exception, "Error in Discord webhook"), TaskContinuationOptions.OnlyOnFaulted);
         }
-    }
-
-    private static void Run(Action action)
-    {
-        Task.Run(action)
-            .ContinueWith(t => Log.Error(t.Exception, "Error in Discord webhook"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
     private DiscordMessage PrepareAuditMessage(

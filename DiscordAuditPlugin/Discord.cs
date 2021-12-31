@@ -11,7 +11,7 @@ public class Discord
 {
     private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":", "@" };
     private readonly ACServer _server;
-    
+
     private DiscordWebhook AuditHook { get; }
     private DiscordWebhook ChatHook { get; }
     private DiscordConfiguration Configuration { get; }
@@ -20,7 +20,7 @@ public class Discord
     {
         _server = server;
         Configuration = configuration;
-        
+
         if (!string.IsNullOrEmpty(Configuration.AuditUrl))
         {
             AuditHook = new DiscordWebhook
@@ -31,7 +31,7 @@ public class Discord
             server.ClientKicked += OnClientKicked;
             server.ClientBanned += OnClientBanned;
         }
-        
+
         if (!string.IsNullOrEmpty(Configuration.ChatUrl))
         {
             ChatHook = new DiscordWebhook
@@ -79,8 +79,8 @@ public class Discord
             DiscordMessage msg = new DiscordMessage
             {
                 AvatarUrl = Configuration.PictureUrl,
-                Username = sender.Name,
-                Content = Sanitize(args.Message)
+                Username = _server.Configuration.Name,
+                Content = Sanitize($"{sender.Name}: {args.Message}")
             };
 
             ChatHook.SendAsync(msg)

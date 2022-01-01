@@ -23,7 +23,7 @@ public class ACPluginLoader
             string pluginDll = Path.Combine(dir, dirName + ".dll");
             if (File.Exists(pluginDll))
             {
-                Log.Debug("Found plugin {0}, {1}", dirName, pluginDll);
+                Log.Verbose("Found plugin {0}, {1}", dirName, pluginDll);
 
                 var loader = PluginLoader.CreateFromAssemblyFile(
                     pluginDll,

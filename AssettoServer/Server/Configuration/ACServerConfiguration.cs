@@ -4,6 +4,8 @@ using IniParser.Model;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
@@ -22,8 +24,8 @@ namespace AssettoServer.Server.Configuration
         public string AdminPassword { get; internal set; }
         public int MaxClients { get; internal set; }
 
-        public int UdpPort { get; internal set; }
-        public int TcpPort { get; internal set; }
+        public ushort UdpPort { get; internal set; }
+        public ushort TcpPort { get; internal set; }
         public int HttpPort { get; internal set; }
 
         public byte RefreshRateHz { get; internal set; }
@@ -89,8 +91,8 @@ namespace AssettoServer.Server.Configuration
             FullTrackName = string.IsNullOrEmpty(TrackConfig) ? Track : Track + "-" + TrackConfig;
             Password = server["PASSWORD"];
             AdminPassword = server["ADMIN_PASSWORD"];
-            UdpPort = int.Parse(server["UDP_PORT"]);
-            TcpPort = int.Parse(server["TCP_PORT"]);
+            UdpPort = ushort.Parse(server["UDP_PORT"]);
+            TcpPort = ushort.Parse(server["TCP_PORT"]);
             HttpPort = int.Parse(server["HTTP_PORT"]);
             MaxBallastKg = int.Parse(server["MAX_BALLAST_KG"]);
             RefreshRateHz = byte.Parse(server["CLIENT_SEND_INTERVAL_HZ"]);
@@ -174,13 +176,27 @@ namespace AssettoServer.Server.Configuration
 
             Extra = extraCfg;
 
+            if (Regex.IsMatch(Name, @"x:\w+$"))
+            {
+                const string errorMsg =
+                    "Server details are configured via ID in server name. This interferes with native AssettoServer server details. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#wrong-server-details";
+                if (Extra.IgnoreConfigurationErrors.WrongServerDetails)
+                {
+                    Log.Warning(errorMsg);
+                }
+                else
+                {
+                    throw new ConfigurationException(errorMsg);
+                }
+            }
+
             if (Extra.RainTrackGripReductionPercent is < 0 or > 1)
             {
-                throw new ArgumentException("RainTrackGripReductionPercent must be in the range 0..1");
+                throw new ConfigurationException("RainTrackGripReductionPercent must be in the range 0..1");
             }
             if (Extra.AiParams.MaxSpeedVariationPercent is < 0 or > 1)
             {
-                throw new ArgumentException("MaxSpeedVariationPercent must be in the range 0..1");
+                throw new ConfigurationException("MaxSpeedVariationPercent must be in the range 0..1");
             }
 
             if(Extra.EnableServerDetails)
@@ -298,11 +314,36 @@ namespace AssettoServer.Server.Configuration
                     AiControlled = aiMode != AiMode.Disabled,
                     AiPakSequenceIds = new byte[MaxClients],
                     LastSeenAiState = new AiState[MaxClients],
-                    LastSeenAiSpawn = new byte[MaxClients]
+                    LastSeenAiSpawn = new byte[MaxClients],
+                    AiSplineHeightOffsetMeters = Extra.AiParams.SplineHeightOffsetMeters
                 });
             }
 
             EntryCars = entryCars;
+            
+            foreach (var carOverrides in Extra.AiParams.CarSpecificOverrides)
+            {
+                var matchedCars = EntryCars.Where(c => c.Model == carOverrides.Model).ToList();
+                foreach (var car in matchedCars)
+                {
+                    car.AiDisableColorChanges = carOverrides.DisableColorChanges;
+                    
+                    if (carOverrides.SplineHeightOffsetMeters.HasValue)
+                        car.AiSplineHeightOffsetMeters = carOverrides.SplineHeightOffsetMeters.Value;
+                    if (carOverrides.EngineIdleRpm.HasValue)
+                        car.AiIdleEngineRpm = carOverrides.EngineIdleRpm.Value;
+                    if (carOverrides.EngineMaxRpm.HasValue)
+                        car.AiMaxEngineRpm = carOverrides.EngineMaxRpm.Value;
+                }
+                
+                foreach (var skinOverrides in carOverrides.SkinSpecificOverrides)
+                {
+                    foreach (var car in matchedCars.Where(c => c.Skin == skinOverrides.Skin))
+                    {
+                        car.AiDisableColorChanges = skinOverrides.DisableColorChanges;
+                    }
+                }
+            }
 
             return this;
         }

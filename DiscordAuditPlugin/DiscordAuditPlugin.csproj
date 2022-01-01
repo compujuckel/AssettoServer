@@ -16,12 +16,7 @@
         <Private>false</Private>
         <ExcludeAssets>runtime</ExcludeAssets>
       </ProjectReference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="CSharpDiscordWebhook" Version="2.2.0">
-          <NoWarn>NU1701</NoWarn>
-      </PackageReference>
+      <PackageReference Include="CSharpDiscordWebhookAsync" Version="1.0.0" />
     </ItemGroup>
 
 </Project>

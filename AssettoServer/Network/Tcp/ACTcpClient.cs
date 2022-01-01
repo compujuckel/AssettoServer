@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -16,8 +15,6 @@ using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
-using Qmmands;
-using Steamworks;
 using Serilog;
 
 namespace AssettoServer.Network.Tcp
@@ -50,12 +47,12 @@ namespace AssettoServer.Network.Tcp
         private CancellationTokenSource DisconnectTokenSource { get; }
         private Task SendLoopTask { get; set; }
         private long LastChatTime { get; set; }
-        private SteamId? SteamId { get; set; }
 
         public event EventHandler<ACTcpClient, ClientHandshakeEventArgs> HandshakeStarted;
         public event EventHandler<ACTcpClient, EventArgs> ChecksumPassed;
         public event EventHandler<ACTcpClient, EventArgs> ChecksumFailed;
         public event EventHandler<ACTcpClient, ChatMessageEventArgs> ChatMessageReceived;
+        public event EventHandler<ACTcpClient, EventArgs> Disconnecting; 
 
         internal ACTcpClient(ACServer server, TcpClient tcpClient)
         {
@@ -206,7 +203,7 @@ namespace AssettoServer.Network.Tcp
                         else if ((Server.Configuration.Extra.EnableWeatherFx && !cspFeatures.Contains("WEATHERFX_V1"))
                                  || (Server.Configuration.Extra.UseSteamAuth && !cspFeatures.Contains("STEAM_TICKET")))
                             SendPacket(new AuthFailedResponse("Content Manager version not supported. Please update Content Manager to v0.8.2329.38887 or above."));
-                        else if (Server.Configuration.Extra.UseSteamAuth && !await ValidateSessionTicketAsync(handshakeRequest.SessionTicket, handshakeRequest.Guid))
+                        else if (Server.Configuration.Extra.UseSteamAuth && !await Server.Steam.ValidateSessionTicketAsync(handshakeRequest.SessionTicket, handshakeRequest.Guid, this))
                             SendPacket(new AuthFailedResponse("Steam authentication failed."));
                         else if (string.IsNullOrEmpty(handshakeRequest.Guid) || !(handshakeRequest.Guid?.Length >= 6))
                             SendPacket(new AuthFailedResponse("Invalid Guid."));
@@ -272,7 +269,7 @@ namespace AssettoServer.Network.Tcp
                                 TrackConfig = cfg.TrackConfig,
                                 TrackName = cfg.Track,
                                 TyreConsumptionRate = cfg.TyreConsumptionRate,
-                                UdpPort = (ushort)cfg.UdpPort,
+                                UdpPort = cfg.UdpPort,
                                 CurrentSession = Server.CurrentSession,
                                 ChecksumCount = (byte)Server.TrackChecksums.Count,
                                 ChecksumPaths = Server.TrackChecksums.Keys,
@@ -341,57 +338,6 @@ namespace AssettoServer.Network.Tcp
             {
                 await DisconnectAsync();
             }
-        }
-
-        private async ValueTask<bool> ValidateSessionTicketAsync(byte[] sessionTicket, string guid)
-        {
-            if (sessionTicket == null || !ulong.TryParse(guid, out ulong steamId))
-                return false;
-
-            TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
-            void ticketValidateResponse(SteamId arg1, SteamId arg2, AuthResponse arg3)
-            {
-                if (arg1 == steamId)
-                {
-                    if (arg3 != AuthResponse.OK)
-                        Log.Information("Steam auth ticket verification failed ({0}) for {1}.", arg3, Name);
-                    else
-                    {
-                        SteamId = arg1;
-                        Log.Information("Steam auth ticket verification succeeded for {0}.", Name);
-                    }
-
-                    taskCompletionSource.SetResult(arg3 == AuthResponse.OK);
-                }
-                else
-                {
-                    Log.Warning("Possible Steamid spoofing attempt for {1} ({2}) - handshake: {3}, ticket: {4}", Name, SessionId, guid, arg1.ToString());
-                }
-            }
-
-            bool validated = false;
-
-            SteamServer.OnValidateAuthTicketResponse += ticketValidateResponse;
-            Task timeoutTask = Task.Delay(5000);
-            Task beginAuthTask = Task.Run(() =>
-            {
-                if (!SteamServer.BeginAuthSession(sessionTicket, steamId))
-                    taskCompletionSource.SetResult(false);
-            });
-
-            Task finishedTask = await Task.WhenAny(timeoutTask, taskCompletionSource.Task);
-
-            if (finishedTask == timeoutTask)
-            {
-                Log.Warning("Steam auth ticket verification timed out for {0}.", Name);
-            }
-            else
-            {
-                validated = await taskCompletionSource.Task;
-            }
-
-            SteamServer.OnValidateAuthTicketResponse -= ticketValidateResponse;
-            return validated;
         }
 
         private void OnClientEvent(PacketReader reader)
@@ -469,7 +415,7 @@ namespace AssettoServer.Network.Tcp
             if (reader.Buffer.Length == fullChecksum.Length + 1)
             {
                 reader.ReadBytes(fullChecksum);
-                passedChecksum = Server.CarChecksums.TryGetValue(EntryCar.Model, out byte[] modelChecksum) && fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(modelChecksum);
+                passedChecksum = !Server.CarChecksums.TryGetValue(EntryCar.Model, out byte[] modelChecksum) || fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(modelChecksum);
 
                 KeyValuePair<string, byte[]>[] allChecksums = Server.TrackChecksums.ToArray();
                 for (int i = 0; i < allChecksums.Length; i++)
@@ -638,6 +584,8 @@ namespace AssettoServer.Network.Tcp
 
         internal async Task DisconnectAsync()
         {
+            Disconnecting?.Invoke(this, EventArgs.Empty);
+            
             try
             {
                 if (!DisconnectTokenSource.IsCancellationRequested && !string.IsNullOrEmpty(Name))
@@ -656,9 +604,6 @@ namespace AssettoServer.Network.Tcp
                     await Server.DisconnectClientAsync(this);
 
                 CloseConnection();
-
-                if (SteamId != null)
-                    SteamServer.EndSession(SteamId.Value);
             }
             catch (Exception ex)
             {

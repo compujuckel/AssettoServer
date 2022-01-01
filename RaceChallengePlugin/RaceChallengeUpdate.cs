@@ -5,10 +5,10 @@ namespace RaceChallengePlugin;
 
 public class RaceChallengeUpdate : IOutgoingNetworkPacket
 {
-    public RaceChallengeEvent EventType { get; set; }
-    public int EventData { get; set; }
     public float OwnHealth { get; set; }
+    public float OwnRate { get; set; }
     public float RivalHealth { get; set; }
+    public float RivalRate { get; set; }
 
     public void ToWriter(ref PacketWriter writer)
     {
@@ -16,19 +16,10 @@ public class RaceChallengeUpdate : IOutgoingNetworkPacket
         writer.Write<byte>(0x03);
         writer.Write<byte>(255);
         writer.Write<ushort>(60000);
-        writer.Write(0x64C44F54);
-        writer.Write(EventData);
+        writer.Write(0xC069E2E7);
         writer.Write(OwnHealth);
+        writer.Write(OwnRate);
         writer.Write(RivalHealth);
-        writer.Write((byte)EventType);
+        writer.Write(RivalRate);
     }
-}
-
-public enum RaceChallengeEvent
-{
-    None = 0,
-    RaceChallenge = 1,
-    RaceCountdown = 2,
-    RaceInProgress = 3,
-    RaceEnded = 4
 }

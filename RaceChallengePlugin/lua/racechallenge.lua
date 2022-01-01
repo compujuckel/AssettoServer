@@ -2,12 +2,13 @@
   None = 0,
   RaceChallenge = 1,
   RaceCountdown = 2,
-  RaceInProgress = 3,
-  RaceEnded = 4
+  RaceEnded = 3
 }
 
 local rivalHealth = 1.0
+local rivalRate = 0
 local ownHealth = 1.0
+local ownRate = 0
 local rivalId = 0
 local rivalName = ""
 local lastEvent = EventType.None
@@ -17,7 +18,7 @@ local lastWinner = 0
 local ownSessionId = ac.getCar(0).sessionID
 
 function GetDriverNameBySessionId(sessionId)
-  local count = ac.getSimState().carsCount
+  local count = ac.getSim().carsCount
   for i = 0, count do
     local car = ac.getCar(i)
     if car.sessionID == sessionId then
@@ -26,24 +27,24 @@ function GetDriverNameBySessionId(sessionId)
   end
 end
 
-local raceUpdateEvent = ac.OnlineEvent({
-    eventType = ac.StructItem.byte(),
-    eventData = ac.StructItem.int32(),
-    ownHealth = ac.StructItem.float(),
-    rivalHealth = ac.StructItem.float()
-  }, function (sender, data)
+local raceStatusEvent = ac.OnlineEvent({
+  eventType = ac.StructItem.byte(),
+  eventData = ac.StructItem.int32(),
+}, function (sender, data)
     -- only accept packets from server
     if sender ~= nil then
       return
     end
 
-    ac.debug("sender", sender)
     ac.debug("eventType", data.eventType)
     ac.debug("eventData", data.eventData)
-    ac.debug("ownHealth", ownHealth)
-    ac.debug("rivalHealth", rivalHealth)
 
     if data.eventType == EventType.RaceChallenge then
+      rivalHealth = 1.0
+      rivalRate = 0
+      ownHealth = 1.0
+      rivalRate = 0
+
       rivalId = data.eventData
       rivalName = GetDriverNameBySessionId(data.eventData)
       ac.debug("rivalName", rivalName)
@@ -53,52 +54,78 @@ local raceUpdateEvent = ac.OnlineEvent({
       raceStartTime = data.eventData
     end
 
-    if data.eventType == EventType.RaceInProgress then
-      ownHealth = data.ownHealth
-      rivalHealth = data.rivalHealth
-    end
-
     if data.eventType == EventType.RaceEnded then
       lastWinner = data.eventData
       raceEndTime = GetSessionTime()
     end
 
     lastEvent = data.eventType
+end)
+
+local raceUpdateEvent = ac.OnlineEvent({
+    ownHealth = ac.StructItem.float(),
+    ownRate = ac.StructItem.float(),
+    rivalHealth = ac.StructItem.float(),
+    rivalRate = ac.StructItem.float()
+  }, function (sender, data)
+    -- only accept packets from server
+    if sender ~= nil then
+      return
+    end
+
+    ac.debug("sender", sender)
+
+    ownHealth = data.ownHealth
+    ownRate = data.ownRate
+    rivalHealth = data.rivalHealth
+    rivalRate = data.rivalRate
+
+    ac.debug("ownHealth", ownHealth)
+    ac.debug("ownRate", ownRate)
+    ac.debug("rivalHealth", rivalHealth)
+    ac.debug("rivalRate", rivalRate)
   end)
 
-
 function GetSessionTime()
-  return ac.getSimState().timeToSessionStart * -1
+  return ac.getSim().timeToSessionStart * -1
 end
 
 -- sending a new message:
---raceUpdateEvent{ eventType = 1, eventData = 2, ownHealth = 0.6, rivalHealth = 0.3 }
+--raceUpdateEvent{ ownHealth = 0.6, ownRate = -0.2, rivalHealth = 0.3, rivalRate = -0.5 }
+--raceStatusEvent{ eventType = 1, eventData = 2 }
 
-function script.drawUI(dt)
+local lastUiUpdate = GetSessionTime()
+function script.drawUI()
+
   ac.debug("lastEvent", lastEvent)
   ac.debug("rivalId", rivalId)
 
   local currentTime = GetSessionTime()
-  local raceTimeElapsed = raceStartTime - currentTime
+  local dt = currentTime - lastUiUpdate
+  lastUiUpdate = currentTime
+  local raceTimeElapsed = currentTime - raceStartTime
+
+  ac.debug("raceTimeElapsed", raceTimeElapsed)
+  ac.debug("dt", dt)
 
   if lastEvent == EventType.RaceCountdown then
-    DrawHealthHud(0)
-
     if raceTimeElapsed > -3000 and raceTimeElapsed < 0 then
-      local text = math.ceil(raceTimeElapsed / 1000) * -1
+      DrawHealthHud(0)
+      local text = math.ceil(raceTimeElapsed / 1000 * -1)
       DrawTextCentered(text)
+    elseif raceTimeElapsed > 0 then
+      if raceTimeElapsed < 1000 then
+        DrawTextCentered("Go!")
+      end
+
+      ownHealth = ownHealth + ownRate * (dt / 1000)
+      rivalHealth = rivalHealth + rivalRate * (dt / 1000)
+      
+      DrawHealthHud(raceTimeElapsed)
     end
   end
 
-  if lastEvent == EventType.RaceInProgress then
-    if(raceTimeElapsed > 0 and raceTimeElapsed < 1000) then
-      DrawTextCentered("Go!")
-    end
-
-    DrawHealthHud(GetSessionTime() - raceStartTime)
-  end
-
-  if lastEvent == EventType.RaceEnded and raceEndTime > GetSessionTime() - 3000 then
+  if lastEvent == EventType.RaceEnded and raceEndTime > currentTime - 3000 then
     DrawHealthHud(raceEndTime - raceStartTime)
 
     if lastWinner == 255 then
@@ -114,7 +141,7 @@ end
 function DrawTextCentered(text)
   local uiState = ac.getUI()
 
-  ui.transparentWindow('raceText', vec2(uiState.windowSize.x / 2 - 250, uiState.windowSize.y / 2 - 50), vec2(500,100), function ()
+  ui.transparentWindow('raceText', vec2(uiState.windowSize.x / 2 - 250, uiState.windowSize.y / 2 - 250), vec2(500,100), function ()
     ui.pushFont(ui.Font.Huge)
     
     local size = ui.measureText(text)

@@ -29,8 +29,6 @@ public class RaceCommandModule : ACModuleBase
     {
         var packet = new RaceChallengeUpdate
         {
-            EventType = eventType,
-            EventData = eventData,
             OwnHealth = ownHealth,
             RivalHealth = rivalHealth,
         };

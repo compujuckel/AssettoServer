@@ -21,8 +21,8 @@ public class Race
     private string ChallengerName { get; }
     private string ChallengedName { get; }
     private long LastPointCheckTime { get; set; }
-    private long ChallengerPoints { get; set; }
-    private long ChallengedPoints { get; set; }
+    private int ChallengerPoints { get; set; }
+    private int ChallengedPoints { get; set; }
 
     public Race(ACServer server, EntryCar challenger, EntryCar challenged, bool lineUpRequired = true)
     {
@@ -76,12 +76,12 @@ public class Race
                 }
             }
             
-            Challenger.Client.SendPacket(new RaceChallengeUpdate
+            Challenger.Client.SendPacket(new RaceChallengeStatus
             {
                 EventType = RaceChallengeEvent.RaceChallenge,
                 EventData = Challenged.SessionId
             });
-            Challenged.Client.SendPacket(new RaceChallengeUpdate
+            Challenged.Client.SendPacket(new RaceChallengeStatus
             {
                 EventType = RaceChallengeEvent.RaceChallenge,
                 EventData = Challenger.SessionId
@@ -89,7 +89,7 @@ public class Race
 
             await Task.Delay(500);
 
-            var countdownPacket = new RaceChallengeUpdate
+            var countdownPacket = new RaceChallengeStatus
             {
                 EventType = RaceChallengeEvent.RaceCountdown,
                 EventData = Server.CurrentTime + 3000
@@ -97,38 +97,21 @@ public class Race
             Challenger.Client.SendPacket(countdownPacket);
             Challenged.Client.SendPacket(countdownPacket);
 
-            byte signalStage = 0;
-            while (signalStage < 4)
+            await Task.Delay(3000);
+            
+            if (!AreLinedUp())
             {
-                if (!AreLinedUp())
+                SendMessage("You went out of line. The race has been cancelled.");
+
+                var endPacket = new RaceChallengeStatus
                 {
-                    SendMessage("You went out of line. The race has been cancelled.");
+                    EventType = RaceChallengeEvent.RaceEnded,
+                    EventData = 255
+                };
+                Challenger.Client.SendPacket(endPacket);
+                Challenged.Client.SendPacket(endPacket);
 
-                    var endPacket = new RaceChallengeUpdate
-                    {
-                        EventType = RaceChallengeEvent.RaceEnded,
-                        EventData = 255
-                    };
-                    Challenger.Client.SendPacket(endPacket);
-                    Challenged.Client.SendPacket(endPacket);
-
-                    return;
-                }
-
-                if (signalStage == 0)
-                    _ = SendTimedMessageAsync("3...");
-                else if (signalStage == 1)
-                    _ = SendTimedMessageAsync("2...");
-                else if (signalStage == 2)
-                    _ = SendTimedMessageAsync("1...");
-                else if (signalStage == 3)
-                {
-                    _ = SendTimedMessageAsync("Go!");
-                    break;
-                }
-
-                await Task.Delay(1000);
-                signalStage++;
+                return;
             }
 
             while (true)
@@ -161,28 +144,40 @@ public class Race
 
                 if (Server.CurrentTime64 - LastPointCheckTime >= 250)
                 {
-                    var distanceBetweenPlayersSquared = Vector3.DistanceSquared(leaderPosition, followerPosition);
-                    long pointsToBeSubtractedFromFollower = (long)(0.001f * distanceBetweenPlayersSquared + 2f);
-
-                    if (Follower == Challenger)
-                        ChallengerPoints -= pointsToBeSubtractedFromFollower;
-                    else
-                        ChallengedPoints -= pointsToBeSubtractedFromFollower;
-
+                    float dt = (Server.CurrentTime64 - LastPointCheckTime) / 1000.0f;
                     LastPointCheckTime = Server.CurrentTime64;
                     
+                    float distanceBetweenPlayersSquared = Vector3.DistanceSquared(leaderPosition, followerPosition);
+                    float pointsToBeSubtractedFromFollower = 0.001f * distanceBetweenPlayersSquared + 8f;
+
+                    float challengerRate = 0;
+                    float challengedRate = 0;
+
+                    if (Follower == Challenger)
+                    {
+                        ChallengerPoints -= (int)(pointsToBeSubtractedFromFollower * dt);
+                        challengerRate = -pointsToBeSubtractedFromFollower;
+                    }
+                    else
+                    {
+                        ChallengedPoints -= (int)(pointsToBeSubtractedFromFollower * dt);
+                        challengedRate = -pointsToBeSubtractedFromFollower;
+                    }
+
                     Challenger.Client.SendPacket(new RaceChallengeUpdate
                     {
-                        EventType = RaceChallengeEvent.RaceInProgress,
                         OwnHealth = (float)ChallengerPoints / 3000,
+                        OwnRate = challengerRate / 3000,
                         RivalHealth = (float)ChallengedPoints / 3000,
+                        RivalRate = challengedRate / 3000
                     });
                     
                     Challenged.Client.SendPacket(new RaceChallengeUpdate
                     {
-                        EventType = RaceChallengeEvent.RaceInProgress,
                         OwnHealth = (float)ChallengedPoints / 3000,
+                        OwnRate = challengedRate / 3000,
                         RivalHealth = (float)ChallengerPoints / 3000,
+                        RivalRate = challengerRate / 3000
                     });
                 }
 
@@ -263,18 +258,18 @@ public class Race
         Challenged.GetRace().CurrentRace = null;
         Log.Information("Ended race between {0} and {1}", ChallengerName, ChallengedName);
 
-        if (Leader == null) return;
+        //if (Leader == null) return;
 
         string winnerName = Challenger == Leader ? ChallengerName : ChallengedName;
         string loserName = Challenger == Leader ? ChallengedName : ChallengerName;
 
-        var endPacket = new RaceChallengeUpdate
+        var endPacket = new RaceChallengeStatus
         {
             EventType = RaceChallengeEvent.RaceEnded,
             EventData = Leader.SessionId
         };
-        Challenger.Client.SendPacket(endPacket);
-        Challenged.Client.SendPacket(endPacket);
+        Challenger.Client?.SendPacket(endPacket);
+        Challenged.Client?.SendPacket(endPacket);
 
         Server.BroadcastPacket(new ChatMessage {SessionId = 255, Message = $"{winnerName} just beat {loserName} in a race."});
     }

@@ -157,7 +157,7 @@ The server does not need to be restarted for the command to take effect.
 
 | Parameter | Description                                                   |
 | --------- | ------------------------------------------------------------- |
-| weatherId | The ID of the weather specified in the `server_cfg.ini`       |
+| weatherId | The ID of the weather specified in the `server_cfg.ini`<br/>For example, if you want to use `WEATHER_0`, type `/setweather 0`       |
 
 ### Setting the maximum afk time
 

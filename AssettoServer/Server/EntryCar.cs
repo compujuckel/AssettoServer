@@ -25,6 +25,7 @@ namespace AssettoServer.Server
         public int LastPingTime { get; internal set; }
         public int LastPongTime { get; internal set; }
         public ushort Ping { get; internal set; }
+        public DriverOptionsFlags DriverOptionsFlags { get; internal set; }
 
         public bool IsSpectator { get; internal set; }
         public string Model { get; internal set; }

@@ -153,8 +153,8 @@ namespace AssettoServer.Server.Configuration
         public int? EngineIdleRpm { get; set; }
         [YamlMember(Description = "AI engine max RPM")]
         public int? EngineMaxRpm { get; set; }
-        [YamlMember(Description = "Disallow random color changes after respawn")]
-        public bool DisableColorChanges { get; set; } = false;
+        [YamlMember(Description = "Allow random color changes after respawn")]
+        public bool? EnableColorChanges { get; set; }
         [YamlMember(Description = "Override some settings for specific skins of this car model")]
         public List<SkinSpecificOverrides> SkinSpecificOverrides { get; set; } = new();
     }
@@ -163,8 +163,8 @@ namespace AssettoServer.Server.Configuration
     {
         [YamlMember(Description = "Skin to match for these overrides")]
         public string Skin { get; set; }
-        [YamlMember(Description = "Disallow random color changes after respawn")]
-        public bool DisableColorChanges { get; set; } = false;
+        [YamlMember(Description = "Allow random color changes after respawn")]
+        public bool? EnableColorChanges { get; set; }
     }
 
     public enum AfkKickBehavior

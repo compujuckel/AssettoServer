@@ -303,6 +303,8 @@ namespace AssettoServer.Server.Configuration
                     Enum.TryParse(entry["AI"], true, out aiMode);
                 }
 
+                var driverOptions = CSPDriverOptions.Parse(entry["SKIN"]);
+
                 entryCars.Add(new EntryCar
                 {
                     Model = entry["MODEL"],
@@ -310,7 +312,9 @@ namespace AssettoServer.Server.Configuration
                     SpectatorMode = int.Parse(entry["SPECTATOR_MODE"] ?? "0"),
                     Ballast = int.Parse(entry["BALLAST"]),
                     Restrictor = int.Parse(entry["RESTRICTOR"]),
+                    DriverOptionsFlags = driverOptions,
                     AiMode = aiMode,
+                    AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange),
                     AiControlled = aiMode != AiMode.Disabled,
                     AiPakSequenceIds = new byte[MaxClients],
                     LastSeenAiState = new AiState[MaxClients],
@@ -326,8 +330,8 @@ namespace AssettoServer.Server.Configuration
                 var matchedCars = EntryCars.Where(c => c.Model == carOverrides.Model).ToList();
                 foreach (var car in matchedCars)
                 {
-                    car.AiDisableColorChanges = carOverrides.DisableColorChanges;
-                    
+                    if(carOverrides.EnableColorChanges.HasValue)
+                        car.AiEnableColorChanges = carOverrides.EnableColorChanges.Value;
                     if (carOverrides.SplineHeightOffsetMeters.HasValue)
                         car.AiSplineHeightOffsetMeters = carOverrides.SplineHeightOffsetMeters.Value;
                     if (carOverrides.EngineIdleRpm.HasValue)
@@ -340,7 +344,8 @@ namespace AssettoServer.Server.Configuration
                 {
                     foreach (var car in matchedCars.Where(c => c.Skin == skinOverrides.Skin))
                     {
-                        car.AiDisableColorChanges = skinOverrides.DisableColorChanges;
+                        if(skinOverrides.EnableColorChanges.HasValue)
+                            car.AiEnableColorChanges = skinOverrides.EnableColorChanges.Value;
                     }
                 }
             }

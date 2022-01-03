@@ -63,6 +63,7 @@ namespace AssettoServer.Network.Tcp
             TcpClient = tcpClient;
             tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
             tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
+            tcpClient.LingerState = new LingerOption(true, 2);
 
             TcpStream = tcpClient.GetStream();
 
@@ -74,8 +75,8 @@ namespace AssettoServer.Network.Tcp
 
         internal Task StartAsync()
         {
-            SendLoopTask = Task.Factory.StartNew(SendLoopAsync);
-            _ = Task.Factory.StartNew(ReceiveLoopAsync);
+            SendLoopTask = Task.Run(SendLoopAsync);
+            _ = Task.Run(ReceiveLoopAsync);
 
             return Task.CompletedTask;
         }
@@ -114,38 +115,33 @@ namespace AssettoServer.Network.Tcp
 
         private async Task SendLoopAsync()
         {
-            while (await OutgoingPacketChannel.Reader.WaitToReadAsync(DisconnectTokenSource.Token))
+            try
             {
-                IOutgoingNetworkPacket packet = default;
-
-                try
+                await foreach(var packet in OutgoingPacketChannel.Reader.ReadAllAsync(DisconnectTokenSource.Token))
                 {
-                    while (OutgoingPacketChannel.Reader.TryRead(out packet))
+                    if (packet is not SunAngleUpdate)
                     {
-                        if (!(packet is SunAngleUpdate))
-                        {
-                            if (packet is AuthFailedResponse authResponse)
-                                Log.Debug("Sending {0} ({1})", packet.GetType().Name, authResponse.Reason);
-                            else if (packet is ChatMessage chatMessage && chatMessage.SessionId == 255)
-                                Log.Verbose("Sending {0} ({1}) to {2}", packet.GetType().Name, chatMessage.Message, Name);
-                            else
-                                Log.Verbose("Sending {0} to {1}", packet.GetType().Name, Name);
-                        }
-
-                        PacketWriter writer = new PacketWriter(TcpStream, TcpSendBuffer);
-                        writer.WritePacket(packet);
-
-                        await writer.SendAsync(DisconnectTokenSource.Token);
+                        if (packet is AuthFailedResponse authResponse)
+                            Log.Debug("Sending {0} ({1})", packet.GetType().Name, authResponse.Reason);
+                        else if (packet is ChatMessage chatMessage && chatMessage.SessionId == 255)
+                            Log.Verbose("Sending {0} ({1}) to {2}", packet.GetType().Name, chatMessage.Message, Name);
+                        else
+                            Log.Verbose("Sending {0} to {1}", packet.GetType().Name, Name);
                     }
+
+                    PacketWriter writer = new PacketWriter(TcpStream, TcpSendBuffer);
+                    writer.WritePacket(packet);
+
+                    await writer.SendAsync(DisconnectTokenSource.Token);
                 }
-                catch (ChannelClosedException) { }
-                catch (ObjectDisposedException) { }
-                catch (OperationCanceledException) { }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error sending {0} to {1}.", packet?.GetType().Name ?? "(no packet)", Name);
-                    _ = DisconnectAsync();
-                }
+            }
+            catch (ChannelClosedException) { }
+            catch (ObjectDisposedException) { }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error sending TCP packet to {0}", Name);
+                _ = DisconnectAsync();
             }
         }
 
@@ -584,22 +580,24 @@ namespace AssettoServer.Network.Tcp
 
         internal async Task DisconnectAsync()
         {
-            Disconnecting?.Invoke(this, EventArgs.Empty);
-            
             try
             {
                 if (!DisconnectTokenSource.IsCancellationRequested && !string.IsNullOrEmpty(Name))
+                {
                     Log.Debug("Disconnecting {0} ({1}).", Name, TcpClient?.Client?.RemoteEndPoint);
+                    Disconnecting?.Invoke(this, EventArgs.Empty);
+                }
 
-                await Task.WhenAny(Task.Delay(2000), SendLoopTask);
                 OutgoingPacketChannel.Writer.TryComplete();
+                await Task.WhenAny(Task.Delay(2000), SendLoopTask);
+
                 try
                 {
                     DisconnectTokenSource.Cancel();
                     DisconnectTokenSource.Dispose();
                 }
                 catch (ObjectDisposedException) { }
-
+                
                 if (IsConnected)
                     await Server.DisconnectClientAsync(this);
 
@@ -607,7 +605,7 @@ namespace AssettoServer.Network.Tcp
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error disconnecting {0}.", Name);
+                Log.Error(ex, "Error disconnecting {0}", Name);
             }
         }
 
@@ -615,7 +613,6 @@ namespace AssettoServer.Network.Tcp
         {
             try
             {
-                TcpStream.Dispose();
                 TcpClient.Dispose();
             }
             catch { }

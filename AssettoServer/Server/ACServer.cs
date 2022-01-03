@@ -772,7 +772,7 @@ namespace AssettoServer.Server
                                             fromCar.LastSeenAiState[toCar.SessionId] = aiState;
                                             fromCar.LastSeenAiSpawn[toCar.SessionId] = aiState.SpawnCounter;
 
-                                            if (!fromCar.AiDisableColorChanges)
+                                            if (fromCar.AiEnableColorChanges)
                                             {
                                                 toClient.SendPacket(new CSPCarColorUpdate
                                                 {

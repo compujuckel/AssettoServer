@@ -80,7 +80,8 @@ public class Discord
             {
                 AvatarUrl = Configuration.PictureUrl,
                 Username = sender.Name,
-                Content = Sanitize(args.Message)
+                Content = Sanitize(args.Message),
+                AllowedMentions = new AllowedMentions()
             };
 
             ChatHook.SendAsync(msg)
@@ -115,7 +116,8 @@ public class Discord
                         new() { Name = "Steam-GUID", Value = clientGuid + " ([link](" + userSteamUrl + "))", InLine = true }
                     }
                 }
-            }
+            },
+            AllowedMentions = new AllowedMentions()
         };
 
         if (adminName != null)

@@ -1,30 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
-namespace AssettoServer.Server.Configuration
+namespace AssettoServer.Server.Configuration;
+
+public class CMContentConfiguration
 {
-    public class CMContentConfiguration
-    {
-        public Dictionary<string, CMContentEntryCar> Cars { get; set; }
-        public CMContentEntryVersionized Track { get; set; }
-    }
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public Dictionary<string, CMContentEntryCar> Cars { get; set; }
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public CMContentEntryVersionized Track { get; set; }
+}
 
-    public class CMContentEntryCar : CMContentEntryVersionized
-    {
-        public Dictionary<string, CMContentEntry> Skins { get; set; }
-    }
+public class CMContentEntryCar : CMContentEntryVersionized
+{
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public Dictionary<string, CMContentEntry> Skins { get; set; }
+}
 
-    public class CMContentEntryVersionized : CMContentEntry
-    {
-        public string Version { get; set; }
-    }
+public class CMContentEntryVersionized : CMContentEntry
+{
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string Version { get; set; }
+}
 
-    public class CMContentEntry
-    {
-        public string Url { get; set; }
-    }
-
+public class CMContentEntry
+{
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string Url { get; set; }
 }

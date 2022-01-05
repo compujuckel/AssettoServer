@@ -120,6 +120,7 @@ namespace AssettoServer.Server
             }
 
             CSPServerExtraOptions = new CSPServerExtraOptions(Configuration.WelcomeMessage);
+            CSPServerExtraOptions.ExtraOptions += "\r\n" + Configuration.CSPExtraOptions;
             CSPLuaClientScriptProvider = new CSPLuaClientScriptProvider(this);
             
             ConnectSemaphore = new SemaphoreSlim(1, 1);

@@ -68,6 +68,7 @@ namespace AssettoServer.Server.Configuration
         public CMContentConfiguration ContentConfiguration { get; internal set; }
         public DynamicTrackConfiguration DynamicTrack { get; internal set; } = new DynamicTrackConfiguration();
         public string ServerVersion { get; internal set; }
+        public string CSPExtraOptions { get; internal set; }
 
         public ACServerConfiguration FromFiles(string preset, string serverCfgPath, string entryListPath, ACPluginLoader loader)
         {
@@ -222,6 +223,12 @@ namespace AssettoServer.Server.Configuration
             else if(!string.IsNullOrEmpty(welcomeMessagePath))
             {
                 Log.Warning("Welcome message not found at {0}", Path.GetFullPath(welcomeMessagePath));
+            }
+
+            string cspExtraOptionsPath = Path.Join(configBaseFolder, "csp_extra_options.ini"); 
+            if (File.Exists(cspExtraOptionsPath))
+            {
+                CSPExtraOptions = File.ReadAllText(cspExtraOptionsPath);
             }
 
             List<WeatherConfiguration> weathers = new List<WeatherConfiguration>();

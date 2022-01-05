@@ -44,7 +44,7 @@ namespace AssettoServer.Server.Configuration
         public List<string> EnablePlugins { get; set; } = new();
         [YamlMember(Description = "Ignore some common configuration errors. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors")]
         public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; set; } = new();
-        [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.76+")]
+        [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
         public bool EnableClientMessages { get; set; } = false;
         public AiParams AiParams { get; set; } = new AiParams();
 

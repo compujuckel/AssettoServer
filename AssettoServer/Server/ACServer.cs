@@ -356,6 +356,11 @@ namespace AssettoServer.Server
                 _ = KunosLobbyRegistration.LoopAsync();
             
             _ = Task.Factory.StartNew(UpdateAsync, TaskCreationOptions.LongRunning);
+            
+            foreach (var plugin in PluginLoader.LoadedPlugins)
+            {
+                plugin.Instance.Initialize(this);
+            }
         }
 
         private async Task InitializeGeoParams()

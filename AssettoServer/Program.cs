@@ -58,11 +58,6 @@ namespace AssettoServer
             
             ACServer server = new ACServer(config, loader);
 
-            foreach (var plugin in loader.LoadedPlugins)
-            {
-                plugin.Instance.Initialize(server);
-            }
-
             await server.StartAsync();
             await Task.Delay(-1);
         }

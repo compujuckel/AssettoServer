@@ -390,7 +390,7 @@ namespace AssettoServer.Network.Tcp
                     clientMessage.SessionId = SessionId;
                 
                     Log.Debug("Unknown CSP lua client message with type 0x{0:X} received, data {1}", clientMessage.LuaType, Convert.ToHexString(clientMessage.Data));
-                    Server.BroadcastPacket(clientMessage, this);
+                    Server.BroadcastPacket(clientMessage);
                 }
             } 
             else

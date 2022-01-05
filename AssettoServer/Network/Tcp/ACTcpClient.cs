@@ -316,6 +316,8 @@ namespace AssettoServer.Network.Tcp
 
                             if (id == 0x00)
                                 OnSpectateCar(reader);
+                            else if (id == 0x03)
+                                OnCspClientMessage(reader);
                         }
                         else if (id == 0x82)
                             OnClientEvent(reader);
@@ -364,6 +366,42 @@ namespace AssettoServer.Network.Tcp
             else
                 EntryCar.TargetCar = null;
 
+        }
+
+        private void OnCspClientMessage(PacketReader reader)
+        {
+            ushort packetType = reader.Read<ushort>();
+            if (packetType == 60000)
+            {
+                int luaPacketType = reader.Read<int>();
+
+                if (Server.CSPLuaMessageTypes.TryGetValue(luaPacketType, out var typeRegistration))
+                {
+                    var packet = typeRegistration.FactoryMethod();
+                    packet.FromReader(reader);
+
+                    typeRegistration.Handler(this, packet);
+                }
+                else
+                {
+                    CSPClientMessage clientMessage = reader.ReadPacket<CSPClientMessage>();
+                    clientMessage.Type = packetType;
+                    clientMessage.LuaType = luaPacketType;
+                    clientMessage.SessionId = SessionId;
+                
+                    Log.Debug("Unknown CSP lua client message with type 0x{0:X} received, data {1}", clientMessage.LuaType, Convert.ToHexString(clientMessage.Data));
+                    Server.BroadcastPacket(clientMessage);
+                }
+            } 
+            else
+            {
+                CSPClientMessage clientMessage = reader.ReadPacket<CSPClientMessage>();
+                clientMessage.Type = packetType;
+                clientMessage.SessionId = SessionId;
+                
+                Log.Debug("Unknown CSP client message with type {0} received, data {1}", clientMessage.Type, Convert.ToHexString(clientMessage.Data));
+                Server.BroadcastPacket(clientMessage, this);
+            }
         }
 
         private async ValueTask OnChecksumAsync(PacketReader reader)
@@ -498,8 +536,8 @@ namespace AssettoServer.Network.Tcp
             ACServerConfiguration cfg = Server.Configuration;
             List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
-            if (!string.IsNullOrEmpty(cfg.WelcomeMessage))
-                SendPacket(new WelcomeMessage { Message = cfg.WelcomeMessage });
+            if (!string.IsNullOrEmpty(Server.CSPServerExtraOptions.EncodedWelcomeMessage))
+                SendPacket(new WelcomeMessage { Message = Server.CSPServerExtraOptions.EncodedWelcomeMessage });
 
             SendPacket(new DriverInfoUpdate { ConnectedCars = connectedCars });
             Server.WeatherImplementation.SendWeather(this);

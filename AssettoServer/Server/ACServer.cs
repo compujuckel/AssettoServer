@@ -44,6 +44,8 @@ namespace AssettoServer.Server
     public class ACServer
     {
         public ACServerConfiguration Configuration { get; }
+        public CSPServerExtraOptions CSPServerExtraOptions { get; }
+        public CSPLuaClientScriptProvider CSPLuaClientScriptProvider { get; }
         public SessionConfiguration CurrentSession { get; private set; }
         public WeatherData CurrentWeather { get; private set; }
         public DateTime CurrentDateTime { get; set; }
@@ -69,6 +71,7 @@ namespace AssettoServer.Server
         internal IWebHost HttpServer { get; private set; }
         internal KunosLobbyRegistration KunosLobbyRegistration { get; }
         internal Steam Steam { get; }
+        internal Dictionary<int, CSPLuaMessageType> CSPLuaMessageTypes { get; } = new();
 
         private SemaphoreSlim ConnectSemaphore { get; }
         private HttpClient HttpClient { get; }
@@ -115,6 +118,10 @@ namespace AssettoServer.Server
                 EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Count];
                 EntryCars[i].AiInit();
             }
+
+            CSPServerExtraOptions = new CSPServerExtraOptions(Configuration.WelcomeMessage);
+            CSPServerExtraOptions.ExtraOptions += "\r\n" + Configuration.CSPExtraOptions;
+            CSPLuaClientScriptProvider = new CSPLuaClientScriptProvider(this);
             
             ConnectSemaphore = new SemaphoreSlim(1, 1);
             ConnectedCars = new ConcurrentDictionary<int, EntryCar>();
@@ -145,6 +152,12 @@ namespace AssettoServer.Server
             
             if(Configuration.Extra.EnableWeatherFx)
                 features.Add("WEATHERFX_V1");
+
+            if (Configuration.Extra.EnableClientMessages)
+            {
+                features.Add("CLIENT_MESSAGES");
+                CSPClientMessageOutgoing.ChatEncoded = false;
+            }
 
             features.Add("SPECTATING_AWARE");
             features.Add("LOWER_CLIENTS_SENDING_RATE");
@@ -862,6 +875,19 @@ namespace AssettoServer.Server
                     Log.Error(ex, "Something went wrong while trying to do a tick update.");
                 }
             }
+        }
+
+        public void RegisterCspLuaMessageType(ushort type, Func<IIncomingNetworkPacket> factoryMethod, Action<ACTcpClient, IIncomingNetworkPacket> handler)
+        {
+            if (CSPLuaMessageTypes.ContainsKey(type))
+                throw new ArgumentException($"Type {type} already registered");
+            
+            CSPLuaMessageTypes.Add(type, new CSPLuaMessageType
+            {
+                MessageType = type,
+                FactoryMethod = factoryMethod,
+                Handler = handler
+            });
         }
 
         internal async Task DisconnectClientAsync(ACTcpClient client)

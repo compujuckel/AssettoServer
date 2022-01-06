@@ -76,7 +76,7 @@ namespace AssettoServer.Network.Http
         public EntryListResponse GetEntryList(string guid)
         {
             guid = guid.Substring(1);
-            bool isAdmin = !string.IsNullOrEmpty(guid) && _server.Admins.ContainsKey(guid);
+            bool isAdmin = !string.IsNullOrEmpty(guid) && _server.Admins.Contains(guid);
 
             EntryListResponse responseObj = new EntryListResponse
             {
@@ -99,7 +99,7 @@ namespace AssettoServer.Network.Http
         [HttpGet("/api/details")]
         public DetailResponse GetDetails(string guid)
         {
-            bool isAdmin = !string.IsNullOrEmpty(guid) && _server.Admins.ContainsKey(guid);
+            bool isAdmin = !string.IsNullOrEmpty(guid) && _server.Admins.Contains(guid);
 
             DetailResponse responseObj = new DetailResponse()
             {

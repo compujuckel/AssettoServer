@@ -400,7 +400,7 @@ namespace AssettoServer.Network.Tcp
                 clientMessage.SessionId = SessionId;
                 
                 Log.Debug("Unknown CSP client message with type {0} received, data {1}", clientMessage.Type, Convert.ToHexString(clientMessage.Data));
-                Server.BroadcastPacket(clientMessage, this);
+                Server.BroadcastPacket(clientMessage);
             }
         }
 

@@ -54,17 +54,6 @@ namespace AssettoServer.Commands.Modules
             return Task.CompletedTask;
         }
 
-        [Command("unban")]
-        public async Task UnbanAsync(string guid)
-        {
-            if (Context.Server.Blacklist.ContainsKey(guid))
-            {
-                await Context.Server.UnbanAsync(guid);
-                Reply($"{guid} has been unbanned.");
-            }
-            else Reply($"ID {guid} is not banned.");
-        }
-
         [Command("pit")]
         public void TeleportToPits([Remainder] ACTcpClient player)
         {

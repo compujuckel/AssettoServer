@@ -61,8 +61,8 @@ namespace AssettoServer.Server
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
         internal ConcurrentDictionary<IPEndPoint, EntryCar> EndpointCars { get; }
         public ImmutableList<EntryCar> EntryCars { get; }
-        internal ConcurrentDictionary<string, bool> Blacklist { get; }
-        internal ConcurrentDictionary<string, bool> Admins { get; }
+        internal GuidListFile Admins { get; }
+        internal GuidListFile Blacklist { get; }
         internal IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; }
         internal IReadOnlyDictionary<string, byte[]> CarChecksums { get; private set; }
         internal CommandService CommandService { get; }
@@ -73,7 +73,7 @@ namespace AssettoServer.Server
         internal Steam Steam { get; }
         internal Dictionary<int, CSPLuaMessageType> CSPLuaMessageTypes { get; } = new();
 
-        private SemaphoreSlim ConnectSemaphore { get; }
+        internal SemaphoreSlim ConnectSemaphore { get; }
         private HttpClient HttpClient { get; }
         public IWeatherTypeProvider WeatherTypeProvider { get; }
         public DefaultWeatherProvider WeatherProvider { get; }
@@ -126,8 +126,8 @@ namespace AssettoServer.Server
             ConnectSemaphore = new SemaphoreSlim(1, 1);
             ConnectedCars = new ConcurrentDictionary<int, EntryCar>();
             EndpointCars = new ConcurrentDictionary<IPEndPoint, EntryCar>();
-            Blacklist = new ConcurrentDictionary<string, bool>();
-            Admins = new ConcurrentDictionary<string, bool>();
+            Admins = new GuidListFile(this, "admins.txt");
+            Blacklist = new GuidListFile(this, "blacklist.txt");
             UdpServer = new ACUdpServer(this, Configuration.UdpPort);
             HttpClient = new HttpClient();
             KunosLobbyRegistration = new KunosLobbyRegistration(this); 
@@ -268,60 +268,16 @@ namespace AssettoServer.Server
             }
         }
 
-        private async Task LoadAdminsAsync()
-        {
-            try
-            {
-                await ConnectSemaphore.WaitAsync();
-                
-                const string adminsPath = "admins.txt";
-                if (File.Exists(adminsPath))
-                {
-                    Admins.Clear();
-                    foreach (string guid in await File.ReadAllLinesAsync(adminsPath))
-                        Admins[guid] = true;
-                }
-                else
-                    File.Create(adminsPath);
-            }
-            finally
-            {
-                ConnectSemaphore.Release();
-            }
-        }
-
-        private async Task LoadBlacklistAsync()
-        {
-            try
-            {
-                await ConnectSemaphore.WaitAsync();
-                
-                const string blacklistPath = "blacklist.txt";
-                if (File.Exists(blacklistPath))
-                {
-                    Blacklist.Clear();
-                    foreach (string guid in await File.ReadAllLinesAsync(blacklistPath))
-                        Blacklist[guid] = true;
-                }
-                else
-                    File.Create(blacklistPath);
-            }
-            finally
-            {
-                ConnectSemaphore.Release();
-            }
-        }
-
         public async Task StartAsync()
         {
             CurrentSession = Configuration.Sessions[0];
             CurrentSession.StartTime = DateTime.Now;
             CurrentSession.StartTimeTicks = CurrentTime;
 
-            await LoadBlacklistAsync();
-            await LoadAdminsAsync();
+            await Blacklist.LoadAsync();
+            await Admins.LoadAsync();
 
-            if (!Configuration.Extra.UseSteamAuth && !Admins.IsEmpty)
+            if (!Configuration.Extra.UseSteamAuth && Admins.List.Any())
             {
                 const string errorMsg =
                     "Admin whitelist is enabled but Steam auth is disabled. This is unsafe because it allows players to gain admin rights by SteamID spoofing. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#unsafe-admin-whitelist";
@@ -415,9 +371,9 @@ namespace AssettoServer.Server
         private void ReloadHandler(PosixSignalContext context)
         {
             Log.Information("Reloading blacklist and adminlist...");
-            
-            LoadBlacklistAsync().ContinueWith(t => Log.Error(t.Exception, "Error reloading blacklist"), TaskContinuationOptions.OnlyOnFaulted);
-            LoadAdminsAsync().ContinueWith(t => Log.Error(t.Exception, "Error reloading adminlist"), TaskContinuationOptions.OnlyOnFaulted);
+
+            _ = Blacklist.LoadAsync();
+            _ = Admins.LoadAsync();
             
             context.Cancel = true;
         }
@@ -487,25 +443,7 @@ namespace AssettoServer.Server
 
         public bool IsGuidBlacklisted(string guid)
         {
-            return Blacklist.ContainsKey(guid);
-        }
-
-        public async Task AddAdminAsync(string guid)
-        {
-            if (Admins.TryAdd(guid, true))
-            {
-                await File.WriteAllLinesAsync("admins.txt", Admins.Select(p => p.Key));
-                Log.Information("Id {0} has been added as an admin.", guid);
-            }
-        }
-
-        public async Task RemoveAdminAsync(string guid)
-        {
-            if (Admins.TryRemove(guid, out _))
-            {
-                await File.WriteAllLinesAsync("admins.txt", Admins.Select(p => p.Key));
-                Log.Information("Id {0} has been removed as an admin.", guid);
-            }
+            return Blacklist.Contains(guid);
         }
 
         public async Task<bool> TrySecureSlotAsync(ACTcpClient client, HandshakeRequest handshakeRequest)
@@ -523,7 +461,7 @@ namespace AssettoServer.Server
                     if (entryCar.Client != null && entryCar.Client.Guid == client.Guid)
                         return false;
 
-                    var isAdmin = !string.IsNullOrEmpty(handshakeRequest.Guid) && Admins.ContainsKey(handshakeRequest.Guid);
+                    var isAdmin = !string.IsNullOrEmpty(handshakeRequest.Guid) && Admins.Contains(handshakeRequest.Guid);
                     
                     if (entryCar.AiMode != AiMode.Fixed 
                         && (isAdmin || Configuration.Extra.AiParams.MaxPlayerCount == 0 || ConnectedCars.Count < Configuration.Extra.AiParams.MaxPlayerCount) 
@@ -584,12 +522,11 @@ namespace AssettoServer.Server
 
             if (client != null)
             {
-                Blacklist.TryAdd(client.Guid, true);
+                await Blacklist.AddAsync(client.Guid);
 
                 Log.Information("{0} was banned. Reason: {1}", client.Name, reasonStr ?? "No reason given.");
-                await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => p.Value).Select(p => p.Key));
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
-
+                
                 var args = new ClientAuditEventArgs
                 {
                     Reason = reason,
@@ -601,12 +538,6 @@ namespace AssettoServer.Server
                 await Task.Delay(250);
                 await client.DisconnectAsync();
             }
-        }
-
-        public async ValueTask UnbanAsync(string guid)
-        {
-            if (Blacklist.TryRemove(guid, out _))
-                await File.WriteAllLinesAsync("blacklist.txt", Blacklist.Where(p => p.Value).Select(p => p.Key));
         }
 
         public void SetWeather(WeatherData weather)

@@ -6,7 +6,7 @@ namespace AssettoServer.Network.Packets.Shared;
 public struct CSPClientMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
 {
     public byte SessionId;
-    public ushort Type;
+    public CSPClientMessageType Type;
     public int? LuaType;
     public byte[] Data;
     
@@ -15,7 +15,7 @@ public struct CSPClientMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
         writer.Write<byte>(0xAB);
         writer.Write<byte>(0x03);
         writer.Write(SessionId);
-        writer.Write(Type);
+        writer.Write((ushort)Type);
         if(LuaType.HasValue)
             writer.Write(LuaType.Value);
         writer.WriteBytes(Data);
@@ -26,4 +26,22 @@ public struct CSPClientMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
         Data = new byte[reader.Buffer.Length - reader.ReadPosition];
         reader.ReadBytes(Data);
     }
+}
+
+public enum CSPClientMessageType
+{
+    HandshakeIn = 0,
+    HandshakeOut = 1,
+    ConditionsV1 = 1000,
+    ConditionsV2 = 1001,
+    ChatSharedSetup = 2000,
+    TrackSharedTrigger = 10000,
+    TrackSharedTriggerAllow = 10001,
+    CarColorChange = 15000,
+    CarTyreState = 15001,
+    CarPartsState = 15002,
+    NewModeChaseAnnouncement = 30000,
+    NewModeChaseCapture = 30001,
+    AdminPenalty = 50000,
+    LuaMessage = 60000
 }

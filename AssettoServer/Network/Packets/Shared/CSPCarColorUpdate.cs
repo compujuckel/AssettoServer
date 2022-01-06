@@ -10,7 +10,7 @@ public class CSPCarColorUpdate : CSPClientMessageOutgoing
 
     public CSPCarColorUpdate()
     {
-        Type = 0x3A98;
+        Type = CSPClientMessageType.CarColorChange;
     }
 
     protected override void ToWriter(BinaryWriter writer)

@@ -370,8 +370,8 @@ namespace AssettoServer.Network.Tcp
 
         private void OnCspClientMessage(PacketReader reader)
         {
-            ushort packetType = reader.Read<ushort>();
-            if (packetType == 60000)
+            CSPClientMessageType packetType = (CSPClientMessageType)reader.Read<ushort>();
+            if (packetType == CSPClientMessageType.LuaMessage)
             {
                 int luaPacketType = reader.Read<int>();
 

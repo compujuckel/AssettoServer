@@ -52,7 +52,6 @@ public class GuidListFile
                         Log.Warning("Duplicate entry in {0}: {1}", _filename, guid);
                     }
                     _guidList[guid] = true;
-                    Log.Debug("Entry in {0}: {1}", _filename, guid);
                 }
             }
             else

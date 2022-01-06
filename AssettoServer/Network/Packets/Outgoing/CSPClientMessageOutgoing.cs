@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using AssettoServer.Network.Packets.Shared;
 
 namespace AssettoServer.Network.Packets.Outgoing;
 
@@ -8,9 +9,9 @@ public abstract class CSPClientMessageOutgoing : IOutgoingNetworkPacket
     public static bool ChatEncoded = true;
         
     public byte SessionId { get; init; }
-    public ushort Type { get; set; }
+    public CSPClientMessageType Type { get; set; }
     public byte[] Data { get; set; }
-        
+    
     private string _encoded;
 
     protected abstract void ToWriter(BinaryWriter writer);
@@ -22,7 +23,7 @@ public abstract class CSPClientMessageOutgoing : IOutgoingNetworkPacket
             using var stream = new MemoryStream();
             using var binWriter = new BinaryWriter(stream);
 
-            binWriter.Write(Type);
+            binWriter.Write((ushort)Type);
             ToWriter(binWriter);
             Data = stream.ToArray();
         }

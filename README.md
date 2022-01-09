@@ -3,6 +3,8 @@
 ## About
 AssettoServer is a custom game server for Assetto Corsa developed with freeroam in mind. It greatly improves upon the default game server by fixing various security issues and providing new features like AI traffic and dynamic weather.
 
+Race/Quali sessions and lap times are not supported yet. Only use this if you want to run a practice-only freeroam server.
+
 This is a fork of https://github.com/Niewiarowski/AssettoServer.
 
 ## Installation

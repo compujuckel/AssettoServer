@@ -74,6 +74,19 @@ namespace AssettoServer.Network.Udp
                     MemoryMarshal.Write(buffer.AsSpan().Slice(1), ref httpPort);
                     SendAsync(endpoint, buffer, 0, 3);
                 }
+                /*else if (packetId == 0xFF)
+                {
+                    if (buffer.Length > 4
+                        && packetReader.Read<byte>() == 0xFF
+                        && packetReader.Read<byte>() == 0xFF
+                        && packetReader.Read<byte>() == 0xFF)
+                    {
+                        Log.Debug("Steam packet received");
+
+                        byte[] data = buffer.AsSpan().ToArray();
+                        Server.Steam.HandleIncomingPacket(data, remoteEp);
+                    }
+                }*/
                 else if (Server.EndpointCars.TryGetValue(remoteEp, out EntryCar car) && car.Client != null)
                 {
                     if (packetId == 0x4F)

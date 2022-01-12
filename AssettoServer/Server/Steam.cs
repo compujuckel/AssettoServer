@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
 using Serilog;
@@ -31,6 +32,9 @@ internal class Steam
 
         try
         {
+            SteamServer.ServerName = _server.Configuration.Name.Substring(0,Math.Min(_server.Configuration.Name.Length, 63));
+            SteamServer.MapName = _server.Configuration.Track.Substring(0,Math.Min(_server.Configuration.Track.Length, 31));
+            SteamServer.MaxPlayers = _server.EntryCars.Count;
             SteamServer.LogOnAnonymous();
             SteamServer.OnSteamServersDisconnected += SteamServer_OnSteamServersDisconnected;
             SteamServer.OnSteamServersConnected += SteamServer_OnSteamServersConnected;
@@ -39,6 +43,18 @@ internal class Steam
         catch (Exception ex)
         {
             Log.Fatal(ex, "Error trying to initialize SteamServer");
+        }
+    }
+
+    internal void HandleIncomingPacket(byte[] data, IPEndPoint endpoint)
+    {
+        SteamServer.HandleIncomingPacket(data, data.Length, endpoint.Address.IpToInt32(), (ushort)endpoint.Port);
+
+        while (SteamServer.GetOutgoingPacket(out var packet))
+        {
+            var dstEndpoint = new IPEndPoint((uint)IPAddress.HostToNetworkOrder((int)packet.Address), packet.Port);
+            Log.Debug("outgoing steam packet to {0}", dstEndpoint);
+            _server.UdpServer.Send(dstEndpoint, packet.Data, 0, packet.Size);
         }
     }
     
@@ -66,13 +82,16 @@ internal class Steam
                         }
                     }
 
-                    foreach (int appid in _server.Configuration.Extra.ValidateDlcOwnership)
+                    if (_server.Configuration.Extra.ValidateDlcOwnership != null)
                     {
-                        if (SteamServer.UserHasLicenseForApp(playerSteamId, appid) != UserHasLicenseForAppResult.HasLicense)
+                        foreach (int appid in _server.Configuration.Extra.ValidateDlcOwnership)
                         {
-                            Log.Information("{0} does not own required DLC {1}", client.Name, appid);
-                            taskCompletionSource.SetResult(false);
-                            return;
+                            if (SteamServer.UserHasLicenseForApp(playerSteamId, appid) != UserHasLicenseForAppResult.HasLicense)
+                            {
+                                Log.Information("{0} does not own required DLC {1}", client.Name, appid);
+                                taskCompletionSource.SetResult(false);
+                                return;
+                            }
                         }
                     }
 

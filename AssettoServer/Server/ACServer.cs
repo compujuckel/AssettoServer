@@ -128,6 +128,7 @@ namespace AssettoServer.Server
             EndpointCars = new ConcurrentDictionary<IPEndPoint, EntryCar>();
             Admins = new GuidListFile(this, "admins.txt");
             Blacklist = new GuidListFile(this, "blacklist.txt");
+            Blacklist.Reloaded += OnBlacklistReloaded;
             UdpServer = new ACUdpServer(this, Configuration.UdpPort);
             HttpClient = new HttpClient();
             KunosLobbyRegistration = new KunosLobbyRegistration(this); 
@@ -378,6 +379,20 @@ namespace AssettoServer.Server
             context.Cancel = true;
         }
 
+        private void OnBlacklistReloaded(GuidListFile sender, EventArgs e)
+        {
+            foreach (var entryCar in ConnectedCars.Values)
+            {
+                if (entryCar.Client != null && Blacklist.Contains(entryCar.Client.Guid))
+                {
+                    Log.Information("{0} was banned after reloading blacklist", entryCar.Client.Name);
+                    entryCar.Client.SendPacket(new KickCar {SessionId = entryCar.Client.SessionId, Reason = KickReason.Blacklisted});
+                    
+                    _ = entryCar.Client.DisconnectAsync();
+                }
+            }
+        }
+
         private void InitializeChecksums()
         {
             Log.Information("Initializing checksums...");
@@ -497,7 +512,7 @@ namespace AssettoServer.Server
             if (reasonStr != null && broadcastMessage)
                 BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
 
-            if (client != null)
+            if (client != null && !client.IsDisconnectRequested)
             {
                 Log.Information("{0} was kicked. Reason: {1}", client.Name, reasonStr ?? "No reason given.");
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
@@ -510,7 +525,6 @@ namespace AssettoServer.Server
                 };
                 ClientKicked?.Invoke(client, args);
                 
-                await Task.Delay(250);
                 await client.DisconnectAsync();
             }
         }
@@ -520,10 +534,8 @@ namespace AssettoServer.Server
             if (reasonStr != null)
                 BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
 
-            if (client != null)
+            if (client != null && !client.IsDisconnectRequested)
             {
-                await Blacklist.AddAsync(client.Guid);
-
                 Log.Information("{0} was banned. Reason: {1}", client.Name, reasonStr ?? "No reason given.");
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
                 
@@ -534,9 +546,9 @@ namespace AssettoServer.Server
                     Admin = admin
                 };
                 ClientBanned?.Invoke(client, args);
-
-                await Task.Delay(250);
+                
                 await client.DisconnectAsync();
+                await Blacklist.AddAsync(client.Guid);
             }
         }
 

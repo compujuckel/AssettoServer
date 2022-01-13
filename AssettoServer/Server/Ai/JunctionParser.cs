@@ -18,7 +18,7 @@ namespace AssettoServer.Server.Ai
         {
             if (!File.Exists(path))
             {
-                Log.Warning("Junction file does not exist");
+                Log.Information("Junction file does not exist");
                 return;
             }
             

@@ -20,4 +20,6 @@ PictureUrl:
 AuditUrl: https://discord.com/api/webhooks/...
 # Discord webhook URL for chat messages
 ChatUrl: https://discord.com/api/webhooks/...
+# Set this to true if the Discord username of the bot should be the AC server name
+ChatMessageIncludeServerName: false
 ```

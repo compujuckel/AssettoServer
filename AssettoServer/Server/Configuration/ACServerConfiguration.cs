@@ -86,7 +86,7 @@ namespace AssettoServer.Server.Configuration
             var parser = new FileIniDataParser();
             IniData data = parser.ReadFile(serverCfgPath);
             var server = data["SERVER"];
-            Name = server["NAME"];
+            Name = string.IsNullOrEmpty(server["NAME"]) ? "AssettoServer" : server["NAME"];
             Track = server["TRACK"];
             TrackConfig = server["CONFIG_TRACK"];
             FullTrackName = string.IsNullOrEmpty(TrackConfig) ? Track : Track + "-" + TrackConfig;

@@ -29,7 +29,8 @@ namespace AssettoServer.Network.Tcp
         public bool IsAdministrator { get; internal set; }
         public string Guid { get; internal set; }
         public EntryCar EntryCar { get; set; }
-        
+        public bool IsDisconnectRequested => _disconnectRequested == 1;
+
         internal TcpClient TcpClient { get; }
         internal NetworkStream TcpStream { get; }
         internal bool HasSentFirstUpdate { get; private set; }
@@ -47,6 +48,7 @@ namespace AssettoServer.Network.Tcp
         private CancellationTokenSource DisconnectTokenSource { get; }
         private Task SendLoopTask { get; set; }
         private long LastChatTime { get; set; }
+        private int _disconnectRequested = 0;
 
         public event EventHandler<ACTcpClient, ClientHandshakeEventArgs> HandshakeStarted;
         public event EventHandler<ACTcpClient, EventArgs> ChecksumPassed;
@@ -85,9 +87,9 @@ namespace AssettoServer.Network.Tcp
         {
             try
             {
-                if (!OutgoingPacketChannel.Writer.TryWrite(packet) && !(packet is SunAngleUpdate))
+                if (!OutgoingPacketChannel.Writer.TryWrite(packet) && !(packet is SunAngleUpdate) && !IsDisconnectRequested)
                 {
-                    Log.Warning("TCP packet queue is full for {0}, disconnecting", Name);
+                    Log.Warning("Cannot write packet to TCP packet queue for {0}, disconnecting", Name);
                     _ = DisconnectAsync();
                 }
             }
@@ -131,7 +133,7 @@ namespace AssettoServer.Network.Tcp
 
                     PacketWriter writer = new PacketWriter(TcpStream, TcpSendBuffer);
                     writer.WritePacket(packet);
-
+                    
                     await writer.SendAsync(DisconnectTokenSource.Token);
                 }
             }
@@ -427,9 +429,6 @@ namespace AssettoServer.Network.Tcp
             if (!passedChecksum)
             {
                 ChecksumFailed?.Invoke(this, EventArgs.Empty);
-                
-                // Small delay is necessary, otherwise the client will not always show the "Checksum failed" screen
-                await Task.Delay(1000);
                 await Server.KickAsync(this, KickReason.ChecksumFailed, $"{Name} failed the checksum check and has been kicked.", false);
             }
             else
@@ -582,7 +581,10 @@ namespace AssettoServer.Network.Tcp
         {
             try
             {
-                if (!DisconnectTokenSource.IsCancellationRequested && !string.IsNullOrEmpty(Name))
+                if (Interlocked.CompareExchange(ref _disconnectRequested, 1, 0) == 1)
+                    return;
+
+                if (!string.IsNullOrEmpty(Name))
                 {
                     Log.Debug("Disconnecting {0} ({1}).", Name, TcpClient?.Client?.RemoteEndPoint);
                     Disconnecting?.Invoke(this, EventArgs.Empty);

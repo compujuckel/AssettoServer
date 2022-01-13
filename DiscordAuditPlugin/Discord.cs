@@ -11,6 +11,7 @@ public class Discord
 {
     private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":", "@" };
     private readonly ACServer _server;
+    private readonly string _serverNameTruncated;
     
     private DiscordWebhook AuditHook { get; }
     private DiscordWebhook ChatHook { get; }
@@ -19,6 +20,7 @@ public class Discord
     public Discord(ACServer server, DiscordConfiguration configuration)
     {
         _server = server;
+        _serverNameTruncated = _server.Configuration.Name.Substring(0, Math.Min(_server.Configuration.Name.Length, 80));
         Configuration = configuration;
         
         if (!string.IsNullOrEmpty(Configuration.AuditUrl))
@@ -47,7 +49,7 @@ public class Discord
     {
         AuditHook.SendAsync(PrepareAuditMessage(
             ":hammer: Ban alert",
-            _server.Configuration.Name,
+            _serverNameTruncated,
             sender.Guid,
             sender.Name,
             args.ReasonStr,
@@ -62,7 +64,7 @@ public class Discord
         {
             AuditHook.SendAsync(PrepareAuditMessage(
                 ":boot: Kick alert",
-                _server.Configuration.Name,
+                _serverNameTruncated,
                 sender.Guid,
                 sender.Name,
                 args.ReasonStr,
@@ -76,11 +78,25 @@ public class Discord
     {
         if (!args.Message.StartsWith("\t\t\t\t$CSP0:") && !string.IsNullOrWhiteSpace(args.Message))
         {
+            string username;
+            string content;
+
+            if (Configuration.ChatMessageIncludeServerName)
+            {
+                username = _serverNameTruncated;
+                content = $"**{sender.Name}:** {Sanitize(args.Message)}";
+            }
+            else
+            {
+                username = sender.Name;
+                content = Sanitize(args.Message);
+            }
+
             DiscordMessage msg = new DiscordMessage
             {
                 AvatarUrl = Configuration.PictureUrl,
-                Username = sender.Name,
-                Content = Sanitize(args.Message),
+                Username = username,
+                Content = content,
                 AllowedMentions = new AllowedMentions()
             };
 

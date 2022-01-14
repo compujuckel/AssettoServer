@@ -69,7 +69,7 @@ namespace AssettoServer.Network.Tcp
 
             TcpStream = tcpClient.GetStream();
 
-            TcpSendBuffer = new byte[8192 + ((server.Configuration.WelcomeMessage?.Length ?? 0) * 4) + 2];
+            TcpSendBuffer = new byte[8192 + ((server.CSPServerExtraOptions.EncodedWelcomeMessage?.Length ?? 0) * 4) + 2];
             TcpSendSemaphore = new SemaphoreSlim(1, 1);
             OutgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(256);
             DisconnectTokenSource = new CancellationTokenSource();

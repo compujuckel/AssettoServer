@@ -14,13 +14,13 @@ namespace AssettoServer
     {
         private class Options
         {
-            [Option('p', "preset", Required = false, HelpText = "Configuration preset")]
+            [Option('p', "preset", Required = false, SetName = "AssettoServer", HelpText = "Configuration preset")]
             public string Preset { get; set; } = "";
 
-            [Option('c', Required = false, HelpText = "Path to server configuration")]
+            [Option('c', Required = false, SetName = "Content Manager compatibility", HelpText = "Path to server configuration")]
             public string ServerCfgPath { get; set; } = "";
 
-            [Option('e', Required = false, HelpText = "Path to entry list")]
+            [Option('e', Required = false, SetName = "Content Manager compatibility", HelpText = "Path to entry list")]
             public string EntryListPath { get; set; } = "";
         }
         
@@ -45,10 +45,10 @@ namespace AssettoServer
 
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
 
-            Log.Information("AssettoServer {0}", ThisAssembly.AssemblyInformationalVersion);
+            Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
             if (!string.IsNullOrEmpty(options.Preset))
             {
-                Log.Information("Using preset {0}", options.Preset);
+                Log.Information("Using preset {Preset}", options.Preset);
             }
 
             ACPluginLoader loader = new ACPluginLoader();

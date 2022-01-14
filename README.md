@@ -105,80 +105,23 @@ included plugins to get started with developing your own plugin.
 
 The API is still under development and might change in the future.
 
-## Admin Commands
+## License
+AssettoServer is licensed under the GNU Affero General Public License v3.0, see [LICENSE](https://github.com/compujuckel/AssettoServer/blob/master/LICENSE) for more info.  
+Additionally, you must preserve the legal notices and author attributions present in the server.
 
-### Teleporting a player to pits
+```
+Copyright (C)  2022 Niewiarowski, compujuckel
 
-`/pit <id>`
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-| Parameter | Description                                                   |
-| --------- | ------------------------------------------------------------- |
-| id        | The car ID or name of the player to be teleported             |
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-### Kicking a player
-
-`/kick <id> <reason>`  
-`/kick_id <id> <reason>`
-
-| Parameter | Description                                                   |
-| --------- | ------------------------------------------------------------- |
-| id        | The car ID or name of the player to be kicked                 |
-| reason    | Optional, will display a reason on why the player was kicked. |
-
-### Banning a player
-
-`/ban <ID> <reason>`  
-`/ban_id <ID> <reason>`
-
-| Parameter | Description                                                   |
-| --------- | ------------------------------------------------------------- |
-| id        | The car ID or name of the player to be banned                 |
-| reason    | Optional, will display a reason on why the player was banned. |
-
-### Unbanning a player
-
-`/unban <steamId>`
-
-| Parameter | Description                                                   |
-| --------- | ------------------------------------------------------------- |
-| steamId   | The steamID64 (Dec) of the blacklisted player                 |
-
-The server does not need to be restarted for the command to take effect.
-
-### Setting the servers time
-
-`/settime <secondOfDay>`
-
-| Parameter | Description                                                   |
-| --------- | ------------------------------------------------------------- |
-| secondOfDay | 0 - 86400, second of day that the time is to be set to      |
-
-### Setting the servers weather
-
-`/setweather <weatherId>`
-
-| Parameter | Description                                                   |
-| --------- | ------------------------------------------------------------- |
-| weatherId | The ID of the weather specified in the `server_cfg.ini`<br/>For example, if you want to use `WEATHER_0`, type `/setweather 0`       |
-
-### Setting the maximum afk time
-
-`/setafktime <minutes>`
-
-| Parameter | Description                                                      |
-| --------- | ---------------------------------------------------------------- |
-| minutes   | The time in minutes a player can be afk without getting kicked.  |
-
-### Forcing headlights for a player
-
-`/forcelights <on/off> <id>`
-
-| Parameter | Description                                                             |
-| --------- | ----------------------------------------------------------------------- |
-| on/off    | On = Active forcing of headlights, Off = Disable forcing of headlights  |
-| id        | The car ID or name of the player                                        |
-
-Not specifying an id will enable/disable forced headlights for all players on the server.
-
-**NOTE**: Forcing headlights for a player will still give him the opportunity to turn on/off his lights locally. His
-lights will however appear turned on for all other players.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+```

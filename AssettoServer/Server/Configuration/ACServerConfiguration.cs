@@ -70,17 +70,36 @@ namespace AssettoServer.Server.Configuration
         public string ServerVersion { get; internal set; }
         public string CSPExtraOptions { get; internal set; }
 
+        /*
+         * Search paths are like this:
+         *
+         * When no options are set, all config files must be located in "cfg/".
+         * WELCOME_MESSAGE path is relative to the working directory of the server.
+         *
+         * When "preset" is set, all configs must be located in "presets/<preset>/".
+         * WELCOME_MESSAGE path must be relative to the preset folder.
+         *
+         * When "serverCfgPath" is set, server_cfg.ini will be loaded from the specified path.
+         * All other configs must be located in the same folder.
+         *
+         * When "entryListPath" is set, it takes precedence and entry_list.ini will be loaded from the specified path.
+         */
         public ACServerConfiguration FromFiles(string preset, string serverCfgPath, string entryListPath, ACPluginLoader loader)
         {
             string configBaseFolder = string.IsNullOrEmpty(preset) ? "cfg" : Path.Join("presets", preset);
+            
+            if (string.IsNullOrEmpty(entryListPath))
+            {
+                entryListPath = Path.Join(configBaseFolder, "entry_list.ini");
+            }
+            
             if (string.IsNullOrEmpty(serverCfgPath))
             {
                 serverCfgPath = Path.Join(configBaseFolder, "server_cfg.ini");
             }
-
-            if (string.IsNullOrEmpty(entryListPath))
+            else
             {
-                entryListPath = Path.Join(configBaseFolder, "entry_list.ini");
+                configBaseFolder = Path.GetDirectoryName(serverCfgPath);
             }
 
             var parser = new FileIniDataParser();

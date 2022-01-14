@@ -120,6 +120,7 @@ namespace AssettoServer.Server
             }
 
             CSPServerExtraOptions = new CSPServerExtraOptions(Configuration.WelcomeMessage);
+            CSPServerExtraOptions.WelcomeMessage += LegalNotice.WelcomeMessage;
             CSPServerExtraOptions.ExtraOptions += "\r\n" + Configuration.CSPExtraOptions;
             CSPLuaClientScriptProvider = new CSPLuaClientScriptProvider(this);
             

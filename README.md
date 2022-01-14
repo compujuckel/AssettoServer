@@ -105,6 +105,9 @@ included plugins to get started with developing your own plugin.
 
 The API is still under development and might change in the future.
 
+## Wiki
+For more information on configuration, admin commands, etc. also check out the [Wiki](https://github.com/compujuckel/AssettoServer/wiki).
+
 ## License
 AssettoServer is licensed under the GNU Affero General Public License v3.0, see [LICENSE](https://github.com/compujuckel/AssettoServer/blob/master/LICENSE) for more info.  
 Additionally, you must preserve the legal notices and author attributions present in the server.

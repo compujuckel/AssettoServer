@@ -27,7 +27,7 @@ internal class KunosLobbyRegistration
         {
             try
             {
-                await Task.Delay(TimeSpan.FromMinutes(10));
+                await Task.Delay(TimeSpan.FromMinutes(1));
                 await PingLobbyAsync();
             }
             catch (Exception ex)

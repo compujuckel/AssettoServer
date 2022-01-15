@@ -163,7 +163,7 @@ public class AdminModule : ACModuleBase
         Reply("Restrictor and ballast set.");
     }
         
-    // CSP uses this to detect if the player is admin
+    // Do not change the reply, it is used by CSP admin detection
     [Command("ballast")]
     public void Ballast()
     {

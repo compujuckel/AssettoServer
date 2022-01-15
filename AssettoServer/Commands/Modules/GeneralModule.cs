@@ -24,20 +24,19 @@ public class GeneralModule : ACModuleBase
     }
 #endif
 
+    // Do not change the reply, it is used by CSP admin detection
     [Command("admin")]
     public void AdminAsync(string password)
     {
         if (IsConsole)
             Reply("You are the console.");
-        else if (Context.Client.IsAdministrator)
-            Reply("You are already an administrator.");
         else if (password == Context.Server.Configuration.AdminPassword)
         {
             Context.Client.IsAdministrator = true;
-            Reply("You have logged in as an administrator.");
+            Reply("You are now Admin for this server");
         }
         else
-            Reply("Incorrect administrator password.");
+            Reply("Command refused");
     }
 
     [Command("legal")]

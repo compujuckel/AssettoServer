@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 using AssettoServer.Server.Configuration;
 using Serilog;
 
@@ -20,74 +20,86 @@ internal class KunosLobbyRegistration
 
     internal async Task LoopAsync()
     {
-        await RegisterToLobbyAsync();
+        if (!await RegisterToLobbyAsync())
+            return;
 
         while (true)
         {
             try
             {
-                await Task.Delay(TimeSpan.FromMinutes(10));
+                await Task.Delay(TimeSpan.FromMinutes(1));
                 await PingLobbyAsync();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error during Kunos lobby registration");
+                Log.Error(ex, "Error during Kunos lobby update");
             }
         }
         // ReSharper disable once FunctionNeverReturns
     }
 
-    private async Task RegisterToLobbyAsync()
+    private async Task<bool> RegisterToLobbyAsync()
     {
         ACServerConfiguration cfg = _server.Configuration;
-        Dictionary<string, object> queryParamsDict = new Dictionary<string, object>
-        {
-            ["name"] = cfg.Name,
-            ["port"] = cfg.UdpPort,
-            ["tcp_port"] = cfg.TcpPort,
-            ["max_clients"] = cfg.MaxClients,
-            ["track"] = cfg.FullTrackName,
-            ["cars"] = string.Join(',', cfg.EntryCars.Select(c => c.Model).Distinct()),
-            ["timeofday"] = (int)cfg.SunAngle,
-            ["sessions"] = string.Join(',', cfg.Sessions.Select(s => s.Type)),
-            ["durations"] = string.Join(',', cfg.Sessions.Select(s => s.Type == 3 ? s.Laps : s.Time * 60)),
-            ["password"] = string.IsNullOrEmpty(cfg.Password) ? "0" : cfg.Password,
-            ["version"] = "202",
-            ["pickup"] = "1",
-            ["autoclutch"] = cfg.AutoClutchAllowed ? "1" : "0",
-            ["abs"] = cfg.ABSAllowed,
-            ["tc"] = cfg.TractionControlAllowed,
-            ["stability"] = cfg.StabilityAllowed ? "1" : "0",
-            ["legal_tyres"] = cfg.LegalTyres,
-            ["fixed_setup"] = "0",
-            ["timed"] = "0",
-            ["extra"] = cfg.HasExtraLap ? "1" : "0",
-            ["pit"] = "0",
-            ["inverted"] = cfg.InvertedGridPositions
-        };
+        var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/register");
+        var queryParams = HttpUtility.ParseQueryString(builder.Query);
+        queryParams["name"] = cfg.Name;
+        queryParams["port"] = cfg.UdpPort.ToString();
+        queryParams["tcp_port"] = cfg.TcpPort.ToString();
+        queryParams["max_clients"] = cfg.MaxClients.ToString();
+        queryParams["track"] = cfg.FullTrackName;
+        queryParams["cars"] = string.Join(',', cfg.EntryCars.Select(c => c.Model).Distinct());
+        queryParams["timeofday"] = ((int)cfg.SunAngle).ToString();
+        queryParams["sessions"] = string.Join(',', cfg.Sessions.Select(s => s.Type));
+        queryParams["durations"] = string.Join(',', cfg.Sessions.Select(s => s.Type == 3 ? s.Laps : s.Time * 60));
+        queryParams["password"] = string.IsNullOrEmpty(cfg.Password) ? "0" : "1";
+        queryParams["version"] = "202";
+        queryParams["pickup"] = "1";
+        queryParams["autoclutch"] = cfg.AutoClutchAllowed ? "1" : "0";
+        queryParams["abs"] = cfg.ABSAllowed.ToString();
+        queryParams["tc"] = cfg.TractionControlAllowed.ToString();
+        queryParams["stability"] = cfg.StabilityAllowed ? "1" : "0";
+        queryParams["legal_tyres"] = cfg.LegalTyres;
+        queryParams["fixed_setup"] = "0";
+        queryParams["timed"] = "0";
+        queryParams["extra"] = cfg.HasExtraLap ? "1" : "0";
+        queryParams["pit"] = "0";
+        queryParams["inverted"] = cfg.InvertedGridPositions.ToString();
+        builder.Query = queryParams.ToString();
 
-        Log.Information("Registering server to lobby");
-        string queryString = string.Join('&', queryParamsDict.Select(p => $"{p.Key}={p.Value}"));
-        HttpResponseMessage response = await _httpClient.GetAsync($"http://93.57.10.21/lobby.ashx/register?{queryString}");
-        if (!response.IsSuccessStatusCode)
-            Log.Information("Failed to register to lobby");
+        Log.Information("Registering server to lobby...");
+        HttpResponseMessage response = await _httpClient.GetAsync(builder.ToString());
+        string body = await response.Content.ReadAsStringAsync();
+
+        if (body.StartsWith("OK"))
+        {
+            Log.Information("Lobby registration successful");
+            return true;
+        }
+        
+        Log.Error("Could not register to lobby, server returned: {0}", body);
+        return false;
     }
 
     private async Task PingLobbyAsync()
     {
-        Dictionary<string, object> queryParamsDict = new Dictionary<string, object>
-        {
-            ["session"] = _server.CurrentSession.Type,
-            ["timeleft"] = (int)_server.CurrentSession.TimeLeft.TotalSeconds,
-            ["port"] = _server.Configuration.UdpPort,
-            ["clients"] = _server.ConnectedCars.Count,
-            ["track"] = _server.Configuration.FullTrackName,
-            ["pickup"] = "1"
-        };
+        var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/ping");
+        var queryParams = HttpUtility.ParseQueryString(builder.Query);
+        
+        queryParams["session"] = _server.CurrentSession.Type.ToString();
+        queryParams["timeleft"] = ((int)_server.CurrentSession.TimeLeft.TotalSeconds).ToString();
+        queryParams["port"] = _server.Configuration.UdpPort.ToString();
+        queryParams["clients"] = _server.ConnectedCars.Count.ToString();
+        queryParams["track"] = _server.Configuration.FullTrackName;
+        queryParams["pickup"] = "1";
+        builder.Query = queryParams.ToString();
+        
+        HttpResponseMessage response = await _httpClient.GetAsync(builder.ToString());
+        string body = await response.Content.ReadAsStringAsync();
 
-        string queryString = string.Join('&', queryParamsDict.Select(p => $"{p.Key}={p.Value}"));
-        HttpResponseMessage response = await _httpClient.GetAsync($"http://93.57.10.21/lobby.ashx/ping?{queryString}");
-        if (!response.IsSuccessStatusCode)
-            Log.Information("Failed to send lobby ping update");
+        if (!body.StartsWith("OK"))
+        {
+            Log.Error("Could not update lobby, server returned: {0}", body);
+        }
     }
 }

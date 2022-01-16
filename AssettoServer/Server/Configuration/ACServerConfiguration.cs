@@ -62,7 +62,7 @@ namespace AssettoServer.Server.Configuration
         public byte MaxContactsPerKm { get; internal set; }
         public float TrackGrip { get; internal set; }
         public string LegalTyres { get; internal set; }
-        public string WelcomeMessage { get; internal set; }
+        public string WelcomeMessage { get; internal set; } = "";
         public float TimeOfDayMultiplier { get; internal set; }
         public ACExtraConfiguration Extra { get; internal set; }
         public CMContentConfiguration ContentConfiguration { get; internal set; }

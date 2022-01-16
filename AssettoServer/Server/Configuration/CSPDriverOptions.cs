@@ -6,6 +6,9 @@ public static class CSPDriverOptions
 {
     public static DriverOptionsFlags Parse(string skin)
     {
+        if (skin == null)
+            return default;
+        
         int separatorPos = skin.LastIndexOf('/');
         if (separatorPos > 0)
         {

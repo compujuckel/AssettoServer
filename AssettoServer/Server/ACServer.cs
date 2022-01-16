@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
@@ -63,8 +62,8 @@ namespace AssettoServer.Server
         public ImmutableList<EntryCar> EntryCars { get; }
         internal GuidListFile Admins { get; }
         internal GuidListFile Blacklist { get; }
-        internal IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; }
-        internal IReadOnlyDictionary<string, byte[]> CarChecksums { get; private set; }
+        internal ImmutableDictionary<string, byte[]> TrackChecksums { get; private set; }
+        internal ImmutableDictionary<string, byte[]> CarChecksums { get; private set; }
         internal CommandService CommandService { get; }
         internal TcpListener TcpListener { get; set; }
         internal ACUdpServer UdpServer { get; }
@@ -396,65 +395,27 @@ namespace AssettoServer.Server
 
         private void InitializeChecksums()
         {
-            Log.Information("Initializing checksums...");
+            TrackChecksums = ChecksumsProvider.CalculateTrackChecksums(Configuration.Track, Configuration.TrackConfig);
+            Log.Information("Initialized {0} track checksums", TrackChecksums.Count);
 
-            using var md5 = MD5.Create();
-            var checksums = new Dictionary<string, byte[]>();
+            var carModels = EntryCars.Select(car => car.Model).Distinct().ToList();
+            CarChecksums = ChecksumsProvider.CalculateCarChecksums(carModels);
+            Log.Information("Initialized {0} car checksums", CarChecksums.Count);
 
-            byte[] createChecksum(string filePath)
+            var modelsWithoutChecksums = carModels.Except(CarChecksums.Keys).ToList();
+            if (modelsWithoutChecksums.Count > 0)
             {
-                if (File.Exists(filePath))
+                string models = string.Join(", ", modelsWithoutChecksums);
+
+                if (Configuration.Extra.IgnoreConfigurationErrors.MissingCarChecksums)
                 {
-                    using var fileStream = File.OpenRead(filePath);
-                    return md5.ComputeHash(fileStream);
+                    Log.Warning("No data.acd found for {0}. This will allow players to cheat using modified data. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-car-checksums", models);
                 }
-
-                return null;
-            }
-
-            void addChecksum(string filePath, string name)
-            {
-                byte[] checksum = createChecksum(filePath);
-                if (checksum != null)
+                else
                 {
-                    checksums[name] = checksum;
+                    throw new ConfigurationException($"No data.acd found for {models}. This will allow players to cheat using modified data. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-car-checksums");
                 }
             }
-
-            void checksumDirectory(string directory)
-            {
-                foreach (string dir in Directory.GetDirectories(directory))
-                    checksumDirectory(dir);
-
-                string[] allFiles = Directory.GetFiles(directory);
-                foreach (string file in allFiles)
-                {
-                    string name = Path.GetFileName(file);
-
-                    if (name == "surfaces.ini" || name.StartsWith("models_"))
-                        addChecksum(file, file.Replace("\\", "/"));
-                }
-            }
-
-            createChecksum("system/data/surfaces.ini");
-            checksumDirectory("content/tracks/" + (string.IsNullOrEmpty(Configuration.TrackConfig) ? Configuration.Track : Configuration.Track + "/" + Configuration.TrackConfig));
-
-            TrackChecksums = checksums;
-            checksums = new Dictionary<string, byte[]>();
-
-            foreach (EntryCar car in Configuration.EntryCars)
-            {
-                addChecksum($"content/cars/{car.Model}/data.acd", car.Model);
-                if (!Configuration.Extra.IgnoreConfigurationErrors.MissingCarChecksums && !checksums.ContainsKey(car.Model))
-                {
-                    throw new ConfigurationException($"No data.acd found for {car.Model}. This will allow players to cheat using modified data. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-car-checksums");
-                }
-            }
-
-
-            CarChecksums = checksums;
-
-            Log.Information("Initialized {0} checksums.", CarChecksums.Count + TrackChecksums.Count);
         }
 
         public bool IsGuidBlacklisted(string guid)

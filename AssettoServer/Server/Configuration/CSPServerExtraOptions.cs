@@ -82,22 +82,20 @@ public class CSPServerExtraOptions
     private static byte[] CompressZlib(byte[] data)
     {
         using var m = new MemoryStream();
-        using (var d = new ZLibStream(m, CompressionLevel.SmallestSize)) {
-            d.Write(data);
-        }
-            
+        using var d = new ZLibStream(m, CompressionLevel.SmallestSize);
+        
+        d.Write(data);
         return m.ToArray();
     }
     
     private static string DecompressZlib(byte[] data)
     {
-        var output = new byte[1024];
+        using var output = new MemoryStream();
+        using var input = new MemoryStream(data);
+        using var d = new ZLibStream(input, CompressionMode.Decompress);
         
-        using var m = new MemoryStream(data);
-        using (var d = new ZLibStream(m, CompressionMode.Decompress))
-        {
-            int count = d.Read(output, 0, output.Length);
-            return Encoding.UTF8.GetString(output, 0, count);
-        }
+        d.CopyTo(output);
+        byte[] bytes = output.ToArray();
+        return Encoding.UTF8.GetString(bytes, 0, bytes.Length);
     }
 }

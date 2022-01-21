@@ -64,60 +64,60 @@ internal class Steam
             return false;
 
         TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
-        void ticketValidateResponse(SteamId playerSteamId, SteamId ownerSteamId, AuthResponse arg3)
+        void ticketValidateResponse(SteamId playerSteamId, SteamId ownerSteamId, AuthResponse authResponse)
         {
-            if (playerSteamId == steamId)
+            if (playerSteamId != steamId)
+                return;
+
+            if (authResponse != AuthResponse.OK)
             {
-                if (arg3 != AuthResponse.OK)
-                    Log.Information("Steam auth ticket verification failed ({0}) for {1}.", arg3, client.Name);
-                else
-                {
-                    if (playerSteamId != ownerSteamId)
-                    {
-                        if (_server.IsGuidBlacklisted(ownerSteamId.ToString()))
-                        {
-                            Log.Information("{0} ({1}) is using Steam family sharing and game owner {2} is blacklisted", client.Name, playerSteamId, ownerSteamId);
-                            taskCompletionSource.SetResult(false);
-                            return;
-                        }
-                    }
-
-                    if (_server.Configuration.Extra.ValidateDlcOwnership != null)
-                    {
-                        foreach (int appid in _server.Configuration.Extra.ValidateDlcOwnership)
-                        {
-                            if (SteamServer.UserHasLicenseForApp(playerSteamId, appid) != UserHasLicenseForAppResult.HasLicense)
-                            {
-                                Log.Information("{0} does not own required DLC {1}", client.Name, appid);
-                                taskCompletionSource.SetResult(false);
-                                return;
-                            }
-                        }
-                    }
-
-                    client.Disconnecting += (_, _) => { SteamServer.EndSession(playerSteamId); };
-                    Log.Information("Steam auth ticket verification succeeded for {0}.", client.Name);
-                }
-
-                taskCompletionSource.SetResult(arg3 == AuthResponse.OK);
+                Log.Information("Steam auth ticket verification failed ({0}) for {1}", authResponse, client.Name);
+                taskCompletionSource.SetResult(false);
+                return;
             }
+            
+            client.Disconnecting += (_, _) => SteamServer.EndSession(playerSteamId);
+
+            if (playerSteamId != ownerSteamId && _server.IsGuidBlacklisted(ownerSteamId.ToString()))
+            {
+                Log.Information("{0} ({1}) is using Steam family sharing and game owner {2} is blacklisted", client.Name, playerSteamId, ownerSteamId);
+                taskCompletionSource.SetResult(false);
+                return;
+            }
+
+            if (_server.Configuration.Extra.ValidateDlcOwnership != null)
+            {
+                foreach (int appid in _server.Configuration.Extra.ValidateDlcOwnership)
+                {
+                    if (SteamServer.UserHasLicenseForApp(playerSteamId, appid) != UserHasLicenseForAppResult.HasLicense)
+                    {
+                        Log.Information("{0} does not own required DLC {1}", client.Name, appid);
+                        taskCompletionSource.SetResult(false);
+                        return;
+                    }
+                }
+            }
+            
+            Log.Information("Steam auth ticket verification succeeded for {0}", client.Name);
+            taskCompletionSource.SetResult(true);
         }
 
         bool validated = false;
 
         SteamServer.OnValidateAuthTicketResponse += ticketValidateResponse;
         Task timeoutTask = Task.Delay(5000);
-        Task beginAuthTask = Task.Run(() =>
+
+        if (!SteamServer.BeginAuthSession(sessionTicket, steamId))
         {
-            if (!SteamServer.BeginAuthSession(sessionTicket, steamId))
-                taskCompletionSource.SetResult(false);
-        });
+            Log.Information("Steam auth ticket verification failed for {0}", client.Name);
+            taskCompletionSource.SetResult(false);
+        }
 
         Task finishedTask = await Task.WhenAny(timeoutTask, taskCompletionSource.Task);
 
         if (finishedTask == timeoutTask)
         {
-            Log.Warning("Steam auth ticket verification timed out for {0}.", steamId);
+            Log.Warning("Steam auth ticket verification timed out for {0}", client.Name);
         }
         else
         {

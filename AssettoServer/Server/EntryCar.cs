@@ -66,7 +66,7 @@ namespace AssettoServer.Server
 
             long timeAfk = Environment.TickCount64 - LastActiveTime;
             if (timeAfk > Server.Configuration.Extra.MaxAfkTimeMilliseconds)
-                _ = Server.KickAsync(Client, Network.Packets.Outgoing.KickReason.None, $"{Client?.Name} has been kicked for being AFK.");
+                _ = Server.KickAsync(Client, Network.Packets.Outgoing.KickReason.Kicked, $"{Client?.Name} has been kicked for being AFK.");
             else if (!HasSentAfkWarning && Server.Configuration.Extra.MaxAfkTimeMilliseconds - timeAfk < 60000)
             {
                 HasSentAfkWarning = true;

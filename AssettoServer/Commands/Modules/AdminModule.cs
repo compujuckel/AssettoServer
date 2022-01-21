@@ -29,7 +29,7 @@ public class AdminModule : ACModuleBase
             Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
                 
             string kickMessage = reason == null ? $"{player.Name} has been kicked." : $"{player.Name} has been kicked for: {reason}.";
-            return Context.Server.KickAsync(player, KickReason.None, kickMessage, true, Context.Client);
+            return Context.Server.KickAsync(player, KickReason.Kicked, kickMessage, true, Context.Client);
         }
 
         return Task.CompletedTask;
@@ -47,7 +47,7 @@ public class AdminModule : ACModuleBase
             Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
                 
             string kickMessage = reason == null ? $"{player.Name} has been banned." : $"{player.Name} has been banned for: {reason}.";
-            return Context.Server.BanAsync(player, KickReason.Blacklisted, kickMessage, Context.Client);
+            return Context.Server.BanAsync(player, KickReason.VoteBlacklisted, kickMessage, Context.Client);
         }
 
         return Task.CompletedTask;

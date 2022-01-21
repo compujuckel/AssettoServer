@@ -386,7 +386,7 @@ namespace AssettoServer.Server
                 if (entryCar.Client != null && Blacklist.Contains(entryCar.Client.Guid))
                 {
                     Log.Information("{0} was banned after reloading blacklist", entryCar.Client.Name);
-                    entryCar.Client.SendPacket(new KickCar {SessionId = entryCar.Client.SessionId, Reason = KickReason.Blacklisted});
+                    entryCar.Client.SendPacket(new KickCar {SessionId = entryCar.Client.SessionId, Reason = KickReason.VoteBlacklisted});
                     
                     _ = entryCar.Client.DisconnectAsync();
                 }

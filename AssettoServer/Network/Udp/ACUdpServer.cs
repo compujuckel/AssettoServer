@@ -112,7 +112,7 @@ namespace AssettoServer.Network.Udp
                         {
                             car.HighPingSeconds++;
                             if (car.HighPingSeconds > Server.Configuration.Extra.MaxPingSeconds)
-                                _ = Server.KickAsync(car?.Client, KickReason.None, $"{car.Client?.Name} has been kicked for high ping ({car.Ping}ms).");
+                                _ = Server.KickAsync(car?.Client, KickReason.Kicked, $"{car.Client?.Name} has been kicked for high ping ({car.Ping}ms).");
                         }
                         else car.HighPingSeconds = 0;
                     }

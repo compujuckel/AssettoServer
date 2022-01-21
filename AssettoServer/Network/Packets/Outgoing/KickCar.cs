@@ -21,10 +21,10 @@ namespace AssettoServer.Network.Packets.Outgoing
 
     public enum KickReason : byte
     {
-        None,
-        TemporaryBan,
-        Blacklisted,
-        ChecksumFailed
-
+        VoteKicked,
+        VoteBanned,
+        VoteBlacklisted,
+        ChecksumFailed,
+        Kicked
     }
 }

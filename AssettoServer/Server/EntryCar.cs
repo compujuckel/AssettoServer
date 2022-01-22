@@ -93,6 +93,12 @@ namespace AssettoServer.Server
             {
                 SetActive();
             }
+            
+            if (Status.Velocity.Y < -75 && Environment.TickCount64 - LastFallCheckTime > 1000)
+            {
+                LastFallCheckTime = Environment.TickCount64;
+                Client?.SendCurrentSession();
+            }
 
             /*if (!AiControlled && Status.StatusFlag != positionUpdate.StatusFlag)
             {
@@ -116,6 +122,72 @@ namespace AssettoServer.Server
             Status.PerformanceDelta = positionUpdate.PerformanceDelta;
             Status.Gas = positionUpdate.Gas;
             Status.NormalizedPosition = positionUpdate.NormalizedPosition;
+        }
+
+        public PositionUpdate? GetPositionUpdateForCar(EntryCar toCar)
+        {
+            var toClient = toCar.Client;
+            if (toCar != this && toClient != null && toClient.HasSentFirstUpdate && (AiControlled || Client != null))
+            {
+                CarStatus status;
+                if (AiControlled)
+                {
+                    var targetCarStatus = toCar.TargetCar == null ? toCar.Status : toCar.TargetCar.Status;
+                    var aiState = GetBestStateForPlayer(targetCarStatus);
+
+                    if (aiState == null) return null;
+
+                    if (LastSeenAiState[toCar.SessionId] != aiState
+                        || LastSeenAiSpawn[toCar.SessionId] != aiState.SpawnCounter)
+                    {
+                        LastSeenAiState[toCar.SessionId] = aiState;
+                        LastSeenAiSpawn[toCar.SessionId] = aiState.SpawnCounter;
+
+                        if (AiEnableColorChanges)
+                        {
+                            toClient.SendPacket(new CSPCarColorUpdate
+                            {
+                                SessionId = SessionId,
+                                Color = aiState.Color
+                            });
+                        }
+                    }
+
+                    status = aiState.Status;
+                }
+                else
+                {
+                    status = Status;
+                }
+                
+                return new PositionUpdate
+                {
+                    SessionId = SessionId,
+                    EngineRpm = status.EngineRpm,
+                    Gas = status.Gas,
+                    Gear = status.Gear,
+                    LastRemoteTimestamp = (uint)(status == Status ? LastRemoteTimestamp : status.Timestamp),
+                    Timestamp = (uint)(status.Timestamp - toCar.TimeOffset),
+                    NormalizedPosition = status.NormalizedPosition,
+                    PakSequenceId = AiPakSequenceIds[toCar.SessionId]++,
+                    PerformanceDelta = status.PerformanceDelta,
+                    Ping = Ping,
+                    Position = status.Position,
+                    Rotation = status.Rotation,
+                    StatusFlag = (Server.Configuration.Extra.ForceLights || ForceLights)
+                        ? status.StatusFlag | CarStatusFlags.LightsOn
+                        : status.StatusFlag,
+                    SteerAngle = status.SteerAngle,
+                    TyreAngularSpeedFL = status.TyreAngularSpeed[0],
+                    TyreAngularSpeedFR = status.TyreAngularSpeed[1],
+                    TyreAngularSpeedRL = status.TyreAngularSpeed[2],
+                    TyreAngularSpeedRR = status.TyreAngularSpeed[3],
+                    Velocity = status.Velocity,
+                    WheelAngle = status.WheelAngle
+                };
+            }
+
+            return null;
         }
     }
 }

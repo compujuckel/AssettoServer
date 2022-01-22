@@ -43,6 +43,7 @@ namespace AssettoServer.Network.Packets.Shared
         public short PerformanceDelta;
         public byte Gas;
         public float NormalizedPosition;
+        public bool IsBatched = false;
 
         public void FromReader(PacketReader reader)
         {
@@ -67,7 +68,8 @@ namespace AssettoServer.Network.Packets.Shared
 
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0x46);
+            if(!IsBatched)
+                writer.Write<byte>(0x46);
             writer.Write(SessionId);
             writer.Write(PakSequenceId);
             writer.Write(Timestamp);
@@ -84,8 +86,11 @@ namespace AssettoServer.Network.Packets.Shared
             writer.Write(EngineRpm);
             writer.Write(Gear);
             writer.Write((uint)StatusFlag);
-            writer.Write(PerformanceDelta);
-            writer.Write(Gas);
+            if (!IsBatched)
+            {
+                writer.Write(PerformanceDelta);
+                writer.Write(Gas);
+            }
         }
     }
 }

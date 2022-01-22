@@ -14,6 +14,7 @@ using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using App.Metrics;
 using App.Metrics.AspNetCore;
+using App.Metrics.Counter;
 using App.Metrics.Formatters.Prometheus;
 using App.Metrics.Timer;
 using AssettoServer.Commands;
@@ -555,7 +556,7 @@ namespace AssettoServer.Server
                 car.Client.SendPacketUdp(packet);
         }
 
-        public async Task UpdateAsync()
+        private async Task UpdateAsync()
         {
             int sleepMs = 1000 / Configuration.RefreshRateHz;
             long nextTick = Environment.TickCount64;
@@ -563,6 +564,11 @@ namespace AssettoServer.Server
             long lastTimeUpdate = Environment.TickCount64;
             float networkDistanceSquared = (float)Math.Pow(Configuration.Extra.NetworkBubbleDistance, 2);
             int outsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
+            Dictionary<EntryCar, List<PositionUpdate>> positionUpdates = new();
+            foreach (var entryCar in EntryCars)
+            {
+                positionUpdates[entryCar] = new List<PositionUpdate>();
+            }
 
             Log.Information("Starting update loop with an update rate of {0}hz.", Configuration.RefreshRateHz);
 
@@ -573,6 +579,13 @@ namespace AssettoServer.Server
                 DurationUnit = TimeUnit.Milliseconds,
                 RateUnit = TimeUnit.Milliseconds
             };
+
+            var updateLoopLateOptions = new CounterOptions
+            {
+                Name = "ACServer.UpdateAsync.Late",
+                MeasurementUnit = Unit.None
+            };
+            Metrics.Measure.Counter.Increment(updateLoopLateOptions, 0);
             
             while (true)
             {
@@ -582,139 +595,65 @@ namespace AssettoServer.Server
                     {
                         Update?.Invoke(this, EventArgs.Empty);
 
+                        foreach (var updates in positionUpdates.Values)
+                        {
+                            updates.Clear();
+                        }
+
                         foreach (EntryCar fromCar in EntryCars)
                         {
-                            ACTcpClient fromClient = fromCar.Client;
-                            if (!fromCar.AiControlled && fromClient != null)
+                            if (fromCar.Client != null && fromCar.Client.HasSentFirstUpdate && (CurrentTime - fromCar.LastPingTime) > 1000)
                             {
-                                if (fromCar.HasUpdateToSend)
+                                fromCar.CheckAfk();
+                                fromCar.LastPingTime = CurrentTime;
+
+                                PacketWriter writer = new PacketWriter(buffer);
+                                int bytesWritten = writer.WritePacket(new PingUpdate { CurrentPing = fromCar.Ping, Time = CurrentTime });
+
+                                UdpServer.Send(fromCar.Client.UdpEndpoint, buffer, 0, bytesWritten);
+
+                                if (CurrentTime - fromCar.LastPongTime > 15000)
                                 {
-                                    fromCar.HasUpdateToSend = false;
-
-                                    CarStatus status = fromCar.Status;
-
-                                    foreach (EntryCar toCar in EntryCars)
-                                    {
-                                        ACTcpClient toClient = toCar.Client;
-                                        if (toCar != fromCar && toClient != null && toClient.HasSentFirstUpdate)
-                                        {
-                                            float distance = Vector3.DistanceSquared(status.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position);
-                                            if (fromCar.TargetCar != null || distance > networkDistanceSquared)
-                                            {
-                                                if ((Environment.TickCount64 - fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId]) < outsideNetworkBubbleUpdateRateMs)
-                                                    continue;
-
-                                                fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
-                                            }
-
-                                            toClient.SendPacketUdp(new PositionUpdate
-                                            {
-                                                SessionId = fromCar.SessionId,
-                                                EngineRpm = status.EngineRpm,
-                                                Gas = status.Gas,
-                                                Gear = status.Gear,
-                                                LastRemoteTimestamp = fromCar.LastRemoteTimestamp,
-                                                Timestamp = (uint)(fromCar.Status.Timestamp - toCar.TimeOffset),
-                                                NormalizedPosition = status.NormalizedPosition,
-                                                PakSequenceId = status.PakSequenceId,
-                                                PerformanceDelta = status.PerformanceDelta,
-                                                Ping = fromCar.Ping,
-                                                Position = status.Position,
-                                                Rotation = status.Rotation,
-                                                StatusFlag = (Configuration.Extra.ForceLights || fromCar.ForceLights)
-                                                    ? status.StatusFlag | CarStatusFlags.LightsOn
-                                                    : status.StatusFlag,
-                                                SteerAngle = status.SteerAngle,
-                                                TyreAngularSpeedFL = status.TyreAngularSpeed[0],
-                                                TyreAngularSpeedFR = status.TyreAngularSpeed[1],
-                                                TyreAngularSpeedRL = status.TyreAngularSpeed[2],
-                                                TyreAngularSpeedRR = status.TyreAngularSpeed[3],
-                                                Velocity = status.Velocity,
-                                                WheelAngle = status.WheelAngle
-                                            });
-                                        }
-                                    }
-
-                                    if (fromCar.Status.Velocity.Y < -75 && Environment.TickCount64 - fromCar.LastFallCheckTime > 1000)
-                                    {
-                                        fromCar.LastFallCheckTime = Environment.TickCount64;
-                                        fromCar.Client?.SendCurrentSession();
-                                    }
+                                    Log.Information("{0} has not sent a ping response for over 15 seconds.", fromCar?.Client?.Name);
+                                    _ = fromCar.Client?.DisconnectAsync();
                                 }
+                            }
 
-                                if (fromClient != null && fromClient.HasSentFirstUpdate && (CurrentTime - fromCar.LastPingTime) > 1000)
+                            if (fromCar.AiControlled || fromCar.HasUpdateToSend)
+                            {
+                                fromCar.HasUpdateToSend = false;
+
+                                foreach (var toCar in EntryCars)
                                 {
-                                    fromCar.CheckAfk();
-                                    fromCar.LastPingTime = CurrentTime;
-
-                                    PacketWriter writer = new PacketWriter(buffer);
-                                    int bytesWritten = writer.WritePacket(new PingUpdate { CurrentPing = fromCar.Ping, Time = CurrentTime });
-
-                                    UdpServer.Send(fromClient.UdpEndpoint, buffer, 0, bytesWritten);
-
-                                    if (CurrentTime - fromCar.LastPongTime > 15000)
+                                    var update = fromCar.GetPositionUpdateForCar(toCar);
+                                    if (update.HasValue)
                                     {
-                                        Log.Information("{0} has not sent a ping response for over 15 seconds.", fromCar?.Client?.Name);
-                                        _ = fromCar.Client?.DisconnectAsync();
+                                        float distanceSquared = Vector3.DistanceSquared(update.Value.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position);
+                                        if (fromCar.TargetCar != null || distanceSquared > networkDistanceSquared)
+                                        {
+                                            if ((Environment.TickCount64 - fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId]) < outsideNetworkBubbleUpdateRateMs)
+                                                continue;
+
+                                            fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
+                                        }
+                                        
+                                        positionUpdates[toCar].Add(update.Value);
                                     }
                                 }
                             }
-                            else if (fromCar.AiControlled)
+                        }
+
+                        foreach (var (entryCar, updates) in positionUpdates)
+                        {
+                            if (updates.Count > 0 && entryCar.Client != null)
                             {
-                                foreach (EntryCar toCar in EntryCars)
+                                foreach (var chunk in updates.Chunk(20)) // TODO adjust this? 25 is probably maximum if we don't want fragmentation
                                 {
-                                    ACTcpClient toClient = toCar.Client;
-                                    if (toCar != fromCar && toClient != null && toClient.HasSentFirstUpdate)
+                                    var batchedUpdate = new BatchedPositionUpdate
                                     {
-                                        var targetCarStatus = toCar.TargetCar == null ? toCar.Status : toCar.TargetCar.Status;
-
-                                        AiState aiState = fromCar.GetBestStateForPlayer(targetCarStatus);
-
-                                        if (aiState == null) continue;
-
-                                        if (fromCar.LastSeenAiState[toCar.SessionId] != aiState
-                                            || fromCar.LastSeenAiSpawn[toCar.SessionId] != aiState.SpawnCounter)
-                                        {
-                                            fromCar.LastSeenAiState[toCar.SessionId] = aiState;
-                                            fromCar.LastSeenAiSpawn[toCar.SessionId] = aiState.SpawnCounter;
-
-                                            if (fromCar.AiEnableColorChanges)
-                                            {
-                                                toClient.SendPacket(new CSPCarColorUpdate
-                                                {
-                                                    SessionId = fromCar.SessionId,
-                                                    Color = aiState.Color
-                                                });
-                                            }
-                                        }
-
-                                        var status = aiState.Status;
-                                        toClient.SendPacketUdp(new PositionUpdate
-                                        {
-                                            SessionId = fromCar.SessionId,
-                                            EngineRpm = status.EngineRpm,
-                                            Gas = status.Gas,
-                                            Gear = status.Gear,
-                                            LastRemoteTimestamp = (uint)status.Timestamp,
-                                            Timestamp = (uint)(status.Timestamp - toCar.TimeOffset),
-                                            NormalizedPosition = status.NormalizedPosition,
-                                            PakSequenceId = fromCar.AiPakSequenceIds[toCar.SessionId]++,
-                                            PerformanceDelta = status.PerformanceDelta,
-                                            Ping = fromCar.Ping,
-                                            Position = status.Position,
-                                            Rotation = status.Rotation,
-                                            StatusFlag = (Configuration.Extra.ForceLights || fromCar.ForceLights)
-                                                ? status.StatusFlag | CarStatusFlags.LightsOn
-                                                : status.StatusFlag,
-                                            SteerAngle = status.SteerAngle,
-                                            TyreAngularSpeedFL = status.TyreAngularSpeed[0],
-                                            TyreAngularSpeedFR = status.TyreAngularSpeed[1],
-                                            TyreAngularSpeedRL = status.TyreAngularSpeed[2],
-                                            TyreAngularSpeedRR = status.TyreAngularSpeed[3],
-                                            Velocity = status.Velocity,
-                                            WheelAngle = status.WheelAngle
-                                        });
-                                    }
+                                        Updates = chunk
+                                    };
+                                    entryCar.Client.SendPacketUdp(batchedUpdate);
                                 }
                             }
                         }
@@ -764,6 +703,7 @@ namespace AssettoServer.Server
                                 if (tickDelta < -1000)
                                     Log.Warning("Server is running {0}ms behind.", -tickDelta);
 
+                                Metrics.Measure.Counter.Increment(updateLoopLateOptions, -tickDelta);
                                 nextTick = 0;
                                 break;
                             }

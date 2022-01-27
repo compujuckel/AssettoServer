@@ -76,7 +76,17 @@ internal class Steam
                 return;
             }
             
-            client.Disconnecting += (_, _) => SteamServer.EndSession(playerSteamId);
+            client.Disconnecting += (_, _) =>
+            {
+                try
+                {
+                    SteamServer.EndSession(playerSteamId);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error ending Steam session for client {0}", client.Name);
+                }
+            };
 
             if (playerSteamId != ownerSteamId && _server.IsGuidBlacklisted(ownerSteamId.ToString()))
             {

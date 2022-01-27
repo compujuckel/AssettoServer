@@ -103,17 +103,15 @@ public class OpenWeatherMapWeatherProvider
             throw new OpenWeatherMapException($"OpenWeatherMap returned error {code}: {message}");
         }
 
-        LiveWeatherProviderResponse weather = new LiveWeatherProviderResponse
+        return new LiveWeatherProviderResponse
         {
             WeatherType = TranslateIdToWeatherType((OpenWeatherType)(int)json.SelectToken("weather[0].id")),
-            TemperatureAmbient = (float)json.SelectToken("main.temp"),
+            TemperatureAmbient = Math.Max(0, (float)json.SelectToken("main.temp")),
             Pressure = (int)json.SelectToken("main.pressure"),
             Humidity = (int)json.SelectToken("main.humidity"),
             WindSpeed = (float)json.SelectToken("wind.speed"),
             WindDirection = (int)json.SelectToken("wind.deg")
         };
-
-        return weather;
     }
 
     // Adapted from https://github.com/gro-ove/actools/blob/master/AcManager.Tools/Helpers/Api/OpenWeatherApiProvider.cs

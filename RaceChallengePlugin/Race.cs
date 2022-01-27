@@ -115,7 +115,6 @@ public class Race
                 Vector3 leaderPosition = Leader.Status.Position;
                 if (Vector3.DistanceSquared(LastLeaderPosition, leaderPosition) > 40000)
                 {
-                    Console.WriteLine("teleport");
                     Leader = Follower;
                     Follower = Leader;
                     return;
@@ -124,7 +123,6 @@ public class Race
 
                 if (Vector3.DistanceSquared(Leader.Status.Position, Follower.Status.Position) > 562500)
                 {
-                    Console.WriteLine("too far");
                     return;
                 }
 
@@ -211,9 +209,8 @@ public class Race
             string loserName = Challenger == Leader ? ChallengedName : ChallengerName;
 
             Server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = $"{winnerName} just beat {loserName} in a race." });
+            Log.Information("{0} just beat {1} in a race", winnerName, loserName);
         }
-
-        Log.Information("Ending race between {0} and {1}.", ChallengerName, ChallengedName);
     }
 
     private void SendMessage(string message)
@@ -228,7 +225,6 @@ public class Race
     private bool AreLinedUp()
     {
         float distanceSquared = Vector3.DistanceSquared(Challenger.Status.Position, Challenged.Status.Position);
-        Console.WriteLine("Distance: {0}", Math.Sqrt(distanceSquared));
 
         if (!LineUpRequired)
         {
@@ -247,8 +243,7 @@ public class Race
 
         angle += challengerRot;
         angle %= 360;
-
-        Console.WriteLine("Challenger angle: {0}", angle);
+        
         if (!((angle <= 105 && angle >= 75) || (angle >= 255 && angle <= 285)))
             return false;
 
@@ -259,8 +254,7 @@ public class Race
 
         angle += challengedRot;
         angle %= 360;
-
-        Console.WriteLine("Challenged angle: {0}", angle);
+        
         if (!((angle <= 105 && angle >= 75) || (angle >= 255 && angle <= 285)))
             return false;
 
@@ -268,7 +262,6 @@ public class Race
         float challengedDirection = Challenged.Status.GetRotationAngle();
 
         float anglediff = (challengerDirection - challengedDirection + 180 + 360) % 360 - 180;
-        Console.WriteLine("Direction difference: {0}", anglediff);
         if (Math.Abs(anglediff) > 5)
             return false;
 

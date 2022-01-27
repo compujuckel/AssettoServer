@@ -54,7 +54,7 @@ namespace AssettoServer.Network.Tcp
         public event EventHandler<ACTcpClient, EventArgs> ChecksumPassed;
         public event EventHandler<ACTcpClient, EventArgs> ChecksumFailed;
         public event EventHandler<ACTcpClient, ChatMessageEventArgs> ChatMessageReceived;
-        public event EventHandler<ACTcpClient, EventArgs> Disconnecting; 
+        public event EventHandler<ACTcpClient, EventArgs> Disconnecting;
 
         internal ACTcpClient(ACServer server, TcpClient tcpClient)
         {
@@ -98,7 +98,7 @@ namespace AssettoServer.Network.Tcp
                 Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
             }
         }
-        
+
         internal void SendPacketUdp<TPacket>(TPacket packet) where TPacket : IOutgoingNetworkPacket
         {
             try
@@ -119,7 +119,7 @@ namespace AssettoServer.Network.Tcp
         {
             try
             {
-                await foreach(var packet in OutgoingPacketChannel.Reader.ReadAllAsync(DisconnectTokenSource.Token))
+                await foreach (var packet in OutgoingPacketChannel.Reader.ReadAllAsync(DisconnectTokenSource.Token))
                 {
                     if (packet is not SunAngleUpdate)
                     {
@@ -133,7 +133,7 @@ namespace AssettoServer.Network.Tcp
 
                     PacketWriter writer = new PacketWriter(TcpStream, TcpSendBuffer);
                     writer.WritePacket(packet);
-                    
+
                     await writer.SendAsync(DisconnectTokenSource.Token);
                 }
             }
@@ -161,7 +161,7 @@ namespace AssettoServer.Network.Tcp
 
                     if (reader.Buffer.Length == 0)
                         return;
-                    
+
                     byte id = reader.Read<byte>();
                     if (id != 0x82)
                         Log.Verbose("Received TCP packet with ID {0:X}", id);
@@ -178,9 +178,9 @@ namespace AssettoServer.Network.Tcp
                         Name = handshakeRequest.Name?.Trim();
 
                         Log.Information("{0} ({1} - {2}) is attempting to connect ({3}).", handshakeRequest.Name, handshakeRequest.Guid, TcpClient.Client.RemoteEndPoint, handshakeRequest.RequestedCar);
-                        
+
                         List<string> cspFeatures;
-                        if(!string.IsNullOrEmpty(handshakeRequest.Features))
+                        if (!string.IsNullOrEmpty(handshakeRequest.Features))
                         {
                             Log.Debug("{0} supports extra CSP features: {1}", handshakeRequest.Name, handshakeRequest.Features);
                             cspFeatures = handshakeRequest.Features.Split(',').ToList();
@@ -217,9 +217,9 @@ namespace AssettoServer.Network.Tcp
 
                             if (args.Cancel)
                             {
-                                if(args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.Blacklisted)
+                                if (args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.Blacklisted)
                                     SendPacket(new BlacklistedResponse());
-                                else if(args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.AuthFailed)
+                                else if (args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.AuthFailed)
                                     SendPacket(new AuthFailedResponse(args.AuthFailedReason));
 
                                 return;
@@ -392,17 +392,17 @@ namespace AssettoServer.Network.Tcp
                     clientMessage.Type = packetType;
                     clientMessage.LuaType = luaPacketType;
                     clientMessage.SessionId = SessionId;
-                
+
                     Log.Debug("Unknown CSP lua client message with type 0x{0:X} received, data {1}", clientMessage.LuaType, Convert.ToHexString(clientMessage.Data));
                     Server.BroadcastPacket(clientMessage);
                 }
-            } 
+            }
             else
             {
                 CSPClientMessage clientMessage = reader.ReadPacket<CSPClientMessage>();
                 clientMessage.Type = packetType;
                 clientMessage.SessionId = SessionId;
-                
+
                 Log.Debug("Unknown CSP client message with type {0} received, data {1}", clientMessage.Type, Convert.ToHexString(clientMessage.Data));
                 Server.BroadcastPacket(clientMessage);
             }
@@ -436,7 +436,7 @@ namespace AssettoServer.Network.Tcp
             else
             {
                 ChecksumPassed?.Invoke(this, EventArgs.Empty);
-                
+
                 Server.BroadcastPacket(new CarConnected
                 {
                     SessionId = SessionId,
@@ -541,11 +541,11 @@ namespace AssettoServer.Network.Tcp
                 Log.Debug("Lap rejected by {0}, race over", Name);
                 return false;
             }
-            
+
             Log.Information("Lap completed by {0}, {1} cuts, laptime {2}", Name, lap.Cuts, lap.LapTime);
-            
+
             // TODO unfuck all of this
-            
+
             if (Server.CurrentSession.Configuration.Type == SessionType.Race || lap.Cuts == 0)
             {
                 entryCarResult.LastLap = lap.LapTime;
@@ -600,21 +600,21 @@ namespace AssettoServer.Network.Tcp
                         entryCarResult.HasCompletedLastLap = true;
                     }
                 }
-                
+
                 if (Server.CurrentSession.Configuration.Type != SessionType.Race)
                 {
                     if (Server.CurrentSession.EndTime != 0)
                     {
                         entryCarResult.HasCompletedLastLap = true;
                     }
-                } 
+                }
                 else if (Server.CurrentSession.Configuration.IsTimedRace)
                 {
                     if (Server.CurrentSession.LeaderHasCompletedLastLap && Server.CurrentSession.EndTime == 0)
                     {
                         Server.CurrentSession.EndTime = timestamp;
                     }
-                } 
+                }
                 else if (entryCarResult.NumLaps != Server.CurrentSession.Configuration.Laps)
                 {
                     if (Server.CurrentSession.EndTime != 0)
@@ -634,13 +634,13 @@ namespace AssettoServer.Network.Tcp
                 {
                     entryCarResult.HasCompletedLastLap = true;
                 }
-                
+
                 return true;
             }
 
             if (Server.CurrentSession.EndTime == 0)
                 return true;
-            
+
             entryCarResult.HasCompletedLastLap = true;
             return false;
         }
@@ -653,7 +653,7 @@ namespace AssettoServer.Network.Tcp
             TcpClient.ReceiveTimeout = 0;
             EntryCar.LastPongTime = Server.CurrentTime;
             HasSentFirstUpdate = true;
-            
+
             List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
             if (!string.IsNullOrEmpty(Server.CSPServerExtraOptions.EncodedWelcomeMessage))
@@ -722,25 +722,16 @@ namespace AssettoServer.Network.Tcp
                     DisconnectTokenSource.Dispose();
                 }
                 catch (ObjectDisposedException) { }
-                
+
                 if (IsConnected)
                     await Server.DisconnectClientAsync(this);
 
-                CloseConnection();
+                TcpClient?.Dispose();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error disconnecting {0}", Name);
             }
-        }
-
-        private void CloseConnection()
-        {
-            try
-            {
-                TcpClient.Dispose();
-            }
-            catch { }
         }
     }
 }

@@ -324,7 +324,7 @@ namespace AssettoServer.Server
                 CurrentSession.Results.Add(entryCar.SessionId, new EntryCarResult());
             }
             
-            Log.Information("New session: {0}", CurrentSession.Configuration.Name);
+            Log.Information("Next session: {0}", CurrentSession.Configuration.Name);
 
             if (CurrentSession.Configuration.Type == SessionType.Race)
             {

@@ -58,7 +58,7 @@ public class AdminModule : ACModuleBase
     {
         EntryCar car = player.EntryCar;
 
-        car.Client.SendCurrentSession();
+        Context.Server.SendCurrentSession(car.Client);
         car.Client.SendPacket(new ChatMessage { SessionId = 255, Message = "You have been teleported to the pits." });
 
         if (player.SessionId != Context.Client.SessionId)

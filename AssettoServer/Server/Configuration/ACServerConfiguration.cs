@@ -38,6 +38,7 @@ namespace AssettoServer.Server.Configuration
         public string TrackConfig { get; internal set; }
         public string FullTrackName { get; internal set; }
         public float SunAngle { get; internal set; }
+        public bool Loop { get; internal set; }
         public int MaxBallastKg { get; internal set; }
         public int QualifyMaxWaitPercentage { get; internal set; }
         public byte TractionControlAllowed { get; internal set; }
@@ -141,6 +142,7 @@ namespace AssettoServer.Server.Configuration
             MaxContactsPerKm = maxContactsPerKm;
             LegalTyres = server["LEGAL_TYRES"];
             TimeOfDayMultiplier = float.Parse(server["TIME_OF_DAY_MULT"]);
+            Loop = int.Parse(server["LOOP_MODE"]) == 1;
 
             var dynTrack = data["DYNAMIC_TRACK"];
             if(dynTrack.Count > 0)
@@ -308,6 +310,7 @@ namespace AssettoServer.Server.Configuration
                     Name = "Race",
                     IsOpen = raceConfig["IS_OPEN"] == "1",
                     Laps = int.Parse(raceConfig["LAPS"]),
+                    Time = int.Parse(raceConfig["TIME"] ?? "0"),
                     WaitTime = int.Parse(raceConfig["WAIT_TIME"] ?? "0")
                 });
 

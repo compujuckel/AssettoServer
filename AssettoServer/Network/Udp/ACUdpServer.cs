@@ -5,14 +5,11 @@ using AssettoServer.Server;
 using NetCoreServer;
 using Serilog;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+using AssettoServer.Server.Configuration;
 
 namespace AssettoServer.Network.Udp
 {
@@ -91,8 +88,8 @@ namespace AssettoServer.Network.Udp
                 {
                     if (packetId == 0x4F)
                     {
-                        if (Server.CurrentSession.Type != packetReader.Read<byte>())
-                            car.Client.SendCurrentSession();
+                        if (Server.CurrentSession.Configuration.Type != packetReader.Read<SessionType>())
+                            Server.SendCurrentSession(car.Client);
                     }
                     else if (packetId == 0x46)
                     {

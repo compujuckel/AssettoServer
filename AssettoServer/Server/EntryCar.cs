@@ -97,7 +97,8 @@ namespace AssettoServer.Server
             if (Status.Velocity.Y < -75 && Environment.TickCount64 - LastFallCheckTime > 1000)
             {
                 LastFallCheckTime = Environment.TickCount64;
-                Client?.SendCurrentSession();
+                if(Client != null)
+                    Server.SendCurrentSession(Client);
             }
 
             /*if (!AiControlled && Status.StatusFlag != positionUpdate.StatusFlag)

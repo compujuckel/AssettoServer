@@ -196,7 +196,7 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new BlacklistedResponse());
                         else if (Server.Configuration.Password?.Length > 0 && handshakeRequest.Password != Server.Configuration.Password && handshakeRequest.Password != Server.Configuration.AdminPassword)
                             SendPacket(new WrongPasswordResponse());
-                        else if (!Server.CurrentSession.IsOpen)
+                        else if (!Server.CurrentSession.Configuration.IsOpen)
                             SendPacket(new SessionClosedResponse());
                         else if ((Server.Configuration.Extra.EnableWeatherFx && !cspFeatures.Contains("WEATHERFX_V1"))
                                  || (Server.Configuration.Extra.UseSteamAuth && !cspFeatures.Contains("STEAM_TICKET")))
@@ -311,6 +311,8 @@ namespace AssettoServer.Network.Tcp
                             OnChat(reader);
                         else if (id == 0x44)
                             await OnChecksumAsync(reader);
+                        else if (id == 0x49)
+                            OnLapCompletedMessageReceived(reader);
                         else if (id == 0xAB)
                         {
                             id = reader.Read<byte>();
@@ -511,16 +513,158 @@ namespace AssettoServer.Network.Tcp
             SendPacket(carListResponse);
         }
 
-        internal void SendCurrentSession()
+        private void OnLapCompletedMessageReceived(PacketReader reader)
         {
-            ACServerConfiguration cfg = Server.Configuration;
-            SendPacket(new CurrentSessionUpdate
+            LapCompletedIncoming lapPacket = reader.ReadPacket<LapCompletedIncoming>();
+
+            Server.Configuration.DynamicTrack.TotalLapCount++; // TODO reset at some point
+            bool ret = OnLapCompleted(lapPacket);
+            if (ret)
             {
-                CurrentSession = Server.CurrentSession,
-                ConnectedCars = Server.EntryCars,
-                TargetCar = EntryCar,
-                TrackGrip = Math.Clamp(cfg.DynamicTrack.Enabled ? cfg.DynamicTrack.BaseGrip + (cfg.DynamicTrack.GripPerLap * cfg.DynamicTrack.TotalLapCount) : 1, 0, 1)
-            });
+                Server.SendLapCompletedMessage(SessionId, lapPacket.LapTime, lapPacket.Cuts);
+            }
+        }
+
+        private bool OnLapCompleted(LapCompletedIncoming lap)
+        {
+            int timestamp = Server.CurrentTime;
+
+            var entryCarResult = Server.CurrentSession.Results[SessionId];
+
+            if (entryCarResult.HasCompletedLastLap)
+            {
+                Log.Debug("Lap rejected by {0}, already finished", Name);
+                return false;
+            }
+
+            if (Server.CurrentSession.Configuration.Type == SessionType.Race && entryCarResult.NumLaps >= Server.CurrentSession.Configuration.Laps && !Server.CurrentSession.Configuration.IsTimedRace)
+            {
+                Log.Debug("Lap rejected by {0}, race over", Name);
+                return false;
+            }
+            
+            Log.Information("Lap completed by {0}, {1} cuts, laptime {2}", Name, lap.Cuts, lap.LapTime);
+            
+            // TODO unfuck all of this
+            
+            if (Server.CurrentSession.Configuration.Type == SessionType.Race || lap.Cuts == 0)
+            {
+                entryCarResult.LastLap = lap.LapTime;
+                if (lap.LapTime < entryCarResult.BestLap)
+                {
+                    entryCarResult.BestLap = lap.LapTime;
+                }
+
+                entryCarResult.NumLaps++;
+                if (entryCarResult.NumLaps > Server.CurrentSession.LeaderLapCount)
+                {
+                    Server.CurrentSession.LeaderLapCount = entryCarResult.NumLaps;
+                }
+
+                entryCarResult.TotalTime = Server.CurrentSession.SessionTimeTicks - (EntryCar.Ping / 2);
+
+                if (Server.CurrentSession.SessionOverFlag)
+                {
+                    if (Server.CurrentSession.Configuration.Type == SessionType.Race && Server.CurrentSession.Configuration.IsTimedRace)
+                    {
+                        if (Server.Configuration.HasExtraLap)
+                        {
+                            if (entryCarResult.NumLaps <= Server.CurrentSession.LeaderLapCount)
+                            {
+                                entryCarResult.HasCompletedLastLap = Server.CurrentSession.LeaderHasCompletedLastLap;
+                            }
+                            else if (Server.CurrentSession.TargetLap > 0)
+                            {
+                                if (entryCarResult.NumLaps >= Server.CurrentSession.TargetLap)
+                                {
+                                    Server.CurrentSession.LeaderHasCompletedLastLap = true;
+                                    entryCarResult.HasCompletedLastLap = true;
+                                }
+                            }
+                            else
+                            {
+                                Server.CurrentSession.TargetLap = entryCarResult.NumLaps + 1;
+                            }
+                        }
+                        else if (entryCarResult.NumLaps <= Server.CurrentSession.LeaderLapCount)
+                        {
+                            entryCarResult.HasCompletedLastLap = Server.CurrentSession.LeaderHasCompletedLastLap;
+                        }
+                        else
+                        {
+                            Server.CurrentSession.LeaderHasCompletedLastLap = true;
+                            entryCarResult.HasCompletedLastLap = true;
+                        }
+                    }
+                    else
+                    {
+                        entryCarResult.HasCompletedLastLap = true;
+                    }
+                }
+                
+                if (Server.CurrentSession.Configuration.Type != SessionType.Race)
+                {
+                    if (Server.CurrentSession.EndTime != 0)
+                    {
+                        entryCarResult.HasCompletedLastLap = true;
+                    }
+
+                    return true;
+                }
+
+                if (Server.CurrentSession.Configuration.IsTimedRace)
+                {
+                    if (Server.CurrentSession.LeaderHasCompletedLastLap && Server.CurrentSession.EndTime == 0)
+                    {
+                        Server.CurrentSession.EndTime = timestamp;
+                    }
+
+                    return true;
+                }
+
+                if (entryCarResult.NumLaps != Server.CurrentSession.Configuration.Laps)
+                {
+                    if (Server.CurrentSession.EndTime == 0)
+                        return true;
+                    
+                    entryCarResult.HasCompletedLastLap = true;
+                    if (Server.CurrentSession.EndTime == 0)
+                    {
+                        Server.CurrentSession.EndTime = timestamp;
+                    }
+
+                    return true;
+                }
+
+                if (!entryCarResult.HasCompletedLastLap)
+                {
+                    entryCarResult.HasCompletedLastLap = true;
+                    if (Server.CurrentSession.EndTime == 0)
+                    {
+                        Server.CurrentSession.EndTime = timestamp;
+                    }
+
+                    return true;
+                }
+                
+                if (Server.CurrentSession.EndTime == 0)
+                    return true;
+                
+                entryCarResult.HasCompletedLastLap = true;
+                if (Server.CurrentSession.EndTime == 0)
+                {
+                    Server.CurrentSession.EndTime = timestamp;
+                }
+
+                return true;
+                
+            }
+
+            if (Server.CurrentSession.EndTime == 0)
+                return true;
+            
+            entryCarResult.HasCompletedLastLap = true;
+            return false;
         }
 
         internal void SendFirstUpdate()
@@ -531,8 +675,7 @@ namespace AssettoServer.Network.Tcp
             TcpClient.ReceiveTimeout = 0;
             EntryCar.LastPongTime = Server.CurrentTime;
             HasSentFirstUpdate = true;
-
-            ACServerConfiguration cfg = Server.Configuration;
+            
             List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
             if (!string.IsNullOrEmpty(Server.CSPServerExtraOptions.EncodedWelcomeMessage))
@@ -556,6 +699,8 @@ namespace AssettoServer.Network.Tcp
                     });
                 }
             }
+
+            Server.SendLapCompletedMessage(255, 0, 0, this);
 
             _ = Task.Delay(40000).ContinueWith(async t =>
             {

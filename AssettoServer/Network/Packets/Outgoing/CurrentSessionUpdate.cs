@@ -1,19 +1,15 @@
 ﻿using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AssettoServer.Network.Packets.Outgoing
 {
     public class CurrentSessionUpdate : IOutgoingNetworkPacket
     {
-        public EntryCar TargetCar;
         public SessionConfiguration CurrentSession;
         public float TrackGrip;
-        public IEnumerable<EntryCar> ConnectedCars;
+        public IEnumerable<EntryCar> Grid;
+        public long StartTime;
 
         public void ToWriter(ref PacketWriter writer)
         {
@@ -25,10 +21,10 @@ namespace AssettoServer.Network.Packets.Outgoing
             writer.Write((ushort)CurrentSession.Laps);
             writer.Write(TrackGrip);
 
-            foreach (EntryCar car in ConnectedCars)
+            foreach (EntryCar car in Grid)
                 writer.Write(car.SessionId);
 
-            writer.Write<long>(CurrentSession.StartTimeTicks - TargetCar.TimeOffset);
+            writer.Write(StartTime);
         }
     }
 }

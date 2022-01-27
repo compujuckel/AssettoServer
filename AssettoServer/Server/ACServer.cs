@@ -46,7 +46,10 @@ namespace AssettoServer.Server
         public ACServerConfiguration Configuration { get; }
         public CSPServerExtraOptions CSPServerExtraOptions { get; }
         public CSPLuaClientScriptProvider CSPLuaClientScriptProvider { get; }
-        public SessionConfiguration CurrentSession { get; private set; }
+        public int CurrentSessionIndex { get; private set; } = -1;
+        public bool IsLastRaceInverted { get; private set; } = false;
+        public bool MustInvertGrid { get; private set; } = false;
+        public SessionState CurrentSession { get; private set; }
         public WeatherData CurrentWeather { get; private set; }
         public DateTime CurrentDateTime { get; set; }
         public TimeZoneInfo TimeZone { get; }
@@ -270,11 +273,122 @@ namespace AssettoServer.Server
             }
         }
 
+        public void NextSession()
+        {
+            // TODO StallSessionSwitch
+            // TODO reset sun angle
+
+            if (Configuration.Sessions.Count - 1 == CurrentSessionIndex)
+            {
+                if (Configuration.Loop)
+                {
+                    Log.Information("Looping sessions");
+                }
+                else if(CurrentSession.Configuration.Type != SessionType.Race || Configuration.InvertedGridPositions == 0 || IsLastRaceInverted)
+                {
+                    // TODO exit
+                }
+
+                if (CurrentSession.Configuration.Type == SessionType.Race && Configuration.InvertedGridPositions != 0)
+                {
+                    if (Configuration.Sessions.Count <= 1)
+                    {
+                        MustInvertGrid = true;
+                    }
+                    else if (!IsLastRaceInverted)
+                    {
+                        MustInvertGrid = true;
+                        IsLastRaceInverted = true;
+                        --CurrentSessionIndex;
+                    }
+                }
+            }
+
+            if (++CurrentSessionIndex >= Configuration.Sessions.Count)
+            {
+                CurrentSessionIndex = 0;
+            }
+
+            var previousSessionResults = CurrentSession?.Results;
+            
+            CurrentSession = new SessionState
+            {
+                Configuration = Configuration.Sessions[CurrentSessionIndex],
+                Results = new Dictionary<byte, EntryCarResult>(),
+                StartTime = DateTime.Now,
+                StartTimeTicks = CurrentTime
+            };
+            
+            foreach (var entryCar in EntryCars)
+            {
+                CurrentSession.Results.Add(entryCar.SessionId, new EntryCarResult());
+            }
+            
+            Log.Information("New session: {0}", CurrentSession.Configuration.Name);
+
+            if (CurrentSession.Configuration.Type == SessionType.Race)
+            {
+                CurrentSession.StartTimeTicks = CurrentTime + (CurrentSession.Configuration.WaitTime * 1000);
+            }
+            else
+            {
+                IsLastRaceInverted = false;
+            }
+            
+            // TODO dynamic track
+            // TODO weather
+            // TODO reset mandatory pits and P2P count
+
+            if (previousSessionResults == null)
+            {
+                CurrentSession.Grid = EntryCars;
+            }
+            else
+            {
+                CurrentSession.Grid = previousSessionResults
+                    .OrderBy(result => result.Value.BestLap)
+                    .Select(result => EntryCars[result.Key]);
+            }
+            
+            SendCurrentSession();
+        }
+        
+        internal void SendCurrentSession(ACTcpClient target = null)
+        {
+            var packet = new CurrentSessionUpdate
+            {
+                CurrentSession = CurrentSession.Configuration,
+                Grid = CurrentSession.Grid,
+                TrackGrip = Math.Clamp(Configuration.DynamicTrack.Enabled ? Configuration.DynamicTrack.BaseGrip + (Configuration.DynamicTrack.GripPerLap * Configuration.DynamicTrack.TotalLapCount) : 1, 0, 1),
+            };
+
+            if (target == null)
+            {
+                foreach (var car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate))
+                {
+                    packet.StartTime = CurrentSession.StartTimeTicks - car.TimeOffset;
+                    car.Client.SendPacket(packet);
+                }
+            }
+            else
+            {
+                target.SendPacket(packet);
+            }
+        }
+
+        public bool IsSessionOver()
+        {
+            if (CurrentSession.Configuration.Type != SessionType.Race)
+            {
+                return (CurrentTime - CurrentSession.StartTimeTicks) > 60_000 * CurrentSession.Configuration.Time;
+            }
+
+            return false;
+        }
+
         public async Task StartAsync()
         {
-            CurrentSession = Configuration.Sessions[0];
-            CurrentSession.StartTime = DateTime.Now;
-            CurrentSession.StartTimeTicks = CurrentTime;
+            NextSession();
 
             await Blacklist.LoadAsync();
             await Admins.LoadAsync();
@@ -537,6 +651,37 @@ namespace AssettoServer.Server
         {
             CurrentDateTime = TimeZoneInfo.ConvertTimeToUtc(TimeZoneInfo.ConvertTimeFromUtc(CurrentDateTime, TimeZone).Date + TimeSpan.FromSeconds(time), TimeZone);
         }
+        
+        public void SendLapCompletedMessage(byte sessionId, int lapTime, int cuts, ACTcpClient target = null)
+        {
+            var laps = CurrentSession.Results
+                .Select((result) => new LapCompletedOutgoing.CompletedLap
+                {
+                    SessionId = result.Key,
+                    LapTime = CurrentSession.Configuration.Type == SessionType.Race ? result.Value.TotalTime : result.Value.BestLap,
+                    NumLaps = (short)result.Value.NumLaps,
+                    HasCompletedLastLap = (byte)(result.Value.HasCompletedLastLap ? 1 : 0)
+                })
+                .OrderBy(lap => lap.LapTime); // TODO wrong for race sessions?
+
+            var packet = new LapCompletedOutgoing
+            {
+                SessionId = sessionId,
+                LapTime = lapTime,
+                Cuts = (byte)cuts,
+                Laps = laps.ToArray(),
+                TrackGrip = CurrentWeather.TrackGrip
+            };
+
+            if (target == null)
+            {
+                BroadcastPacket(packet);
+            }
+            else
+            {
+                target.SendPacket(packet);
+            }
+        }
 
         public void BroadcastPacket<TPacket>(TPacket packet, ACTcpClient sender = null) where TPacket : IOutgoingNetworkPacket
         {
@@ -675,16 +820,21 @@ namespace AssettoServer.Server
                             lastTimeUpdate = Environment.TickCount64;
                         }
 
-                        if (CurrentSession.TimeLeft.TotalMilliseconds < 100)
+                        /*if (CurrentSession.TimeLeft.TotalMilliseconds < 100)
                         {
                             CurrentSession.StartTime = DateTime.Now;
                             CurrentSession.StartTimeTicks = CurrentTime64;
 
                             foreach (EntryCar car in EntryCars.Where(c => c.Client != null))
                             {
-                                car.Client.SendCurrentSession();
+                                SendCurrentSession(car.Client);
                                 Log.Information("Restarting session for {0}.", car.Client.Name);
                             }
+                        }*/
+
+                        if (IsSessionOver())
+                        {
+                            NextSession();
                         }
                     }
 

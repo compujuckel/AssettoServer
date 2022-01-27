@@ -1,10 +1,6 @@
 ﻿using AssettoServer.Server.Configuration;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using AssettoServer.Server;
 
 namespace AssettoServer.Network.Packets.Outgoing.Handshake
 {
@@ -40,7 +36,7 @@ namespace AssettoServer.Network.Packets.Outgoing.Handshake
         public byte SessionId;
         public byte SessionCount;
         public IEnumerable<SessionConfiguration> Sessions;
-        public SessionConfiguration CurrentSession;
+        public SessionState CurrentSession;
         public float TrackGrip;
         public byte SpawnPosition;
         public byte ChecksumCount;
@@ -90,11 +86,11 @@ namespace AssettoServer.Network.Packets.Outgoing.Handshake
                 writer.Write((ushort)sessionConfiguration.Time);
             }
 
-            writer.WriteASCIIString(CurrentSession.Name);
-            writer.Write((byte)CurrentSession.Id);
-            writer.Write((byte)CurrentSession.Type);
-            writer.Write((ushort)CurrentSession.Time);
-            writer.Write((ushort)CurrentSession.Laps);
+            writer.WriteASCIIString(CurrentSession.Configuration.Name);
+            writer.Write((byte)CurrentSession.Configuration.Id);
+            writer.Write((byte)CurrentSession.Configuration.Type);
+            writer.Write((ushort)CurrentSession.Configuration.Time);
+            writer.Write((ushort)CurrentSession.Configuration.Laps);
 
             writer.Write(TrackGrip);
             writer.Write(SessionId);

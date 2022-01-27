@@ -517,9 +517,8 @@ namespace AssettoServer.Network.Tcp
         {
             LapCompletedIncoming lapPacket = reader.ReadPacket<LapCompletedIncoming>();
 
-            Server.Configuration.DynamicTrack.TotalLapCount++; // TODO reset at some point
-            bool ret = OnLapCompleted(lapPacket);
-            if (ret)
+            //Server.Configuration.DynamicTrack.TotalLapCount++; // TODO reset at some point
+            if (OnLapCompleted(lapPacket))
             {
                 Server.SendLapCompletedMessage(SessionId, lapPacket.LapTime, lapPacket.Cuts);
             }
@@ -608,56 +607,35 @@ namespace AssettoServer.Network.Tcp
                     {
                         entryCarResult.HasCompletedLastLap = true;
                     }
-
-                    return true;
-                }
-
-                if (Server.CurrentSession.Configuration.IsTimedRace)
+                } 
+                else if (Server.CurrentSession.Configuration.IsTimedRace)
                 {
                     if (Server.CurrentSession.LeaderHasCompletedLastLap && Server.CurrentSession.EndTime == 0)
                     {
                         Server.CurrentSession.EndTime = timestamp;
                     }
-
-                    return true;
-                }
-
-                if (entryCarResult.NumLaps != Server.CurrentSession.Configuration.Laps)
+                } 
+                else if (entryCarResult.NumLaps != Server.CurrentSession.Configuration.Laps)
                 {
-                    if (Server.CurrentSession.EndTime == 0)
-                        return true;
-                    
-                    entryCarResult.HasCompletedLastLap = true;
-                    if (Server.CurrentSession.EndTime == 0)
+                    if (Server.CurrentSession.EndTime != 0)
                     {
-                        Server.CurrentSession.EndTime = timestamp;
+                        entryCarResult.HasCompletedLastLap = true;
                     }
-
-                    return true;
                 }
-
-                if (!entryCarResult.HasCompletedLastLap)
+                else if (!entryCarResult.HasCompletedLastLap)
                 {
                     entryCarResult.HasCompletedLastLap = true;
                     if (Server.CurrentSession.EndTime == 0)
                     {
                         Server.CurrentSession.EndTime = timestamp;
                     }
-
-                    return true;
                 }
-                
-                if (Server.CurrentSession.EndTime == 0)
-                    return true;
-                
-                entryCarResult.HasCompletedLastLap = true;
-                if (Server.CurrentSession.EndTime == 0)
+                else if (Server.CurrentSession.EndTime != 0)
                 {
-                    Server.CurrentSession.EndTime = timestamp;
+                    entryCarResult.HasCompletedLastLap = true;
                 }
-
+                
                 return true;
-                
             }
 
             if (Server.CurrentSession.EndTime == 0)

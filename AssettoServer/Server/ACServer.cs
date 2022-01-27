@@ -740,9 +740,12 @@ namespace AssettoServer.Server
                     {
                         Update?.Invoke(this, EventArgs.Empty);
 
-                        foreach (var updates in positionUpdates.Values)
+                        if (Configuration.Extra.EnableBatchedPositionUpdates)
                         {
-                            updates.Clear();
+                            foreach (var updates in positionUpdates.Values)
+                            {
+                                updates.Clear();
+                            }
                         }
 
                         foreach (EntryCar fromCar in EntryCars)
@@ -751,6 +754,8 @@ namespace AssettoServer.Server
                             {
                                 fromCar.CheckAfk();
                                 fromCar.LastPingTime = CurrentTime;
+                                
+                                // TODO use Client.SendPacketUdp
 
                                 PacketWriter writer = new PacketWriter(buffer);
                                 int bytesWritten = writer.WritePacket(new PingUpdate { CurrentPing = fromCar.Ping, Time = CurrentTime });
@@ -770,35 +775,37 @@ namespace AssettoServer.Server
 
                                 foreach (var toCar in EntryCars)
                                 {
-                                    var update = fromCar.GetPositionUpdateForCar(toCar);
-                                    if (update.HasValue)
+                                    if (fromCar.GetPositionUpdateForCar(toCar, out var update))
                                     {
-                                        float distanceSquared = Vector3.DistanceSquared(update.Value.Position, toCar.TargetCar == null ? toCar.Status.Position : toCar.TargetCar.Status.Position);
-                                        if (fromCar.TargetCar != null || distanceSquared > networkDistanceSquared)
+                                        if (Configuration.Extra.EnableBatchedPositionUpdates)
                                         {
-                                            if ((Environment.TickCount64 - fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId]) < outsideNetworkBubbleUpdateRateMs)
-                                                continue;
-
-                                            fromCar.OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
+                                            positionUpdates[toCar].Add(update.Value);
                                         }
-                                        
-                                        positionUpdates[toCar].Add(update.Value);
+                                        else
+                                        {
+                                            toCar.Client.SendPacketUdp(update.Value);
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        foreach (var (entryCar, updates) in positionUpdates)
+                        if (Configuration.Extra.EnableBatchedPositionUpdates)
                         {
-                            if (updates.Count > 0 && entryCar.Client != null)
+                            foreach (var (entryCar, updates) in positionUpdates)
                             {
-                                foreach (var chunk in updates.Chunk(20)) // TODO adjust this? 25 is probably maximum if we don't want fragmentation
+                                if (updates.Count > 0 && entryCar.Client != null)
                                 {
-                                    var batchedUpdate = new BatchedPositionUpdate
+                                    foreach (var chunk in updates.Chunk(20)) // TODO adjust this? 25 is probably maximum if we don't want fragmentation
                                     {
-                                        Updates = chunk
-                                    };
-                                    entryCar.Client.SendPacketUdp(batchedUpdate);
+                                        var batchedUpdate = new BatchedPositionUpdate
+                                        {
+                                            Timestamp = (uint)(CurrentTime - entryCar.TimeOffset),
+                                            Ping = entryCar.Ping,
+                                            Updates = chunk
+                                        };
+                                        entryCar.Client.SendPacketUdp(batchedUpdate);
+                                    }
                                 }
                             }
                         }
@@ -819,18 +826,6 @@ namespace AssettoServer.Server
 
                             lastTimeUpdate = Environment.TickCount64;
                         }
-
-                        /*if (CurrentSession.TimeLeft.TotalMilliseconds < 100)
-                        {
-                            CurrentSession.StartTime = DateTime.Now;
-                            CurrentSession.StartTimeTicks = CurrentTime64;
-
-                            foreach (EntryCar car in EntryCars.Where(c => c.Client != null))
-                            {
-                                SendCurrentSession(car.Client);
-                                Log.Information("Restarting session for {0}.", car.Client.Name);
-                            }
-                        }*/
 
                         if (IsSessionOver())
                         {

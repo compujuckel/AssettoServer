@@ -365,11 +365,7 @@ namespace AssettoServer.Network.Tcp
         private void OnSpectateCar(PacketReader reader)
         {
             SpectateCar spectatePacket = reader.ReadPacket<SpectateCar>();
-            if ((spectatePacket.SessionId != SessionId || spectatePacket.CameraMode == 2) && Server.ConnectedCars.TryGetValue(spectatePacket.SessionId, out EntryCar targetCar) && targetCar.Client != null)
-                EntryCar.TargetCar = targetCar;
-            else
-                EntryCar.TargetCar = null;
-
+            EntryCar.TargetCar = spectatePacket.SessionId != SessionId ? Server.EntryCars[spectatePacket.SessionId] : null;
         }
 
         private void OnCspClientMessage(PacketReader reader)

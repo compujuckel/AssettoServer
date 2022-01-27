@@ -46,6 +46,8 @@ namespace AssettoServer.Server.Configuration
         public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; set; } = new();
         [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
         public bool EnableClientMessages { get; set; } = false;
+        [YamlMember(Description = "Send multiple position updates in one packet. Greatly reduces number of packets to be sent. Experimental!")]
+        public bool EnableBatchedPositionUpdates { get; set; } = false;
         public AiParams AiParams { get; set; } = new AiParams();
 
         [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;

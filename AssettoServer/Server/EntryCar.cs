@@ -125,18 +125,31 @@ namespace AssettoServer.Server
             Status.NormalizedPosition = positionUpdate.NormalizedPosition;
         }
 
-        public PositionUpdate? GetPositionUpdateForCar(EntryCar toCar)
+        public bool GetPositionUpdateForCar(EntryCar toCar, out PositionUpdate? positionUpdate)
         {
             var toClient = toCar.Client;
+            CarStatus targetCarStatus;
+            if (toCar.TargetCar != null)
+            {
+                targetCarStatus = toCar.TargetCar.AiControlled ? toCar.TargetCar.LastSeenAiState[toCar.SessionId].Status : toCar.TargetCar.Status;
+            }
+            else
+            {
+                targetCarStatus = toCar.Status;
+            }
+            
             if (toCar != this && toClient != null && toClient.HasSentFirstUpdate && (AiControlled || Client != null))
             {
                 CarStatus status;
                 if (AiControlled)
                 {
-                    var targetCarStatus = toCar.TargetCar == null ? toCar.Status : toCar.TargetCar.Status;
                     var aiState = GetBestStateForPlayer(targetCarStatus);
-
-                    if (aiState == null) return null;
+                    
+                    if (aiState == null)
+                    {
+                        positionUpdate = null;
+                        return false;
+                    }
 
                     if (LastSeenAiState[toCar.SessionId] != aiState
                         || LastSeenAiSpawn[toCar.SessionId] != aiState.SpawnCounter)
@@ -160,16 +173,26 @@ namespace AssettoServer.Server
                 {
                     status = Status;
                 }
-                
-                return new PositionUpdate
+            
+                float distanceSquared = Vector3.DistanceSquared(status.Position, targetCarStatus.Position);
+                if (TargetCar != null || distanceSquared > (float)Math.Pow(Server.Configuration.Extra.NetworkBubbleDistance, 2))
+                {
+                    if ((Environment.TickCount64 - OtherCarsLastSentUpdateTime[toCar.SessionId]) < 1000 / Server.Configuration.Extra.OutsideNetworkBubbleRefreshRateHz)
+                    {
+                        positionUpdate = null;
+                        return false;
+                    }
+
+                    OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
+                }
+
+                positionUpdate = new PositionUpdate
                 {
                     SessionId = SessionId,
                     EngineRpm = status.EngineRpm,
                     Gas = status.Gas,
                     Gear = status.Gear,
-                    LastRemoteTimestamp = (uint)(AiControlled ? status.Timestamp : LastRemoteTimestamp),
                     Timestamp = (uint)(status.Timestamp - toCar.TimeOffset),
-                    NormalizedPosition = status.NormalizedPosition,
                     PakSequenceId = AiControlled ? AiPakSequenceIds[toCar.SessionId]++ : status.PakSequenceId,
                     PerformanceDelta = status.PerformanceDelta,
                     Ping = Ping,
@@ -186,9 +209,11 @@ namespace AssettoServer.Server
                     Velocity = status.Velocity,
                     WheelAngle = status.WheelAngle
                 };
+                return true;
             }
 
-            return null;
+            positionUpdate = null;
+            return false;
         }
     }
 }

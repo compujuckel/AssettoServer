@@ -50,7 +50,7 @@ internal class KunosLobbyRegistration
         queryParams["track"] = cfg.FullTrackName;
         queryParams["cars"] = string.Join(',', cfg.EntryCars.Select(c => c.Model).Distinct());
         queryParams["timeofday"] = ((int)cfg.SunAngle).ToString();
-        queryParams["sessions"] = string.Join(',', cfg.Sessions.Select(s => s.Type));
+        queryParams["sessions"] = string.Join(',', cfg.Sessions.Select(s => (int)s.Type));
         queryParams["durations"] = string.Join(',', cfg.Sessions.Select(s => s.IsTimedRace ? s.Time * 60 : s.Laps));
         queryParams["password"] = string.IsNullOrEmpty(cfg.Password) ? "0" : "1";
         queryParams["version"] = "202";
@@ -86,7 +86,7 @@ internal class KunosLobbyRegistration
         var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/ping");
         var queryParams = HttpUtility.ParseQueryString(builder.Query);
         
-        queryParams["session"] = _server.CurrentSession.Configuration.Type.ToString();
+        queryParams["session"] = ((int)_server.CurrentSession.Configuration.Type).ToString();
         queryParams["timeleft"] = ((int)_server.CurrentSession.TimeLeft.TotalSeconds).ToString();
         queryParams["port"] = _server.Configuration.UdpPort.ToString();
         queryParams["clients"] = _server.ConnectedCars.Count.ToString();

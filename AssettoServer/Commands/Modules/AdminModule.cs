@@ -200,4 +200,11 @@ public class AdminModule : ACModuleBase
             Reply("AI not enabled");
         }
     }
+
+    [Command("batchedpositionupdates")]
+    public void BatchedPositionUpdates(bool enable)
+    {
+        Context.Server.Configuration.Extra.EnableBatchedPositionUpdates = enable;
+        Reply(enable ? "Enabled batched position updates" : "Disabled batched position updates");
+    }
 }

@@ -33,6 +33,9 @@ namespace AssettoServer.Server
         public int SpectatorMode { get; internal set; }
         public int Ballast { get; internal set; }
         public int Restrictor { get; internal set; }
+        
+        public float NetworkDistanceSquared { get; internal set; }
+        public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }
 
         internal long[] OtherCarsLastSentUpdateTime { get; set; }
         internal EntryCar TargetCar { get; set; }
@@ -175,9 +178,9 @@ namespace AssettoServer.Server
                 }
             
                 float distanceSquared = Vector3.DistanceSquared(status.Position, targetCarStatus.Position);
-                if (TargetCar != null || distanceSquared > (float)Math.Pow(Server.Configuration.Extra.NetworkBubbleDistance, 2))
+                if (TargetCar != null || distanceSquared > NetworkDistanceSquared)
                 {
-                    if ((Environment.TickCount64 - OtherCarsLastSentUpdateTime[toCar.SessionId]) < 1000 / Server.Configuration.Extra.OutsideNetworkBubbleRefreshRateHz)
+                    if ((Environment.TickCount64 - OtherCarsLastSentUpdateTime[toCar.SessionId]) < OutsideNetworkBubbleUpdateRateMs)
                     {
                         positionUpdate = null;
                         return false;

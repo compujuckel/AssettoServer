@@ -348,7 +348,9 @@ namespace AssettoServer.Server.Configuration
                     AiPakSequenceIds = new byte[MaxClients],
                     LastSeenAiState = new AiState[MaxClients],
                     LastSeenAiSpawn = new byte[MaxClients],
-                    AiSplineHeightOffsetMeters = Extra.AiParams.SplineHeightOffsetMeters
+                    AiSplineHeightOffsetMeters = Extra.AiParams.SplineHeightOffsetMeters,
+                    NetworkDistanceSquared = (float)Math.Pow(Extra.NetworkBubbleDistance, 2),
+                    OutsideNetworkBubbleUpdateRateMs = 1000 / Extra.OutsideNetworkBubbleRefreshRateHz
                 });
             }
 

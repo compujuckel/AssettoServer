@@ -707,8 +707,6 @@ namespace AssettoServer.Server
             long nextTick = Environment.TickCount64;
             byte[] buffer = new byte[2048];
             long lastTimeUpdate = Environment.TickCount64;
-            float networkDistanceSquared = (float)Math.Pow(Configuration.Extra.NetworkBubbleDistance, 2);
-            int outsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
             Dictionary<EntryCar, List<PositionUpdate>> positionUpdates = new();
             foreach (var entryCar in EntryCars)
             {
@@ -775,16 +773,15 @@ namespace AssettoServer.Server
 
                                 foreach (var toCar in EntryCars)
                                 {
-                                    if (fromCar.GetPositionUpdateForCar(toCar, out var update))
+                                    if (!fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
+                                    
+                                    if (Configuration.Extra.EnableBatchedPositionUpdates)
                                     {
-                                        if (Configuration.Extra.EnableBatchedPositionUpdates)
-                                        {
-                                            positionUpdates[toCar].Add(update.Value);
-                                        }
-                                        else
-                                        {
-                                            toCar.Client.SendPacketUdp(update.Value);
-                                        }
+                                        positionUpdates[toCar].Add(update.Value);
+                                    }
+                                    else
+                                    {
+                                        toCar.Client.SendPacketUdp(update.Value);
                                     }
                                 }
                             }
@@ -794,18 +791,17 @@ namespace AssettoServer.Server
                         {
                             foreach (var (entryCar, updates) in positionUpdates)
                             {
-                                if (updates.Count > 0 && entryCar.Client != null)
+                                if (updates.Count == 0 || entryCar.Client == null) continue;
+                                
+                                foreach (var chunk in updates.Chunk(20)) // TODO adjust this? 25 is probably maximum if we don't want fragmentation
                                 {
-                                    foreach (var chunk in updates.Chunk(20)) // TODO adjust this? 25 is probably maximum if we don't want fragmentation
+                                    var batchedUpdate = new BatchedPositionUpdate
                                     {
-                                        var batchedUpdate = new BatchedPositionUpdate
-                                        {
-                                            Timestamp = (uint)(CurrentTime - entryCar.TimeOffset),
-                                            Ping = entryCar.Ping,
-                                            Updates = chunk
-                                        };
-                                        entryCar.Client.SendPacketUdp(batchedUpdate);
-                                    }
+                                        Timestamp = (uint)(CurrentTime - entryCar.TimeOffset),
+                                        Ping = entryCar.Ping,
+                                        Updates = chunk
+                                    };
+                                    entryCar.Client.SendPacketUdp(batchedUpdate);
                                 }
                             }
                         }

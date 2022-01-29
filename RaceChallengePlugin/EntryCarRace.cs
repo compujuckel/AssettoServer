@@ -12,7 +12,7 @@ internal class EntryCarRace
     
     public int LightFlashCount { get; internal set; }
     
-    internal Race CurrentRace { get; set; }
+    internal Race? CurrentRace { get; set; }
 
     private long LastLightFlashTime { get; set; }
     private long LastRaceChallengeTime { get; set; }
@@ -65,9 +65,9 @@ internal class EntryCarRace
     internal void ChallengeCar(EntryCar car, bool lineUpRequired = true)
     {
         void Reply(string message)
-            => _entryCar.Client.SendPacket(new ChatMessage { SessionId = 255, Message = message });
+            => _entryCar.Client?.SendPacket(new ChatMessage { SessionId = 255, Message = message });
 
-        Race currentRace = CurrentRace;
+        var currentRace = CurrentRace;
         if (currentRace != null)
         {
             if (currentRace.HasStarted)
@@ -95,13 +95,13 @@ internal class EntryCarRace
                     CurrentRace = currentRace;
                     car.GetRace().CurrentRace = currentRace;
 
-                    _entryCar.Client.SendPacket(new ChatMessage { SessionId = 255, Message = $"You have challenged {car.Client.Name} to a race." });
+                    _entryCar.Client?.SendPacket(new ChatMessage { SessionId = 255, Message = $"You have challenged {car.Client?.Name} to a race." });
 
                     if (lineUpRequired)
-                        car.Client.SendPacket(new ChatMessage { SessionId = 255, Message = $"{_entryCar.Client.Name} has challenged you to a race. Send /accept within 10 seconds to accept." });
+                        car.Client?.SendPacket(new ChatMessage { SessionId = 255, Message = $"{_entryCar.Client?.Name} has challenged you to a race. Send /accept within 10 seconds to accept." });
                     else
-                        car.Client.SendPacket(new ChatMessage
-                            { SessionId = 255, Message = $"{_entryCar.Client.Name} has challenged you to a race. Flash your hazard lights or send /accept within 10 seconds to accept." });
+                        car.Client?.SendPacket(new ChatMessage
+                            { SessionId = 255, Message = $"{_entryCar.Client?.Name} has challenged you to a race. Flash your hazard lights or send /accept within 10 seconds to accept." });
 
                     _ = Task.Delay(10000).ContinueWith(t =>
                     {
@@ -111,8 +111,8 @@ internal class EntryCarRace
                             car.GetRace().CurrentRace = null;
 
                             ChatMessage timeoutMessage = new ChatMessage { SessionId = 255, Message = $"Race request has timed out." };
-                            _entryCar.Client.SendPacket(timeoutMessage);
-                            car.Client.SendPacket(timeoutMessage);
+                            _entryCar.Client?.SendPacket(timeoutMessage);
+                            car.Client?.SendPacket(timeoutMessage);
                         }
                     });
                 }
@@ -122,12 +122,12 @@ internal class EntryCarRace
 
     private void ChallengeNearbyCar()
     {
-        EntryCar bestMatch = null;
+        EntryCar? bestMatch = null;
         float distanceSquared = 30 * 30;
 
         foreach(EntryCar car in _server.EntryCars)
         {
-            ACTcpClient carClient = car.Client;
+            ACTcpClient? carClient = car.Client;
             if(carClient != null && car != _entryCar)
             {
                 float challengedAngle = (float)(Math.Atan2(_entryCar.Status.Position.X - car.Status.Position.X, _entryCar.Status.Position.Z - car.Status.Position.Z) * 180 / Math.PI);

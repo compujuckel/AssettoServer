@@ -9,8 +9,8 @@
         public string Nation;
         public string RequestedCar;
         public string Password;
-        public string Features;
-        public byte[] SessionTicket;
+        public string? Features;
+        public byte[]? SessionTicket;
 
         public void FromReader(PacketReader reader)
         {

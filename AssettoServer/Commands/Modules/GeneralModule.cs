@@ -3,9 +3,11 @@ using Qmmands;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace AssettoServer.Commands.Modules;
 
+[UsedImplicitly(ImplicitUseKindFlags.Access, ImplicitUseTargetFlags.WithMembers)]
 public class GeneralModule : ACModuleBase
 {
     [Command("ping")]
@@ -28,9 +30,7 @@ public class GeneralModule : ACModuleBase
     [Command("admin")]
     public void AdminAsync(string password)
     {
-        if (IsConsole)
-            Reply("You are the console.");
-        else if (password == Context.Server.Configuration.AdminPassword)
+        if (password == Context.Server.Configuration.AdminPassword)
         {
             Context.Client.IsAdministrator = true;
             Reply("You are now Admin for this server");

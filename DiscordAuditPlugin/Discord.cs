@@ -10,17 +10,15 @@ namespace DiscordAuditPlugin;
 public class Discord
 {
     private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":", "@" };
-    private readonly ACServer _server;
     private readonly string _serverNameTruncated;
     
-    private DiscordWebhook AuditHook { get; }
-    private DiscordWebhook ChatHook { get; }
+    private DiscordWebhook? AuditHook { get; }
+    private DiscordWebhook? ChatHook { get; }
     private DiscordConfiguration Configuration { get; }
 
     public Discord(ACServer server, DiscordConfiguration configuration)
-    {
-        _server = server;
-        _serverNameTruncated = _server.Configuration.Name.Substring(0, Math.Min(_server.Configuration.Name.Length, 80));
+    { ;
+        _serverNameTruncated = server.Configuration.Name.Substring(0, Math.Min(server.Configuration.Name.Length, 80));
         Configuration = configuration;
         
         if (!string.IsNullOrEmpty(Configuration.AuditUrl))
@@ -47,7 +45,7 @@ public class Discord
 
     private void OnClientBanned(ACTcpClient sender, ClientAuditEventArgs args)
     {
-        AuditHook.SendAsync(PrepareAuditMessage(
+        AuditHook!.SendAsync(PrepareAuditMessage(
             ":hammer: Ban alert",
             _serverNameTruncated,
             sender.Guid,
@@ -62,7 +60,7 @@ public class Discord
     {
         if (args.Reason != KickReason.ChecksumFailed)
         {
-            AuditHook.SendAsync(PrepareAuditMessage(
+            AuditHook!.SendAsync(PrepareAuditMessage(
                 ":boot: Kick alert",
                 _serverNameTruncated,
                 sender.Guid,
@@ -88,7 +86,7 @@ public class Discord
             }
             else
             {
-                username = sender.Name;
+                username = sender.Name ?? throw new InvalidOperationException("ACTcpClient has no name set");
                 content = Sanitize(args.Message);
             }
 
@@ -100,7 +98,7 @@ public class Discord
                 AllowedMentions = new AllowedMentions()
             };
 
-            ChatHook.SendAsync(msg)
+            ChatHook!.SendAsync(msg)
                 .ContinueWith(t => Log.Error(t.Exception, "Error in Discord webhook"), TaskContinuationOptions.OnlyOnFaulted);
         }
     }
@@ -108,11 +106,11 @@ public class Discord
     private DiscordMessage PrepareAuditMessage(
         string title,
         string serverName,
-        string clientGuid,
-        string clientName,
-        string reason,
+        string? clientGuid,
+        string? clientName,
+        string? reason,
         Color color,
-        string adminName
+        string? adminName
     )
     {
         string userSteamUrl = "https://steamcommunity.com/profiles/" + clientGuid;
@@ -145,8 +143,10 @@ public class Discord
         return message;
     }
 
-    private static string Sanitize(string text)
+    private static string Sanitize(string? text)
     {
+        text ??= "";
+        
         foreach (string unsafeChar in SensitiveCharacters)
             text = text.Replace(unsafeChar, $"\\{unsafeChar}");
         return text;

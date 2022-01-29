@@ -76,7 +76,7 @@ namespace AssettoServer.Server.Ai
             float variation = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs * EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedVariationPercent;
 
             float fastLaneOffset = 0;
-            if (CurrentSplinePoint != null && CurrentSplinePoint.Left != null)
+            if (CurrentSplinePoint.Left != null)
             {
                 fastLaneOffset = EntryCar.Server.Configuration.Extra.AiParams.RightLaneOffsetMs;
             }
@@ -282,7 +282,7 @@ namespace AssettoServer.Server.Ai
 
         public void DetectObstacles()
         {
-            if (!Initialized || CurrentSplinePoint == null) return;
+            if (!Initialized) return;
             
             if (Environment.TickCount64 < _ignoreObstaclesUntil)
             {

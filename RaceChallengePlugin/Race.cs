@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
 using Serilog;
@@ -10,8 +11,8 @@ public class Race
     public ACServer Server { get; }
     public EntryCar Challenger { get; }
     public EntryCar Challenged { get; }
-    public EntryCar Leader { get; private set; }
-    public EntryCar Follower { get; private set; }
+    public EntryCar? Leader { get; private set; }
+    public EntryCar? Follower { get; private set; }
 
     public bool HasStarted { get; private set; }
     public bool LineUpRequired { get; }
@@ -28,8 +29,8 @@ public class Race
         Challenged = challenged;
         LineUpRequired = lineUpRequired;
 
-        ChallengerName = Challenger.Client.Name;
-        ChallengedName = Challenged.Client.Name;
+        ChallengerName = Challenger.Client?.Name!;
+        ChallengedName = Challenged.Client?.Name!;
     }
 
     public Task StartAsync()
@@ -121,7 +122,7 @@ public class Race
                 }
                 LastLeaderPosition = leaderPosition;
 
-                if (Vector3.DistanceSquared(Leader.Status.Position, Follower.Status.Position) > 562500)
+                if (Vector3.DistanceSquared(Leader.Status.Position, Follower!.Status.Position) > 562500)
                 {
                     return;
                 }
@@ -142,6 +143,7 @@ public class Race
         }
     }
 
+    [MemberNotNull(nameof(Leader))]
     private void UpdateLeader()
     {
         bool isFirstUpdate = false;

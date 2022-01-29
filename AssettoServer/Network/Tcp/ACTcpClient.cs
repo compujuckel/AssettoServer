@@ -35,7 +35,7 @@ namespace AssettoServer.Network.Tcp
         internal TcpClient TcpClient { get; }
         internal NetworkStream TcpStream { get; }
         internal bool HasSentFirstUpdate { get; private set; }
-        internal bool HasStartedHandshake { get; private set; }
+        [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode), nameof(Guid))] internal bool HasStartedHandshake { get; private set; }
         internal bool HasPassedChecksum { get; private set; }
         internal bool IsConnected { get; set; }
 

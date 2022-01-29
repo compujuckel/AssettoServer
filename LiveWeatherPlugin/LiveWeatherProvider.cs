@@ -1,4 +1,5 @@
 ﻿using AssettoServer.Server;
+using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather;
 using Serilog;
 
@@ -9,6 +10,8 @@ public class LiveWeatherProvider
     private readonly ACServer _server;
     private readonly LiveWeatherConfiguration _configuration;
     private readonly OpenWeatherMapWeatherProvider _liveWeatherProvider;
+
+    private readonly TrackParams _trackParams; 
 
     public LiveWeatherProvider(ACServer server, LiveWeatherConfiguration configuration)
     {
@@ -21,6 +24,7 @@ public class LiveWeatherProvider
             throw new InvalidOperationException("No track params set for track");
 
         _liveWeatherProvider = new OpenWeatherMapWeatherProvider(_configuration.OpenWeatherMapApiKey);
+        _trackParams = _server.TrackParams;
     }
 
     internal async Task LoopAsync()
@@ -46,7 +50,7 @@ public class LiveWeatherProvider
     private async Task UpdateAsync()
     {
         var last = _server.CurrentWeather;
-        var response = await _liveWeatherProvider.GetWeatherAsync(_server.TrackParams.Latitude, _server.TrackParams.Longitude);
+        var response = await _liveWeatherProvider.GetWeatherAsync(_trackParams.Latitude, _trackParams.Longitude);
         var weatherType = _server.WeatherTypeProvider.GetWeatherType(response.WeatherType);
             
         Log.Debug("Live weather: {0}, ambient {1}°C", response.WeatherType, response.TemperatureAmbient);

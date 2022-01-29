@@ -58,7 +58,7 @@ internal class Steam
         }
     }
     
-    internal async ValueTask<bool> ValidateSessionTicketAsync(byte[] sessionTicket, string guid, ACTcpClient client)
+    internal async ValueTask<bool> ValidateSessionTicketAsync(byte[]? sessionTicket, string guid, ACTcpClient client)
     {
         if (sessionTicket == null || !ulong.TryParse(guid, out ulong steamId))
             return false;

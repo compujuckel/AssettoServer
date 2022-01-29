@@ -8,12 +8,15 @@ using Humanizer;
 using Humanizer.Bytes;
 using Qmmands;
 using System;
+using System.Globalization;
 using System.Numerics;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace AssettoServer.Commands.Modules;
 
 [RequireAdmin]
+[UsedImplicitly(ImplicitUseKindFlags.Access, ImplicitUseTargetFlags.WithMembers)]
 public class AdminModule : ACModuleBase
 {
     [Command("kick", "kick_id")]
@@ -132,16 +135,12 @@ public class AdminModule : ACModuleBase
     [Command("distance")]
     public void GetDistance([Remainder] ACTcpClient player)
     {
-        if (Context.Client.EntryCar == null || player.EntryCar == null) return;
-        
-        Reply(Vector3.Distance(Context.Client.EntryCar.Status.Position, player.EntryCar.Status.Position).ToString());
+        Reply(Vector3.Distance(Context.Client.EntryCar.Status.Position, player.EntryCar.Status.Position).ToString(CultureInfo.InvariantCulture));
     }
 
     [Command("forcelights")]
     public void ForceLights(string toggle, [Remainder] ACTcpClient player)
     {
-        if (player.EntryCar == null) return;
-        
         bool forceLights = toggle == "on";
         player.EntryCar.ForceLights = forceLights;
 
@@ -151,8 +150,6 @@ public class AdminModule : ACModuleBase
     [Command("whois")]
     public void WhoIs(ACTcpClient player)
     {
-        if (player.EntryCar == null) return;
-
         Reply($"IP: {(player.TcpClient.Client.RemoteEndPoint as System.Net.IPEndPoint)?.Address}\nProfile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {player.EntryCar.Ping}ms");
         Reply($"Position: {player.EntryCar.Status.Position}\nVelocity: {(int)(player.EntryCar.Status.Velocity.Length() * 3.6)}kmh");
     }

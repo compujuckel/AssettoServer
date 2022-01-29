@@ -10,7 +10,7 @@ namespace AssettoServer.Server.Configuration
         [YamlMember(Description = "Enable Steam ticket validation. Requires CSP 0.1.75+ and a recent version of Content Manager")]
         public bool UseSteamAuth { get; set; } = false;
         [YamlMember(Description = "List of DLC App IDs that are required to join. Steam auth must be enabled. Possible values: https://steamdb.info/app/244210/dlc/")]
-        public List<int> ValidateDlcOwnership { get; set; } = new();
+        public List<int>? ValidateDlcOwnership { get; set; } = new();
         [YamlMember(Description = "Enable AFK autokick")]
         public bool EnableAntiAfk { get; set; } = true;
         [YamlMember(Description = "Maximum allowed AFK time before kick")]

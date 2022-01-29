@@ -13,7 +13,7 @@ public class RaceCommandModule : ACModuleBase
     [Command("accept")]
     public async ValueTask AcceptRaceAsync()
     {
-        Race currentRace = Context.Client.EntryCar.GetRace().CurrentRace;
+        var currentRace = Context.Client.EntryCar.GetRace().CurrentRace;
         if (currentRace == null)
             Reply("You do not have a pending race request.");
         else if (currentRace.HasStarted)

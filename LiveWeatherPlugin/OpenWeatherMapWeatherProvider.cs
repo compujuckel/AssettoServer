@@ -98,19 +98,19 @@ public class OpenWeatherMapWeatherProvider
         
         if (!response.IsSuccessStatusCode)
         {
-            var code = (int)json.SelectToken("cod");
-            var message = (string)json.SelectToken("message");
+            var code = (int)json.SelectToken("cod")!;
+            var message = (string)json.SelectToken("message")!;
             throw new OpenWeatherMapException($"OpenWeatherMap returned error {code}: {message}");
         }
 
         return new LiveWeatherProviderResponse
         {
-            WeatherType = TranslateIdToWeatherType((OpenWeatherType)(int)json.SelectToken("weather[0].id")),
-            TemperatureAmbient = Math.Max(0, (float)json.SelectToken("main.temp")),
-            Pressure = (int)json.SelectToken("main.pressure"),
-            Humidity = (int)json.SelectToken("main.humidity"),
-            WindSpeed = (float)json.SelectToken("wind.speed"),
-            WindDirection = (int)json.SelectToken("wind.deg")
+            WeatherType = TranslateIdToWeatherType((OpenWeatherType)(int)json.SelectToken("weather[0].id")!),
+            TemperatureAmbient = Math.Max(0, (float)json.SelectToken("main.temp")!),
+            Pressure = (int)json.SelectToken("main.pressure")!,
+            Humidity = (int)json.SelectToken("main.humidity")!,
+            WindSpeed = (float)json.SelectToken("wind.speed")!,
+            WindDirection = (int)json.SelectToken("wind.deg")!
         };
     }
 

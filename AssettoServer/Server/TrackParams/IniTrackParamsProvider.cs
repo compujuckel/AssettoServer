@@ -42,7 +42,7 @@ namespace AssettoServer.Server.TrackParams
             }
         }
         
-        public TrackParams GetParamsForTrack(string track)
+        public TrackParams? GetParamsForTrack(string track)
         {
             var cleanTrack = track.Substring(track.LastIndexOf('/') + 1);
             

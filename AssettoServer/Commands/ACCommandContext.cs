@@ -18,7 +18,7 @@ namespace AssettoServer.Commands
         public ChatMessage Message { get; }
         public bool IsConsole => Client == null && Message.SessionId == 255;
 
-        public ACCommandContext(ACServer server, ACTcpClient client, ChatMessage message, IServiceProvider serviceProvider = null) : base(serviceProvider)
+        public ACCommandContext(ACServer server, ACTcpClient client, ChatMessage message, IServiceProvider? serviceProvider = null) : base(serviceProvider)
         {
             Server = server;
             Client = client;

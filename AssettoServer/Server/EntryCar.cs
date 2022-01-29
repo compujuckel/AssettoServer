@@ -1,6 +1,7 @@
 ﻿using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using AssettoServer.Server.Configuration;
 
@@ -8,8 +9,8 @@ namespace AssettoServer.Server
 { 
     public partial class EntryCar
     {
-        public ACServer Server { get; internal set; }
-        public ACTcpClient Client { get; internal set; }
+        [NotNull] public ACServer? Server { get; internal set; }
+        public ACTcpClient? Client { get; internal set; }
         public CarStatus Status { get; private set; } = new CarStatus();
 
         public bool ForceLights { get; internal set; }
@@ -27,8 +28,8 @@ namespace AssettoServer.Server
         public DriverOptionsFlags DriverOptionsFlags { get; internal set; }
 
         public bool IsSpectator { get; internal set; }
-        public string Model { get; internal set; }
-        public string Skin { get; internal set; }
+        [NotNull] public string? Model { get; internal set; }
+        [NotNull] public string? Skin { get; internal set; }
         public int SpectatorMode { get; internal set; }
         public int Ballast { get; internal set; }
         public int Restrictor { get; internal set; }
@@ -36,13 +37,13 @@ namespace AssettoServer.Server
         public float NetworkDistanceSquared { get; internal set; }
         public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }
 
-        internal long[] OtherCarsLastSentUpdateTime { get; set; }
-        internal EntryCar TargetCar { get; set; }
+        [NotNull] internal long[]? OtherCarsLastSentUpdateTime { get; set; }
+        internal EntryCar? TargetCar { get; set; }
         private long LastFallCheckTime{ get; set;}
 
-        public event EventHandler<EntryCar, PositionUpdateEventArgs> PositionUpdateReceived;
-        public event EventHandler<EntryCar, EventArgs> ResetInvoked;
-
+        public event EventHandler<EntryCar, PositionUpdateEventArgs>? PositionUpdateReceived;
+        public event EventHandler<EntryCar, EventArgs>? ResetInvoked;
+        
         internal void Reset()
         {
             ResetInvoked?.Invoke(this, EventArgs.Empty);
@@ -129,16 +130,13 @@ namespace AssettoServer.Server
 
         public bool GetPositionUpdateForCar(EntryCar toCar, out PositionUpdate positionUpdate)
         {
-            if(toCar == null)
-                throw new ArgumentNullException(nameof(toCar), "toCar cannot be null.");
-            
             CarStatus targetCarStatus;
             var toTargetCar = toCar.TargetCar;
             if (toTargetCar != null)
             {
                 if (toTargetCar.AiControlled && toTargetCar.LastSeenAiState[toCar.SessionId] != null)
                 {
-                    targetCarStatus = toTargetCar.LastSeenAiState[toCar.SessionId].Status;
+                    targetCarStatus = toTargetCar.LastSeenAiState[toCar.SessionId]!.Status;
                 }
                 else
                 {

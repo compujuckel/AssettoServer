@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Serilog;
 
 namespace AssettoServer.Server.Ai
@@ -21,7 +22,7 @@ namespace AssettoServer.Server.Ai
             _evaluated.Clear();
         }
 
-        public TrafficSplinePoint Next(TrafficSplinePoint point, int count = 1)
+        public TrafficSplinePoint? Next(TrafficSplinePoint? point, int count = 1)
         {
             for (int i = 0; i < count && point != null; i++)
             {
@@ -41,7 +42,13 @@ namespace AssettoServer.Server.Ai
             return point;
         }
 
-        public TrafficSplinePoint Previous(TrafficSplinePoint point, int count = 1)
+        public bool TryNext(TrafficSplinePoint? point, [MaybeNullWhen(false)] out TrafficSplinePoint nextPoint, int count = 1)
+        {
+            nextPoint = Next(point, count);
+            return nextPoint != null;
+        }
+
+        public TrafficSplinePoint? Previous(TrafficSplinePoint? point, int count = 1)
         {
             for (int i = 0; i < count && point != null; i++)
             {
@@ -69,6 +76,12 @@ namespace AssettoServer.Server.Ai
             }
 
             return point;
+        }
+        
+        public bool TryPrevious(TrafficSplinePoint? point, [MaybeNullWhen(false)] out TrafficSplinePoint nextPoint, int count = 1)
+        {
+            nextPoint = Previous(point, count);
+            return nextPoint != null;
         }
     }
 }

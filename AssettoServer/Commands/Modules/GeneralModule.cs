@@ -10,7 +10,7 @@ public class GeneralModule : ACModuleBase
 {
     [Command("ping")]
     public void Ping()
-        => Reply($"Pong! {Context.Client?.EntryCar.Ping ?? 0}ms.");
+        => Reply($"Pong! {Context.Client.EntryCar?.Ping ?? 0}ms.");
 
     [Command("time")]
     public void Time()
@@ -43,7 +43,7 @@ public class GeneralModule : ACModuleBase
     public async Task ShowLegalNotice()
     {
         using var sr = new StringReader(LegalNotice.LegalNoticeText);
-        string line;
+        string? line;
         while ((line = await sr.ReadLineAsync()) != null)
         {
             Reply(line);

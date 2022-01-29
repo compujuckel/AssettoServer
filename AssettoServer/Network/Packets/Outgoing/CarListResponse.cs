@@ -11,10 +11,13 @@ namespace AssettoServer.Network.Packets.Outgoing
     {
         public int PageIndex;
         public int EntryCarsCount;
-        public IEnumerable<EntryCar> EntryCars;
+        public IEnumerable<EntryCar>? EntryCars;
 
         public void ToWriter(ref PacketWriter writer)
         {
+            if (EntryCars == null)
+                throw new ArgumentNullException(nameof(EntryCars));
+            
             writer.Write<byte>(0x40);
             writer.Write((byte)PageIndex);
             writer.Write((byte)EntryCarsCount);

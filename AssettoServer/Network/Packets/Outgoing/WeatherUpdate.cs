@@ -10,7 +10,7 @@ namespace AssettoServer.Network.Packets.Outgoing
     {
         public byte Ambient;
         public byte Road;
-        public string Graphics;
+        public string? Graphics;
         public short WindSpeed;
         public short WindDirection;
 

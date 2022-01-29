@@ -335,18 +335,18 @@ namespace AssettoServer.Server.Weather
                 RainWater = 0.10f,
                 Sun = 0.30f,
                 Humidity = 1.00f
-            },
-            new WeatherType()
-            {
-                WeatherFxType = WeatherFxType.None,
-                TemperatureCoefficient = 1f
             }
         );
 
+        private static readonly WeatherType NoneType = new WeatherType()
+        {
+            WeatherFxType = WeatherFxType.None,
+            TemperatureCoefficient = 1f
+        };
+
         public WeatherType GetWeatherType(WeatherFxType id)
         {
-            return WeatherTypes.Find(type => type.WeatherFxType == id) ?? 
-                   WeatherTypes.Find(type => type.WeatherFxType == WeatherFxType.None);
+            return WeatherTypes.Find(type => type.WeatherFxType == id) ?? NoneType;
         }
     }
 }

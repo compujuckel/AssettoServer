@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security.Cryptography;
 using Serilog;
@@ -35,7 +36,7 @@ public static class ChecksumsProvider
         return builder.ToImmutable();
     }
 
-    private static bool TryCreateChecksum(string filePath, out byte[] checksum)
+    private static bool TryCreateChecksum(string filePath, [MaybeNullWhen(false)] out byte[] checksum)
     {
         if (File.Exists(filePath))
         {
@@ -49,9 +50,9 @@ public static class ChecksumsProvider
         return false;
     }
     
-    private static void AddChecksum(ImmutableDictionary<string, byte[]>.Builder builder, string filePath, string name = null)
+    private static void AddChecksum(ImmutableDictionary<string, byte[]>.Builder builder, string filePath, string? name = null)
     {
-        if (TryCreateChecksum(filePath, out byte[] checksum))
+        if (TryCreateChecksum(filePath, out byte[]? checksum))
         {
             builder.Add(name ?? filePath, checksum);
             Log.Debug("Added checksum for {0}", name ?? filePath);

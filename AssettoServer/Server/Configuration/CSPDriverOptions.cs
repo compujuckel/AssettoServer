@@ -4,7 +4,7 @@ namespace AssettoServer.Server.Configuration;
 
 public static class CSPDriverOptions
 {
-    public static DriverOptionsFlags Parse(string skin)
+    public static DriverOptionsFlags Parse(string? skin)
     {
         if (skin == null)
             return default;

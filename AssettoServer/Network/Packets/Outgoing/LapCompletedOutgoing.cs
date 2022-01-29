@@ -1,11 +1,13 @@
-﻿namespace AssettoServer.Network.Packets.Outgoing;
+﻿using System;
+
+namespace AssettoServer.Network.Packets.Outgoing;
 
 public class LapCompletedOutgoing : IOutgoingNetworkPacket
 {
     public byte SessionId;
     public int LapTime;
     public byte Cuts;
-    public CompletedLap[] Laps;
+    public CompletedLap[]? Laps;
     public float TrackGrip;
 
     public class CompletedLap
@@ -18,6 +20,9 @@ public class LapCompletedOutgoing : IOutgoingNetworkPacket
     
     public void ToWriter(ref PacketWriter writer)
     {
+        if (Laps == null)
+            throw new ArgumentNullException(nameof(Laps));
+
         writer.Write<byte>(0x49);
         writer.Write(SessionId);
         writer.Write(LapTime);

@@ -1,9 +1,10 @@
 using System.Collections.Generic;
-using AssettoServer.Server.Weather;
+using JetBrains.Annotations;
 using YamlDotNet.Serialization;
 
 namespace AssettoServer.Server.Configuration
 {
+    [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     public class ACExtraConfiguration
     {
         [YamlMember(Description = "Enable Steam ticket validation. Requires CSP 0.1.75+ and a recent version of Content Manager")]
@@ -39,7 +40,7 @@ namespace AssettoServer.Server.Configuration
         [YamlMember(Description = "Enable AI traffic")]
         public bool EnableAi { get; set; } = false;
         [YamlMember(Description = "Override the country shown in CM. Please do not use this unless the autodetected country is wrong")]
-        public List<string> GeoParamsCountryOverride { get; set; } = null;
+        public List<string>? GeoParamsCountryOverride { get; set; } = null;
         [YamlMember(Description = "List of plugins to enable")]
         public List<string> EnablePlugins { get; set; } = new();
         [YamlMember(Description = "Ignore some common configuration errors. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors")]
@@ -53,6 +54,7 @@ namespace AssettoServer.Server.Configuration
         [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
     }
 
+    [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     public class IgnoreConfigurationErrors
     {
         public bool MissingCarChecksums { get; set; } = false;
@@ -61,6 +63,7 @@ namespace AssettoServer.Server.Configuration
         public bool UnsafeAdminWhitelist { get; set; } = false;
     }
 
+    [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     public class AiParams
     {
         [YamlMember(Description = "Radius around a player in which AI cars won't despawn")]
@@ -147,10 +150,11 @@ namespace AssettoServer.Server.Configuration
         [YamlIgnore] public float RightLaneOffsetMs => RightLaneOffsetKph / 3.6f;
     }
 
+    [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     public class CarSpecificOverrides
     {
         [YamlMember(Description = "Car model to match for these overrides")]
-        public string Model { get; set; }
+        public string? Model { get; set; }
         [YamlMember(Description = "AI spline height offset. Use this if the AI spline is too close to the ground")]
         public float? SplineHeightOffsetMeters { get; set; }
         [YamlMember(Description = "AI engine idle RPM")]
@@ -163,10 +167,11 @@ namespace AssettoServer.Server.Configuration
         public List<SkinSpecificOverrides> SkinSpecificOverrides { get; set; } = new();
     }
 
+    [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     public class SkinSpecificOverrides
     {
         [YamlMember(Description = "Skin to match for these overrides")]
-        public string Skin { get; set; }
+        public string? Skin { get; set; }
         [YamlMember(Description = "Allow random color changes after respawn")]
         public bool? EnableColorChanges { get; set; }
     }

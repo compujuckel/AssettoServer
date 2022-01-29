@@ -11,7 +11,6 @@ namespace AssettoServer.Server.Ai
         public int Id { get; init; }
         public Vector3 Point { get; init; }
         
-        public float Speed { get; set; }
         public float MaxCorneringSpeed { get; set; }
         //public float Gas { get; set; }
         //public float Brake { get; set; }
@@ -27,14 +26,14 @@ namespace AssettoServer.Server.Ai
         //public float Tag { get; set; }
         //public float Grade { get; set; }
         
-        [Ignore] public TrafficSplineJunction JunctionStart { get; set; }
-        [Ignore] public TrafficSplineJunction JunctionEnd { get; set; }
-        [Ignore] public TrafficSplinePoint Previous { get; set; }
-        [Ignore] public TrafficSplinePoint Next { get; set; }
-        [Ignore] public TrafficSplinePoint Left { get; set; }
-        [Ignore] public TrafficSplinePoint Right { get; set; }
+        [Ignore] public TrafficSplineJunction? JunctionStart { get; set; }
+        [Ignore] public TrafficSplineJunction? JunctionEnd { get; set; }
+        [Ignore] public TrafficSplinePoint? Previous { get; set; }
+        [Ignore] public TrafficSplinePoint? Next { get; set; }
+        [Ignore] public TrafficSplinePoint? Left { get; set; }
+        [Ignore] public TrafficSplinePoint? Right { get; set; }
 
-        public TrafficSplinePoint Traverse(int count)
+        public TrafficSplinePoint? Traverse(int count)
         {
             TrafficSplinePoint ret = this;
             for (int i = 0; i < count; i++)
@@ -65,7 +64,7 @@ namespace AssettoServer.Server.Ai
             var ret = new List<TrafficSplinePoint>();
             const int maxCount = 10;
 
-            TrafficSplinePoint point = Left;
+            TrafficSplinePoint? point = Left;
             while (point != null && ret.Count < maxCount)
             {
                 if (IsSameDirection(point))

@@ -46,9 +46,9 @@ public class ACPluginLoader
         {
             if (typeof(IAssettoServerPlugin).IsAssignableFrom(type) && !type.IsAbstract)
             {
-                IAssettoServerPlugin instance = (IAssettoServerPlugin)Activator.CreateInstance(type);
+                IAssettoServerPlugin instance = Activator.CreateInstance(type) as IAssettoServerPlugin ?? throw new InvalidOperationException("Could not create plugin instance");
 
-                Type configType = null;
+                Type? configType = null;
                 foreach (var inface in type.GetInterfaces())
                 {
                     if (inface.IsGenericType && inface.GetGenericTypeDefinition() == typeof(IAssettoServerPlugin<>))
@@ -57,27 +57,21 @@ public class ACPluginLoader
                     }
                 }
                 
-                LoadedPlugins.Add(new Plugin
-                {
-                    Name = name,
-                    Assembly = assembly,
-                    Instance = instance,
-                    ConfigurationType = configType
-                });
+                LoadedPlugins.Add(new Plugin(name, assembly, instance, configType));
             }
         }
         
         Log.Information("Loaded plugin {0}", name);
     }
 
-    public void LoadConfiguration(object configuration)
+    public void LoadConfiguration(object? configuration)
     {
         foreach (var plugin in LoadedPlugins)
         {
             if (plugin.ConfigurationType != null && plugin.ConfigurationType.IsInstanceOfType(configuration))
             {
                 var genericType = typeof(IAssettoServerPlugin<>).MakeGenericType(new[] { plugin.ConfigurationType });
-                var method = genericType.GetMethod("SetConfiguration");
+                var method = genericType.GetMethod("SetConfiguration") ?? throw new InvalidOperationException($"Plugin {plugin.Name} does not have a SetConfiguration method");
 
                 method.Invoke(plugin.Instance, new []{ configuration });
                 break;

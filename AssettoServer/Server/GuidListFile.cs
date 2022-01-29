@@ -17,7 +17,7 @@ public class GuidListFile
     private readonly ConcurrentDictionary<string, bool> _guidList = new();
     private readonly FileSystemWatcher _watcher;
 
-    public event EventHandler<GuidListFile, EventArgs> Reloaded;
+    public event EventHandler<GuidListFile, EventArgs>? Reloaded;
     
     public GuidListFile(ACServer server, string filename)
     {

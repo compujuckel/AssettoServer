@@ -1,11 +1,16 @@
-﻿namespace AssettoServer.Network.Packets.Outgoing
+﻿using System;
+
+namespace AssettoServer.Network.Packets.Outgoing
 {
     public class RawPacket : IOutgoingNetworkPacket
     {
-        public byte[] Content;
+        public byte[]? Content;
         
         public void ToWriter(ref PacketWriter writer)
         {
+            if (Content == null)
+                throw new ArgumentNullException(nameof(Content));
+            
             writer.WriteBytes(Content);
         }
     }

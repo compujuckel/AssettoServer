@@ -7,17 +7,17 @@ namespace AssettoServer.Server.Weather.Implementation;
 public class VanillaWeatherImplementation : IWeatherImplementation
 {
     private readonly ACServer _server;
-    private WeatherUpdate _lastWeather;
+    private WeatherUpdate? _lastWeather;
 
     public VanillaWeatherImplementation(ACServer server)
     {
         _server = server;
     }
     
-    public void SendWeather(ACTcpClient client = null)
+    public void SendWeather(ACTcpClient? client = null)
     {
         var weather = _server.CurrentWeather;
-        
+
         var wfxParams = new WeatherFxParams
         {
             Type = weather.Type.WeatherFxType,

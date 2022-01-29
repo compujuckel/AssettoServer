@@ -54,7 +54,7 @@ namespace AssettoServer.Network.Udp
                 if (packetId == 0x4E)
                 {
                     int sessionId = packetReader.Read<byte>();
-                    if (Server.ConnectedCars.TryGetValue(sessionId, out EntryCar car) && car.Client != null)
+                    if (Server.ConnectedCars.TryGetValue(sessionId, out EntryCar? car) && car.Client != null)
                     {
                         if (car.Client.TryAssociateUdp(remoteEp))
                         {
@@ -84,7 +84,7 @@ namespace AssettoServer.Network.Udp
                         Server.Steam.HandleIncomingPacket(data, remoteEp);
                     }
                 }*/
-                else if (Server.EndpointCars.TryGetValue(remoteEp, out EntryCar car) && car.Client != null)
+                else if (Server.EndpointCars.TryGetValue(remoteEp, out EntryCar? car) && car.Client != null)
                 {
                     if (packetId == 0x4F)
                     {
@@ -109,7 +109,7 @@ namespace AssettoServer.Network.Udp
                         {
                             car.HighPingSeconds++;
                             if (car.HighPingSeconds > Server.Configuration.Extra.MaxPingSeconds)
-                                _ = Server.KickAsync(car?.Client, KickReason.Kicked, $"{car.Client?.Name} has been kicked for high ping ({car.Ping}ms).");
+                                _ = Server.KickAsync(car.Client, KickReason.Kicked, $"{car.Client?.Name} has been kicked for high ping ({car.Ping}ms).");
                         }
                         else car.HighPingSeconds = 0;
                     }

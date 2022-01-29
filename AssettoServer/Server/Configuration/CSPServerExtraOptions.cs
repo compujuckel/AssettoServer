@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
@@ -56,6 +57,7 @@ public class CSPServerExtraOptions
         }
     }
 
+    [MemberNotNull(nameof(EncodedWelcomeMessage))]
     private void Encode()
     {
         EncodedWelcomeMessage = BuildWelcomeMessage();

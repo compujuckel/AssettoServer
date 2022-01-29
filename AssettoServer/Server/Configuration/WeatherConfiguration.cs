@@ -1,23 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AssettoServer.Server.Weather;
+﻿using AssettoServer.Server.Weather;
 
 namespace AssettoServer.Server.Configuration
 {
     public class WeatherConfiguration
     {
-        public string Graphics { get; internal set; }
-        public float BaseTemperatureAmbient { get; internal set; }
-        public float BaseTemperatureRoad { get; internal set; }
-        public float VariationAmbient { get; internal set; }
-        public float VariationRoad { get; internal set; }
-        public float WindBaseSpeedMin { get; internal set; }
-        public float WindBaseSpeedMax { get; internal set; }
-        public int WindBaseDirection { get; internal set; }
-        public int WindVariationDirection { get; internal set; }
-        public WeatherFxParams WeatherFxParams { get; internal set; }
+        public string Graphics { get; init; }
+        public float BaseTemperatureAmbient { get; init; }
+        public float BaseTemperatureRoad { get; init; }
+        public float VariationAmbient { get; init; }
+        public float VariationRoad { get; init; }
+        public float WindBaseSpeedMin { get; init; }
+        public float WindBaseSpeedMax { get; init; }
+        public int WindBaseDirection { get; init; }
+        public int WindVariationDirection { get; init; }
+        public WeatherFxParams WeatherFxParams { get; init; }
+
+        public WeatherConfiguration(string graphics)
+        {
+            Graphics = graphics;
+            WeatherFxParams = WeatherFxParams.FromString(graphics);
+        }
     }
 }

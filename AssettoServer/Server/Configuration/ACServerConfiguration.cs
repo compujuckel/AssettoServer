@@ -1,14 +1,14 @@
 ﻿using System;
-using IniParser;
-using IniParser.Model;
-using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Plugin;
-using AssettoServer.Server.Weather;
+using IniParser;
+using IniParser.Model;
+using Newtonsoft.Json;
 using Serilog;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
@@ -19,9 +19,9 @@ namespace AssettoServer.Server.Configuration
 {
     public class ACServerConfiguration
     {
-        public string Name { get; internal set; }
-        public string Password { get; internal set; }
-        public string AdminPassword { get; internal set; }
+        [NotNull] public string? Name { get; internal set; }
+        public string? Password { get; internal set; }
+        public string? AdminPassword { get; internal set; }
         public int MaxClients { get; internal set; }
 
         public ushort UdpPort { get; internal set; }
@@ -30,13 +30,13 @@ namespace AssettoServer.Server.Configuration
 
         public byte RefreshRateHz { get; internal set; }
 
-        public IReadOnlyList<EntryCar> EntryCars { get; internal set; }
-        public IReadOnlyList<SessionConfiguration> Sessions { get; internal set; }
-        public IReadOnlyList<WeatherConfiguration> Weathers { get; internal set; }
+        [NotNull] public IReadOnlyList<EntryCar>? EntryCars { get; internal set; }
+        [NotNull] public IReadOnlyList<SessionConfiguration>? Sessions { get; internal set; }
+        [NotNull] public IReadOnlyList<WeatherConfiguration>? Weathers { get; internal set; }
 
-        public string Track { get; internal set; }
-        public string TrackConfig { get; internal set; }
-        public string FullTrackName { get; internal set; }
+        [NotNull] public string? Track { get; internal set; }
+        [NotNull] public string? TrackConfig { get; internal set; }
+        [NotNull] public string? FullTrackName { get; internal set; }
         public float SunAngle { get; internal set; }
         public bool Loop { get; internal set; }
         public int MaxBallastKg { get; internal set; }
@@ -62,14 +62,14 @@ namespace AssettoServer.Server.Configuration
         public float TyreConsumptionRate { get; internal set; }
         public byte MaxContactsPerKm { get; internal set; }
         public float TrackGrip { get; internal set; }
-        public string LegalTyres { get; internal set; }
+        [NotNull] public string? LegalTyres { get; internal set; }
         public string WelcomeMessage { get; internal set; } = "";
         public float TimeOfDayMultiplier { get; internal set; }
-        public ACExtraConfiguration Extra { get; internal set; }
-        public CMContentConfiguration ContentConfiguration { get; internal set; }
+        [NotNull] public ACExtraConfiguration? Extra { get; internal set; }
+        public CMContentConfiguration? ContentConfiguration { get; internal set; }
         public DynamicTrackConfiguration DynamicTrack { get; internal set; } = new DynamicTrackConfiguration();
-        public string ServerVersion { get; internal set; }
-        public string CSPExtraOptions { get; internal set; }
+        [NotNull] public string? ServerVersion { get; internal set; }
+        public string? CSPExtraOptions { get; internal set; }
 
         /*
          * Search paths are like this:
@@ -100,7 +100,7 @@ namespace AssettoServer.Server.Configuration
             }
             else
             {
-                configBaseFolder = Path.GetDirectoryName(serverCfgPath);
+                configBaseFolder = Path.GetDirectoryName(serverCfgPath)!;
             }
 
             var parser = new FileIniDataParser();
@@ -108,7 +108,7 @@ namespace AssettoServer.Server.Configuration
             var server = data["SERVER"];
             Name = string.IsNullOrEmpty(server["NAME"]) ? "AssettoServer" : server["NAME"];
             Track = server["TRACK"];
-            TrackConfig = server["CONFIG_TRACK"];
+            TrackConfig = server["CONFIG_TRACK"] ?? "";
             FullTrackName = string.IsNullOrEmpty(TrackConfig) ? Track : Track + "-" + TrackConfig;
             Password = server["PASSWORD"];
             AdminPassword = server["ADMIN_PASSWORD"];
@@ -140,7 +140,7 @@ namespace AssettoServer.Server.Configuration
             TyreConsumptionRate = float.Parse(server["TYRE_WEAR_RATE"]) / 100;
             byte.TryParse(server["MAX_CONTACTS_PER_KM"], out byte maxContactsPerKm);
             MaxContactsPerKm = maxContactsPerKm;
-            LegalTyres = server["LEGAL_TYRES"];
+            LegalTyres = server["LEGAL_TYRES"] ?? "";
             TimeOfDayMultiplier = float.Parse(server["TIME_OF_DAY_MULT"]);
             Loop = int.Parse(server["LOOP_MODE"]) == 1;
 
@@ -166,6 +166,7 @@ namespace AssettoServer.Server.Configuration
                 yamlParser.Accept<DocumentStart>(out _);
 
                 extraCfg = deserializer.Deserialize<ACExtraConfiguration>(yamlParser);
+                extraCfg.EnablePlugins ??= new List<string>();
 
                 foreach (var pluginName in extraCfg.EnablePlugins)
                 {
@@ -224,11 +225,10 @@ namespace AssettoServer.Server.Configuration
             if(Extra.EnableServerDetails)
             {
                 string cmContentPath = Path.Join(configBaseFolder, "cm_content/content.json");
-                CMContentConfiguration cmContent = new CMContentConfiguration();
                 // Only load if the file already exists, otherwise this will fail if the content directory does not exist
                 if (File.Exists(cmContentPath))
                 {
-                    cmContent = JsonConvert.DeserializeObject<CMContentConfiguration>(File.ReadAllText(cmContentPath));
+                    var cmContent = JsonConvert.DeserializeObject<CMContentConfiguration>(File.ReadAllText(cmContentPath));
 
                     File.WriteAllText(cmContentPath, JsonConvert.SerializeObject(cmContent, Formatting.Indented));
 
@@ -259,9 +259,8 @@ namespace AssettoServer.Server.Configuration
                 if (weather.Count == 0)
                     break;
 
-                var weatherConfiguration = new WeatherConfiguration
+                var weatherConfiguration = new WeatherConfiguration(weather["GRAPHICS"])
                 {
-                    Graphics = weather["GRAPHICS"],
                     BaseTemperatureAmbient = float.Parse(weather["BASE_TEMPERATURE_AMBIENT"]),
                     BaseTemperatureRoad = float.Parse(weather["BASE_TEMPERATURE_ROAD"]),
                     VariationAmbient = float.Parse(weather["VARIATION_AMBIENT"]),
@@ -270,7 +269,6 @@ namespace AssettoServer.Server.Configuration
                     WindBaseSpeedMax = float.Parse(weather["WIND_BASE_SPEED_MAX"]),
                     WindBaseDirection = int.Parse(weather["WIND_BASE_DIRECTION"]),
                     WindVariationDirection = int.Parse(weather["WIND_VARIATION_DIRECTION"]),
-                    WeatherFxParams = WeatherFxParams.FromString(weather["GRAPHICS"])
                 };
 
                 weathers.Add(weatherConfiguration);
@@ -337,7 +335,7 @@ namespace AssettoServer.Server.Configuration
                 entryCars.Add(new EntryCar
                 {
                     Model = entry["MODEL"],
-                    Skin = entry["SKIN"],
+                    Skin = entry["SKIN"] ?? "",
                     SpectatorMode = int.Parse(entry["SPECTATOR_MODE"] ?? "0"),
                     Ballast = int.Parse(entry["BALLAST"]),
                     Restrictor = int.Parse(entry["RESTRICTOR"]),

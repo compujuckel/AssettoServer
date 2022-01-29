@@ -10,7 +10,7 @@ namespace AssettoServer.Server
         public short P2PCount { get; internal set; }
         public bool P2PActive { get; internal set; }
         public bool MandatoryPit { get; internal set; }
-        public string CurrentTyreCompound { get; internal set; }
+        public string? CurrentTyreCompound { get; internal set; }
 
         public byte PakSequenceId { get; internal set; }
         public Vector3 Position { get; set; }

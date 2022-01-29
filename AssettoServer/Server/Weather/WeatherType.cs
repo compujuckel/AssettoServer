@@ -9,7 +9,7 @@ namespace AssettoServer.Server.Weather
     public record WeatherType
     {
         public WeatherFxType WeatherFxType { get; init; }
-        public string Graphics { get; init; }
+        public string? Graphics { get; init; }
         public float TemperatureCoefficient { get; init; }
         public float RainIntensity { get; init; }
         public float RainWetness { get; init; }

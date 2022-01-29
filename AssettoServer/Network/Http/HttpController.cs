@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using AssettoServer.Network.Http.Responses;
 using AssettoServer.Server;
 using AssettoServer.Server.Weather;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +20,7 @@ namespace AssettoServer.Network.Http
             _server = server;
         }
 
-        private string IdFromGuid(string guid)
+        private string? IdFromGuid(string? guid)
         {
             if (guid != null)
             {
@@ -86,8 +87,8 @@ namespace AssettoServer.Network.Http
                     Skin = ec.Skin,
                     IsEntryList = ec.AiMode != AiMode.Fixed && (isAdmin || _server.Configuration.Extra.AiParams.MaxPlayerCount == 0 ||
                                                                 _server.ConnectedCars.Count < _server.Configuration.Extra.AiParams.MaxPlayerCount),
-                    DriverName = ec?.Client?.Name,
-                    DriverTeam = ec?.Client?.Team,
+                    DriverName = ec.Client?.Name,
+                    DriverTeam = ec.Client?.Team,
                     IsConnected = ec.Client != null
                 }).ToList(),
                 Features = _server.Features
@@ -133,11 +134,11 @@ namespace AssettoServer.Network.Http
                         Skin = ec.Skin,
                         IsEntryList = ec.AiMode != AiMode.Fixed && (isAdmin || _server.Configuration.Extra.AiParams.MaxPlayerCount == 0 ||
                                                                     _server.ConnectedCars.Count < _server.Configuration.Extra.AiParams.MaxPlayerCount),
-                        DriverName = ec?.Client?.Name,
-                        DriverTeam = ec?.Client?.Team,
-                        DriverNation = ec?.Client?.NationCode,
+                        DriverName = ec.Client?.Name,
+                        DriverTeam = ec.Client?.Team,
+                        DriverNation = ec.Client?.NationCode,
                         IsConnected = ec.Client != null,
-                        ID = IdFromGuid(ec?.Client?.Guid)
+                        ID = IdFromGuid(ec.Client?.Guid)
                     }).ToList(),
                 },
                 Until = DateTimeOffset.Now.ToUnixTimeSeconds() + (long)_server.CurrentSession.TimeLeft.TotalSeconds * 1000,

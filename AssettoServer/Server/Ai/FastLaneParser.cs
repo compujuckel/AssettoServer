@@ -73,7 +73,7 @@ namespace AssettoServer.Server.Ai
 
             for (var i = 0; i < detailCount; i++)
             {
-                points[i].Speed = reader.ReadSingle();
+                /*points[i].Speed*/ _ = reader.ReadSingle();
                 /*points[i].Gas*/ _ = reader.ReadSingle();
                 /*points[i].Brake*/ _ = reader.ReadSingle();
                 /*points[i].ObsoleteLatG*/ _ = reader.ReadSingle();
@@ -97,7 +97,7 @@ namespace AssettoServer.Server.Ai
                 points[i].Previous = points[i == 0 ? detailCount - 1 : i - 1];
                 points[i].Next = points[i == detailCount - 1 ? 0 : i + 1];
 
-                points[i].Length = Vector3.Distance(points[i].Point, points[i].Next.Point);
+                points[i].Length = Vector3.Distance(points[i].Point, points[i].Next!.Point);
             }
 
             /*using (var writer = new StreamWriter(Path.GetFileName(filename) + ".csv"))

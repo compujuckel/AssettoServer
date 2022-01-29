@@ -4,7 +4,7 @@
     {
         public int Id { get; init; }
         public SessionType Type => (SessionType)Id + 1;
-        public string Name { get; init; }
+        public string Name { get; init; } = "";
         public int Time { get; init; }
         public int Laps { get; init; }
         public int WaitTime { get; init; }

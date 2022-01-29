@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AssettoServer.Server.Weather
+﻿namespace AssettoServer.Server.Weather
 {
     public class WeatherData
     {
@@ -23,5 +17,11 @@ namespace AssettoServer.Server.Weather
         public float RainWetness { get; set; }
         public float RainWater { get; set; }
         public float TrackGrip { get; set; }
+
+        public WeatherData(WeatherType type, WeatherType upcomingType)
+        {
+            Type = type;
+            UpcomingType = upcomingType;
+        }
     }
 }

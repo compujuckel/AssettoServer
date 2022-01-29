@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using Serilog;
@@ -19,8 +20,8 @@ namespace AssettoServer.Server.Ai
             // obj-Files are one-indexed
             int objectStartIndex = 1;
             int id = 1;
-            string currentSplineName = null;
-            List<TrafficSplinePoint> points = null;
+            string? currentSplineName = null;
+            List<TrafficSplinePoint>? points = null;
             foreach (string line in lines)
             {
                 string[] words = line.Split();
@@ -32,6 +33,9 @@ namespace AssettoServer.Server.Ai
                     case "o":
                         if (points != null)
                         {
+                            if (currentSplineName == null)
+                                throw new ArgumentNullException(nameof(currentSplineName));
+                            
                             objectStartIndex = objectStartIndex + points.Count;
                             var spline = new TrafficSpline
                             {
@@ -64,6 +68,9 @@ namespace AssettoServer.Server.Ai
                         });
                         break;
                     case "l":
+                        if (points == null)
+                            throw new ArgumentNullException(nameof(points));
+                        
                         int start = int.Parse(words[1]) - objectStartIndex;
                         int end = int.Parse(words[2]) - objectStartIndex;
 
@@ -75,6 +82,9 @@ namespace AssettoServer.Server.Ai
 
             if (points != null)
             {
+                if (currentSplineName == null)
+                    throw new ArgumentNullException(nameof(currentSplineName));
+                
                 var spline = new TrafficSpline
                 {
                     Name = currentSplineName,

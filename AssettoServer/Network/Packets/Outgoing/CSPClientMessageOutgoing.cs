@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using AssettoServer.Network.Packets.Shared;
 
@@ -10,12 +11,12 @@ public abstract class CSPClientMessageOutgoing : IOutgoingNetworkPacket
         
     public byte SessionId { get; init; }
     public CSPClientMessageType Type { get; set; }
-    public byte[] Data { get; set; }
+    public byte[]? Data { get; set; }
     
-    private string _encoded;
+    private string? _encoded;
 
     protected abstract void ToWriter(BinaryWriter writer);
-        
+    
     public void ToWriter(ref PacketWriter writer)
     {
         if (Data == null)
@@ -30,10 +31,7 @@ public abstract class CSPClientMessageOutgoing : IOutgoingNetworkPacket
 
         if (ChatEncoded)
         {
-            if (_encoded == null)
-            {
-                _encoded = "\t\t\t\t$CSP0:" + Convert.ToBase64String(Data).TrimEnd('=');
-            }
+            _encoded ??= "\t\t\t\t$CSP0:" + Convert.ToBase64String(Data).TrimEnd('=');
                 
             writer.Write<byte>(0x47);
             writer.Write(SessionId);

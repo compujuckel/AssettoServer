@@ -3,7 +3,6 @@ using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Udp;
-using AssettoServer.Server;
 using AssettoServer.Server.Weather;
 using Humanizer;
 using Humanizer.Bytes;
@@ -18,7 +17,7 @@ namespace AssettoServer.Commands.Modules;
 public class AdminModule : ACModuleBase
 {
     [Command("kick", "kick_id")]
-    public Task KickAsync(ACTcpClient player, [Remainder] string reason = null)
+    public Task KickAsync(ACTcpClient player, [Remainder] string? reason = null)
     {
         if (player.SessionId == Context.Client?.SessionId)
             Reply("You cannot kick yourself.");
@@ -36,7 +35,7 @@ public class AdminModule : ACModuleBase
     }
 
     [Command("ban", "ban_id")]
-    public Task BanAsync(ACTcpClient player, [Remainder] string reason = null)
+    public Task BanAsync(ACTcpClient player, [Remainder] string? reason = null)
     {
         if (player.SessionId == Context.Client?.SessionId)
             Reply("You cannot ban yourself.");
@@ -56,13 +55,11 @@ public class AdminModule : ACModuleBase
     [Command("pit")]
     public void TeleportToPits([Remainder] ACTcpClient player)
     {
-        EntryCar car = player.EntryCar;
-
-        Context.Server.SendCurrentSession(car.Client);
-        car.Client.SendPacket(new ChatMessage { SessionId = 255, Message = "You have been teleported to the pits." });
+        Context.Server.SendCurrentSession(player);
+        player.SendPacket(new ChatMessage { SessionId = 255, Message = "You have been teleported to the pits." });
 
         if (player.SessionId != Context.Client.SessionId)
-            Reply($"{car.Client.Name} has been teleported to the pits.");
+            Reply($"{player.Name} has been teleported to the pits.");
     }
 
     [Command("settime")]
@@ -135,12 +132,16 @@ public class AdminModule : ACModuleBase
     [Command("distance")]
     public void GetDistance([Remainder] ACTcpClient player)
     {
+        if (Context.Client.EntryCar == null || player.EntryCar == null) return;
+        
         Reply(Vector3.Distance(Context.Client.EntryCar.Status.Position, player.EntryCar.Status.Position).ToString());
     }
 
     [Command("forcelights")]
     public void ForceLights(string toggle, [Remainder] ACTcpClient player)
     {
+        if (player.EntryCar == null) return;
+        
         bool forceLights = toggle == "on";
         player.EntryCar.ForceLights = forceLights;
 
@@ -150,10 +151,10 @@ public class AdminModule : ACModuleBase
     [Command("whois")]
     public void WhoIs(ACTcpClient player)
     {
-        EntryCar car = player.EntryCar;
+        if (player.EntryCar == null) return;
 
-        Reply($"IP: {(player.TcpClient.Client.RemoteEndPoint as System.Net.IPEndPoint).Address}\nProfile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {car.Ping}ms");
-        Reply($"Position: {car.Status.Position}\nVelocity: {(int)(car.Status.Velocity.Length() * 3.6)}kmh");
+        Reply($"IP: {(player.TcpClient.Client.RemoteEndPoint as System.Net.IPEndPoint)?.Address}\nProfile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {player.EntryCar.Ping}ms");
+        Reply($"Position: {player.EntryCar.Status.Position}\nVelocity: {(int)(player.EntryCar.Status.Velocity.Length() * 3.6)}kmh");
     }
 
     [Command("restrict")]

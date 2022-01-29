@@ -9,8 +9,8 @@ namespace AssettoServer.Network.Packets.Outgoing
     public class CarConnected : IOutgoingNetworkPacket
     {
         public byte SessionId;
-        public string Name;
-        public string Nation;
+        public string? Name;
+        public string? Nation;
 
         public void ToWriter(ref PacketWriter writer)
         {

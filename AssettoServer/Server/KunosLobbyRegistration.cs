@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ internal class KunosLobbyRegistration
     {
         _server = server;
     }
-
+    
     internal async Task LoopAsync()
     {
         if (!await RegisterToLobbyAsync())
@@ -35,7 +36,6 @@ internal class KunosLobbyRegistration
                 Log.Error(ex, "Error during Kunos lobby update");
             }
         }
-        // ReSharper disable once FunctionNeverReturns
     }
 
     private async Task<bool> RegisterToLobbyAsync()

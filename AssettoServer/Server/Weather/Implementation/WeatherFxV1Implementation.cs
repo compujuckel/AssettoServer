@@ -13,8 +13,8 @@ public class WeatherFxV1Implementation : IWeatherImplementation
         _server = server;
     }
 
-    public void SendWeather(ACTcpClient client = null)
-    { 
+    public void SendWeather(ACTcpClient? client = null)
+    {
         var weather = new CSPWeatherUpdate
         {
             UnixTimestamp = (ulong) new DateTimeOffset(_server.CurrentDateTime).ToUnixTimeSeconds(),

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using AssettoServer.Server.Configuration;
 using Serilog;
 
@@ -15,9 +16,11 @@ namespace AssettoServer.Server.Weather
             _server = server;
 
             int config = Random.Shared.Next(_server.Configuration.Weathers.Count);
-            SetWeatherConfiguration(config);
+            if (!SetWeatherConfiguration(config))
+                throw new InvalidOperationException("Could not set initial weather configuration");
         }
 
+        [MemberNotNullWhen(true, nameof(_weatherConfiguration))]
         public bool SetWeatherConfiguration(int id)
         {
             if (id < 0 || id >= _server.Configuration.Weathers.Count)
@@ -39,10 +42,8 @@ namespace AssettoServer.Server.Weather
 
             float ambient = GetFloatWithVariation(_weatherConfiguration.BaseTemperatureAmbient, _weatherConfiguration.VariationAmbient);
             
-            _server.SetWeather(new WeatherData
+            _server.SetWeather(new WeatherData(weatherType, weatherType)
             {
-                Type = weatherType,
-                UpcomingType = weatherType,
                 TemperatureAmbient = ambient,
                 TemperatureRoad = GetFloatWithVariation(ambient + _weatherConfiguration.BaseTemperatureRoad, _weatherConfiguration.VariationRoad),
                 WindSpeed = GetRandomFloatInRange(_weatherConfiguration.WindBaseSpeedMin, _weatherConfiguration.WindBaseSpeedMax),

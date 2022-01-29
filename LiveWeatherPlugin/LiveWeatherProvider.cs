@@ -51,10 +51,8 @@ public class LiveWeatherProvider
             
         Log.Debug("Live weather: {0}, ambient {1}°C", response.WeatherType, response.TemperatureAmbient);
 
-        _server.SetWeather(new WeatherData
+        _server.SetWeather(new WeatherData(last.Type, weatherType)
         {
-            Type = last.Type,
-            UpcomingType = weatherType,
             TransitionDuration = 120000.0,
             TemperatureAmbient = response.TemperatureAmbient,
             TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(TimeZoneInfo.ConvertTimeFromUtc(_server.CurrentDateTime, _server.TimeZone).TimeOfDay.TotalSeconds, response.TemperatureAmbient,

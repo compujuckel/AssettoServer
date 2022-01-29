@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 // From https://github.com/JPBotelho/Catmull-Rom-Splines, Unity dependencies removed
@@ -111,6 +112,7 @@ namespace JPBotelho
         }
 
         //Sets the length of the point array based on resolution/closed loop.
+        [MemberNotNull(nameof(_splinePoints))]
         private void InitializeProperties()
         {
             int pointsToCreate;
@@ -127,6 +129,7 @@ namespace JPBotelho
         }
 
         //Math stuff to generate the spline points
+        [MemberNotNull(nameof(_splinePoints))]
         private void GenerateSplinePoints()
         {
             InitializeProperties();

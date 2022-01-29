@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -20,10 +22,10 @@ public partial class EntryCar
     public bool AiControlled { get; set; }
     public AiMode AiMode { get; init; }
     public int TargetAiStateCount { get; private set; } = 1;
-    public byte[] LastSeenAiSpawn { get; init; }
-    public byte[] AiPakSequenceIds { get; init; }
-    public AiState[] LastSeenAiState { get; init; }
-    public string AiName { get; private set; }
+    [NotNull] public byte[]? LastSeenAiSpawn { get; init; }
+    [NotNull] public byte[]? AiPakSequenceIds { get; init; }
+    [NotNull] public AiState?[]? LastSeenAiState { get; init; }
+    public string? AiName { get; private set; }
     public bool AiEnableColorChanges { get; set; } = false;
     public int AiIdleEngineRpm { get; set; } = 800;
     public int AiMaxEngineRpm { get; set; } = 3000;
@@ -126,12 +128,12 @@ public partial class EntryCar
         }
     }
 
-    public AiState GetBestStateForPlayer(CarStatus playerStatus)
+    public AiState? GetBestStateForPlayer(CarStatus playerStatus)
     {
         _aiStatesLock.EnterReadLock();
         try
         {
-            AiState bestState = null;
+            AiState? bestState = null;
             float minDistance = float.MaxValue;
 
             foreach (var aiState in _aiStates)
@@ -186,7 +188,7 @@ public partial class EntryCar
 
     public (AiState aiState, float distanceSquared) GetClosestAiState(Vector3 position)
     {
-        AiState closestState = null;
+        AiState? closestState = null;
         float minDistanceSquared = float.MaxValue;
 
         _aiStatesLock.EnterReadLock();
@@ -206,6 +208,9 @@ public partial class EntryCar
         {
             _aiStatesLock.ExitReadLock();
         }
+
+        if (closestState == null)
+            throw new InvalidOperationException("Could not get closest AI state");
 
         return (closestState, minDistanceSquared);
     }

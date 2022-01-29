@@ -12,7 +12,7 @@ namespace AssettoServer.Network.Packets
 {
     public struct PacketWriter
     {
-        public readonly Stream Stream;
+        public readonly Stream? Stream;
         public Memory<byte> Buffer { get; private set; }
 
         private int _writePosition;
@@ -38,22 +38,24 @@ namespace AssettoServer.Network.Packets
 
         public async ValueTask SendAsync(CancellationToken cancellationToken = default)
         {
+            if (Stream == null)
+                throw new ArgumentNullException(nameof(Stream));
+            
             ushort packetSize = (ushort)(_writePosition - 2);
             MemoryMarshal.Write(Buffer.Span, ref packetSize);
 
             await Stream.WriteAsync(Buffer.Slice(0, packetSize + 2), cancellationToken);
         }
 
-        public void WriteASCIIString(string str, bool bigLength = false)
+        public void WriteASCIIString(string? str, bool bigLength = false)
             => WriteString(str, Encoding.ASCII, bigLength);
 
-        public void WriteUTF32String(string str, bool bigLength = false)
+        public void WriteUTF32String(string? str, bool bigLength = false)
             => WriteString(str, Encoding.UTF32, bigLength);
 
-        public void WriteString(string str, Encoding encoding, bool bigLength = false)
+        public void WriteString(string? str, Encoding encoding, bool bigLength = false)
         {
-            if (str == null)
-                str = string.Empty;
+            str ??= string.Empty;
 
             if (bigLength)
                 Write((ushort)str.Length);

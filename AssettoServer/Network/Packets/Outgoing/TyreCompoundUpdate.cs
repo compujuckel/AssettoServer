@@ -8,7 +8,7 @@ namespace AssettoServer.Network.Packets.Outgoing
 {
     public class TyreCompoundUpdate : IOutgoingNetworkPacket
     {
-        public string CompoundName;
+        public string? CompoundName;
         public byte SessionId;
 
         public void ToWriter(ref PacketWriter writer)

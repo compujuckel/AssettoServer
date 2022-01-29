@@ -114,10 +114,8 @@ public class VotingWeather
 
         _server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = $"Weather vote ended. Next weather: {winner}" });
 
-        _server.SetWeather(new WeatherData
+        _server.SetWeather(new WeatherData(last.Type, winnerType)
         {
-            Type = last.Type,
-            UpcomingType = winnerType,
             TransitionDuration = 120000.0,
             TemperatureAmbient = last.TemperatureAmbient,
             TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(TimeZoneInfo.ConvertTimeFromUtc(_server.CurrentDateTime, _server.TimeZone).TimeOfDay.TotalSeconds, last.TemperatureAmbient,

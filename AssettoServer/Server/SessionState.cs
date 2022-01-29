@@ -6,7 +6,7 @@ namespace AssettoServer.Server;
 
 public class SessionState
 {
-    public SessionConfiguration Configuration { get; set; }
+    public SessionConfiguration Configuration { get; init; }
     public int EndTime { get; set; } // TODO
     public DateTime StartTime { get; set; }
     public long StartTimeTicks { get; set; }
@@ -17,8 +17,13 @@ public class SessionState
     public int LeaderLapCount { get; set; } = 0;
     public bool LeaderHasCompletedLastLap { get; set; } = false;
     public bool SessionOverFlag { get; set; } = false;
-    public Dictionary<byte, EntryCarResult> Results { get; set; }
-    public IEnumerable<EntryCar> Grid { get; set; }
+    public Dictionary<byte, EntryCarResult>? Results { get; set; }
+    public IEnumerable<EntryCar>? Grid { get; set; }
+
+    public SessionState(SessionConfiguration configuration)
+    {
+        Configuration = configuration;
+    }
 }
 
 public class EntryCarResult

@@ -8,7 +8,7 @@ namespace AssettoServer.Network.Packets.Outgoing
 {
     public class WelcomeMessage : IOutgoingNetworkPacket
     {
-        public string Message;
+        public string? Message;
 
         public void ToWriter(ref PacketWriter writer)
         {

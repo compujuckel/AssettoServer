@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ namespace AssettoServer.Server.Ai
         private long _lastAiUpdate = Environment.TickCount64;
         private long _lastAiObstacleDetectionUpdate = Environment.TickCount64;
         
-        public ILookup<TrafficSplinePoint, AiState> AiStatesBySplinePoint { get; private set; }
+        public ILookup<TrafficSplinePoint, AiState>? AiStatesBySplinePoint { get; private set; }
 
         private readonly GaugeOptions _aiStateCountMetric = new GaugeOptions
         {
@@ -75,13 +76,13 @@ namespace AssettoServer.Server.Ai
 
         private void OnClientChecksumPassed(ACTcpClient sender, EventArgs args)
         {
-            sender.EntryCar.SetAiControl(false);
+            sender.EntryCar?.SetAiControl(false);
             AdjustOverbooking();
         }
 
         private void OnClientDisconnected(ACTcpClient sender, EventArgs args)
         {
-            if (sender.EntryCar.AiMode == AiMode.Auto)
+            if (sender.EntryCar?.AiMode == AiMode.Auto)
             {
                 sender.EntryCar.SetAiControl(true);
                 AdjustOverbooking();
@@ -140,10 +141,15 @@ namespace AssettoServer.Server.Ai
             return true;
         }
 
-        private TrafficSplinePoint GetSpawnPoint(EntryCar playerCar)
+        private TrafficSplinePoint? GetSpawnPoint(EntryCar playerCar)
         {
+            if (!_server.AiEnabled)
+                throw new InvalidOperationException("Ai disabled");
+            
             var targetPlayerSplinePos = _server.TrafficMap.WorldToSpline(playerCar.Status.Position);
 
+            if (targetPlayerSplinePos.point.Next == null) return null;
+            
             var forward = targetPlayerSplinePos.point.Next.Point - targetPlayerSplinePos.point.Point;
             int direction = Vector3.Dot(forward, playerCar.Status.Velocity) > 0 ? 1 : -1;
             
@@ -156,7 +162,7 @@ namespace AssettoServer.Server.Ai
             int spawnDistance = Random.Shared.Next(_server.Configuration.Extra.AiParams.MinSpawnDistancePoints, _server.Configuration.Extra.AiParams.MaxSpawnDistancePoints);
             var spawnPoint = targetPlayerSplinePos.point.Traverse(spawnDistance * direction)?.RandomLane(_server.Configuration.Extra.AiParams.TwoWayTraffic);
             
-            if (spawnPoint != null)
+            if (spawnPoint != null && spawnPoint.Next != null)
             {
                 forward = spawnPoint.Next.Point - spawnPoint.Point;
                 direction = Vector3.Dot(forward, playerCar.Status.Velocity) > 0 ? 1 : -1;
@@ -169,7 +175,7 @@ namespace AssettoServer.Server.Ai
 
             return spawnPoint;
         }
-
+        
         public void ObstacleDetection()
         {
             using var timer = _server.Metrics.Measure.Timer.Time(_obstacleDetectionDurationMetric);
@@ -280,7 +286,7 @@ namespace AssettoServer.Server.Ai
 
             while (playerCarsOrdered.Count > 0 && outOfRangeAiStates.Count > 0)
             {
-                TrafficSplinePoint spawnPoint = null;
+                TrafficSplinePoint? spawnPoint = null;
                 while (spawnPoint == null && playerCarsOrdered.Count > 0)
                 {
                     var targetPlayerCar = playerCarsOrdered.ElementAt(GetRandomWeighted(playerCarsOrdered.Count));

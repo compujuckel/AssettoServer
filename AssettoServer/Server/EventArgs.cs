@@ -12,8 +12,8 @@ public delegate void EventHandler<TSender, TArgs>(TSender sender, TArgs args) wh
 public class ClientAuditEventArgs : EventArgs
 {
     public KickReason Reason { get; init; }
-    public string ReasonStr { get; init; }
-    public ACTcpClient Admin { get; init; }
+    public string? ReasonStr { get; init; }
+    public ACTcpClient? Admin { get; init; }
 }
 
 public class ClientHandshakeEventArgs : CancelEventArgs
@@ -21,7 +21,7 @@ public class ClientHandshakeEventArgs : CancelEventArgs
     public HandshakeRequest HandshakeRequest { get; init; }
 
     public CancelTypeEnum CancelType { get; set; }
-    public string AuthFailedReason { get; set; }
+    public string? AuthFailedReason { get; set; }
 
     public enum CancelTypeEnum
     {
@@ -32,7 +32,12 @@ public class ClientHandshakeEventArgs : CancelEventArgs
 
 public class ChatEventArgs : CancelEventArgs
 {
-    public string Message { get; init; }
+    public string Message { get; }
+
+    public ChatEventArgs(string message)
+    {
+        Message = message;
+    }
 }
 
 public class ChatMessageEventArgs : EventArgs

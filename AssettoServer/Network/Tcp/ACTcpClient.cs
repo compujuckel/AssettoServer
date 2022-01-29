@@ -1,6 +1,7 @@
 ﻿using AssettoServer.Network.Packets;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -23,12 +24,12 @@ namespace AssettoServer.Network.Tcp
     {
         public ACServer Server { get; }
         public byte SessionId { get; set; }
-        public string Name { get; private set; }
-        public string Team { get; private set; }
-        public string NationCode { get; private set; }
+        public string? Name { get; private set; }
+        public string? Team { get; private set; }
+        public string? NationCode { get; private set; }
         public bool IsAdministrator { get; internal set; }
-        public string Guid { get; internal set; }
-        public EntryCar EntryCar { get; set; }
+        public string? Guid { get; internal set; }
+        [NotNull] public EntryCar? EntryCar { get; set; }
         public bool IsDisconnectRequested => _disconnectRequested == 1;
 
         internal TcpClient TcpClient { get; }
@@ -38,7 +39,7 @@ namespace AssettoServer.Network.Tcp
         internal bool HasPassedChecksum { get; private set; }
         internal bool IsConnected { get; set; }
 
-        internal IPEndPoint UdpEndpoint { get; private set; }
+        internal IPEndPoint? UdpEndpoint { get; private set; }
         internal bool HasAssociatedUdp { get; private set; }
 
         private ThreadLocal<byte[]> UdpSendBuffer { get; }
@@ -46,15 +47,15 @@ namespace AssettoServer.Network.Tcp
         private SemaphoreSlim TcpSendSemaphore { get; }
         private Channel<IOutgoingNetworkPacket> OutgoingPacketChannel { get; }
         private CancellationTokenSource DisconnectTokenSource { get; }
-        private Task SendLoopTask { get; set; }
+        [NotNull] private Task? SendLoopTask { get; set; }
         private long LastChatTime { get; set; }
         private int _disconnectRequested = 0;
 
-        public event EventHandler<ACTcpClient, ClientHandshakeEventArgs> HandshakeStarted;
-        public event EventHandler<ACTcpClient, EventArgs> ChecksumPassed;
-        public event EventHandler<ACTcpClient, EventArgs> ChecksumFailed;
-        public event EventHandler<ACTcpClient, ChatMessageEventArgs> ChatMessageReceived;
-        public event EventHandler<ACTcpClient, EventArgs> Disconnecting;
+        public event EventHandler<ACTcpClient, ClientHandshakeEventArgs>? HandshakeStarted;
+        public event EventHandler<ACTcpClient, EventArgs>? ChecksumPassed;
+        public event EventHandler<ACTcpClient, EventArgs>? ChecksumFailed;
+        public event EventHandler<ACTcpClient, ChatMessageEventArgs>? ChatMessageReceived;
+        public event EventHandler<ACTcpClient, EventArgs>? Disconnecting;
 
         internal ACTcpClient(ACServer server, TcpClient tcpClient)
         {
@@ -103,7 +104,7 @@ namespace AssettoServer.Network.Tcp
         {
             try
             {
-                byte[] buffer = UdpSendBuffer.Value;
+                byte[] buffer = UdpSendBuffer.Value!;
                 PacketWriter writer = new PacketWriter(buffer);
                 int bytesWritten = writer.WritePacket(packet);
 
@@ -209,6 +210,9 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new NoSlotsAvailableResponse());
                         else
                         {
+                            if (EntryCar == null)
+                                throw new InvalidOperationException("No EntryCar set even though handshake started");
+                            
                             var args = new ClientHandshakeEventArgs
                             {
                                 HandshakeRequest = handshakeRequest
@@ -220,7 +224,7 @@ namespace AssettoServer.Network.Tcp
                                 if (args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.Blacklisted)
                                     SendPacket(new BlacklistedResponse());
                                 else if (args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.AuthFailed)
-                                    SendPacket(new AuthFailedResponse(args.AuthFailedReason));
+                                    SendPacket(new AuthFailedResponse(args.AuthFailedReason ?? "No reason specified"));
 
                                 return;
                             }
@@ -411,7 +415,7 @@ namespace AssettoServer.Network.Tcp
             if (reader.Buffer.Length == fullChecksum.Length + 1)
             {
                 reader.ReadBytes(fullChecksum);
-                passedChecksum = !Server.CarChecksums.TryGetValue(EntryCar.Model, out byte[] modelChecksum) || fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(modelChecksum);
+                passedChecksum = !Server.CarChecksums.TryGetValue(EntryCar.Model, out byte[]? modelChecksum) || fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(modelChecksum);
 
                 KeyValuePair<string, byte[]>[] allChecksums = Server.TrackChecksums.ToArray();
                 for (int i = 0; i < allChecksums.Length; i++)
@@ -524,7 +528,7 @@ namespace AssettoServer.Network.Tcp
         {
             int timestamp = Server.CurrentTime;
 
-            var entryCarResult = Server.CurrentSession.Results[SessionId];
+            var entryCarResult = Server.CurrentSession.Results?[SessionId] ?? throw new InvalidOperationException("Current session does not have results set");
 
             if (entryCarResult.HasCompletedLastLap)
             {

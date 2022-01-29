@@ -12,13 +12,13 @@ namespace AssettoServer.Network.Packets
 {
     public struct PacketReader
     {
-        public readonly Stream Stream;
+        public readonly Stream? Stream;
         public Memory<byte> Buffer { get; private set; }
         public int ReadPosition { get; private set; }
 
         private bool _readPacket;
 
-        public PacketReader(Stream stream, Memory<byte> buffer)
+        public PacketReader(Stream? stream, Memory<byte> buffer)
         {
             Stream = stream;
             Buffer = buffer;
@@ -100,12 +100,14 @@ namespace AssettoServer.Network.Packets
 
         private async ValueTask ReadBytesInternalAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
+            if (Stream == null)
+                throw new ArgumentNullException(nameof(Stream));
 
             int totalBytesRead = 0;
             int bytesRead;
             int bufferLength = buffer.Length;
-
-            while ((bytesRead = await Stream.ReadAsync(buffer.Slice(totalBytesRead), cancellationToken)) > 0 && (totalBytesRead += bytesRead) < bufferLength) ;
+            
+            while ((bytesRead = await Stream.ReadAsync(buffer.Slice(totalBytesRead), cancellationToken)) > 0 && (totalBytesRead += bytesRead) < bufferLength) { }
         }
     }
 }

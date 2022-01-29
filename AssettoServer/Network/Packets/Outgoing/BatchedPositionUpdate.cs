@@ -1,4 +1,5 @@
-﻿using AssettoServer.Network.Packets.Shared;
+﻿using System;
+using AssettoServer.Network.Packets.Shared;
 
 namespace AssettoServer.Network.Packets.Outgoing;
 
@@ -6,10 +7,13 @@ public class BatchedPositionUpdate : IOutgoingNetworkPacket
 {
     public uint Timestamp;
     public ushort Ping;
-    public PositionUpdate[] Updates;
+    public PositionUpdate[]? Updates;
     
     public void ToWriter(ref PacketWriter writer)
     {
+        if (Updates == null)
+            throw new ArgumentNullException(nameof(Updates));
+        
         writer.Write<byte>(0x48);
         writer.Write(Timestamp);
         writer.Write(Ping);

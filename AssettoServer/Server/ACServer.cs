@@ -746,19 +746,13 @@ namespace AssettoServer.Server
                             }
                         }
 
-                        foreach (EntryCar fromCar in EntryCars)
+                        foreach (var fromCar in EntryCars)
                         {
                             if (fromCar.Client != null && fromCar.Client.HasSentFirstUpdate && (CurrentTime - fromCar.LastPingTime) > 1000)
                             {
                                 fromCar.CheckAfk();
                                 fromCar.LastPingTime = CurrentTime;
-                                
-                                // TODO use Client.SendPacketUdp
-
-                                PacketWriter writer = new PacketWriter(buffer);
-                                int bytesWritten = writer.WritePacket(new PingUpdate { CurrentPing = fromCar.Ping, Time = CurrentTime });
-
-                                UdpServer.Send(fromCar.Client.UdpEndpoint, buffer, 0, bytesWritten);
+                                fromCar.Client?.SendPacketUdp(new PingUpdate { CurrentPing = fromCar.Ping, Time = CurrentTime });
 
                                 if (CurrentTime - fromCar.LastPongTime > 15000)
                                 {
@@ -773,15 +767,17 @@ namespace AssettoServer.Server
 
                                 foreach (var toCar in EntryCars)
                                 {
-                                    if (!fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
-                                    
+                                    var toClient = toCar.Client;
+                                    if (toCar == fromCar || toClient == null || !toClient.HasSentFirstUpdate
+                                        || !fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
+
                                     if (Configuration.Extra.EnableBatchedPositionUpdates)
                                     {
-                                        positionUpdates[toCar].Add(update.Value);
+                                        positionUpdates[toCar].Add(update);
                                     }
                                     else
                                     {
-                                        toCar.Client.SendPacketUdp(update.Value);
+                                        toClient.SendPacketUdp(update);
                                     }
                                 }
                             }
@@ -789,19 +785,20 @@ namespace AssettoServer.Server
 
                         if (Configuration.Extra.EnableBatchedPositionUpdates)
                         {
-                            foreach (var (entryCar, updates) in positionUpdates)
+                            foreach (var (toCar, updates) in positionUpdates)
                             {
-                                if (updates.Count == 0 || entryCar.Client == null) continue;
+                                var toClient = toCar.Client;
+                                if (updates.Count == 0 || toClient == null) continue;
                                 
                                 foreach (var chunk in updates.Chunk(20)) // TODO adjust this? 25 is probably maximum if we don't want fragmentation
                                 {
                                     var batchedUpdate = new BatchedPositionUpdate
                                     {
-                                        Timestamp = (uint)(CurrentTime - entryCar.TimeOffset),
-                                        Ping = entryCar.Ping,
+                                        Timestamp = (uint)(CurrentTime - toCar.TimeOffset),
+                                        Ping = toCar.Ping,
                                         Updates = chunk
                                     };
-                                    entryCar.Client.SendPacketUdp(batchedUpdate);
+                                    toClient.SendPacketUdp(batchedUpdate);
                                 }
                             }
                         }

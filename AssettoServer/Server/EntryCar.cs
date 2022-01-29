@@ -2,7 +2,6 @@
 using AssettoServer.Network.Tcp;
 using System;
 using System.Numerics;
-using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
 
 namespace AssettoServer.Server
@@ -39,7 +38,7 @@ namespace AssettoServer.Server
 
         internal long[] OtherCarsLastSentUpdateTime { get; set; }
         internal EntryCar TargetCar { get; set; }
-        internal long LastFallCheckTime{ get; set;}
+        private long LastFallCheckTime{ get; set;}
 
         public event EventHandler<EntryCar, PositionUpdateEventArgs> PositionUpdateReceived;
         public event EventHandler<EntryCar, EventArgs> ResetInvoked;
@@ -128,95 +127,99 @@ namespace AssettoServer.Server
             Status.NormalizedPosition = positionUpdate.NormalizedPosition;
         }
 
-        public bool GetPositionUpdateForCar(EntryCar toCar, out PositionUpdate? positionUpdate)
+        public bool GetPositionUpdateForCar(EntryCar toCar, out PositionUpdate positionUpdate)
         {
-            var toClient = toCar.Client;
+            if(toCar == null)
+                throw new ArgumentNullException(nameof(toCar), "toCar cannot be null.");
+            
             CarStatus targetCarStatus;
-            if (toCar.TargetCar != null)
+            var toTargetCar = toCar.TargetCar;
+            if (toTargetCar != null)
             {
-                targetCarStatus = toCar.TargetCar.AiControlled ? toCar.TargetCar.LastSeenAiState[toCar.SessionId].Status : toCar.TargetCar.Status;
+                if (toTargetCar.AiControlled && toTargetCar.LastSeenAiState[toCar.SessionId] != null)
+                {
+                    targetCarStatus = toTargetCar.LastSeenAiState[toCar.SessionId].Status;
+                }
+                else
+                {
+                    targetCarStatus = toTargetCar.Status;
+                }
             }
             else
             {
                 targetCarStatus = toCar.Status;
             }
-            
-            if (toCar != this && toClient != null && toClient.HasSentFirstUpdate && (AiControlled || Client != null))
+
+            CarStatus status;
+            if (AiControlled)
             {
-                CarStatus status;
-                if (AiControlled)
+                var aiState = GetBestStateForPlayer(targetCarStatus);
+
+                if (aiState == null)
                 {
-                    var aiState = GetBestStateForPlayer(targetCarStatus);
-                    
-                    if (aiState == null)
-                    {
-                        positionUpdate = null;
-                        return false;
-                    }
+                    positionUpdate = default;
+                    return false;
+                }
 
-                    if (LastSeenAiState[toCar.SessionId] != aiState
-                        || LastSeenAiSpawn[toCar.SessionId] != aiState.SpawnCounter)
-                    {
-                        LastSeenAiState[toCar.SessionId] = aiState;
-                        LastSeenAiSpawn[toCar.SessionId] = aiState.SpawnCounter;
+                if (LastSeenAiState[toCar.SessionId] != aiState
+                    || LastSeenAiSpawn[toCar.SessionId] != aiState.SpawnCounter)
+                {
+                    LastSeenAiState[toCar.SessionId] = aiState;
+                    LastSeenAiSpawn[toCar.SessionId] = aiState.SpawnCounter;
 
-                        if (AiEnableColorChanges)
+                    if (AiEnableColorChanges)
+                    {
+                        toCar.Client?.SendPacket(new CSPCarColorUpdate
                         {
-                            toClient.SendPacket(new CSPCarColorUpdate
-                            {
-                                SessionId = SessionId,
-                                Color = aiState.Color
-                            });
-                        }
+                            SessionId = SessionId,
+                            Color = aiState.Color
+                        });
                     }
-
-                    status = aiState.Status;
-                }
-                else
-                {
-                    status = Status;
-                }
-            
-                float distanceSquared = Vector3.DistanceSquared(status.Position, targetCarStatus.Position);
-                if (TargetCar != null || distanceSquared > NetworkDistanceSquared)
-                {
-                    if ((Environment.TickCount64 - OtherCarsLastSentUpdateTime[toCar.SessionId]) < OutsideNetworkBubbleUpdateRateMs)
-                    {
-                        positionUpdate = null;
-                        return false;
-                    }
-
-                    OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
                 }
 
-                positionUpdate = new PositionUpdate
-                {
-                    SessionId = SessionId,
-                    EngineRpm = status.EngineRpm,
-                    Gas = status.Gas,
-                    Gear = status.Gear,
-                    Timestamp = (uint)(status.Timestamp - toCar.TimeOffset),
-                    PakSequenceId = AiControlled ? AiPakSequenceIds[toCar.SessionId]++ : status.PakSequenceId,
-                    PerformanceDelta = status.PerformanceDelta,
-                    Ping = Ping,
-                    Position = status.Position,
-                    Rotation = status.Rotation,
-                    StatusFlag = (Server.Configuration.Extra.ForceLights || ForceLights)
-                        ? status.StatusFlag | CarStatusFlags.LightsOn
-                        : status.StatusFlag,
-                    SteerAngle = status.SteerAngle,
-                    TyreAngularSpeedFL = status.TyreAngularSpeed[0],
-                    TyreAngularSpeedFR = status.TyreAngularSpeed[1],
-                    TyreAngularSpeedRL = status.TyreAngularSpeed[2],
-                    TyreAngularSpeedRR = status.TyreAngularSpeed[3],
-                    Velocity = status.Velocity,
-                    WheelAngle = status.WheelAngle
-                };
-                return true;
+                status = aiState.Status;
+            }
+            else
+            {
+                status = Status;
             }
 
-            positionUpdate = null;
-            return false;
+            float distanceSquared = Vector3.DistanceSquared(status.Position, targetCarStatus.Position);
+            if (TargetCar != null || distanceSquared > NetworkDistanceSquared)
+            {
+                if ((Environment.TickCount64 - OtherCarsLastSentUpdateTime[toCar.SessionId]) < OutsideNetworkBubbleUpdateRateMs)
+                {
+                    positionUpdate = default;
+                    return false;
+                }
+
+                OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
+            }
+
+            positionUpdate = new PositionUpdate
+            {
+                SessionId = SessionId,
+                EngineRpm = status.EngineRpm,
+                Gas = status.Gas,
+                Gear = status.Gear,
+                Timestamp = (uint)(status.Timestamp - toCar.TimeOffset),
+                PakSequenceId = AiControlled ? AiPakSequenceIds[toCar.SessionId]++ : status.PakSequenceId,
+                PerformanceDelta = status.PerformanceDelta,
+                Ping = Ping,
+                Position = status.Position,
+                Rotation = status.Rotation,
+                StatusFlag = (Server.Configuration.Extra.ForceLights || ForceLights)
+                    ? status.StatusFlag | CarStatusFlags.LightsOn
+                    : status.StatusFlag,
+                SteerAngle = status.SteerAngle,
+                TyreAngularSpeedFL = status.TyreAngularSpeed[0],
+                TyreAngularSpeedFR = status.TyreAngularSpeed[1],
+                TyreAngularSpeedRL = status.TyreAngularSpeed[2],
+                TyreAngularSpeedRR = status.TyreAngularSpeed[3],
+                Velocity = status.Velocity,
+                WheelAngle = status.WheelAngle
+            };
+            return true;
         }
     }
 }

@@ -186,7 +186,7 @@ public partial class EntryCar
         return true;
     }
 
-    public (AiState aiState, float distanceSquared) GetClosestAiState(Vector3 position)
+    public (AiState? AiState, float DistanceSquared) GetClosestAiState(Vector3 position)
     {
         AiState? closestState = null;
         float minDistanceSquared = float.MaxValue;
@@ -208,9 +208,6 @@ public partial class EntryCar
         {
             _aiStatesLock.ExitReadLock();
         }
-
-        if (closestState == null)
-            throw new InvalidOperationException("Could not get closest AI state");
 
         return (closestState, minDistanceSquared);
     }

@@ -34,7 +34,7 @@ namespace AssettoServer.Network.Tcp
         [NotNull] public EntryCar? EntryCar { get; set; }
         public bool IsDisconnectRequested => _disconnectRequested == 1;
 
-        internal TcpClient TcpClient { get; }
+        public TcpClient TcpClient { get; }
         internal NetworkStream TcpStream { get; }
         internal bool HasSentFirstUpdate { get; private set; }
         [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode), nameof(Guid))] internal bool HasStartedHandshake { get; private set; }
@@ -385,9 +385,9 @@ namespace AssettoServer.Network.Tcp
                     if (targetCar.AiControlled)
                     {
                         var targetAiState = targetCar.GetClosestAiState(EntryCar.Status.Position);
-                        if (targetAiState.distanceSquared < 25 * 25)
+                        if (targetAiState.AiState != null && targetAiState.DistanceSquared < 25 * 25)
                         {
-                            targetAiState.aiState.StopForCollision();
+                            targetAiState.AiState.StopForCollision();
                         }
                     }
                 }

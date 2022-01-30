@@ -55,7 +55,7 @@ public static class ChecksumsProvider
         if (TryCreateChecksum(filePath, out byte[]? checksum))
         {
             builder.Add(name ?? filePath, checksum);
-            Log.Debug("Added checksum for {0}", name ?? filePath);
+            Log.Debug("Added checksum for {Path}", name ?? filePath);
         }
     }
     

@@ -9,13 +9,10 @@ namespace AssettoServer.Server.Plugin;
 public class ACPluginLoader
 {
     public Dictionary<string, PluginLoader> AvailablePlugins { get; } = new();
-    public List<Plugin> LoadedPlugins = new();
+    public List<Plugin> LoadedPlugins { get; } = new();
 
     public ACPluginLoader()
     {
-        var loaders = new List<PluginLoader>();
-
-        // create plugin loaders
         string pluginsDir = Path.Combine(AppContext.BaseDirectory, "plugins");
         foreach (string dir in Directory.GetDirectories(pluginsDir))
         {
@@ -23,7 +20,7 @@ public class ACPluginLoader
             string pluginDll = Path.Combine(dir, dirName + ".dll");
             if (File.Exists(pluginDll))
             {
-                Log.Verbose("Found plugin {0}, {1}", dirName, pluginDll);
+                Log.Verbose("Found plugin {PluginName}, {PluginPath}", dirName, pluginDll);
 
                 var loader = PluginLoader.CreateFromAssemblyFile(
                     pluginDll,
@@ -61,7 +58,7 @@ public class ACPluginLoader
             }
         }
         
-        Log.Information("Loaded plugin {0}", name);
+        Log.Information("Loaded plugin {PluginName}", name);
     }
 
     public void LoadConfiguration(object? configuration)

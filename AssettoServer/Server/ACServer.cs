@@ -113,7 +113,7 @@ namespace AssettoServer.Server
 
             Configuration = configuration;
             EntryCars = Configuration.EntryCars.ToImmutableList();
-            Log.Information("Loaded {0} cars.", EntryCars.Count);
+            Log.Information("Loaded {Count} cars", EntryCars.Count);
             for (int i = 0; i < EntryCars.Count; i++)
             {
                 EntryCars[i].SessionId = (byte)i;
@@ -325,7 +325,7 @@ namespace AssettoServer.Server
                 CurrentSession.Results.Add(entryCar.SessionId, new EntryCarResult());
             }
             
-            Log.Information("Next session: {0}", CurrentSession.Configuration.Name);
+            Log.Information("Next session: {SessionName}", CurrentSession.Configuration.Name);
 
             if (CurrentSession.Configuration.Type == SessionType.Race)
             {
@@ -413,7 +413,7 @@ namespace AssettoServer.Server
             _ = Task.Factory.StartNew(AcceptTcpConnectionsAsync, TaskCreationOptions.LongRunning);
             UdpServer.Start();
 
-            Log.Information("Starting HTTP server on port {0}", Configuration.HttpPort);
+            Log.Information("Starting HTTP server on port {HttpPort}", Configuration.HttpPort);
             
             HttpServer = WebHost.CreateDefaultBuilder()
                 .ConfigureKestrel(options => options.AllowSynchronousIO = true)
@@ -454,7 +454,7 @@ namespace AssettoServer.Server
                         CountryCode = json["countryCode"]
                     };
                     
-                    Log.Information("Server invite link: {0}", $"https://acstuff.ru/s/q:race/online/join?ip={GeoParams.Ip}&httpPort={Configuration.HttpPort}");
+                    Log.Information("Server invite link: {ServerInviteLink}", $"https://acstuff.ru/s/q:race/online/join?ip={GeoParams.Ip}&httpPort={Configuration.HttpPort}");
                 }
                 else
                 {
@@ -481,6 +481,7 @@ namespace AssettoServer.Server
                 
             // Allow some time for the chat messages to be sent
             Thread.Sleep(250);
+            Log.CloseAndFlush();
         }
         
         private void ReloadHandler(PosixSignalContext context)
@@ -499,7 +500,7 @@ namespace AssettoServer.Server
             {
                 if (entryCar.Client != null && entryCar.Client.Guid != null && Blacklist.Contains(entryCar.Client.Guid))
                 {
-                    Log.Information("{0} was banned after reloading blacklist", entryCar.Client.Name);
+                    Log.Information("{ClientName} was banned after reloading blacklist", entryCar.Client.Name);
                     entryCar.Client.SendPacket(new KickCar {SessionId = entryCar.Client.SessionId, Reason = KickReason.VoteBlacklisted});
                     
                     _ = entryCar.Client.DisconnectAsync();
@@ -510,11 +511,11 @@ namespace AssettoServer.Server
         private void InitializeChecksums()
         {
             TrackChecksums = ChecksumsProvider.CalculateTrackChecksums(Configuration.Track, Configuration.TrackConfig);
-            Log.Information("Initialized {0} track checksums", TrackChecksums.Count);
+            Log.Information("Initialized {Count} track checksums", TrackChecksums.Count);
 
             var carModels = EntryCars.Select(car => car.Model).Distinct().ToList();
             CarChecksums = ChecksumsProvider.CalculateCarChecksums(carModels);
-            Log.Information("Initialized {0} car checksums", CarChecksums.Count);
+            Log.Information("Initialized {Count} car checksums", CarChecksums.Count);
 
             var modelsWithoutChecksums = carModels.Except(CarChecksums.Keys).ToList();
             if (modelsWithoutChecksums.Count > 0)
@@ -523,7 +524,7 @@ namespace AssettoServer.Server
 
                 if (Configuration.Extra.IgnoreConfigurationErrors.MissingCarChecksums)
                 {
-                    Log.Warning("No data.acd found for {0}. This will allow players to cheat using modified data. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-car-checksums", models);
+                    Log.Warning("No data.acd found for {CarModels}. This will allow players to cheat using modified data. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-car-checksums", models);
                 }
                 else
                 {
@@ -573,7 +574,7 @@ namespace AssettoServer.Server
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error securing slot for {0}.", client.Name);
+                Log.Error(ex, "Error securing slot for {ClientName}", client.Name);
             }
             finally
             {
@@ -590,7 +591,7 @@ namespace AssettoServer.Server
                 if (reasonStr != null && broadcastMessage)
                     BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
                 
-                Log.Information("{0} was kicked. Reason: {1}", client.Name, reasonStr ?? "No reason given.");
+                Log.Information("{ClientName} was kicked. Reason: {Reason}", client.Name, reasonStr ?? "No reason given.");
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
 
                 var args = new ClientAuditEventArgs
@@ -612,7 +613,7 @@ namespace AssettoServer.Server
                 if (reasonStr != null)
                     BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
                 
-                Log.Information("{0} was banned. Reason: {1}", client.Name, reasonStr ?? "No reason given.");
+                Log.Information("{ClientName} was banned. Reason: {Reason}", client.Name, reasonStr ?? "No reason given.");
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
                 
                 var args = new ClientAuditEventArgs
@@ -636,7 +637,7 @@ namespace AssettoServer.Server
         
         public void SetCspWeather(WeatherFxType upcoming, int duration)
         {
-            Log.Information("CSP weather transitioning to {0}", upcoming);
+            Log.Information("CSP weather transitioning to {UpcomingWeatherType}", upcoming);
             
             CurrentWeather.UpcomingType = WeatherTypeProvider.GetWeatherType(upcoming);
             CurrentWeather.TransitionValue = 0;
@@ -688,7 +689,7 @@ namespace AssettoServer.Server
         public void BroadcastPacket<TPacket>(TPacket packet, ACTcpClient? sender = null) where TPacket : IOutgoingNetworkPacket
         {
             if (!(packet is SunAngleUpdate))
-                Log.Verbose("Broadcasting {0}", typeof(TPacket).Name);
+                Log.Verbose("Broadcasting {PacketName}", typeof(TPacket).Name);
 
             foreach (EntryCar car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client))
                 car.Client?.SendPacket(packet);
@@ -697,7 +698,7 @@ namespace AssettoServer.Server
         public void BroadcastPacketUdp<TPacket>(TPacket packet, ACTcpClient? sender = null) where TPacket : IOutgoingNetworkPacket
         {
             if (!(packet is SunAngleUpdate))
-                Log.Verbose("Broadcasting {0}", typeof(TPacket).Name);
+                Log.Verbose("Broadcasting {PacketName}", typeof(TPacket).Name);
 
             foreach (EntryCar car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client && c.Client.HasAssociatedUdp))
                 car.Client?.SendPacketUdp(packet);
@@ -707,7 +708,6 @@ namespace AssettoServer.Server
         {
             int sleepMs = 1000 / Configuration.RefreshRateHz;
             long nextTick = Environment.TickCount64;
-            byte[] buffer = new byte[2048];
             long lastTimeUpdate = Environment.TickCount64;
             Dictionary<EntryCar, List<PositionUpdate>> positionUpdates = new();
             foreach (var entryCar in EntryCars)
@@ -715,7 +715,7 @@ namespace AssettoServer.Server
                 positionUpdates[entryCar] = new List<PositionUpdate>();
             }
 
-            Log.Information("Starting update loop with an update rate of {0}hz.", Configuration.RefreshRateHz);
+            Log.Information("Starting update loop with an update rate of {RefreshRateHz}hz", Configuration.RefreshRateHz);
 
             var timerOptions = new TimerOptions
             {
@@ -736,7 +736,7 @@ namespace AssettoServer.Server
             {
                 try
                 {
-                    using (var timer = Metrics.Measure.Timer.Time(timerOptions))
+                    using (Metrics.Measure.Timer.Time(timerOptions))
                     {
                         Update?.Invoke(this, EventArgs.Empty);
 
@@ -758,7 +758,7 @@ namespace AssettoServer.Server
 
                                 if (CurrentTime - fromCar.LastPongTime > 15000)
                                 {
-                                    Log.Information("{0} has not sent a ping response for over 15 seconds.", fromCar.Client?.Name);
+                                    Log.Information("{ClientName} has not sent a ping response for over 15 seconds", fromCar.Client?.Name);
                                     _ = fromCar.Client?.DisconnectAsync();
                                 }
                             }
@@ -841,7 +841,7 @@ namespace AssettoServer.Server
                             else if (tickDelta < -sleepMs)
                             {
                                 if (tickDelta < -1000)
-                                    Log.Warning("Server is running {0}ms behind.", -tickDelta);
+                                    Log.Warning("Server is running {TickDelta}ms behind", -tickDelta);
 
                                 Metrics.Measure.Counter.Increment(updateLoopLateOptions, -tickDelta);
                                 nextTick = 0;
@@ -862,7 +862,7 @@ namespace AssettoServer.Server
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Something went wrong while trying to do a tick update.");
+                    Log.Error(ex, "Something went wrong while trying to do a tick update");
                 }
             }
         }
@@ -882,7 +882,7 @@ namespace AssettoServer.Server
                 await ConnectSemaphore.WaitAsync();
                 if (client.IsConnected && client.EntryCar?.Client == client && ConnectedCars.TryRemove(client.SessionId, out _))
                 {
-                    Log.Information("{0} has disconnected.", client.Name);
+                    Log.Information("{ClientName} has disconnected", client.Name);
 
                     if (client.UdpEndpoint != null)
                         EndpointCars.TryRemove(client.UdpEndpoint, out _);
@@ -898,7 +898,7 @@ namespace AssettoServer.Server
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error disconnecting {0}.", client?.Name);
+                Log.Error(ex, "Error disconnecting {ClientName}", client.Name);
             }
             finally
             {
@@ -922,7 +922,7 @@ namespace AssettoServer.Server
             if (!e.Result.IsSuccessful)
             {
                 (e.Context as ACCommandContext)?.Reply("An error occurred while executing this command.");
-                Log.Error(e.Result.Exception, "Command execution failed: {0}", e.Result.FailureReason);
+                Log.Error(e.Result.Exception, "Command execution failed: {Reason}", e.Result.FailureReason);
             }
 
             return Task.CompletedTask;
@@ -930,7 +930,7 @@ namespace AssettoServer.Server
 
         private async Task AcceptTcpConnectionsAsync()
         {
-            Log.Information("Starting TCP server on port {0}", Configuration.TcpPort);
+            Log.Information("Starting TCP server on port {TcpPort}", Configuration.TcpPort);
             TcpListener = new TcpListener(IPAddress.Any, Configuration.TcpPort);
             TcpListener.Start();
 
@@ -971,8 +971,6 @@ namespace AssettoServer.Server
 
         private void OnChatMessageReceived(ACTcpClient sender, ChatMessageEventArgs args)
         {
-            Log.Information("CHAT: {0} ({1}): {2}", sender.Name, sender.SessionId, args.ChatMessage.Message);
-
             if (!CommandUtilities.HasPrefix(args.ChatMessage.Message, '/', out string commandStr))
             {
                 var outArgs = new ChatEventArgs(args.ChatMessage.Message);

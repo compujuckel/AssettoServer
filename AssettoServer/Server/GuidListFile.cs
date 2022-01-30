@@ -35,7 +35,7 @@ public class GuidListFile
     {
         if (e.ChangeType != WatcherChangeTypes.Deleted)
         {
-            Log.Information("File {0} changed on disk, reloading", _filename);
+            Log.Information("File {Path} changed on disk, reloading", _filename);
             Task.Run(LoadAsync);
         }
     }
@@ -54,7 +54,7 @@ public class GuidListFile
                 {
                     if (_guidList.ContainsKey(guid))
                     {
-                        Log.Warning("Duplicate entry in {0}: {1}", _filename, guid);
+                        Log.Warning("Duplicate entry in {Path}: {Guid}", _filename, guid);
                     }
                     _guidList[guid] = true;
                 }
@@ -62,11 +62,11 @@ public class GuidListFile
             else
                 File.Create(_filename);
 
-            Log.Debug("Loaded {0} with {1} entries", _filename, _guidList.Count);
+            Log.Debug("Loaded {Path} with {Count} entries", _filename, _guidList.Count);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error loading {0}", _filename);
+            Log.Error(ex, "Error loading {Path}", _filename);
         }
         finally
         {

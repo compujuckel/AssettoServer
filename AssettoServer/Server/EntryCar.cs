@@ -4,6 +4,9 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using AssettoServer.Server.Configuration;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 
 namespace AssettoServer.Server
 { 
@@ -43,6 +46,34 @@ namespace AssettoServer.Server
 
         public event EventHandler<EntryCar, PositionUpdateEventArgs>? PositionUpdateReceived;
         public event EventHandler<EntryCar, EventArgs>? ResetInvoked;
+
+        private readonly ILogger _log;
+
+        public class EntryCarLogEventEnricher : ILogEventEnricher
+        {
+            private readonly EntryCar _entryCar;
+
+            public EntryCarLogEventEnricher(EntryCar entryCar)
+            {
+                _entryCar = entryCar;
+            }
+            
+            public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+            {
+                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("SessionId", _entryCar.SessionId));
+                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("CarModel", _entryCar.Model));
+                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("CarSkin", _entryCar.Skin));
+            }
+        }
+
+        public EntryCar()
+        {
+            _log = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .Enrich.With(new EntryCarLogEventEnricher(this))
+                .WriteTo.Logger(Log.Logger)
+                .CreateLogger();
+        }
         
         internal void Reset()
         {

@@ -29,7 +29,7 @@ namespace AssettoServer.Server.Ai
 
                 foreach (var junctionRecord in junctions)
                 {
-                    Log.Debug("J {0} -> {1} : {2}", junctionRecord.Start, junctionRecord.End, junctionRecord.Probability);
+                    Log.Debug("J {JunctionStart} -> {JunctionEnd} : {JunctionProbability}", junctionRecord.Start, junctionRecord.End, junctionRecord.Probability);
 
                     var startPoint = map.PointsById[junctionRecord.Start];
                     var endPoint = map.PointsById[junctionRecord.End];

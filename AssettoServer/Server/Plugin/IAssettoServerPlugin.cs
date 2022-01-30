@@ -1,4 +1,6 @@
-﻿namespace AssettoServer.Server.Plugin;
+﻿using JetBrains.Annotations;
+
+namespace AssettoServer.Server.Plugin;
 
 public interface IAssettoServerPlugin
 {
@@ -7,5 +9,5 @@ public interface IAssettoServerPlugin
 
 public interface IAssettoServerPlugin<T> : IAssettoServerPlugin
 {
-    public void SetConfiguration(T configuration);
+    [UsedImplicitly] public void SetConfiguration(T configuration);
 }

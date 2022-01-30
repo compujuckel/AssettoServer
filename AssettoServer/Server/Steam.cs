@@ -53,7 +53,7 @@ internal class Steam
         while (SteamServer.GetOutgoingPacket(out var packet))
         {
             var dstEndpoint = new IPEndPoint((uint)IPAddress.HostToNetworkOrder((int)packet.Address), packet.Port);
-            Log.Debug("outgoing steam packet to {0}", dstEndpoint);
+            Log.Debug("Outgoing steam packet to {Endpoint}", dstEndpoint);
             _server.UdpServer.Send(dstEndpoint, packet.Data, 0, packet.Size);
         }
     }
@@ -71,7 +71,7 @@ internal class Steam
 
             if (authResponse != AuthResponse.OK)
             {
-                Log.Information("Steam auth ticket verification failed ({0}) for {1}", authResponse, client.Name);
+                client.Logger.Information("Steam auth ticket verification failed ({AuthResponse}) for {ClientName}", authResponse, client.Name);
                 taskCompletionSource.SetResult(false);
                 return;
             }
@@ -84,13 +84,13 @@ internal class Steam
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Error ending Steam session for client {0}", client.Name);
+                    client.Logger.Error(ex, "Error ending Steam session for client {ClientName}", client.Name);
                 }
             };
 
             if (playerSteamId != ownerSteamId && _server.IsGuidBlacklisted(ownerSteamId.ToString()))
             {
-                Log.Information("{0} ({1}) is using Steam family sharing and game owner {2} is blacklisted", client.Name, playerSteamId, ownerSteamId);
+                client.Logger.Information("{ClientName} ({SteamId}) is using Steam family sharing and game owner {OwnerSteamId} is blacklisted", client.Name, playerSteamId, ownerSteamId);
                 taskCompletionSource.SetResult(false);
                 return;
             }
@@ -101,14 +101,14 @@ internal class Steam
                 {
                     if (SteamServer.UserHasLicenseForApp(playerSteamId, appid) != UserHasLicenseForAppResult.HasLicense)
                     {
-                        Log.Information("{0} does not own required DLC {1}", client.Name, appid);
+                        client.Logger.Information("{ClientName} does not own required DLC {DlcId}", client.Name, appid);
                         taskCompletionSource.SetResult(false);
                         return;
                     }
                 }
             }
             
-            Log.Information("Steam auth ticket verification succeeded for {0}", client.Name);
+            client.Logger.Information("Steam auth ticket verification succeeded for {ClientName}", client.Name);
             taskCompletionSource.SetResult(true);
         }
 
@@ -119,7 +119,7 @@ internal class Steam
 
         if (!SteamServer.BeginAuthSession(sessionTicket, steamId))
         {
-            Log.Information("Steam auth ticket verification failed for {0}", client.Name);
+            client.Logger.Information("Steam auth ticket verification failed for {ClientName}", client.Name);
             taskCompletionSource.SetResult(false);
         }
 
@@ -127,7 +127,7 @@ internal class Steam
 
         if (finishedTask == timeoutTask)
         {
-            Log.Warning("Steam auth ticket verification timed out for {0}", client.Name);
+            client.Logger.Warning("Steam auth ticket verification timed out for {ClientName}", client.Name);
         }
         else
         {
@@ -167,6 +167,6 @@ internal class Steam
 
     private void SteamServer_OnSteamServerConnectFailure(Result result, bool stillTrying)
     {
-        Log.Error("Failed to connect to Steam servers. Result {0}, still trying = {1}", result, stillTrying);
+        Log.Error("Failed to connect to Steam servers. Result {Result}, still trying = {StillTrying}", result, stillTrying);
     }
 }

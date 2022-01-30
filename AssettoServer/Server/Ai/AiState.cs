@@ -351,17 +351,17 @@ namespace AssettoServer.Server.Ai
                 _stoppedForObstacleSince = Environment.TickCount64;
                 _obstacleHonkStart = _stoppedForObstacleSince + Random.Shared.Next(3000, 7000);
                 _obstacleHonkEnd = _obstacleHonkStart + Random.Shared.Next(500, 1500);
-                Log.Verbose("AI {0} stopped for obstacle", EntryCar.SessionId);
+                Log.Verbose("AI {SessionId} stopped for obstacle", EntryCar.SessionId);
             }
             else if (CurrentSpeed > 0 && _stoppedForObstacle)
             {
                 _stoppedForObstacle = false;
-                Log.Verbose("AI {0} no longer stopped for obstacle", EntryCar.SessionId);
+                Log.Verbose("AI {SessionId} no longer stopped for obstacle", EntryCar.SessionId);
             }
             else if (_stoppedForObstacle && Environment.TickCount64 - _stoppedForObstacleSince > 10_000)
             {
                 _ignoreObstaclesUntil = Environment.TickCount64 + 10_000;
-                Log.Verbose("AI {0} ignoring obstacles until {1}", EntryCar.SessionId, _ignoreObstaclesUntil);
+                Log.Verbose("AI {SessionId} ignoring obstacles until {IgnoreObstaclesUntil}", EntryCar.SessionId, _ignoreObstaclesUntil);
             }
 
             float deceleration = EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration;
@@ -435,7 +435,7 @@ namespace AssettoServer.Server.Ai
             float moveMeters = (dt / 1000.0f) * CurrentSpeed;
             if (!Move(_currentVecProgress + moveMeters) || !MapView.TryNext(CurrentSplinePoint, out var nextPoint))
             {
-                Log.Debug("Car {0} reached spline end, despawning", EntryCar.SessionId);
+                Log.Debug("Car {SessionId} reached spline end, despawning", EntryCar.SessionId);
                 Initialized = false;
                 return;
             }

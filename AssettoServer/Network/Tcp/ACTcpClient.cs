@@ -17,6 +17,8 @@ using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 
 namespace AssettoServer.Network.Tcp
 {
@@ -57,9 +59,35 @@ namespace AssettoServer.Network.Tcp
         public event EventHandler<ACTcpClient, ChatMessageEventArgs>? ChatMessageReceived;
         public event EventHandler<ACTcpClient, EventArgs>? Disconnecting;
 
+        public ILogger Logger { get; }
+        
+        public class ACTcpClientLogEventEnricher : ILogEventEnricher
+        {
+            private readonly ACTcpClient _client;
+
+            public ACTcpClientLogEventEnricher(ACTcpClient client)
+            {
+                _client = client;
+            }
+            
+            public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+            {
+                var endpoint = (IPEndPoint)_client.TcpClient.Client.RemoteEndPoint!;
+                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientName", _client.Name));
+                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientSteamId", _client.Guid));
+                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientIpAddress", endpoint.Address.ToString()));
+                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientPort", endpoint.Port));
+            }
+        }
+
         internal ACTcpClient(ACServer server, TcpClient tcpClient)
         {
             Server = server;
+            Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .Enrich.With(new ACTcpClientLogEventEnricher(this))
+                .WriteTo.Logger(Log.Logger)
+                .CreateLogger();
 
             UdpSendBuffer = new ThreadLocal<byte[]>(() => new byte[2048]);
 
@@ -90,13 +118,13 @@ namespace AssettoServer.Network.Tcp
             {
                 if (!OutgoingPacketChannel.Writer.TryWrite(packet) && !(packet is SunAngleUpdate) && !IsDisconnectRequested)
                 {
-                    Log.Warning("Cannot write packet to TCP packet queue for {0}, disconnecting", Name);
+                    Logger.Warning("Cannot write packet to TCP packet queue for {ClientName}, disconnecting", Name);
                     _ = DisconnectAsync();
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
+                Logger.Error(ex, "Error sending {PacketName} to {ClientName}", typeof(TPacket).Name, Name);
             }
         }
 
@@ -112,7 +140,7 @@ namespace AssettoServer.Network.Tcp
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error sending {0} to {1}.", typeof(TPacket).Name, Name);
+                Logger.Error(ex, "Error sending {PacketName} to {ClientName}", typeof(TPacket).Name, Name);
             }
         }
 
@@ -125,11 +153,11 @@ namespace AssettoServer.Network.Tcp
                     if (packet is not SunAngleUpdate)
                     {
                         if (packet is AuthFailedResponse authResponse)
-                            Log.Debug("Sending {0} ({1})", packet.GetType().Name, authResponse.Reason);
+                            Logger.Debug("Sending {PacketName} ({AuthResponseReason})", packet.GetType().Name, authResponse.Reason);
                         else if (packet is ChatMessage chatMessage && chatMessage.SessionId == 255)
-                            Log.Verbose("Sending {0} ({1}) to {2}", packet.GetType().Name, chatMessage.Message, Name);
+                            Logger.Verbose("Sending {PacketName} ({ChatMessage}) to {ClientName}", packet.GetType().Name, chatMessage.Message, Name);
                         else
-                            Log.Verbose("Sending {0} to {1}", packet.GetType().Name, Name);
+                            Logger.Verbose("Sending {PacketName} to {ClientName}", packet.GetType().Name, Name);
                     }
 
                     PacketWriter writer = new PacketWriter(TcpStream, TcpSendBuffer);
@@ -143,7 +171,7 @@ namespace AssettoServer.Network.Tcp
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error sending TCP packet to {0}", Name);
+                Logger.Error(ex, "Error sending TCP packet to {ClientName}", Name);
                 _ = DisconnectAsync();
             }
         }
@@ -165,7 +193,7 @@ namespace AssettoServer.Network.Tcp
 
                     byte id = reader.Read<byte>();
                     if (id != 0x82)
-                        Log.Verbose("Received TCP packet with ID {0:X}", id);
+                        Logger.Verbose("Received TCP packet with ID {PacketId:X}", id);
 
                     if (!HasStartedHandshake && id != 0x3D)
                         return;
@@ -178,13 +206,13 @@ namespace AssettoServer.Network.Tcp
 
                         Name = handshakeRequest.Name?.Trim();
 
-                        Log.Information("{0} ({1} - {2}) is attempting to connect ({3}).", handshakeRequest.Name, handshakeRequest.Guid, TcpClient.Client.RemoteEndPoint, handshakeRequest.RequestedCar);
+                        Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, TcpClient.Client.RemoteEndPoint?.ToString(), handshakeRequest.RequestedCar);
 
                         List<string> cspFeatures;
                         if (!string.IsNullOrEmpty(handshakeRequest.Features))
                         {
-                            Log.Debug("{0} supports extra CSP features: {1}", handshakeRequest.Name, handshakeRequest.Features);
                             cspFeatures = handshakeRequest.Features.Split(',').ToList();
+                            Logger.Debug("{ClientName} supports extra CSP features: {ClientFeatures}", handshakeRequest.Name, cspFeatures);
                         }
                         else
                         {
@@ -240,7 +268,7 @@ namespace AssettoServer.Network.Tcp
                             if (handshakeRequest.Password == Server.Configuration.AdminPassword)
                                 IsAdministrator = true;
 
-                            Log.Information("{0} ({1}, {2} ({3})) has connected.", Name, Guid, SessionId, EntryCar.Model + "-" + EntryCar.Skin);
+                            Logger.Information("{ClientName} ({ClientSteamId}, {SessionId} ({Car})) has connected", Name, Guid, SessionId, EntryCar.Model + "-" + EntryCar.Skin);
 
                             ACServerConfiguration cfg = Server.Configuration;
                             HandshakeResponse handshakeResponse = new HandshakeResponse
@@ -292,7 +320,7 @@ namespace AssettoServer.Network.Tcp
                             {
                                 if (EntryCar.Client == this && IsConnected && !HasSentFirstUpdate)
                                 {
-                                    Log.Information("{0} has taken over 10 minutes to spawn in and will be disconnected.", Name);
+                                    Logger.Information("{ClientName} has taken over 10 minutes to spawn in and will be disconnected", Name);
                                     await DisconnectAsync();
                                 }
                             });
@@ -320,7 +348,7 @@ namespace AssettoServer.Network.Tcp
                         else if (id == 0xAB)
                         {
                             id = reader.Read<byte>();
-                            Log.Verbose("Received extended TCP packet with ID {0:X}", id);
+                            Logger.Verbose("Received extended TCP packet with ID {PacketId:X}", id);
 
                             if (id == 0x00)
                                 OnSpectateCar(reader);
@@ -336,7 +364,7 @@ namespace AssettoServer.Network.Tcp
             catch (IOException) { }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error receiving TCP packet from {0}.", Name);
+                Logger.Error(ex, "Error receiving TCP packet from {ClientName}", Name);
             }
             finally
             {
@@ -393,7 +421,7 @@ namespace AssettoServer.Network.Tcp
                     clientMessage.LuaType = luaPacketType;
                     clientMessage.SessionId = SessionId;
 
-                    Log.Debug("Unknown CSP lua client message with type 0x{0:X} received, data {1}", clientMessage.LuaType, Convert.ToHexString(clientMessage.Data));
+                    Logger.Debug("Unknown CSP lua client message with type 0x{LuaType:X} received, data {Data}", clientMessage.LuaType, Convert.ToHexString(clientMessage.Data));
                     Server.BroadcastPacket(clientMessage);
                 }
             }
@@ -403,7 +431,7 @@ namespace AssettoServer.Network.Tcp
                 clientMessage.Type = packetType;
                 clientMessage.SessionId = SessionId;
 
-                Log.Debug("Unknown CSP client message with type {0} received, data {1}", clientMessage.Type, Convert.ToHexString(clientMessage.Data));
+                Logger.Debug("Unknown CSP client message with type {MessageType} received, data {Data}", clientMessage.Type, Convert.ToHexString(clientMessage.Data));
                 Server.BroadcastPacket(clientMessage);
             }
         }
@@ -421,7 +449,7 @@ namespace AssettoServer.Network.Tcp
                 for (int i = 0; i < allChecksums.Length; i++)
                     if (!allChecksums[i].Value.AsSpan().SequenceEqual(fullChecksum.AsSpan().Slice(i * 16, 16)))
                     {
-                        Log.Information("{0} failed checksum for file {1}.", Name, allChecksums[i].Key);
+                        Logger.Information("{ClientName} failed checksum for file {ChecksumFile}", Name, allChecksums[i].Key);
                         passedChecksum = false;
                         break;
                     }
@@ -459,6 +487,8 @@ namespace AssettoServer.Network.Tcp
 
             ChatMessage chatMessage = reader.ReadPacket<ChatMessage>();
             chatMessage.SessionId = SessionId;
+            
+            Logger.Information("CHAT: {ClientName} ({SessionId}): {ChatMessage}", Name, SessionId, chatMessage.Message);
 
             var args = new ChatMessageEventArgs
             {
@@ -532,17 +562,17 @@ namespace AssettoServer.Network.Tcp
 
             if (entryCarResult.HasCompletedLastLap)
             {
-                Log.Debug("Lap rejected by {0}, already finished", Name);
+                Logger.Debug("Lap rejected by {ClientName}, already finished", Name);
                 return false;
             }
 
             if (Server.CurrentSession.Configuration.Type == SessionType.Race && entryCarResult.NumLaps >= Server.CurrentSession.Configuration.Laps && !Server.CurrentSession.Configuration.IsTimedRace)
             {
-                Log.Debug("Lap rejected by {0}, race over", Name);
+                Logger.Debug("Lap rejected by {ClientName}, race over", Name);
                 return false;
             }
 
-            Log.Information("Lap completed by {0}, {1} cuts, laptime {2}", Name, lap.Cuts, lap.LapTime);
+            Logger.Information("Lap completed by {ClientName}, {NumCuts} cuts, laptime {LapTime}", Name, lap.Cuts, lap.LapTime);
 
             // TODO unfuck all of this
 
@@ -709,7 +739,7 @@ namespace AssettoServer.Network.Tcp
 
                 if (!string.IsNullOrEmpty(Name))
                 {
-                    Log.Debug("Disconnecting {0} ({1}).", Name, TcpClient?.Client?.RemoteEndPoint);
+                    Logger.Debug("Disconnecting {ClientName} ({ClientIpEndpoint}).", Name, TcpClient?.Client?.RemoteEndPoint);
                     Disconnecting?.Invoke(this, EventArgs.Empty);
                 }
 
@@ -730,7 +760,7 @@ namespace AssettoServer.Network.Tcp
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error disconnecting {0}", Name);
+                Logger.Error(ex, "Error disconnecting {ClientName}", Name);
             }
         }
     }

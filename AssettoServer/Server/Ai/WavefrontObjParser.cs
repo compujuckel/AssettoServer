@@ -10,7 +10,7 @@ namespace AssettoServer.Server.Ai
     {
         public static TrafficMap ParseFile(string filename, float laneWidth)
         {
-            Log.Debug("Loading traffic map {0}", filename);
+            Log.Debug("Loading traffic map {Path}", filename);
             
             var lines = File.ReadLines(filename);
 
@@ -44,12 +44,12 @@ namespace AssettoServer.Server.Ai
                                 MinCorneringSpeed = 0 // TODO
                             };
                             splines.Add(spline);
-                            Log.Debug("Spline {0} finished with {1} points", spline.Name, spline.Points.Length);
+                            Log.Debug("Spline {Name} finished with {Count} points", spline.Name, spline.Points.Length);
                         }
                         
                         currentSplineName = words[1];
                         points = new List<TrafficSplinePoint>();
-                        Log.Debug("Found new spline {0}", currentSplineName);
+                        Log.Debug("Found new spline {Name}", currentSplineName);
                         break;
                     case "v":
                         if (points == null)
@@ -92,7 +92,7 @@ namespace AssettoServer.Server.Ai
                     MinCorneringSpeed = 0 // TODO
                 };
                 splines.Add(spline);
-                Log.Debug("Spline {0} finished with {1} points", spline.Name, spline.Points.Length);
+                Log.Debug("Spline {Name} finished with {Count} points", spline.Name, spline.Points.Length);
             }
 
             return new TrafficMap(filename, splines, laneWidth);

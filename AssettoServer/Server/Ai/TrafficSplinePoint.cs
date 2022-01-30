@@ -107,7 +107,7 @@ namespace AssettoServer.Server.Ai
 
             if (ret.Count >= maxCount)
             {
-                Log.Error("Possible loop at AI spline point {0}", Id);
+                Log.Error("Possible loop at AI spline point {SplinePointId}", Id);
             }
 
             return ret;

@@ -27,7 +27,7 @@ namespace AssettoServer.Commands
 
         public void Broadcast(string message)
         {
-            Log.Information("{0}", message);
+            Log.Information("Broadcast: {Message}", message);
             Server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = message });
         }
     }

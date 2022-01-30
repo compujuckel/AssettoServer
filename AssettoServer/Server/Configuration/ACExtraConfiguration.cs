@@ -39,7 +39,7 @@ namespace AssettoServer.Server.Configuration
         public double RainTrackGripReductionPercent { get; set; } = 0;
         [YamlMember(Description = "Enable AI traffic")]
         public bool EnableAi { get; set; } = false;
-        [YamlMember(Description = "Override the country shown in CM. Please do not use this unless the autodetected country is wrong")]
+        [YamlMember(Description = "Override the country shown in CM. Please do not use this unless the autodetected country is wrong", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
         public List<string>? GeoParamsCountryOverride { get; set; } = null;
         [YamlMember(Description = "List of plugins to enable")]
         public List<string> EnablePlugins { get; set; } = new();
@@ -49,6 +49,8 @@ namespace AssettoServer.Server.Configuration
         public bool EnableClientMessages { get; set; } = false;
         [YamlMember(Description = "Send multiple position updates in one packet. Greatly reduces number of packets to be sent. Experimental!")]
         public bool EnableBatchedPositionUpdates { get; set; } = false;
+        [YamlMember(Description = "Send logs to a Loki instance, e.g. Grafana Cloud", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
+        public LokiSettings? LokiSettings { get; set; }
         public AiParams AiParams { get; set; } = new AiParams();
 
         [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
@@ -61,6 +63,14 @@ namespace AssettoServer.Server.Configuration
         public bool MissingTrackParams { get; set; } = false;
         public bool WrongServerDetails { get; set; } = false;
         public bool UnsafeAdminWhitelist { get; set; } = false;
+    }
+
+    [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
+    public class LokiSettings
+    {
+        public string? Url { get; set; }
+        public string? Login { get; set; }
+        public string? Password { get; set; }
     }
 
     [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]

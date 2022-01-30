@@ -35,13 +35,13 @@ public class WordFilter
         if (_configuration.BannableChatPatterns.Any(regex => Regex.Match(args.Message, regex, RegexOptions.IgnoreCase).Success))
         {
             args.Cancel = true;
-            Log.Information("Chat message from {0} ({1}) filtered and banned: {2}", sender.Name, sender.SessionId, args.Message);
+            sender.Logger.Information("Chat message from {ClientName} ({SessionId}) filtered and banned: {ChatMessage}", sender.Name, sender.SessionId, args.Message);
             _server.BanAsync(sender, KickReason.VoteBlacklisted, "Prohibited language");
         }
         else if (_configuration.ProhibitedChatPatterns.Any(regex => Regex.Match(args.Message, regex, RegexOptions.IgnoreCase).Success))
         {
             args.Cancel = true;
-            Log.Information("Chat message from {0} ({1}) filtered: {2}", sender.Name, sender.SessionId, args.Message);
+            sender.Logger.Information("Chat message from {ClientName} ({SessionId}) filtered: {ChatMessage}", sender.Name, sender.SessionId, args.Message);
         }
     }
 }

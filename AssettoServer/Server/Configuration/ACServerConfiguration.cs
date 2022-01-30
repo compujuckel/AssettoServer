@@ -243,7 +243,7 @@ namespace AssettoServer.Server.Configuration
             }
             else if(!string.IsNullOrEmpty(welcomeMessagePath))
             {
-                Log.Warning("Welcome message not found at {0}", Path.GetFullPath(welcomeMessagePath));
+                Log.Warning("Welcome message not found at {Path}", Path.GetFullPath(welcomeMessagePath));
             }
 
             string cspExtraOptionsPath = Path.Join(configBaseFolder, "csp_extra_options.ini"); 

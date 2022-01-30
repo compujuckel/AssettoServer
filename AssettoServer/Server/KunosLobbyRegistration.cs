@@ -77,7 +77,7 @@ internal class KunosLobbyRegistration
             return true;
         }
         
-        Log.Error("Could not register to lobby, server returned: {0}", body);
+        Log.Error("Could not register to lobby, server returned: {ErrorMessage}", body);
         return false;
     }
 
@@ -99,7 +99,7 @@ internal class KunosLobbyRegistration
 
         if (!body.StartsWith("OK"))
         {
-            Log.Error("Could not update lobby, server returned: {0}", body);
+            Log.Error("Could not update lobby, server returned: {ErrorMessage}", body);
         }
     }
 }

@@ -39,7 +39,7 @@ namespace AssettoServer.Network.Udp
 
         protected override void OnStarted()
         {
-            Log.Information("Starting UDP server on port {0}", Server.Configuration.UdpPort);
+            Log.Information("Starting UDP server on port {UdpPort}", Server.Configuration.UdpPort);
             ReceiveAsync();
         }
 
@@ -128,7 +128,7 @@ namespace AssettoServer.Network.Udp
 
         protected override void OnError(SocketError error)
         {
-            Log.Error("UDP Server caught an error with code {0}", error);
+            Log.Error("UDP Server caught an error with code {ErrorCode}", error);
         }
 
         internal void UpdateStatistics()

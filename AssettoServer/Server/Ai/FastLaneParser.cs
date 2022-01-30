@@ -27,7 +27,7 @@ namespace AssettoServer.Server.Ai
                 var spline = FromFile(file, idOffset);
                 splines.Add(spline);
 
-                Log.Debug("Parsed {0}, id range {1} - {2} minSpeed {3}", file, idOffset, idOffset + spline.Points.Length - 1, spline.MinCorneringSpeed);
+                Log.Debug("Parsed {Path}, id range {MinId} - {MaxId} minSpeed {MinSpeed}", file, idOffset, idOffset + spline.Points.Length - 1, spline.MinCorneringSpeed);
                 idOffset += spline.Points.Length;
             }
 
@@ -39,7 +39,7 @@ namespace AssettoServer.Server.Ai
 
         public TrafficSpline FromFile(string filename, int idOffset = 0)
         {
-            Log.Debug("Loading AI spline {0}", filename);
+            Log.Debug("Loading AI spline {Path}", filename);
             using var reader = new BinaryReader(File.OpenRead(filename));
 
             float minCorneringSpeed = float.MaxValue;

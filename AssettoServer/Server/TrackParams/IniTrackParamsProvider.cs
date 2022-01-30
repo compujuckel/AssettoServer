@@ -27,7 +27,7 @@ namespace AssettoServer.Server.TrackParams
         {
             if (!File.Exists(TrackParamsPath))
             {
-                Log.Information("{0} not found, downloading from GitHub...", TrackParamsPath);
+                Log.Information("{Path} not found, downloading from GitHub...", TrackParamsPath);
                 var response = await _httpClient.GetAsync(RemoteTrackParamsUrl);
 
                 if (!response.IsSuccessStatusCode)

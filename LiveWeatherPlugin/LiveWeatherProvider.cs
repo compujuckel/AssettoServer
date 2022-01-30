@@ -53,7 +53,7 @@ public class LiveWeatherProvider
         var response = await _liveWeatherProvider.GetWeatherAsync(_trackParams.Latitude, _trackParams.Longitude);
         var weatherType = _server.WeatherTypeProvider.GetWeatherType(response.WeatherType);
             
-        Log.Debug("Live weather: {0}, ambient {1}°C", response.WeatherType, response.TemperatureAmbient);
+        Log.Debug("Live weather: {WeatherType}, ambient {TemperatureAmbient}°C", response.WeatherType, response.TemperatureAmbient);
 
         _server.SetWeather(new WeatherData(last.Type, weatherType)
         {

@@ -211,7 +211,7 @@ public class Race
             string loserName = Challenger == Leader ? ChallengedName : ChallengerName;
 
             Server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = $"{winnerName} just beat {loserName} in a race." });
-            Log.Information("{0} just beat {1} in a race", winnerName, loserName);
+            Log.Information("{WinnerName} just beat {LoserName} in a race", winnerName, loserName);
         }
     }
 

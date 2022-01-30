@@ -203,7 +203,7 @@ namespace AssettoServer.Server.Ai
             int targetAiCount = Math.Min(playerCount * Math.Min(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount, aiCount), _server.Configuration.Extra.AiParams.MaxAiTargetCount);
 
             int overbooking = (int) Math.Ceiling((float) targetAiCount / aiCount);
-            Log.Debug("Overbooking update, #Players {0} #AIs {1} #Target {2} -> {3}", playerCount, aiCount, targetAiCount, overbooking);
+            Log.Debug("Overbooking update, #Players {NumPlayers} #AIs {NumAis} #Target {TargetAiCount} -> {Overbooking}", playerCount, aiCount, targetAiCount, overbooking);
             
             SetAiOverbooking(overbooking);
         }

@@ -42,12 +42,12 @@ namespace AssettoServer.Server
 
         [NotNull] internal long[]? OtherCarsLastSentUpdateTime { get; set; }
         internal EntryCar? TargetCar { get; set; }
-        private long LastFallCheckTime{ get; set;}
+        private long LastFallCheckTime{ get; set; }
 
         public event EventHandler<EntryCar, PositionUpdateEventArgs>? PositionUpdateReceived;
         public event EventHandler<EntryCar, EventArgs>? ResetInvoked;
 
-        private readonly ILogger _log;
+        public ILogger Logger { get; private set; } = Log.Logger;
 
         public class EntryCarLogEventEnricher : ILogEventEnricher
         {
@@ -66,9 +66,9 @@ namespace AssettoServer.Server
             }
         }
 
-        public EntryCar()
+        public void ResetLogger()
         {
-            _log = new LoggerConfiguration()
+            Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.With(new EntryCarLogEventEnricher(this))
                 .WriteTo.Logger(Log.Logger)

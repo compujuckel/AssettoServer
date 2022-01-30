@@ -85,7 +85,7 @@ public partial class EntryCar
                         && Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0)
                     {
                         aiState.Initialized = false;
-                        _log.Debug("Removed close state from AI {SessionId}", SessionId);
+                        Logger.Debug("Removed close state from AI {SessionId}", SessionId);
                     }
                 }
             }
@@ -233,11 +233,11 @@ public partial class EntryCar
                     _aiStatesLock.ExitWriteLock();
                 }
 
-                _log.Verbose("Removed state of Traffic {SessionId} due to overbooking reduction", SessionId);
+                Logger.Verbose("Removed state of Traffic {SessionId} due to overbooking reduction", SessionId);
 
                 if (_aiStates.Count == 0)
                 {
-                    _log.Verbose("Traffic {SessionId} has no states left, disconnecting", SessionId);
+                    Logger.Verbose("Traffic {SessionId} has no states left, disconnecting", SessionId);
                     Server.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
                 }
 
@@ -270,7 +270,7 @@ public partial class EntryCar
 
             if (AiControlled)
             {
-                _log.Debug("Slot {SessionId} is now controlled by AI", SessionId);
+                Logger.Debug("Slot {SessionId} is now controlled by AI", SessionId);
 
                 AiReset();
                 Server.BroadcastPacket(new CarConnected
@@ -289,7 +289,7 @@ public partial class EntryCar
             }
             else
             {
-                _log.Debug("Slot {SessionId} is no longer controlled by AI", SessionId);
+                Logger.Debug("Slot {SessionId} is no longer controlled by AI", SessionId);
                 if (_aiStates.Count > 0)
                 {
                     Server.BroadcastPacket(new CarDisconnected { SessionId = SessionId });

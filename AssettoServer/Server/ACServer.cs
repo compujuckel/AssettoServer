@@ -103,7 +103,7 @@ namespace AssettoServer.Server
         
         public ACServer(ACServerConfiguration configuration, ACPluginLoader loader)
         {
-            Log.Information("Starting server.");
+            Log.Information("Starting server");
 
             Metrics = new MetricsBuilder()
                 .Configuration.Configure(options => { options.DefaultContextLabel = "AssettoServer"; })
@@ -412,6 +412,8 @@ namespace AssettoServer.Server
             
             _ = Task.Factory.StartNew(AcceptTcpConnectionsAsync, TaskCreationOptions.LongRunning);
             UdpServer.Start();
+            
+            EntryCars.ForEach(car => car.ResetLogger());
 
             Log.Information("Starting HTTP server on port {HttpPort}", Configuration.HttpPort);
             
@@ -496,14 +498,14 @@ namespace AssettoServer.Server
 
         private void OnBlacklistReloaded(GuidListFile sender, EventArgs e)
         {
-            foreach (var entryCar in ConnectedCars.Values)
+            foreach (var client in ConnectedCars.Values.Select(c => c.Client))
             {
-                if (entryCar.Client != null && entryCar.Client.Guid != null && Blacklist.Contains(entryCar.Client.Guid))
+                if (client != null && client.Guid != null && Blacklist.Contains(client.Guid))
                 {
-                    Log.Information("{ClientName} was banned after reloading blacklist", entryCar.Client.Name);
-                    entryCar.Client.SendPacket(new KickCar {SessionId = entryCar.Client.SessionId, Reason = KickReason.VoteBlacklisted});
+                    client.Logger.Information("{ClientName} was banned after reloading blacklist", client.Name);
+                    client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = KickReason.VoteBlacklisted});
                     
-                    _ = entryCar.Client.DisconnectAsync();
+                    _ = client.DisconnectAsync();
                 }
             }
         }
@@ -574,7 +576,7 @@ namespace AssettoServer.Server
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error securing slot for {ClientName}", client.Name);
+                client.Logger.Error(ex, "Error securing slot for {ClientName}", client.Name);
             }
             finally
             {
@@ -591,7 +593,7 @@ namespace AssettoServer.Server
                 if (reasonStr != null && broadcastMessage)
                     BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
                 
-                Log.Information("{ClientName} was kicked. Reason: {Reason}", client.Name, reasonStr ?? "No reason given.");
+                client.Logger.Information("{ClientName} was kicked. Reason: {Reason}", client.Name, reasonStr ?? "No reason given.");
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
 
                 var args = new ClientAuditEventArgs
@@ -613,7 +615,7 @@ namespace AssettoServer.Server
                 if (reasonStr != null)
                     BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
                 
-                Log.Information("{ClientName} was banned. Reason: {Reason}", client.Name, reasonStr ?? "No reason given.");
+                client.Logger.Information("{ClientName} was banned. Reason: {Reason}", client.Name, reasonStr ?? "No reason given.");
                 client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
                 
                 var args = new ClientAuditEventArgs
@@ -750,16 +752,17 @@ namespace AssettoServer.Server
 
                         foreach (var fromCar in EntryCars)
                         {
-                            if (fromCar.Client != null && fromCar.Client.HasSentFirstUpdate && (CurrentTime - fromCar.LastPingTime) > 1000)
+                            var fromClient = fromCar.Client;
+                            if (fromClient != null && fromClient.HasSentFirstUpdate && (CurrentTime - fromCar.LastPingTime) > 1000)
                             {
                                 fromCar.CheckAfk();
                                 fromCar.LastPingTime = CurrentTime;
-                                fromCar.Client?.SendPacketUdp(new PingUpdate { CurrentPing = fromCar.Ping, Time = CurrentTime });
+                                fromClient.SendPacketUdp(new PingUpdate { CurrentPing = fromCar.Ping, Time = CurrentTime });
 
                                 if (CurrentTime - fromCar.LastPongTime > 15000)
                                 {
-                                    Log.Information("{ClientName} has not sent a ping response for over 15 seconds", fromCar.Client?.Name);
-                                    _ = fromCar.Client?.DisconnectAsync();
+                                    fromClient.Logger.Information("{ClientName} has not sent a ping response for over 15 seconds", fromCar.Client?.Name);
+                                    _ = fromClient.DisconnectAsync();
                                 }
                             }
 
@@ -882,7 +885,7 @@ namespace AssettoServer.Server
                 await ConnectSemaphore.WaitAsync();
                 if (client.IsConnected && client.EntryCar?.Client == client && ConnectedCars.TryRemove(client.SessionId, out _))
                 {
-                    Log.Information("{ClientName} has disconnected", client.Name);
+                    client.Logger.Information("{ClientName} has disconnected", client.Name);
 
                     if (client.UdpEndpoint != null)
                         EndpointCars.TryRemove(client.UdpEndpoint, out _);
@@ -898,7 +901,7 @@ namespace AssettoServer.Server
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error disconnecting {ClientName}", client.Name);
+                client.Logger.Error(ex, "Error disconnecting {ClientName}", client.Name);
             }
             finally
             {
@@ -949,7 +952,7 @@ namespace AssettoServer.Server
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Something went wrong while trying to accept TCP connection.");
+                    Log.Error(ex, "Something went wrong while trying to accept TCP connection");
                 }
             }
         }

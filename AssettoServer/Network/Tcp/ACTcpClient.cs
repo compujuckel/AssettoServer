@@ -46,7 +46,6 @@ namespace AssettoServer.Network.Tcp
 
         private ThreadLocal<byte[]> UdpSendBuffer { get; }
         private Memory<byte> TcpSendBuffer { get; }
-        private SemaphoreSlim TcpSendSemaphore { get; }
         private Channel<IOutgoingNetworkPacket> OutgoingPacketChannel { get; }
         private CancellationTokenSource DisconnectTokenSource { get; }
         [NotNull] private Task? SendLoopTask { get; set; }
@@ -98,8 +97,7 @@ namespace AssettoServer.Network.Tcp
 
             TcpStream = tcpClient.GetStream();
 
-            TcpSendBuffer = new byte[8192 + ((server.CSPServerExtraOptions.EncodedWelcomeMessage?.Length ?? 0) * 4) + 2];
-            TcpSendSemaphore = new SemaphoreSlim(1, 1);
+            TcpSendBuffer = new byte[8192 + (server.CSPServerExtraOptions.EncodedWelcomeMessage.Length * 4) + 2];
             OutgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(256);
             DisconnectTokenSource = new CancellationTokenSource();
         }
@@ -201,10 +199,10 @@ namespace AssettoServer.Network.Tcp
                     if (!HasStartedHandshake)
                     {
                         HandshakeRequest handshakeRequest = reader.ReadPacket<HandshakeRequest>();
-                        if (handshakeRequest.Name?.Length > 25)
+                        if (handshakeRequest.Name.Length > 25)
                             handshakeRequest.Name = handshakeRequest.Name.Substring(0, 25);
 
-                        Name = handshakeRequest.Name?.Trim();
+                        Name = handshakeRequest.Name.Trim();
 
                         Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, TcpClient.Client.RemoteEndPoint?.ToString(), handshakeRequest.RequestedCar);
 
@@ -232,7 +230,7 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new AuthFailedResponse("Content Manager version not supported. Please update Content Manager to v0.8.2329.38887 or above."));
                         else if (Server.Configuration.Extra.UseSteamAuth && !await Server.Steam.ValidateSessionTicketAsync(handshakeRequest.SessionTicket, handshakeRequest.Guid, this))
                             SendPacket(new AuthFailedResponse("Steam authentication failed."));
-                        else if (string.IsNullOrEmpty(handshakeRequest.Guid) || !(handshakeRequest.Guid?.Length >= 6))
+                        else if (string.IsNullOrEmpty(handshakeRequest.Guid) || !(handshakeRequest.Guid.Length >= 6))
                             SendPacket(new AuthFailedResponse("Invalid Guid."));
                         else if (!await Server.TrySecureSlotAsync(this, handshakeRequest))
                             SendPacket(new NoSlotsAvailableResponse());
@@ -316,7 +314,7 @@ namespace AssettoServer.Network.Tcp
                             HasStartedHandshake = true;
                             SendPacket(handshakeResponse);
 
-                            _ = Task.Delay(TimeSpan.FromMinutes(10)).ContinueWith(async t =>
+                            _ = Task.Delay(TimeSpan.FromMinutes(10)).ContinueWith(async _ =>
                             {
                                 if (EntryCar.Client == this && IsConnected && !HasSentFirstUpdate)
                                 {
@@ -482,7 +480,7 @@ namespace AssettoServer.Network.Tcp
 
             if (Server.Configuration.Extra.AfkKickBehavior == AfkKickBehavior.PlayerInput)
             {
-                EntryCar?.SetActive();
+                EntryCar.SetActive();
             }
 
             ChatMessage chatMessage = reader.ReadPacket<ChatMessage>();
@@ -511,6 +509,7 @@ namespace AssettoServer.Network.Tcp
 
         private void OnP2PUpdate(PacketReader reader)
         {
+            // ReSharper disable once InconsistentNaming
             P2PUpdateRequest p2pUpdateRequest = reader.ReadPacket<P2PUpdateRequest>();
             if (p2pUpdateRequest.P2PCount == -1)
                 SendPacket(new P2PUpdate
@@ -710,7 +709,7 @@ namespace AssettoServer.Network.Tcp
 
             Server.SendLapCompletedMessage(255, 0, 0, this);
 
-            _ = Task.Delay(40000).ContinueWith(async t =>
+            _ = Task.Delay(40000).ContinueWith(async _ =>
             {
                 if (!HasPassedChecksum && IsConnected)
                 {
@@ -739,7 +738,7 @@ namespace AssettoServer.Network.Tcp
 
                 if (!string.IsNullOrEmpty(Name))
                 {
-                    Logger.Debug("Disconnecting {ClientName} ({ClientIpEndpoint}).", Name, TcpClient?.Client?.RemoteEndPoint);
+                    Logger.Debug("Disconnecting {ClientName} ({$ClientIpEndpoint})", Name, TcpClient.Client?.RemoteEndPoint);
                     Disconnecting?.Invoke(this, EventArgs.Empty);
                 }
 
@@ -756,7 +755,7 @@ namespace AssettoServer.Network.Tcp
                 if (IsConnected)
                     await Server.DisconnectClientAsync(this);
 
-                TcpClient?.Dispose();
+                TcpClient.Dispose();
             }
             catch (Exception ex)
             {

@@ -28,7 +28,10 @@ internal class Steam
         {
             SteamServer.Init(244210, serverInit);
         }
-        catch { }
+        catch
+        {
+            // ignored
+        }
 
         try
         {
@@ -154,13 +157,19 @@ internal class Steam
         {
             SteamServer.LogOff();
         }
-        catch { }
+        catch
+        {
+            // ignored
+        }
 
         try
         {
             SteamServer.Shutdown();
         }
-        catch { }
+        catch
+        {
+            // ignored
+        }
 
         Initialize();
     }

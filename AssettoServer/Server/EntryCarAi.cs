@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
-using Serilog;
 
 namespace AssettoServer.Server;
 

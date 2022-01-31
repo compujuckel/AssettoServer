@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -76,13 +75,13 @@ namespace AssettoServer.Server.Ai
 
         private void OnClientChecksumPassed(ACTcpClient sender, EventArgs args)
         {
-            sender.EntryCar?.SetAiControl(false);
+            sender.EntryCar.SetAiControl(false);
             AdjustOverbooking();
         }
 
         private void OnClientDisconnected(ACTcpClient sender, EventArgs args)
         {
-            if (sender.EntryCar?.AiMode == AiMode.Auto)
+            if (sender.EntryCar.AiMode == AiMode.Auto)
             {
                 sender.EntryCar.SetAiControl(true);
                 AdjustOverbooking();

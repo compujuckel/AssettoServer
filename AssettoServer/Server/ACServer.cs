@@ -706,6 +706,7 @@ namespace AssettoServer.Server
                 car.Client?.SendPacketUdp(packet);
         }
 
+        [SuppressMessage("ReSharper", "FunctionNeverReturns")]
         private async Task UpdateAsync()
         {
             int sleepMs = 1000 / Configuration.RefreshRateHz;
@@ -883,7 +884,7 @@ namespace AssettoServer.Server
             try
             {
                 await ConnectSemaphore.WaitAsync();
-                if (client.IsConnected && client.EntryCar?.Client == client && ConnectedCars.TryRemove(client.SessionId, out _))
+                if (client.IsConnected && client.EntryCar.Client == client && ConnectedCars.TryRemove(client.SessionId, out _))
                 {
                     client.Logger.Information("{ClientName} has disconnected", client.Name);
 
@@ -931,6 +932,7 @@ namespace AssettoServer.Server
             return Task.CompletedTask;
         }
 
+        [SuppressMessage("ReSharper", "FunctionNeverReturns")]
         private async Task AcceptTcpConnectionsAsync()
         {
             Log.Information("Starting TCP server on port {TcpPort}", Configuration.TcpPort);

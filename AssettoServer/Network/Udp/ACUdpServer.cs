@@ -34,7 +34,7 @@ namespace AssettoServer.Network.Udp
         {
             Server = server;
 
-            Server.Update += (_, _) => UpdateStatistics();
+            Server.Update += UpdateStatistics;
         }
 
         protected override void OnStarted()
@@ -131,7 +131,7 @@ namespace AssettoServer.Network.Udp
             Log.Error("UDP Server caught an error with code {ErrorCode}", error);
         }
 
-        internal void UpdateStatistics()
+        private void UpdateStatistics(ACServer sender, EventArgs e)
         {
             if(Environment.TickCount64 - LastStatsUpdateTime > 1000)
             {

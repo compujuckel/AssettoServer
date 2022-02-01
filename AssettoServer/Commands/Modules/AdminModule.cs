@@ -11,6 +11,7 @@ using System;
 using System.Globalization;
 using System.Numerics;
 using System.Threading.Tasks;
+using AssettoServer.Server.Configuration;
 using JetBrains.Annotations;
 
 namespace AssettoServer.Commands.Modules;
@@ -22,7 +23,7 @@ public class AdminModule : ACModuleBase
     [Command("kick", "kick_id")]
     public Task KickAsync(ACTcpClient player, [Remainder] string? reason = null)
     {
-        if (player.SessionId == Context.Client?.SessionId)
+        if (player.SessionId == Context.Client.SessionId)
             Reply("You cannot kick yourself.");
         else if (player.IsAdministrator)
             Reply("You cannot kick an administrator");
@@ -40,7 +41,7 @@ public class AdminModule : ACModuleBase
     [Command("ban", "ban_id")]
     public Task BanAsync(ACTcpClient player, [Remainder] string? reason = null)
     {
-        if (player.SessionId == Context.Client?.SessionId)
+        if (player.SessionId == Context.Client.SessionId)
             Reply("You cannot ban yourself.");
         else if (player.IsAdministrator)
             Reply("You cannot ban an administrator.");
@@ -200,9 +201,9 @@ public class AdminModule : ACModuleBase
     }
 
     [Command("batchedpositionupdates")]
-    public void BatchedPositionUpdates(bool enable)
+    public void BatchedPositionUpdates(BatchedPositionUpdateBehavior behavior)
     {
-        Context.Server.Configuration.Extra.EnableBatchedPositionUpdates = enable;
-        Reply(enable ? "Enabled batched position updates" : "Disabled batched position updates");
+        Context.Server.Configuration.Extra.BatchedPositionUpdateBehavior = behavior;
+        Reply($"Set batched position update behavior to {behavior}");
     }
 }

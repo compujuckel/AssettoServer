@@ -743,7 +743,7 @@ namespace AssettoServer.Server
                     {
                         Update?.Invoke(this, EventArgs.Empty);
 
-                        if (Configuration.Extra.EnableBatchedPositionUpdates)
+                        if (Configuration.Extra.BatchedPositionUpdateBehavior != BatchedPositionUpdateBehavior.None)
                         {
                             foreach (var updates in positionUpdates.Values)
                             {
@@ -762,7 +762,7 @@ namespace AssettoServer.Server
 
                                 if (CurrentTime - fromCar.LastPongTime > 15000)
                                 {
-                                    fromClient.Logger.Information("{ClientName} has not sent a ping response for over 15 seconds", fromCar.Client?.Name);
+                                    fromClient.Logger.Information("{ClientName} has not sent a ping response for over 15 seconds", fromClient.Name);
                                     _ = fromClient.DisconnectAsync();
                                 }
                             }
@@ -777,7 +777,8 @@ namespace AssettoServer.Server
                                     if (toCar == fromCar || toClient == null || !toClient.HasSentFirstUpdate
                                         || !fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
 
-                                    if (Configuration.Extra.EnableBatchedPositionUpdates)
+                                    if (Configuration.Extra.BatchedPositionUpdateBehavior == BatchedPositionUpdateBehavior.Full
+                                        || (fromCar.AiControlled && Configuration.Extra.BatchedPositionUpdateBehavior == BatchedPositionUpdateBehavior.AiOnly))
                                     {
                                         positionUpdates[toCar].Add(update);
                                     }
@@ -789,7 +790,7 @@ namespace AssettoServer.Server
                             }
                         }
 
-                        if (Configuration.Extra.EnableBatchedPositionUpdates)
+                        if (Configuration.Extra.BatchedPositionUpdateBehavior != BatchedPositionUpdateBehavior.None)
                         {
                             foreach (var (toCar, updates) in positionUpdates)
                             {

@@ -47,8 +47,8 @@ namespace AssettoServer.Server.Configuration
         public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; set; } = new();
         [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
         public bool EnableClientMessages { get; set; } = false;
-        [YamlMember(Description = "Send multiple position updates in one packet. Greatly reduces number of packets to be sent. Experimental!")]
-        public bool EnableBatchedPositionUpdates { get; set; } = false;
+        [YamlMember(Description = "Send multiple position updates in one packet. Greatly reduces number of packets to be sent. Possible values: None/AiOnly/Full. Experimental!")]
+        public BatchedPositionUpdateBehavior BatchedPositionUpdateBehavior { get; set; } = BatchedPositionUpdateBehavior.None;
         [YamlMember(Description = "Send logs to a Loki instance, e.g. Grafana Cloud", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
         public LokiSettings? LokiSettings { get; set; }
         public AiParams AiParams { get; set; } = new AiParams();
@@ -190,5 +190,12 @@ namespace AssettoServer.Server.Configuration
     {
         PlayerInput,
         MinimumSpeed
+    }
+
+    public enum BatchedPositionUpdateBehavior
+    {
+        None = 0,
+        AiOnly,
+        Full
     }
 }

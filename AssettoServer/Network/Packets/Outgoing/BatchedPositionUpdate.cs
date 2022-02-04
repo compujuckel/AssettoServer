@@ -1,27 +1,29 @@
 ﻿using System;
-using AssettoServer.Network.Packets.Shared;
 
 namespace AssettoServer.Network.Packets.Outgoing;
 
-public class BatchedPositionUpdate : IOutgoingNetworkPacket
+public readonly struct BatchedPositionUpdate : IOutgoingNetworkPacket
 {
-    public uint Timestamp;
-    public ushort Ping;
-    public PositionUpdate[]? Updates;
-    
+    public readonly uint Timestamp;
+    public readonly ushort Ping;
+    public readonly ArraySegment<PositionUpdateOut> Updates;
+
+    public BatchedPositionUpdate(uint timestamp, ushort ping, ArraySegment<PositionUpdateOut> updates)
+    {
+        Timestamp = timestamp;
+        Ping = ping;
+        Updates = updates;
+    }
+
     public void ToWriter(ref PacketWriter writer)
     {
-        if (Updates == null)
-            throw new ArgumentNullException(nameof(Updates));
-        
         writer.Write<byte>(0x48);
         writer.Write(Timestamp);
         writer.Write(Ping);
-        writer.Write((byte)Updates.Length);
-        for (int i = 0; i < Updates.Length; i++)
+        writer.Write((byte)Updates.Count);
+        for (int i = 0; i < Updates.Count; i++)
         {
-            Updates[i].IsBatched = true;
-            Updates[i].ToWriter(ref writer);
+            Updates[i].ToWriter(ref writer, true);
         }
     }
 }

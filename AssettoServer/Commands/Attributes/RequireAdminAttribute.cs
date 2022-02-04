@@ -9,7 +9,7 @@ namespace AssettoServer.Commands.Attributes
         {
             if (context is ACCommandContext acContext)
             {
-                return acContext.Client?.IsAdministrator == true ? CheckResult.Successful : CheckResult.Failed("You are not an administrator.");
+                return acContext.Client.IsAdministrator ? CheckResult.Successful : CheckResult.Failed("You are not an administrator.");
             }
 
             return CheckResult.Failed("Invalid command context.");

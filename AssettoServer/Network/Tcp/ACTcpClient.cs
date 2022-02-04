@@ -88,7 +88,7 @@ namespace AssettoServer.Network.Tcp
                 .WriteTo.Logger(Log.Logger)
                 .CreateLogger();
 
-            UdpSendBuffer = new ThreadLocal<byte[]>(() => new byte[2048]);
+            UdpSendBuffer = new ThreadLocal<byte[]>(() => new byte[1500]);
 
             TcpClient = tcpClient;
             tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
@@ -126,13 +126,13 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        internal void SendPacketUdp<TPacket>(TPacket packet) where TPacket : IOutgoingNetworkPacket
+        internal void SendPacketUdp<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket
         {
             try
             {
                 byte[] buffer = UdpSendBuffer.Value!;
                 PacketWriter writer = new PacketWriter(buffer);
-                int bytesWritten = writer.WritePacket(packet);
+                int bytesWritten = writer.WritePacket(in packet);
 
                 Server.UdpServer.Send(UdpEndpoint, buffer, 0, bytesWritten);
             }
@@ -738,12 +738,12 @@ namespace AssettoServer.Network.Tcp
 
                 if (!string.IsNullOrEmpty(Name))
                 {
-                    Logger.Debug("Disconnecting {ClientName} ({$ClientIpEndpoint})", Name, TcpClient.Client?.RemoteEndPoint);
+                    Logger.Debug("Disconnecting {ClientName} ({$ClientIpEndpoint})", Name, TcpClient.Client.RemoteEndPoint);
                     Disconnecting?.Invoke(this, EventArgs.Empty);
                 }
 
                 OutgoingPacketChannel.Writer.TryComplete();
-                await Task.WhenAny(Task.Delay(2000), SendLoopTask);
+                _ = await Task.WhenAny(Task.Delay(2000), SendLoopTask);
 
                 try
                 {

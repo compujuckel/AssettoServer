@@ -1,16 +1,17 @@
 ﻿using AssettoServer.Network.Packets.Outgoing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AssettoServer.Network.Packets.Shared
 {
-    public struct PingUpdate : IOutgoingNetworkPacket
+    public readonly struct PingUpdate : IOutgoingNetworkPacket
     {
-        public int Time;
-        public ushort CurrentPing;
+        public readonly int Time;
+        public readonly ushort CurrentPing;
+
+        public PingUpdate(int time, ushort currentPing)
+        {
+            Time = time;
+            CurrentPing = currentPing;
+        }
 
         public void ToWriter(ref PacketWriter writer)
         {

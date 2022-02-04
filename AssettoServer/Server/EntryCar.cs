@@ -3,6 +3,8 @@ using AssettoServer.Network.Tcp;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using AssettoServer.Network.Packets.Incoming;
+using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Configuration;
 using Serilog;
 using Serilog.Core;
@@ -43,8 +45,8 @@ namespace AssettoServer.Server
         [NotNull] internal long[]? OtherCarsLastSentUpdateTime { get; set; }
         internal EntryCar? TargetCar { get; set; }
         private long LastFallCheckTime{ get; set; }
-
-        public event EventHandler<EntryCar, PositionUpdateEventArgs>? PositionUpdateReceived;
+        
+        public event EventHandlerIn<EntryCar, PositionUpdateIn>? PositionUpdateReceived;
         public event EventHandler<EntryCar, EventArgs>? ResetInvoked;
 
         public ILogger Logger { get; private set; } = Log.Logger;
@@ -114,9 +116,9 @@ namespace AssettoServer.Server
             HasSentAfkWarning = false;
         }
 
-        internal void UpdatePosition(PositionUpdate positionUpdate)
+        internal void UpdatePosition(in PositionUpdateIn positionUpdate)
         {
-            PositionUpdateReceived?.Invoke(this, new PositionUpdateEventArgs { PositionUpdate = positionUpdate});
+            PositionUpdateReceived?.Invoke(this, in positionUpdate);
             
             HasUpdateToSend = true;
             LastRemoteTimestamp = positionUpdate.LastRemoteTimestamp;
@@ -159,7 +161,7 @@ namespace AssettoServer.Server
             Status.NormalizedPosition = positionUpdate.NormalizedPosition;
         }
 
-        public bool GetPositionUpdateForCar(EntryCar toCar, out PositionUpdate positionUpdate)
+        public bool GetPositionUpdateForCar(EntryCar toCar, out PositionUpdateOut positionUpdateOut)
         {
             CarStatus targetCarStatus;
             var toTargetCar = toCar.TargetCar;
@@ -186,7 +188,7 @@ namespace AssettoServer.Server
 
                 if (aiState == null)
                 {
-                    positionUpdate = default;
+                    positionUpdateOut = default;
                     return false;
                 }
 
@@ -218,36 +220,33 @@ namespace AssettoServer.Server
             {
                 if ((Environment.TickCount64 - OtherCarsLastSentUpdateTime[toCar.SessionId]) < OutsideNetworkBubbleUpdateRateMs)
                 {
-                    positionUpdate = default;
+                    positionUpdateOut = default;
                     return false;
                 }
 
                 OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
             }
 
-            positionUpdate = new PositionUpdate
-            {
-                SessionId = SessionId,
-                EngineRpm = status.EngineRpm,
-                Gas = status.Gas,
-                Gear = status.Gear,
-                Timestamp = (uint)(status.Timestamp - toCar.TimeOffset),
-                PakSequenceId = AiControlled ? AiPakSequenceIds[toCar.SessionId]++ : status.PakSequenceId,
-                PerformanceDelta = status.PerformanceDelta,
-                Ping = Ping,
-                Position = status.Position,
-                Rotation = status.Rotation,
-                StatusFlag = (Server.Configuration.Extra.ForceLights || ForceLights)
+            positionUpdateOut = new PositionUpdateOut(SessionId,
+                AiControlled ? AiPakSequenceIds[toCar.SessionId]++ : status.PakSequenceId,
+                (uint)(status.Timestamp - toCar.TimeOffset),
+                Ping,
+                status.Position,
+                status.Rotation,
+                status.Velocity,
+                status.TyreAngularSpeed[0],
+                status.TyreAngularSpeed[1],
+                status.TyreAngularSpeed[2],
+                status.TyreAngularSpeed[3],
+                status.SteerAngle,
+                status.WheelAngle,
+                status.EngineRpm,
+                status.Gear,
+                (Server.Configuration.Extra.ForceLights || ForceLights)
                     ? status.StatusFlag | CarStatusFlags.LightsOn
                     : status.StatusFlag,
-                SteerAngle = status.SteerAngle,
-                TyreAngularSpeedFL = status.TyreAngularSpeed[0],
-                TyreAngularSpeedFR = status.TyreAngularSpeed[1],
-                TyreAngularSpeedRL = status.TyreAngularSpeed[2],
-                TyreAngularSpeedRR = status.TyreAngularSpeed[3],
-                Velocity = status.Velocity,
-                WheelAngle = status.WheelAngle
-            };
+                status.PerformanceDelta,
+                status.Gas);
             return true;
         }
     }

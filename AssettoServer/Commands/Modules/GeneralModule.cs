@@ -12,7 +12,7 @@ public class GeneralModule : ACModuleBase
 {
     [Command("ping")]
     public void Ping()
-        => Reply($"Pong! {Context.Client.EntryCar?.Ping ?? 0}ms.");
+        => Reply($"Pong! {Context.Client.EntryCar.Ping}ms.");
 
     [Command("time")]
     public void Time()

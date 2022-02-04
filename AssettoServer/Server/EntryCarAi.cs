@@ -37,50 +37,24 @@ public partial class EntryCar
         AiName = $"{Server.Configuration.Extra.AiParams.NamePrefix} {SessionId}";
         SetAiOverbooking(0);
     }
-    
-    public List<AiState> GetAiStatesCopy()
-    {
-        _aiStatesLock.EnterReadLock();
-        try
-        {
-            return new List<AiState>(_aiStates);
-        }
-        finally
-        {
-            _aiStatesLock.ExitReadLock();
-        }
-    }
-
-    public int GetActiveAiStateCount()
-    {
-        if (!AiControlled) return 0;
-        
-        _aiStatesLock.EnterReadLock();
-        try
-        {
-            return _aiStates.Count(aiState => aiState.Initialized);
-        }
-        finally
-        {
-            _aiStatesLock.ExitReadLock();
-        }
-    }
 
     public void RemoveUnsafeStates()
     {
         _aiStatesLock.EnterReadLock();
         try
         {
-            foreach (var aiState in _aiStates)
+            for (var i = 0; i < _aiStates.Count; i++)
             {
+                var aiState = _aiStates[i];
                 if (!aiState.Initialized) continue;
 
-                foreach (var targetAiState in _aiStates)
+                for (var j = 0; j < _aiStates.Count; j++)
                 {
+                    var targetAiState = _aiStates[j];
                     if (aiState != targetAiState
                         && targetAiState.Initialized
                         && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < Server.Configuration.Extra.AiParams.MinStateDistanceSquared
-                        && Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0)
+                        && Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0) // TODO bad idea for two way traffic?
                     {
                         aiState.Initialized = false;
                         Logger.Debug("Removed close state from AI {SessionId}", SessionId);
@@ -115,8 +89,9 @@ public partial class EntryCar
         _aiStatesLock.EnterReadLock();
         try
         {
-            foreach (var aiState in _aiStates)
+            for (var i = 0; i < _aiStates.Count; i++)
             {
+                var aiState = _aiStates[i];
                 aiState.DetectObstacles();
             }
         }
@@ -134,8 +109,9 @@ public partial class EntryCar
             AiState? bestState = null;
             float minDistance = float.MaxValue;
 
-            foreach (var aiState in _aiStates)
+            for (var i = 0; i < _aiStates.Count; i++)
             {
+                var aiState = _aiStates[i];
                 if (!aiState.Initialized) continue;
 
                 float distance = Vector3.DistanceSquared(aiState.Status.Position, playerStatus.Position);
@@ -168,8 +144,9 @@ public partial class EntryCar
         _aiStatesLock.EnterReadLock();
         try
         {
-            foreach (var aiState in _aiStates)
+            for (var i = 0; i < _aiStates.Count; i++)
             {
+                var aiState = _aiStates[i];
                 if (aiState.Initialized && Vector3.DistanceSquared(aiState.Status.Position, position) < aiState.SafetyDistanceSquared)
                 {
                     return false;
@@ -208,6 +185,29 @@ public partial class EntryCar
         }
 
         return (closestState, minDistanceSquared);
+    }
+
+    public void GetInitializedStates(List<AiState> initializedStates, List<AiState>? uninitializedStates = null)
+    {
+        _aiStatesLock.EnterReadLock();
+        try
+        {
+            for (int i = 0; i < _aiStates.Count; i++)
+            {
+                if (_aiStates[i].Initialized)
+                {
+                    initializedStates.Add(_aiStates[i]);
+                }
+                else
+                {
+                    uninitializedStates?.Add(_aiStates[i]);
+                }
+            }
+        }
+        finally
+        {
+            _aiStatesLock.ExitReadLock();
+        }
     }
     
     public bool CanSpawnAiState(Vector3 spawnPoint, AiState aiState)

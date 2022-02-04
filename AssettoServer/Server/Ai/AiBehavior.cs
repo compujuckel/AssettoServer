@@ -16,8 +16,13 @@ namespace AssettoServer.Server.Ai
         private readonly ACServer _server;
         private long _lastAiUpdate = Environment.TickCount64;
         private long _lastAiObstacleDetectionUpdate = Environment.TickCount64;
-        
-        public ILookup<TrafficSplinePoint, AiState>? AiStatesBySplinePoint { get; private set; }
+
+        private readonly List<EntryCar> _playerCars = new();
+        private readonly List<AiState> _initializedAiStates = new();
+        private readonly List<AiState> _uninitializedAiStates = new();
+        private readonly List<AiDistance> _distances = new();
+
+        public Dictionary<TrafficSplinePoint, AiState> AiStatesBySplinePoint { get; } = new();
 
         private readonly GaugeOptions _aiStateCountMetric = new GaugeOptions
         {
@@ -50,14 +55,15 @@ namespace AssettoServer.Server.Ai
 
         private void OnUpdate(object sender, EventArgs args)
         {
-            foreach (var entryCar in _server.EntryCars)
+            for (var i = 0; i < _server.EntryCars.Count; i++)
             {
+                var entryCar = _server.EntryCars[i];
                 if (entryCar.AiControlled)
                 {
                     entryCar.AiUpdate();
                 }
             }
-            
+
             if (Environment.TickCount64 - _lastAiUpdate > 500)
             {
                 _lastAiUpdate = Environment.TickCount64;
@@ -88,11 +94,18 @@ namespace AssettoServer.Server.Ai
             }
         }
 
-        private struct AiDistance
+        private readonly struct AiDistance
         {
-            public AiState AiCar;
-            public EntryCar PlayerCar;
-            public float DistanceSquared;
+            public readonly AiState AiCar;
+            public readonly EntryCar PlayerCar;
+            public readonly float DistanceSquared;
+
+            public AiDistance(AiState aiCar, EntryCar playerCar, float distanceSquared)
+            {
+                AiCar = aiCar;
+                PlayerCar = playerCar;
+                DistanceSquared = distanceSquared;
+            }
         }
 
         private static int GetTriangleNumber(int n)
@@ -122,15 +135,15 @@ namespace AssettoServer.Server.Ai
 
         private bool IsPositionSafe(Vector3 position)
         {
-            foreach(var entryCar in _server.EntryCars)
+            for (var i = 0; i < _server.EntryCars.Count; i++)
             {
+                var entryCar = _server.EntryCars[i];
                 if (entryCar.AiControlled && !entryCar.IsPositionSafe(position))
                 {
                     return false;
                 }
-                
-                if (entryCar.Client != null 
-                    && entryCar.Client.HasSentFirstUpdate
+
+                if (entryCar.Client?.HasSentFirstUpdate == true
                     && Vector3.DistanceSquared(entryCar.Status.Position, position) < _server.Configuration.Extra.AiParams.SpawnSafetyDistanceToPlayerSquared)
                 {
                     return false;
@@ -169,7 +182,7 @@ namespace AssettoServer.Server.Ai
 
             while (spawnPoint != null && !IsPositionSafe(spawnPoint.Point))
             {
-                spawnPoint = spawnPoint.Traverse(direction);
+                spawnPoint = spawnPoint.Traverse(direction * 5);
             }
 
             return spawnPoint;
@@ -178,15 +191,33 @@ namespace AssettoServer.Server.Ai
         public void ObstacleDetection()
         {
             using var timer = _server.Metrics.Measure.Timer.Time(_obstacleDetectionDurationMetric);
-            
-            AiStatesBySplinePoint = _server.EntryCars
-                .Where(car => car.AiControlled)
-                .SelectMany(car => car.GetAiStatesCopy())
-                .Where(state => state.Initialized)
-                .ToLookup(state => state.CurrentSplinePoint, state => state);
-            
-            foreach (var entryCar in _server.EntryCars)
+            AiStatesBySplinePoint.Clear();
+
+            var tmp = new List<AiState>();
+            for (int i = 0; i < _server.EntryCars.Count; i++)
             {
+                tmp.Clear();
+                var car = _server.EntryCars[i];
+                if (car.AiControlled)
+                {
+                    car.GetInitializedStates(tmp);
+                    for (int j = 0; j < tmp.Count; j++)
+                    {
+                        if (!AiStatesBySplinePoint.TryAdd(tmp[j].CurrentSplinePoint, tmp[j]))
+                        {
+                            var existing = AiStatesBySplinePoint[tmp[j].CurrentSplinePoint];
+                            if (tmp[j].CurrentSpeed < existing.CurrentSpeed)
+                            {
+                                AiStatesBySplinePoint[tmp[j].CurrentSplinePoint] = tmp[j];
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < _server.EntryCars.Count; i++)
+            {
+                var entryCar = _server.EntryCars[i];
                 if (entryCar.AiControlled)
                 {
                     entryCar.AiObstacleDetection();
@@ -220,76 +251,64 @@ namespace AssettoServer.Server.Ai
         public void Update()
         {
             using var timer = _server.Metrics.Measure.Timer.Time(_updateDurationMetric);
-            
-            foreach (var entryCar in _server.EntryCars)
+
+            _playerCars.Clear();
+            _initializedAiStates.Clear();
+            _uninitializedAiStates.Clear();
+            _distances.Clear();
+            for (int i = 0; i < _server.EntryCars.Count; i++)
             {
-                if (entryCar.AiControlled)
+                var entryCar = _server.EntryCars[i];
+                if (!entryCar.AiControlled
+                    && entryCar.Client?.HasSentFirstUpdate == true
+                    && Environment.TickCount64 - entryCar.LastActiveTime < _server.Configuration.Extra.AiParams.PlayerAfkTimeoutMilliseconds)
+                {
+                    _playerCars.Add(entryCar);
+                }
+                else if (entryCar.AiControlled)
                 {
                     entryCar.RemoveUnsafeStates();
+                    entryCar.GetInitializedStates(_initializedAiStates, _uninitializedAiStates);
                 }
             }
             
-            _server.Metrics.Measure.Gauge.SetValue(_aiStateCountMetric, _server.EntryCars.Sum(entryCar => entryCar.GetActiveAiStateCount()));
+            _server.Metrics.Measure.Gauge.SetValue(_aiStateCountMetric, _initializedAiStates.Count);
 
-            var playerCars = _server.EntryCars.Where(car => !car.AiControlled
-                                                            && car.Client != null
-                                                            && car.Client.HasSentFirstUpdate
-                                                            && Environment.TickCount64 - car.LastActiveTime < _server.Configuration.Extra.AiParams.PlayerAfkTimeoutMilliseconds
-            ).ToList();
-
-            var allStates = _server.EntryCars.Where(car => car.AiControlled).SelectMany(car => car.GetAiStatesCopy()).ToList();
-            var initializedAiStates = allStates.Where(state => state.Initialized);
-            var distances = new List<AiDistance>();
-
-            foreach(var aiState in initializedAiStates)
+            for (int i = 0; i < _initializedAiStates.Count; i++)
             {
-                foreach (var playerCar in playerCars)
+                for (int j = 0; j < _playerCars.Count; j++)
                 {
-                    var offsetPosition = playerCar.Status.Position + Vector3.Normalize(playerCar.Status.Velocity) * _server.Configuration.Extra.AiParams.PlayerPositionOffsetMeters;
-                    
-                    distances.Add(new AiDistance()
-                    {
-                        AiCar = aiState,
-                        PlayerCar = playerCar,
-                        DistanceSquared = Vector3.DistanceSquared(aiState.Status.Position, offsetPosition)
-                    });
+                    var offsetPosition = _playerCars[j].Status.Position + Vector3.Normalize(_playerCars[j].Status.Velocity) * _server.Configuration.Extra.AiParams.PlayerPositionOffsetMeters;
+                    _distances.Add(new AiDistance(_initializedAiStates[i], _playerCars[j], Vector3.DistanceSquared(_initializedAiStates[i].Status.Position, offsetPosition)));
                 }
             }
 
-            var uninitializedAiStates = allStates.Where(state => !state.Initialized).ToList();
-
             // Find all AIs that are at least <PlayerRadius> meters away from all players. Highest distance AI will be teleported
-            var outOfRangeAiStates = uninitializedAiStates.Concat(from distance in distances
+            _uninitializedAiStates.AddRange(from distance in _distances
                 group distance by distance.AiCar
                 into aiGroup
                 where Environment.TickCount64 > aiGroup.Key.SpawnProtectionEnds && aiGroup.Min(d => d.DistanceSquared) > _server.Configuration.Extra.AiParams.PlayerRadiusSquared
-                orderby aiGroup.Min(d => d.DistanceSquared) descending 
-                select aiGroup.Key).ToList();
+                orderby aiGroup.Min(d => d.DistanceSquared) descending
+                select aiGroup.Key);
             
-            List<EntryCar> playerCarsOrdered;
-            
-            // Special case after server startup when no AI cars are spawned yet
-            if (distances.Count == 0)
-            {
-                playerCarsOrdered = playerCars;
-            }
             // Order player cars by their minimum distance to an AI. Higher distance -> higher probability for the next AI to spawn next to them
-            else
+            if(_distances.Count > 0)
             {
-                playerCarsOrdered = (from distance in distances
+                _playerCars.Clear();
+                _playerCars.AddRange(from distance in _distances
                     group distance by distance.PlayerCar
                     into playerGroup
                     orderby playerGroup.Min(d => d.DistanceSquared) descending
-                    select playerGroup.Key).ToList();
+                    select playerGroup.Key);
             }
 
-            while (playerCarsOrdered.Count > 0 && outOfRangeAiStates.Count > 0)
+            while (_playerCars.Count > 0 && _uninitializedAiStates.Count > 0)
             {
                 TrafficSplinePoint? spawnPoint = null;
-                while (spawnPoint == null && playerCarsOrdered.Count > 0)
+                while (spawnPoint == null && _playerCars.Count > 0)
                 {
-                    var targetPlayerCar = playerCarsOrdered.ElementAt(GetRandomWeighted(playerCarsOrdered.Count));
-                    playerCarsOrdered.Remove(targetPlayerCar);
+                    var targetPlayerCar = _playerCars.ElementAt(GetRandomWeighted(_playerCars.Count));
+                    _playerCars.Remove(targetPlayerCar);
 
                     spawnPoint = GetSpawnPoint(targetPlayerCar);
                 }
@@ -297,14 +316,14 @@ namespace AssettoServer.Server.Ai
                 if (spawnPoint == null)
                     continue;
 
-                foreach (var targetAiState in outOfRangeAiStates)
+                foreach (var targetAiState in _uninitializedAiStates)
                 {
                     if (!targetAiState.CanSpawn(spawnPoint.Point))
                         continue;
                     
                     targetAiState.Teleport(spawnPoint);
 
-                    outOfRangeAiStates.Remove(targetAiState);
+                    _uninitializedAiStates.Remove(targetAiState);
                     break;
                 }
             }

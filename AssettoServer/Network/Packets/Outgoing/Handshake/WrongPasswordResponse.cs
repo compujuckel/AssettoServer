@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AssettoServer.Network.Packets.Outgoing.Handshake
 {
-    public struct WrongPasswordResponse : IOutgoingNetworkPacket
+    public readonly struct WrongPasswordResponse : IOutgoingNetworkPacket
     {
         public void ToWriter(ref PacketWriter writer)
         {

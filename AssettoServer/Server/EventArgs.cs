@@ -8,6 +8,7 @@ using AssettoServer.Network.Tcp;
 namespace AssettoServer.Server;
 
 public delegate void EventHandler<TSender, TArgs>(TSender sender, TArgs args) where TArgs : EventArgs;
+public delegate void EventHandlerIn<TSender, TArg>(TSender sender, in TArg args) where TArg : struct;
 
 public class ClientAuditEventArgs : EventArgs
 {
@@ -43,9 +44,4 @@ public class ChatEventArgs : CancelEventArgs
 public class ChatMessageEventArgs : EventArgs
 {
     public ChatMessage ChatMessage { get; init; }
-}
-
-public class PositionUpdateEventArgs : EventArgs
-{
-    public PositionUpdate PositionUpdate { get; init; }
 }

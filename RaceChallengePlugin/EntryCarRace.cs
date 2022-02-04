@@ -1,4 +1,6 @@
 ﻿using System.Numerics;
+using AssettoServer.Network.Packets.Incoming;
+using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
@@ -30,16 +32,16 @@ internal class EntryCarRace
         CurrentRace = null;
     }
 
-    private void OnPositionUpdateReceived(EntryCar sender, PositionUpdateEventArgs args)
+    private void OnPositionUpdateReceived(EntryCar sender, in PositionUpdateIn positionUpdate)
     {
         long currentTick = Environment.TickCount64;
-        if(((_entryCar.Status.StatusFlag & CarStatusFlags.LightsOn) == 0 && (args.PositionUpdate.StatusFlag & CarStatusFlags.LightsOn) != 0) || ((_entryCar.Status.StatusFlag & CarStatusFlags.HighBeamsOff) == 0 && (args.PositionUpdate.StatusFlag & CarStatusFlags.HighBeamsOff) != 0))
+        if(((_entryCar.Status.StatusFlag & CarStatusFlags.LightsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.LightsOn) != 0) || ((_entryCar.Status.StatusFlag & CarStatusFlags.HighBeamsOff) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HighBeamsOff) != 0))
         {
             LastLightFlashTime = currentTick;
             LightFlashCount++;
         }
 
-        if ((_entryCar.Status.StatusFlag & CarStatusFlags.HazardsOn) == 0 && (args.PositionUpdate.StatusFlag & CarStatusFlags.HazardsOn) != 0)
+        if ((_entryCar.Status.StatusFlag & CarStatusFlags.HazardsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HazardsOn) != 0)
         {
             if (CurrentRace != null && !CurrentRace.HasStarted && !CurrentRace.LineUpRequired)
                 _ = CurrentRace.StartAsync();

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AssettoServer.Network.Packets.Outgoing.Handshake
 {
-    public struct AuthFailedResponse : IOutgoingNetworkPacket
+    public readonly struct AuthFailedResponse : IOutgoingNetworkPacket
     {
         public readonly string Reason;
 

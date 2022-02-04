@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
-using System.Linq;
 using System.Numerics;
-using AssettoServer.Network.Packets.Shared;
+using AssettoServer.Network.Packets.Outgoing;
 using JPBotelho;
 using Serilog;
 
@@ -179,12 +178,10 @@ namespace AssettoServer.Server.Ai
         {
             if (!EntryCar.Server.AiEnabled)
                 throw new InvalidOperationException("AI disabled");
-            if (EntryCar.Server.AiBehavior.AiStatesBySplinePoint == null)
-                throw new InvalidOperationException("AiStatesBySplinePoint is null");
-            
+
             float maxCornerBrakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - EntryCar.Server.TrafficMap.MinCorneringSpeed, 
-                                        EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeForceFactor) 
-                                    * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
+                                                 EntryCar.Server.Configuration.Extra.AiParams.DefaultDeceleration * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeForceFactor) 
+                                             * EntryCar.Server.Configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
             float maxBrakingDistance = Math.Max(maxCornerBrakingDistance, 50);
             
             AiState? closestAiState = null;
@@ -199,9 +196,10 @@ namespace AssettoServer.Server.Ai
                 if (point == null)
                     break;
 
-                if (closestAiState == null && EntryCar.Server.AiBehavior.AiStatesBySplinePoint.Contains(point))
+
+                if (closestAiState == null && EntryCar.Server.AiBehavior.AiStatesBySplinePoint.TryGetValue(point, out var candidate))
                 {
-                    closestAiState = EntryCar.Server.AiBehavior.AiStatesBySplinePoint[point].First();
+                    closestAiState = candidate;
                     closestAiStateDistance = Vector3.Distance(Status.Position, closestAiState.Status.Position);
                 }
 
@@ -223,19 +221,20 @@ namespace AssettoServer.Server.Ai
 
         private (EntryCar? entryCar, float distance) FindClosestPlayerObstacle()
         {
-            var playerCars = EntryCar.Server.EntryCars
-                .Where(car => car.Client != null && car.Client.HasSentFirstUpdate);
-
             EntryCar? closestCar = null;
             float minDistance = float.MaxValue;
-            foreach (var playerCar in playerCars)
+            for (var i = 0; i < EntryCar.Server.EntryCars.Count; i++)
             {
-                float distance = Vector3.DistanceSquared(playerCar.Status.Position, Status.Position);
-
-                if (distance < minDistance && GetAngleToCar(playerCar.Status) is > 166 and < 194)
+                var playerCar = EntryCar.Server.EntryCars[i];
+                if (playerCar.Client?.HasSentFirstUpdate == true)
                 {
-                    minDistance = distance;
-                    closestCar = playerCar;
+                    float distance = Vector3.DistanceSquared(playerCar.Status.Position, Status.Position);
+
+                    if (distance < minDistance && GetAngleToCar(playerCar.Status) is > 166 and < 194)
+                    {
+                        minDistance = distance;
+                        closestCar = playerCar;
+                    }
                 }
             }
 

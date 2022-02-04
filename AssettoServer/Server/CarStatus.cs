@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Numerics;
-using AssettoServer.Network.Packets.Shared;
+using AssettoServer.Network.Packets.Outgoing;
 
 namespace AssettoServer.Server
 {

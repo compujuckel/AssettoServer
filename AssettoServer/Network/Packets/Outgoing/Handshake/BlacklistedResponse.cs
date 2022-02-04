@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AssettoServer.Network.Packets.Outgoing.Handshake
 {
-    public struct BlacklistedResponse : IOutgoingNetworkPacket
+    public readonly struct BlacklistedResponse : IOutgoingNetworkPacket
     {
         public void ToWriter(ref PacketWriter writer)
         {

@@ -23,7 +23,7 @@ namespace AssettoServer.Network.Packets.Outgoing
         public Half RainWetness;
         public Half RainWater;
 
-        public void ToWriter(ref PacketWriter writer)
+        public readonly void ToWriter(ref PacketWriter writer)
         {
             writer.Write<byte>(0xAB);
             writer.Write<byte>(0x1);
@@ -43,7 +43,7 @@ namespace AssettoServer.Network.Packets.Outgoing
             writer.Write(RainWater);
         }
 
-        public override string ToString()
+        public readonly override string ToString()
         {
             return $"{nameof(UnixTimestamp)}: {UnixTimestamp}, {nameof(WeatherType)}: {WeatherType}, {nameof(UpcomingWeatherType)}: {UpcomingWeatherType}, {nameof(TransitionValue)}: {TransitionValue}, {nameof(TemperatureAmbient)}: {TemperatureAmbient}, {nameof(TemperatureRoad)}: {TemperatureRoad}, {nameof(TrackGrip)}: {TrackGrip}, {nameof(WindDirectionDeg)}: {WindDirectionDeg}, {nameof(WindSpeed)}: {WindSpeed}, {nameof(Humidity)}: {Humidity}, {nameof(Pressure)}: {Pressure}, {nameof(RainIntensity)}: {RainIntensity}, {nameof(RainWetness)}: {RainWetness}, {nameof(RainWater)}: {RainWater}";
         }

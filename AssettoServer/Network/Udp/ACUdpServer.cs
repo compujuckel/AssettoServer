@@ -1,6 +1,5 @@
 ﻿using AssettoServer.Network.Packets;
 using AssettoServer.Network.Packets.Outgoing;
-using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
 using NetCoreServer;
 using Serilog;
@@ -9,6 +8,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
+using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Server.Configuration;
 
 namespace AssettoServer.Network.Udp
@@ -95,8 +95,8 @@ namespace AssettoServer.Network.Udp
                     {
                         if (!car.Client.HasSentFirstUpdate)
                             car.Client.SendFirstUpdate();
-
-                        car.UpdatePosition(packetReader.ReadPacket<PositionUpdate>());
+                        
+                        car.UpdatePosition(packetReader.Read<PositionUpdateIn>());
                     }
                     else if (packetId == 0xF8)
                     {
@@ -117,13 +117,12 @@ namespace AssettoServer.Network.Udp
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error while receiving a UDP packet.");
+                Log.Error(ex, "Error while receiving a UDP packet");
             }
             finally
             {
                 ThreadPool.QueueUserWorkItem(o => { ReceiveAsync(); });
             }
-
         }
 
         protected override void OnError(SocketError error)

@@ -46,7 +46,7 @@ namespace AssettoServer.Network.Packets.Outgoing.Handshake
         public int CurrentTime;
 
 
-        public void ToWriter(ref PacketWriter writer)
+        public readonly void ToWriter(ref PacketWriter writer)
         {
             writer.Write<byte>(0x3E);
             writer.WriteUTF32String(ServerName);

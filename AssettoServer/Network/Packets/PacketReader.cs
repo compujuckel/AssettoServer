@@ -1,8 +1,6 @@
 ﻿using AssettoServer.Network.Packets.Incoming;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -49,10 +47,10 @@ namespace AssettoServer.Network.Packets
             return new string(stringChars);
         }
 
-        public T Read<T>() where T : struct
+        public T Read<T>() where T : unmanaged
         {
             T result = MemoryMarshal.Read<T>(Buffer.Slice(ReadPosition).Span);
-            ReadPosition += MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan<T>(ref result, 1)).Length;
+            ReadPosition += Marshal.SizeOf(typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T));
 
             return result;
         }

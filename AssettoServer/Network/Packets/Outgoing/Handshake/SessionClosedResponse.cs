@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AssettoServer.Network.Packets.Outgoing.Handshake
 {
-    public struct SessionClosedResponse : IOutgoingNetworkPacket
+    public readonly struct SessionClosedResponse : IOutgoingNetworkPacket
     {
         public void ToWriter(ref PacketWriter writer)
         {

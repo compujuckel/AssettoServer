@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace AssettoServer.Network.Packets.Outgoing.Handshake
 {
-    public struct UnsupportedProtocolResponse : IOutgoingNetworkPacket
+    public readonly struct UnsupportedProtocolResponse : IOutgoingNetworkPacket
     {
         public void ToWriter(ref PacketWriter writer)
         {

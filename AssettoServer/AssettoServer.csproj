@@ -20,6 +20,14 @@
     <PackageReference Include="App.Metrics.Reporting.Console" Version="4.3.0" />
     <PackageReference Include="CommandLineParser" Version="2.9.0-preview1" />
     <PackageReference Include="CsvHelper" Version="27.1.1" />
+    <PackageReference Include="ErrorProne.NET.CoreAnalyzers" Version="0.4.0-beta.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="ErrorProne.NET.Structs" Version="0.4.0-beta.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Humanizer.Core" Version="2.11.10" />
     <PackageReference Include="ini-parser" Version="2.5.2">
       <NoWarn>NU1701</NoWarn>

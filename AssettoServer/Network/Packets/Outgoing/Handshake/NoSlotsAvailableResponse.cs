@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AssettoServer.Network.Packets.Outgoing.Handshake
 {
-    public struct NoSlotsAvailableResponse : IOutgoingNetworkPacket
+    public readonly struct NoSlotsAvailableResponse : IOutgoingNetworkPacket
     {
         public void ToWriter(ref PacketWriter writer)
         {

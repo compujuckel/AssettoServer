@@ -30,7 +30,7 @@ namespace AssettoServer.Network.Packets
             _writePosition = 0;
         }
 
-        public int WritePacket<TPacket>(TPacket packet) where TPacket : IOutgoingNetworkPacket
+        public int WritePacket<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket
         {
             packet.ToWriter(ref this);
             return _writePosition;

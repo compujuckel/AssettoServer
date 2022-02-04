@@ -22,7 +22,7 @@ namespace AssettoServer.Commands
 
         public void Reply(string message)
         {
-            Client?.SendPacket(new ChatMessage { SessionId = 255, Message = message });
+            Client.SendPacket(new ChatMessage { SessionId = 255, Message = message });
         }
 
         public void Broadcast(string message)

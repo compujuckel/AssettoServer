@@ -712,10 +712,10 @@ namespace AssettoServer.Server
             int sleepMs = 1000 / Configuration.RefreshRateHz;
             long nextTick = Environment.TickCount64;
             long lastTimeUpdate = Environment.TickCount64;
-            Dictionary<EntryCar, List<PositionUpdate>> positionUpdates = new();
+            Dictionary<EntryCar, CountedArray<PositionUpdateOut>> positionUpdates = new();
             foreach (var entryCar in EntryCars)
             {
-                positionUpdates[entryCar] = new List<PositionUpdate>();
+                positionUpdates[entryCar] = new CountedArray<PositionUpdateOut>(EntryCars.Count);
             }
 
             Log.Information("Starting update loop with an update rate of {RefreshRateHz}hz", Configuration.RefreshRateHz);
@@ -743,22 +743,15 @@ namespace AssettoServer.Server
                     {
                         Update?.Invoke(this, EventArgs.Empty);
 
-                        if (Configuration.Extra.BatchedPositionUpdateBehavior != BatchedPositionUpdateBehavior.None)
+                        for (int i = 0; i < EntryCars.Count; i++)
                         {
-                            foreach (var updates in positionUpdates.Values)
-                            {
-                                updates.Clear();
-                            }
-                        }
-
-                        foreach (var fromCar in EntryCars)
-                        {
+                            var fromCar = EntryCars[i];
                             var fromClient = fromCar.Client;
                             if (fromClient != null && fromClient.HasSentFirstUpdate && (CurrentTime - fromCar.LastPingTime) > 1000)
                             {
                                 fromCar.CheckAfk();
                                 fromCar.LastPingTime = CurrentTime;
-                                fromClient.SendPacketUdp(new PingUpdate { CurrentPing = fromCar.Ping, Time = CurrentTime });
+                                fromClient.SendPacketUdp(new PingUpdate(CurrentTime, fromCar.Ping));
 
                                 if (CurrentTime - fromCar.LastPongTime > 15000)
                                 {
@@ -771,8 +764,9 @@ namespace AssettoServer.Server
                             {
                                 fromCar.HasUpdateToSend = false;
 
-                                foreach (var toCar in EntryCars)
+                                for (int j = 0; j < EntryCars.Count; j++)
                                 {
+                                    var toCar = EntryCars[j];
                                     var toClient = toCar.Client;
                                     if (toCar == fromCar || toClient == null || !toClient.HasSentFirstUpdate
                                         || !fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
@@ -784,7 +778,7 @@ namespace AssettoServer.Server
                                     }
                                     else
                                     {
-                                        toClient.SendPacketUdp(update);
+                                        toClient.SendPacketUdp(in update);
                                     }
                                 }
                             }
@@ -794,19 +788,21 @@ namespace AssettoServer.Server
                         {
                             foreach (var (toCar, updates) in positionUpdates)
                             {
-                                var toClient = toCar.Client;
-                                if (updates.Count == 0 || toClient == null) continue;
+                                if (updates.Count == 0) continue;
                                 
-                                foreach (var chunk in updates.Chunk(20)) // TODO adjust this? 25 is probably maximum if we don't want fragmentation
+                                var toClient = toCar.Client;
+                                if (toClient != null)
                                 {
-                                    var batchedUpdate = new BatchedPositionUpdate
+                                    const int chunkSize = 20;
+                                    for (int i = 0; i < updates.Count; i += chunkSize)
                                     {
-                                        Timestamp = (uint)(CurrentTime - toCar.TimeOffset),
-                                        Ping = toCar.Ping,
-                                        Updates = chunk
-                                    };
-                                    toClient.SendPacketUdp(batchedUpdate);
+                                        var batchedUpdate = new BatchedPositionUpdate((uint)(CurrentTime - toCar.TimeOffset), toCar.Ping,
+                                            new ArraySegment<PositionUpdateOut>(updates.Array, i, Math.Min(i + chunkSize, updates.Count)));
+                                        toClient.SendPacketUdp(in batchedUpdate);
+                                    }
                                 }
+                                
+                                updates.Clear();
                             }
                         }
 

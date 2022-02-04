@@ -36,7 +36,7 @@ public class GuidListFile
         if (e.ChangeType != WatcherChangeTypes.Deleted)
         {
             Log.Information("File {Path} changed on disk, reloading", _filename);
-            Task.Run(LoadAsync);
+            _ = Task.Run(LoadAsync);
         }
     }
 

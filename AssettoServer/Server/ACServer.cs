@@ -712,6 +712,7 @@ namespace AssettoServer.Server
         [SuppressMessage("ReSharper", "FunctionNeverReturns")]
         private async Task UpdateAsync()
         {
+            int failedUpdateLoops = 0;
             int sleepMs = 1000 / Configuration.RefreshRateHz;
             long nextTick = Environment.TickCount64;
             long lastTimeUpdate = Environment.TickCount64;
@@ -800,7 +801,7 @@ namespace AssettoServer.Server
                                     for (int i = 0; i < updates.Count; i += chunkSize)
                                     {
                                         var batchedUpdate = new BatchedPositionUpdate((uint)(CurrentTime - toCar.TimeOffset), toCar.Ping,
-                                            new ArraySegment<PositionUpdateOut>(updates.Array, i, Math.Min(i + chunkSize, updates.Count)));
+                                            new ArraySegment<PositionUpdateOut>(updates.Array, i, Math.Min(chunkSize, updates.Count - i)));
                                         toClient.SendPacketUdp(in batchedUpdate);
                                     }
                                 }
@@ -863,10 +864,22 @@ namespace AssettoServer.Server
                         nextTick = Environment.TickCount64;
                         await Task.Delay(500);
                     }
+
+                    failedUpdateLoops = 0;
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Something went wrong while trying to do a tick update");
+                    if (failedUpdateLoops < 10)
+                    {
+                        failedUpdateLoops++;
+                        Log.Error(ex, "Something went wrong while trying to do a tick update");
+                    }
+                    else
+                    {
+                        Log.Fatal(ex, "Cannot recover from update loop error, shutting down");
+                        Log.CloseAndFlush();
+                        Environment.Exit(1);
+                    }
                 }
             }
         }

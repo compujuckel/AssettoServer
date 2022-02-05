@@ -55,7 +55,7 @@ namespace AssettoServer.Server.Ai
 
         private void OnUpdate(object sender, EventArgs args)
         {
-            for (var i = 0; i < _server.EntryCars.Count; i++)
+            for (var i = 0; i < _server.EntryCars.Length; i++)
             {
                 var entryCar = _server.EntryCars[i];
                 if (entryCar.AiControlled)
@@ -135,7 +135,7 @@ namespace AssettoServer.Server.Ai
 
         private bool IsPositionSafe(Vector3 position)
         {
-            for (var i = 0; i < _server.EntryCars.Count; i++)
+            for (var i = 0; i < _server.EntryCars.Length; i++)
             {
                 var entryCar = _server.EntryCars[i];
                 if (entryCar.AiControlled && !entryCar.IsPositionSafe(position))
@@ -194,7 +194,7 @@ namespace AssettoServer.Server.Ai
             AiStatesBySplinePoint.Clear();
 
             var tmp = new List<AiState>();
-            for (int i = 0; i < _server.EntryCars.Count; i++)
+            for (int i = 0; i < _server.EntryCars.Length; i++)
             {
                 tmp.Clear();
                 var car = _server.EntryCars[i];
@@ -215,7 +215,7 @@ namespace AssettoServer.Server.Ai
                 }
             }
 
-            for (int i = 0; i < _server.EntryCars.Count; i++)
+            for (int i = 0; i < _server.EntryCars.Length; i++)
             {
                 var entryCar = _server.EntryCars[i];
                 if (entryCar.AiControlled)
@@ -256,7 +256,7 @@ namespace AssettoServer.Server.Ai
             _initializedAiStates.Clear();
             _uninitializedAiStates.Clear();
             _distances.Clear();
-            for (int i = 0; i < _server.EntryCars.Count; i++)
+            for (int i = 0; i < _server.EntryCars.Length; i++)
             {
                 var entryCar = _server.EntryCars[i];
                 if (!entryCar.AiControlled

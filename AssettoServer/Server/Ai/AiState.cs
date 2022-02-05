@@ -223,7 +223,7 @@ namespace AssettoServer.Server.Ai
         {
             EntryCar? closestCar = null;
             float minDistance = float.MaxValue;
-            for (var i = 0; i < EntryCar.Server.EntryCars.Count; i++)
+            for (var i = 0; i < EntryCar.Server.EntryCars.Length; i++)
             {
                 var playerCar = EntryCar.Server.EntryCars[i];
                 if (playerCar.Client?.HasSentFirstUpdate == true)

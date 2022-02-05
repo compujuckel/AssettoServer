@@ -37,7 +37,7 @@ internal class Steam
         {
             SteamServer.ServerName = _server.Configuration.Name.Substring(0,Math.Min(_server.Configuration.Name.Length, 63));
             SteamServer.MapName = _server.Configuration.Track.Substring(0,Math.Min(_server.Configuration.Track.Length, 31));
-            SteamServer.MaxPlayers = _server.EntryCars.Count;
+            SteamServer.MaxPlayers = _server.EntryCars.Length;
             SteamServer.LogOnAnonymous();
             SteamServer.OnSteamServersDisconnected += SteamServer_OnSteamServersDisconnected;
             SteamServer.OnSteamServersConnected += SteamServer_OnSteamServersConnected;

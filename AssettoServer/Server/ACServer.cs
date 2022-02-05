@@ -62,7 +62,7 @@ namespace AssettoServer.Server
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
         internal ConcurrentDictionary<IPEndPoint, EntryCar> EndpointCars { get; }
-        public ImmutableList<EntryCar> EntryCars { get; }
+        public EntryCar[] EntryCars { get; }
         internal GuidListFile Admins { get; }
         internal GuidListFile Blacklist { get; }
         [NotNull] internal ImmutableDictionary<string, byte[]>? TrackChecksums { get; private set; }
@@ -112,13 +112,13 @@ namespace AssettoServer.Server
                 .Build();
 
             Configuration = configuration;
-            EntryCars = Configuration.EntryCars.ToImmutableList();
-            Log.Information("Loaded {Count} cars", EntryCars.Count);
-            for (int i = 0; i < EntryCars.Count; i++)
+            EntryCars = Configuration.EntryCars.ToArray();
+            Log.Information("Loaded {Count} cars", EntryCars.Length);
+            for (int i = 0; i < EntryCars.Length; i++)
             {
                 EntryCars[i].SessionId = (byte)i;
                 EntryCars[i].Server = this;
-                EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Count];
+                EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Length];
                 EntryCars[i].AiInit();
             }
 
@@ -413,7 +413,10 @@ namespace AssettoServer.Server
             _ = Task.Factory.StartNew(AcceptTcpConnectionsAsync, TaskCreationOptions.LongRunning);
             UdpServer.Start();
             
-            EntryCars.ForEach(car => car.ResetLogger());
+            for (var i = 0; i < EntryCars.Length; i++)
+            {
+                EntryCars[i].ResetLogger();
+            }
 
             Log.Information("Starting HTTP server on port {HttpPort}", Configuration.HttpPort);
             
@@ -549,7 +552,7 @@ namespace AssettoServer.Server
                 if (ConnectedCars.Count >= Configuration.MaxClients)
                     return false;
 
-                for (int i = 0; i < EntryCars.Count; i++)
+                for (int i = 0; i < EntryCars.Length; i++)
                 {
                     EntryCar entryCar = EntryCars[i];
                     if (entryCar.Client != null && entryCar.Client.Guid == client.Guid)
@@ -715,7 +718,7 @@ namespace AssettoServer.Server
             Dictionary<EntryCar, CountedArray<PositionUpdateOut>> positionUpdates = new();
             foreach (var entryCar in EntryCars)
             {
-                positionUpdates[entryCar] = new CountedArray<PositionUpdateOut>(EntryCars.Count);
+                positionUpdates[entryCar] = new CountedArray<PositionUpdateOut>(EntryCars.Length);
             }
 
             Log.Information("Starting update loop with an update rate of {RefreshRateHz}hz", Configuration.RefreshRateHz);
@@ -743,7 +746,7 @@ namespace AssettoServer.Server
                     {
                         Update?.Invoke(this, EventArgs.Empty);
 
-                        for (int i = 0; i < EntryCars.Count; i++)
+                        for (int i = 0; i < EntryCars.Length; i++)
                         {
                             var fromCar = EntryCars[i];
                             var fromClient = fromCar.Client;
@@ -764,7 +767,7 @@ namespace AssettoServer.Server
                             {
                                 fromCar.HasUpdateToSend = false;
 
-                                for (int j = 0; j < EntryCars.Count; j++)
+                                for (int j = 0; j < EntryCars.Length; j++)
                                 {
                                     var toCar = EntryCars[j];
                                     var toClient = toCar.Client;

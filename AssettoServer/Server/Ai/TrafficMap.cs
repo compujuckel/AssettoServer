@@ -11,7 +11,7 @@ namespace AssettoServer.Server.Ai
         public string SourcePath { get; }
         public List<TrafficSpline> Splines { get; }
         public Dictionary<int, TrafficSplinePoint> PointsById { get; }
-        public KDTree<float, TrafficSplinePoint> KdTree { get; }
+        public KDTree<TrafficSplinePoint> KdTree { get; }
         public float MinCorneringSpeed { get; }
         
         public TrafficMap(string sourcePath, List<TrafficSpline> splines, float laneWidth)
@@ -34,16 +34,7 @@ namespace AssettoServer.Server.Ai
             var treeData = CreateTreeData();
             var treeNodes = PointsById.Values.ToArray();
 
-            KdTree = new KDTree<float, TrafficSplinePoint>(3, treeData, treeNodes, (x, y) =>
-            {
-                double dist = 0;
-                for (int i = 0; i < x.Length; i++)
-                {
-                    dist += (x[i] - y[i]) * (x[i] - y[i]);
-                }
-
-                return dist;
-            });
+            KdTree = new KDTree<TrafficSplinePoint>(treeData, treeNodes);
             
             AdjacentLaneDetector.DetectAdjacentLanes(this, laneWidth);
             JunctionParser.Parse(this, SourcePath + ".junctions.csv");
@@ -54,15 +45,12 @@ namespace AssettoServer.Server.Ai
             return new TrafficMapView(this);
         }
 
-        private float[][] CreateTreeData()
+        private Vector3[] CreateTreeData()
         {
-            var data = new List<float[]>();
+            var data = new List<Vector3>();
             foreach (var point in PointsById)
             {
-                var pointArray = new float[3];
-                point.Value.Point.CopyTo(pointArray);
-                
-                data.Add(pointArray);
+                data.Add(point.Value.Point);
             }
 
             return data.ToArray();
@@ -70,10 +58,7 @@ namespace AssettoServer.Server.Ai
 
         public (TrafficSplinePoint point, float distanceSquared) WorldToSpline(Vector3 position)
         {
-            var pointArray = new float[3];
-            position.CopyTo(pointArray);
-
-            var nearest = KdTree.NearestNeighbors(pointArray, 1)[0].Item2;
+            var nearest = KdTree.NearestNeighbors(position, 1)[0].Item2;
             float dist = Vector3.DistanceSquared(position, nearest.Point);
 
             return (nearest, dist);

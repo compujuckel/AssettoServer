@@ -47,9 +47,7 @@
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="7.1.0" />
     <PackageReference Include="SerilogTimings" Version="2.3.1-dev-00010" />
-    <PackageReference Include="Supercluster.KDTree" Version="1.0.4">
-      <NoWarn>NU1701</NoWarn>
-    </PackageReference>
+    <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.5" />
     <PackageReference Include="TimeZoneConverter" Version="3.5.0" />
     <PackageReference Include="YamlDotNet" Version="11.2.1" />
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.244" PrivateAssets="all" Condition="!Exists('packages.config')" />
@@ -79,5 +77,8 @@
     <Reference Include="Facepunch.Steamworks.Win64" Condition="'$(RuntimeIdentifier)' != 'linux-x64'">
       <HintPath>..\Redist\Facepunch.Steamworks.Win64.dll</HintPath>
     </Reference>
+    <!--<Reference Include="Supercluster.KDTree, Version=1.0.3.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\..\..\RiderProjects\Supercluster.KDTree\KDTree\bin\Debug\net6.0\Supercluster.KDTree.dll</HintPath>
+    </Reference>-->
   </ItemGroup>
 </Project>

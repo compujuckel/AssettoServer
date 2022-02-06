@@ -8,12 +8,12 @@ namespace AssettoServer
         
         public static float CalculateBrakingDistance(float speed, float deceleration = Gravity)
         {
-            return (float)Math.Pow(speed, 2) / (2 * deceleration);
+            return MathF.Pow(speed, 2) / (2 * deceleration);
         }
         
         public static float CalculateMaxCorneringSpeed(float radius, float friction = 1)
         {
-            return (float)Math.Sqrt(Gravity * friction * radius);
+            return MathF.Sqrt(Gravity * friction * radius);
         }
     }
 }

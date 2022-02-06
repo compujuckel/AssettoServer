@@ -347,7 +347,7 @@ namespace AssettoServer.Server.Configuration
                     LastSeenAiState = new AiState[MaxClients],
                     LastSeenAiSpawn = new byte[MaxClients],
                     AiSplineHeightOffsetMeters = Extra.AiParams.SplineHeightOffsetMeters,
-                    NetworkDistanceSquared = (float)Math.Pow(Extra.NetworkBubbleDistance, 2),
+                    NetworkDistanceSquared = MathF.Pow(Extra.NetworkBubbleDistance, 2),
                     OutsideNetworkBubbleUpdateRateMs = 1000 / Extra.OutsideNetworkBubbleRefreshRateHz
                 });
             }

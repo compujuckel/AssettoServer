@@ -240,7 +240,7 @@ namespace AssettoServer.Server.Ai
 
             if (closestCar != null)
             {
-                return (closestCar, (float)Math.Sqrt(minDistance));
+                return (closestCar, MathF.Sqrt(minDistance));
             }
 
             return (null, float.MaxValue);

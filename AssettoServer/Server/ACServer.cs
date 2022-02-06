@@ -33,6 +33,7 @@ using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather.Implementation;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using NanoSockets;
 using Serilog;
 using Qmmands;
 using Newtonsoft.Json;
@@ -61,7 +62,7 @@ namespace AssettoServer.Server
         public long CurrentTime64 => Environment.TickCount64 - StartTime64;
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
-        internal ConcurrentDictionary<IPEndPoint, EntryCar> EndpointCars { get; }
+        internal ConcurrentDictionary<Address, EntryCar> EndpointCars { get; }
         public EntryCar[] EntryCars { get; }
         internal GuidListFile Admins { get; }
         internal GuidListFile Blacklist { get; }
@@ -69,7 +70,7 @@ namespace AssettoServer.Server
         [NotNull] internal ImmutableDictionary<string, byte[]>? CarChecksums { get; private set; }
         internal CommandService CommandService { get; }
         internal TcpListener? TcpListener { get; set; }
-        internal ACUdpServer UdpServer { get; }
+        internal ACUdpServerNano UdpServer { get; }
         internal IWebHost? HttpServer { get; private set; }
         internal KunosLobbyRegistration KunosLobbyRegistration { get; }
         internal Steam Steam { get; }
@@ -129,11 +130,11 @@ namespace AssettoServer.Server
             
             ConnectSemaphore = new SemaphoreSlim(1, 1);
             ConnectedCars = new ConcurrentDictionary<int, EntryCar>();
-            EndpointCars = new ConcurrentDictionary<IPEndPoint, EntryCar>();
+            EndpointCars = new ConcurrentDictionary<Address, EntryCar>();
             Admins = new GuidListFile(this, "admins.txt");
             Blacklist = new GuidListFile(this, "blacklist.txt");
             Blacklist.Reloaded += OnBlacklistReloaded;
-            UdpServer = new ACUdpServer(this, Configuration.UdpPort);
+            UdpServer = new ACUdpServerNano(this, Configuration.UdpPort);
             HttpClient = new HttpClient();
             KunosLobbyRegistration = new KunosLobbyRegistration(this); 
             PluginLoader = loader;
@@ -901,8 +902,8 @@ namespace AssettoServer.Server
                 {
                     client.Logger.Information("{ClientName} has disconnected", client.Name);
 
-                    if (client.UdpEndpoint != null)
-                        EndpointCars.TryRemove(client.UdpEndpoint, out _);
+                    if (client.UdpEndpoint.HasValue)
+                        EndpointCars.TryRemove(client.UdpEndpoint.Value, out _);
 
                     client.EntryCar.Client = null;
                     client.IsConnected = false;

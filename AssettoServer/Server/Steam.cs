@@ -57,7 +57,7 @@ internal class Steam
         {
             var dstEndpoint = new IPEndPoint((uint)IPAddress.HostToNetworkOrder((int)packet.Address), packet.Port);
             Log.Debug("Outgoing steam packet to {Endpoint}", dstEndpoint);
-            _server.UdpServer.Send(dstEndpoint, packet.Data, 0, packet.Size);
+            //_server.UdpServer.Send(dstEndpoint, packet.Data, 0, packet.Size); TODO
         }
     }
     

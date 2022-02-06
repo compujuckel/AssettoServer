@@ -36,7 +36,6 @@
     <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" />
     <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.0" />
-    <PackageReference Include="NetCoreServer" Version="5.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Polly" Version="7.2.2" />
     <PackageReference Include="Qmmands" Version="4.0.0" />
@@ -62,11 +61,19 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>steam_appid.txt</TargetPath>
     </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Redist/libnanosockets.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libnanosockets.so</TargetPath>
+    </ContentWithTargetPath>
   </ItemGroup>
   <ItemGroup Condition="'$(RuntimeIdentifier)' != 'linux-x64'">
     <ContentWithTargetPath Include="Redist/steam_api64.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>steam_api64.dll</TargetPath>
+    </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Redist/nanosockets.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>nanosockets.dll</TargetPath>
     </ContentWithTargetPath>
   </ItemGroup>
   

@@ -16,6 +16,7 @@ using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
+using NanoSockets;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -41,7 +42,7 @@ namespace AssettoServer.Network.Tcp
         internal bool HasPassedChecksum { get; private set; }
         internal bool IsConnected { get; set; }
 
-        internal IPEndPoint? UdpEndpoint { get; private set; }
+        internal Address? UdpEndpoint { get; private set; }
         internal bool HasAssociatedUdp { get; private set; }
 
         private ThreadLocal<byte[]> UdpSendBuffer { get; }
@@ -130,11 +131,16 @@ namespace AssettoServer.Network.Tcp
         {
             try
             {
+                if (!UdpEndpoint.HasValue)
+                {
+                    throw new InvalidOperationException($"UDP endpoint not associated for {Name}");
+                }
+                
                 byte[] buffer = UdpSendBuffer.Value!;
                 PacketWriter writer = new PacketWriter(buffer);
                 int bytesWritten = writer.WritePacket(in packet);
 
-                Server.UdpServer.Send(UdpEndpoint, buffer, 0, bytesWritten);
+                Server.UdpServer.Send(UdpEndpoint.Value, buffer, 0, bytesWritten);
             }
             catch (Exception ex)
             {
@@ -718,7 +724,7 @@ namespace AssettoServer.Network.Tcp
             });
         }
 
-        internal bool TryAssociateUdp(IPEndPoint endpoint)
+        internal bool TryAssociateUdp(Address endpoint)
         {
             if (HasAssociatedUdp)
                 return false;

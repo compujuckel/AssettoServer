@@ -169,14 +169,6 @@ public class AdminModule : ACModuleBase
         Reply("SYNTAX ERROR: Use 'ballast [driver numeric id] [kg]'");
     }
 
-    [Command("netstats")]
-    public void NetStats()
-    {
-        ACUdpServer udpServer = Context.Server.UdpServer;
-        Reply($"Sent: {udpServer.DatagramsSentPerSecond} packets/s ({ByteSize.FromBytes(udpServer.BytesSentPerSecond).Per(TimeSpan.FromSeconds(1)).Humanize("#.##")})\n" +
-              $"Received: {udpServer.DatagramsReceivedPerSecond} packets/s ({ByteSize.FromBytes(udpServer.BytesReceivedPerSecond).Per(TimeSpan.FromSeconds(1)).Humanize("#.##")})");
-    }
-
     [Command("setsplineheight")]
     public void SetSplineHeight(float height)
     {

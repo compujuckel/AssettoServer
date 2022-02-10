@@ -98,7 +98,7 @@ namespace AssettoServer.Network.Http
         }
 
         [HttpGet("/api/details")]
-        public DetailResponse GetDetails(string guid)
+        public DetailResponse GetDetails(string? guid)
         {
             bool isAdmin = !string.IsNullOrEmpty(guid) && _server.Admins.Contains(guid);
 

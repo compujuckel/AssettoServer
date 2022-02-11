@@ -17,7 +17,7 @@ public class Discord
     private DiscordConfiguration Configuration { get; }
 
     public Discord(ACServer server, DiscordConfiguration configuration)
-    { ;
+    {
         _serverNameTruncated = server.Configuration.Name.Substring(0, Math.Min(server.Configuration.Name.Length, 80));
         Configuration = configuration;
         

@@ -59,9 +59,9 @@ namespace NanoSockets {
 			return address0 == other.address0 && address1 == other.address1 && port == other.port;
 		}
 
-		public override bool Equals(object obj) {
-			if (obj is Address)
-				return Equals((Address)obj);
+		public override bool Equals(object? obj) {
+			if (obj is Address address)
+				return Equals(address);
 
 			return false;
 		}

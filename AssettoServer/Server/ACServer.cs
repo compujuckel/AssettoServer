@@ -97,6 +97,7 @@ namespace AssettoServer.Server
         public event EventHandler<ACTcpClient, EventArgs>? ClientChecksumPassed;
         public event EventHandler<ACTcpClient, EventArgs>? ClientChecksumFailed;
         public event EventHandler<ACTcpClient, EventArgs>? ClientDisconnected;
+        public event EventHandler<ACTcpClient, EventArgs>? ClientFirstUpdateSent;
         public event EventHandler<ACTcpClient, ClientAuditEventArgs>? ClientKicked;
         public event EventHandler<ACTcpClient, ClientAuditEventArgs>? ClientBanned;
         public event EventHandler<ACServer, EventArgs>? Update;
@@ -167,7 +168,6 @@ namespace AssettoServer.Server
 
             features.Add("SPECTATING_AWARE");
             features.Add("LOWER_CLIENTS_SENDING_RATE");
-            features.Add("CLIENTS_EXCHANGE_V1");
 
             Features = features;
 
@@ -427,7 +427,7 @@ namespace AssettoServer.Server
                 .UseMetrics(options => { options.EndpointOptions = endpointsOptions => { endpointsOptions.MetricsEndpointOutputFormatter = Metrics.OutputMetricsFormatters.OfType<MetricsPrometheusTextOutputFormatter>().First(); }; })
                 .UseSerilog()
                 .UseStartup(_ => new Startup(this))
-                .UseUrls($"http://*:{Configuration.HttpPort}")
+                .UseUrls($"http://0.0.0.0:{Configuration.HttpPort}")
                 .Build();
             await HttpServer.StartAsync();
             
@@ -964,6 +964,7 @@ namespace AssettoServer.Server
                     acClient.ChecksumFailed += OnClientChecksumFailed;
                     acClient.ChecksumPassed += OnClientChecksumPassed;
                     acClient.ChatMessageReceived += OnChatMessageReceived;
+                    acClient.FirstUpdateSent += OnClientFirstUpdateSent;
                     await acClient.StartAsync();
                 }
                 catch (Exception ex)
@@ -986,6 +987,11 @@ namespace AssettoServer.Server
         private void OnClientChecksumFailed(ACTcpClient sender, EventArgs args)
         {
             ClientChecksumFailed?.Invoke(sender, args);
+        }
+
+        private void OnClientFirstUpdateSent(ACTcpClient sender, EventArgs args)
+        {
+            ClientFirstUpdateSent?.Invoke(sender, args);
         }
 
         private void OnChatMessageReceived(ACTcpClient sender, ChatMessageEventArgs args)

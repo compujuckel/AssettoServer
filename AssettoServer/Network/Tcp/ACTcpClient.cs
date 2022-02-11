@@ -58,6 +58,7 @@ namespace AssettoServer.Network.Tcp
         public event EventHandler<ACTcpClient, EventArgs>? ChecksumFailed;
         public event EventHandler<ACTcpClient, ChatMessageEventArgs>? ChatMessageReceived;
         public event EventHandler<ACTcpClient, EventArgs>? Disconnecting;
+        public event EventHandler<ACTcpClient, EventArgs>? FirstUpdateSent;
 
         public ILogger Logger { get; }
         
@@ -722,6 +723,8 @@ namespace AssettoServer.Network.Tcp
                     await Server.KickAsync(this, KickReason.ChecksumFailed, $"{Name} did not send the requested checksums.", false);
                 }
             });
+            
+            FirstUpdateSent?.Invoke(this, EventArgs.Empty);
         }
 
         internal bool TryAssociateUdp(Address endpoint)

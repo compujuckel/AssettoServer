@@ -31,7 +31,9 @@ internal class Steam
         catch
         {
             // ignored
+#pragma warning disable ERP022
         }
+#pragma warning restore ERP022
 
         try
         {
@@ -160,7 +162,9 @@ internal class Steam
         catch
         {
             // ignored
+#pragma warning disable ERP022
         }
+#pragma warning restore ERP022
 
         try
         {
@@ -169,7 +173,9 @@ internal class Steam
         catch
         {
             // ignored
+#pragma warning disable ERP022
         }
+#pragma warning restore ERP022
 
         Initialize();
     }

@@ -67,7 +67,7 @@ namespace AssettoServer.Server.Ai
         public AiState(EntryCar entryCar)
         {
             EntryCar = entryCar;
-            MapView = EntryCar.Server.TrafficMap?.NewView() ?? throw new InvalidOperationException("Could not create TrafficMapView");
+            MapView = new TrafficMapView();
         }
 
         private void SetRandomSpeed()
@@ -444,15 +444,16 @@ namespace AssettoServer.Server.Ai
                 _startTangent, 
                 _endTangent, 
                 _currentVecProgress / _currentVecLength);
-
+            
             Vector3 rotation = new Vector3()
             {
-                X = (float)(Math.Atan2(smoothPos.Tangent.Z, smoothPos.Tangent.X) - Math.PI / 2),
-                Y = (float)(Math.Atan2(new Vector2(smoothPos.Tangent.Z, smoothPos.Tangent.X).Length(), smoothPos.Tangent.Y) - Math.PI / 2) * -1f,
+                X = MathF.Atan2(smoothPos.Tangent.Z, smoothPos.Tangent.X) - MathF.PI / 2,
+                Y = (MathF.Atan2(new Vector2(smoothPos.Tangent.Z, smoothPos.Tangent.X).Length(), smoothPos.Tangent.Y) - MathF.PI / 2) * -1f,
                 Z = CurrentSplinePoint.GetCamber(_currentVecProgress / _currentVecLength)
             };
-
-            byte tyreAngularSpeed = (byte) Math.Min(byte.MaxValue, 100 + GetTyreAngularSpeed(CurrentSpeed, 0.65f));
+            
+            float tyreAngularSpeed = GetTyreAngularSpeed(CurrentSpeed, 0.65f);
+            byte encodedTyreAngularSpeed =  (byte) (Math.Clamp(MathF.Round(MathF.Log10(tyreAngularSpeed + 1.0f) * 20.0f) * Math.Sign(tyreAngularSpeed), -100.0f, 154.0f) + 100.0f);
 
             Status.Timestamp = EntryCar.Server.CurrentTime;
             Status.Position = smoothPos.Position with { Y = smoothPos.Position.Y + EntryCar.AiSplineHeightOffsetMeters };
@@ -460,10 +461,10 @@ namespace AssettoServer.Server.Ai
             Status.Velocity = smoothPos.Tangent * CurrentSpeed;
             Status.SteerAngle = 127;
             Status.WheelAngle = 127;
-            Status.TyreAngularSpeed[0] = tyreAngularSpeed;
-            Status.TyreAngularSpeed[1] = tyreAngularSpeed;
-            Status.TyreAngularSpeed[2] = tyreAngularSpeed;
-            Status.TyreAngularSpeed[3] = tyreAngularSpeed;
+            Status.TyreAngularSpeed[0] = encodedTyreAngularSpeed;
+            Status.TyreAngularSpeed[1] = encodedTyreAngularSpeed;
+            Status.TyreAngularSpeed[2] = encodedTyreAngularSpeed;
+            Status.TyreAngularSpeed[3] = encodedTyreAngularSpeed;
             Status.EngineRpm = (ushort)MathUtils.Lerp(EntryCar.AiIdleEngineRpm, EntryCar.AiMaxEngineRpm, CurrentSpeed / EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs);
             Status.StatusFlag = CarStatusFlags.LightsOn
                                 | CarStatusFlags.HighBeamsOff
@@ -476,7 +477,7 @@ namespace AssettoServer.Server.Ai
         
         private static float GetTyreAngularSpeed(float speed, float wheelDiameter)
         {
-            return (float) (speed / (Math.PI * wheelDiameter) * 6);
+            return speed / (MathF.PI * wheelDiameter) * 6;
         }
 
         private static CarStatusFlags GetWiperSpeed(float rainIntensity)

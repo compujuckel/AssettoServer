@@ -40,11 +40,6 @@ namespace AssettoServer.Server.Ai
             JunctionParser.Parse(this, SourcePath + ".junctions.csv");
         }
 
-        public TrafficMapView NewView()
-        {
-            return new TrafficMapView(this);
-        }
-
         private Vector3[] CreateTreeData()
         {
             var data = new List<Vector3>();

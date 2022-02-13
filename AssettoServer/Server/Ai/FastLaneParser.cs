@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Numerics;
 using Serilog;
@@ -22,12 +23,28 @@ namespace AssettoServer.Server.Ai
 
             int idOffset = 0;
             // List of files should be ordered to guarantee consistent IDs for junctions etc.
-            foreach (var file in Directory.EnumerateFiles(folder, "fast_lane*.ai").OrderBy(f => f))
-            {
-                var spline = FromFile(file, idOffset);
+            foreach (var file in Directory.EnumerateFiles(folder, "fast_lane*.ai?").OrderBy(f => f))
+            { 
+                TrafficSpline spline;
+                if (file.EndsWith(".aiz"))
+                {
+                    using var fileStream = File.OpenRead(file);
+                    using var compressed = new GZipStream(fileStream, CompressionMode.Decompress);
+                    spline = FromFile(compressed, Path.GetFileName(file), idOffset);
+                }
+                else if(file.EndsWith(".ai"))
+                {
+                    using var fileStream = File.OpenRead(file);
+                    spline = FromFile(fileStream, Path.GetFileName(file), idOffset);
+                }
+                else
+                {
+                    continue;
+                }
+                
                 splines.Add(spline);
 
-                Log.Debug("Parsed {Path}, id range {MinId} - {MaxId} minSpeed {MinSpeed}", file, idOffset, idOffset + spline.Points.Length - 1, spline.MinCorneringSpeed);
+                Log.Information("Parsed {Path}, id range {MinId} - {MaxId}, min. speed {MinSpeed} km/h", file, idOffset, idOffset + spline.Points.Length - 1, MathF.Round(spline.MinCorneringSpeed * 3.6f));
                 idOffset += spline.Points.Length;
             }
 
@@ -37,10 +54,10 @@ namespace AssettoServer.Server.Ai
             return new TrafficMap(Path.Join(folder, "fast_lane.ai"), splines, _server.Configuration.Extra.AiParams.LaneWidthMeters);
         }
 
-        public TrafficSpline FromFile(string filename, int idOffset = 0)
+        private TrafficSpline FromFile(Stream file, string name, int idOffset = 0)
         {
-            Log.Debug("Loading AI spline {Path}", filename);
-            using var reader = new BinaryReader(File.OpenRead(filename));
+            Log.Debug("Loading AI spline {Path}", name);
+            using var reader = new BinaryReader(file);
 
             float minCorneringSpeed = float.MaxValue;
 
@@ -87,6 +104,13 @@ namespace AssettoServer.Server.Ai
                 /*points[i].Tag*/ _ = reader.ReadSingle();
                 /*points[i].Grade*/ _ = reader.ReadSingle();
 
+                // For point-to-point splines the last point might be completely off
+                if (i == detailCount - 1 && points[i].Radius < 1)
+                {
+                    Log.Debug("Resetting radius of last spline point");
+                    points[i].Radius = 1000;
+                }
+                
                 points[i].MaxCorneringSpeed = PhysicsUtils.CalculateMaxCorneringSpeed(points[i].Radius) * _server.Configuration.Extra.AiParams.CorneringSpeedFactor;
                 
                 minCorneringSpeed = Math.Min(minCorneringSpeed, points[i].MaxCorneringSpeed);
@@ -100,6 +124,15 @@ namespace AssettoServer.Server.Ai
                 points[i].Length = Vector3.Distance(points[i].Point, points[i].Next!.Point);
             }
 
+            bool closedLoop = Vector3.Distance(points[0].Point, points[^1].Point) < 50;
+            if (!closedLoop)
+            {
+                points[0].Previous = null;
+                points[^1].Next = null;
+                points[^1].Length = 1;
+                Log.Debug("Distance between spline start and end too big, not closing loop");
+            }
+
             /*using (var writer = new StreamWriter(Path.GetFileName(filename) + ".csv"))
             using (var csv = new CsvWriter(writer, new CultureInfo("de-DE", false)))
             {
@@ -108,7 +141,7 @@ namespace AssettoServer.Server.Ai
 
             return new TrafficSpline
             {
-                Name = filename,
+                Name = name,
                 Points = points,
                 MinCorneringSpeed = minCorneringSpeed
             };

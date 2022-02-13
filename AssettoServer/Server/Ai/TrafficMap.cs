@@ -37,7 +37,7 @@ namespace AssettoServer.Server.Ai
             KdTree = new KDTree<TrafficSplinePoint>(treeData, treeNodes);
             
             AdjacentLaneDetector.DetectAdjacentLanes(this, laneWidth);
-            JunctionParser.Parse(this, SourcePath + ".junctions.csv");
+            JunctionParser.Parse(this, SourcePath + ".yml");
         }
 
         private Vector3[] CreateTreeData()

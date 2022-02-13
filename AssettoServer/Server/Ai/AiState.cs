@@ -150,7 +150,6 @@ namespace AssettoServer.Server.Ai
                 if (!MapView.TryNext(CurrentSplinePoint, out var nextPoint)
                     || !MapView.TryNext(nextPoint, out var nextNextPoint))
                 {
-                    Log.Warning("Spline end");
                     return false;
                 }
 
@@ -192,7 +191,7 @@ namespace AssettoServer.Server.Ai
             while (distanceTravelled < maxBrakingDistance)
             {
                 distanceTravelled += point.Length;
-                point = point.Next;
+                point = MapView.Next(point);
                 if (point == null)
                     break;
 

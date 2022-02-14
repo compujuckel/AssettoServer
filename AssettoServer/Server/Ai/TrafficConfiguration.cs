@@ -13,6 +13,7 @@ public class TrafficConfiguration
 public class SplineConfiguration
 {
     public string Name { get; set; } = "";
+    public string? ConnectEnd { get; set; }
     public List<JunctionRecord> Junctions { get; set; } = new();
 }
 
@@ -21,7 +22,6 @@ public class JunctionRecord
 {
     public string Name { get; set; } = "";
     public int Start { get; set; }
-    public string EndSpline { get; set; } = "";
-    public int End { get; set; }
+    public string End { get; set; } = "";
     public float Probability { get; set; }
 }

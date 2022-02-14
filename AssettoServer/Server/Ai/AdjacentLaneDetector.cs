@@ -26,7 +26,7 @@ namespace AssettoServer.Server.Ai
 
             foreach (var spline in map.Splines)
             {
-                Parallel.ForEach(spline.Points, point =>
+                Parallel.ForEach(spline.Value.Points, point =>
                 {
                     if (point.Right == null && point.Next != null)
                     {

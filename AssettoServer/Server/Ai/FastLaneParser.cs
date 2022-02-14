@@ -19,30 +19,32 @@ namespace AssettoServer.Server.Ai
 
         public TrafficMap FromFiles(string folder)
         {
-            List<TrafficSpline> splines = new List<TrafficSpline>();
+            Dictionary<string, TrafficSpline> splines = new();
 
             int idOffset = 0;
             // List of files should be ordered to guarantee consistent IDs for junctions etc.
             foreach (var file in Directory.EnumerateFiles(folder, "fast_lane*.ai?").OrderBy(f => f))
-            { 
+            {
+                string filename = Path.GetFileName(file);
+                
                 TrafficSpline spline;
                 if (file.EndsWith(".aiz"))
                 {
                     using var fileStream = File.OpenRead(file);
                     using var compressed = new GZipStream(fileStream, CompressionMode.Decompress);
-                    spline = FromFile(compressed, Path.GetFileName(file), idOffset);
+                    spline = FromFile(compressed, filename, idOffset);
                 }
                 else if(file.EndsWith(".ai"))
                 {
                     using var fileStream = File.OpenRead(file);
-                    spline = FromFile(fileStream, Path.GetFileName(file), idOffset);
+                    spline = FromFile(fileStream, filename, idOffset);
                 }
                 else
                 {
                     continue;
                 }
                 
-                splines.Add(spline);
+                splines.Add(filename, spline);
 
                 Log.Information("Parsed {Path}, id range {MinId} - {MaxId}, min. speed {MinSpeed} km/h", file, idOffset, idOffset + spline.Points.Length - 1, MathF.Round(spline.MinCorneringSpeed * 3.6f));
                 idOffset += spline.Points.Length;
@@ -51,7 +53,7 @@ namespace AssettoServer.Server.Ai
             if (splines.Count == 0) 
                 throw new InvalidOperationException($"No AI splines found. Please put at least one AI spline (fast_lane.ai) into {Path.GetFullPath(folder)}");
 
-            return new TrafficMap(Path.Join(folder, "fast_lane.ai"), splines, _server.Configuration.Extra.AiParams.LaneWidthMeters);
+            return new TrafficMap(folder, splines, _server.Configuration.Extra.AiParams.LaneWidthMeters);
         }
 
         private TrafficSpline FromFile(Stream file, string name, int idOffset = 0)

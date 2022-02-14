@@ -1,17 +1,16 @@
 ﻿using System.IO;
-using AssettoServer.Server.Configuration;
 using Serilog;
 using YamlDotNet.Serialization;
 
 namespace AssettoServer.Server.Ai;
 
-public class JunctionParser
+public static class TrafficConfigurationParser
 {
     public static void Parse(TrafficMap map, string path)
     {
         if (!File.Exists(path))
         {
-            Log.Information("Junction file does not exist");
+            Log.Information("Traffic configuration does not exist");
             return;
         }
 
@@ -22,15 +21,31 @@ public class JunctionParser
 
         foreach (var spline in config.Splines)
         {
-            var startSpline = map.Splines.Find(s => s.Name == spline.Name) ?? throw new ConfigurationException($"Could not find spline with name {spline.Name}");
+            var startSpline = map.Splines[spline.Name];
+
+            if (spline.ConnectEnd != null)
+            {
+                var endPoint = map.GetByIdentifier(spline.ConnectEnd);
+                var startPoint = startSpline.Points[^1];
+                startPoint.Next = endPoint;
+                
+                var jct = new TrafficSplineJunction
+                {
+                    StartPoint = startPoint,
+                    EndPoint = endPoint,
+                    Probability = 1.0f
+                };
+
+                startPoint.JunctionStart = jct;
+                endPoint.JunctionEnd = jct;
+            }
 
             foreach (var junction in spline.Junctions)
             {
-                Log.Debug("Junction {Name} from {StartSpline} {StartId} to {EndSpline} {EndId}", junction.Name, startSpline.Name, junction.Start, junction.EndSpline, junction.End);
-                var endSpline = map.Splines.Find(s => s.Name == junction.EndSpline) ?? throw new ConfigurationException($"Could not find spline with name {spline.Name}");
+                Log.Debug("Junction {Name} from {StartSpline} {StartId} to {End}", junction.Name, startSpline.Name, junction.Start, junction.End);
 
                 var startPoint = startSpline.Points[junction.Start];
-                var endPoint = endSpline.Points[junction.End];
+                var endPoint = map.GetByIdentifier(junction.End);
 
                 var jct = new TrafficSplineJunction
                 {

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Numerics;
+using Serilog;
 using Supercluster.KDTree;
 
 namespace AssettoServer.Server.Ai
@@ -14,7 +14,7 @@ namespace AssettoServer.Server.Ai
         public KDTree<TrafficSplinePoint> KdTree { get; }
         public float MinCorneringSpeed { get; }
         
-        public TrafficMap(string sourcePath, Dictionary<string, TrafficSpline> splines, float laneWidth)
+        public TrafficMap(Dictionary<string, TrafficSpline> splines, float laneWidth, TrafficConfiguration? configuration = null)
         {
             Splines = splines;
             PointsById = new Dictionary<int, TrafficSplinePoint>();
@@ -36,7 +36,10 @@ namespace AssettoServer.Server.Ai
             KdTree = new KDTree<TrafficSplinePoint>(treeData, treeNodes);
             
             AdjacentLaneDetector.DetectAdjacentLanes(this, laneWidth);
-            TrafficConfigurationParser.Parse(this, Path.Join(sourcePath, "config.yml"));
+            if (configuration != null)
+            {
+                ApplyConfiguration(configuration);
+            }
         }
 
         private Vector3[] CreateTreeData()
@@ -64,6 +67,49 @@ namespace AssettoServer.Server.Ai
             float dist = Vector3.DistanceSquared(position, nearest.Point);
 
             return (nearest, dist);
+        }
+
+        private void ApplyConfiguration(TrafficConfiguration config)
+        {
+            foreach (var spline in config.Splines)
+            {
+                var startSpline = Splines[spline.Name];
+
+                if (spline.ConnectEnd != null)
+                {
+                    var endPoint = GetByIdentifier(spline.ConnectEnd);
+                    var startPoint = startSpline.Points[^1];
+                    startPoint.Next = endPoint;
+                
+                    var jct = new TrafficSplineJunction
+                    {
+                        StartPoint = startPoint,
+                        EndPoint = endPoint,
+                        Probability = 1.0f
+                    };
+
+                    startPoint.JunctionStart = jct;
+                    endPoint.JunctionEnd = jct;
+                }
+
+                foreach (var junction in spline.Junctions)
+                {
+                    Log.Debug("Junction {Name} from {StartSpline} {StartId} to {End}", junction.Name, startSpline.Name, junction.Start, junction.End);
+
+                    var startPoint = startSpline.Points[junction.Start];
+                    var endPoint = GetByIdentifier(junction.End);
+
+                    var jct = new TrafficSplineJunction
+                    {
+                        StartPoint = startPoint,
+                        EndPoint = endPoint,
+                        Probability = junction.Probability
+                    };
+
+                    startPoint.JunctionStart = jct;
+                    endPoint.JunctionEnd = jct;
+                }
+            }
         }
     }
 }

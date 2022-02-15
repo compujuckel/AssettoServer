@@ -95,6 +95,6 @@ public static class WavefrontObjParser
             Log.Debug("Spline {Name} finished with {Count} points", spline.Name, spline.Points.Length);
         }
 
-        return new TrafficMap(Path.GetDirectoryName(filename)!, splines, laneWidth);
+        return new TrafficMap(splines, laneWidth);
     }
 }

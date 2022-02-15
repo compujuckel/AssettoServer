@@ -15,14 +15,14 @@ internal static class Program
         [Option('o', "output", Required = true, HelpText = "Output file")]
         public string Output { get; set; } = null!;
 
-        [Option('c', "compress", Required = false, HelpText = "Compress and optimize for AssettoServer")]
-        public bool Compress { get; set; } = false;
-
         [Option("start", Required = false, HelpText = "Set point as new spline start point")]
         public int CutStart { get; set; } = 0;
         
         [Option("end", Required = false, HelpText = "Set point as new spline end point")]
         public int CutEnd { get; set; } = 0;
+
+        [Option("optimize", Required = false, HelpText = "Use file format optimized for AssettoServer")]
+        public bool Optimize { get; set; } = false;
     }
 
     public static async Task Main(string[] args)
@@ -40,14 +40,14 @@ internal static class Program
         
         Log.Information("Adjusting spline...");
         fastLane.Cut(options.CutStart, options.CutEnd);
-        
-        if(options.Compress)
-            fastLane.NullUnused();
+
+        if (options.Optimize)
+            fastLane.Version = -1;
 
         Log.Information("Writing output spline to {Path}...", options.Output);
         await using (var outputFile = File.Create(options.Output))
         {
-            fastLane.ToFile(outputFile, options.Compress);
+            fastLane.ToFile(outputFile);
         }
         
         Log.Information("Finished");

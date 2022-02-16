@@ -93,14 +93,49 @@ namespace AssettoServer.Server
         
         private List<PosixSignalRegistration> SignalHandlers { get; }
 
-        public event EventHandler<ACTcpClient, ClientHandshakeEventArgs>? ClientHandshakeStarted; 
+        /// <summary>
+        /// Fires when a client has started a handshake. At this point it is still possible to reject the connection by setting ClientHandshakeEventArgs.Cancel = true.
+        /// </summary>
+        public event EventHandler<ACTcpClient, ClientHandshakeEventArgs>? ClientHandshakeStarted;
+        
+        /// <summary>
+        /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
+        /// </summary>
         public event EventHandler<ACTcpClient, EventArgs>? ClientChecksumPassed;
+        
+        /// <summary>
+        /// Fires when a client failed the checksum check.
+        /// </summary>
         public event EventHandler<ACTcpClient, EventArgs>? ClientChecksumFailed;
+        
+        /// <summary>
+        /// Fires when a player has disconnected.
+        /// </summary>
         public event EventHandler<ACTcpClient, EventArgs>? ClientDisconnected;
+        
+        /// <summary>
+        /// Fires when a client has sent the first position update and is visible to other players.
+        /// </summary>
         public event EventHandler<ACTcpClient, EventArgs>? ClientFirstUpdateSent;
+        
+        /// <summary>
+        /// Fires when a client has been kicked.
+        /// </summary>
         public event EventHandler<ACTcpClient, ClientAuditEventArgs>? ClientKicked;
+        
+        /// <summary>
+        /// Fires when a client has been banned.
+        /// </summary>
         public event EventHandler<ACTcpClient, ClientAuditEventArgs>? ClientBanned;
+        
+        /// <summary>
+        /// Fires on each server tick in the main loop. Don't do resource intensive / long running stuff in here!
+        /// </summary>
         public event EventHandler<ACServer, EventArgs>? Update;
+        
+        /// <summary>
+        /// Fires when a client has sent a chat message. Set ChatEventArgs.Cancel = true to stop it from being broadcast to other players.
+        /// </summary>
         public event EventHandler<ACTcpClient, ChatEventArgs>? ChatMessageReceived;
         
         public ACServer(ACServerConfiguration configuration, ACPluginLoader loader)

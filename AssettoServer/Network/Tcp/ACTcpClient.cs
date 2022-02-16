@@ -53,11 +53,34 @@ namespace AssettoServer.Network.Tcp
         private long LastChatTime { get; set; }
         private int _disconnectRequested = 0;
 
+        /// <summary>
+        /// Fires when a client has started a handshake. At this point it is still possible to reject the connection by setting ClientHandshakeEventArgs.Cancel = true.
+        /// </summary>
         public event EventHandler<ACTcpClient, ClientHandshakeEventArgs>? HandshakeStarted;
+        
+        /// <summary>
+        /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
+        /// </summary>
         public event EventHandler<ACTcpClient, EventArgs>? ChecksumPassed;
+        
+        /// <summary>
+        /// Fires when a client failed the checksum check.
+        /// </summary>
         public event EventHandler<ACTcpClient, EventArgs>? ChecksumFailed;
+        
+        /// <summary>
+        /// Fires when a client has sent a chat message. Set ChatEventArgs.Cancel = true to stop it from being broadcast to other players.
+        /// </summary>
         public event EventHandler<ACTcpClient, ChatMessageEventArgs>? ChatMessageReceived;
+        
+        /// <summary>
+        /// Fires when a player has started disconnecting.
+        /// </summary>
         public event EventHandler<ACTcpClient, EventArgs>? Disconnecting;
+        
+        /// <summary>
+        /// Fires when a client has sent the first position update and is visible to other players.
+        /// </summary>
         public event EventHandler<ACTcpClient, EventArgs>? FirstUpdateSent;
 
         public ILogger Logger { get; }

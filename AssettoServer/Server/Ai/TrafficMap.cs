@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using AssettoServer.Network.Packets.Outgoing;
 using Serilog;
 using Supercluster.KDTree;
 
@@ -13,9 +14,12 @@ namespace AssettoServer.Server.Ai
         public Dictionary<int, TrafficSplinePoint> PointsById { get; }
         public KDTree<TrafficSplinePoint> KdTree { get; }
         public float MinCorneringSpeed { get; }
-        
-        public TrafficMap(Dictionary<string, TrafficSpline> splines, float laneWidth, TrafficConfiguration? configuration = null)
+
+        private readonly ILogger _logger;
+
+        public TrafficMap(Dictionary<string, TrafficSpline> splines, float laneWidth, TrafficConfiguration? configuration = null, ILogger? logger = null)
         {
+            _logger = logger ?? Log.Logger;
             Splines = splines;
             PointsById = new Dictionary<int, TrafficSplinePoint>();
             MinCorneringSpeed = Splines.Values.Min(s => s.MinCorneringSpeed);
@@ -85,7 +89,10 @@ namespace AssettoServer.Server.Ai
                     {
                         StartPoint = startPoint,
                         EndPoint = endPoint,
-                        Probability = 1.0f
+                        Probability = 1.0f,
+                        IndicateWhenTaken = IndicatorToStatusFlags(spline.IndicateEnd),
+                        IndicateDistancePre = spline.IndicateEndDistancePre,
+                        IndicateDistancePost = spline.IndicateEndDistancePost
                     };
 
                     startPoint.JunctionStart = jct;
@@ -94,7 +101,7 @@ namespace AssettoServer.Server.Ai
 
                 foreach (var junction in spline.Junctions)
                 {
-                    Log.Debug("Junction {Name} from {StartSpline} {StartId} to {End}", junction.Name, startSpline.Name, junction.Start, junction.End);
+                    _logger.Debug("Junction {Name} from {StartSpline} {StartId} to {End}", junction.Name, startSpline.Name, junction.Start, junction.End);
 
                     var startPoint = startSpline.Points[junction.Start];
                     var endPoint = GetByIdentifier(junction.End);
@@ -103,13 +110,27 @@ namespace AssettoServer.Server.Ai
                     {
                         StartPoint = startPoint,
                         EndPoint = endPoint,
-                        Probability = junction.Probability
+                        Probability = junction.Probability,
+                        IndicateWhenTaken = IndicatorToStatusFlags(junction.IndicateWhenTaken),
+                        IndicateWhenNotTaken = IndicatorToStatusFlags(junction.IndicateWhenNotTaken),
+                        IndicateDistancePre = junction.IndicateDistancePre,
+                        IndicateDistancePost = junction.IndicateDistancePost
                     };
 
                     startPoint.JunctionStart = jct;
                     endPoint.JunctionEnd = jct;
                 }
             }
+        }
+
+        private static CarStatusFlags IndicatorToStatusFlags(Indicator indicator)
+        {
+            return indicator switch
+            {
+                Indicator.Left => CarStatusFlags.IndicateLeft,
+                Indicator.Right => CarStatusFlags.IndicateRight,
+                _ => 0
+            };
         }
     }
 }

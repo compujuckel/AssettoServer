@@ -13,9 +13,24 @@ namespace AssettoServer.Server.Ai
     {
         private readonly ACServer _server;
 
+        private ILogger _logger = Log.Logger;
+
         public FastLaneParser(ACServer server)
         {
             _server = server;
+        }
+
+        private void CheckConfig(TrafficConfiguration configuration)
+        {
+            if (!string.IsNullOrWhiteSpace(configuration.Author))
+            {
+                Log.Information("Loading AI spline by {Author}, version {Version}", configuration.Author, configuration.Version);
+            }
+            
+            if (!string.IsNullOrWhiteSpace(configuration.Track) && Path.GetFileName(_server.Configuration.Track) != configuration.Track)
+            {
+                throw new InvalidOperationException($"Mismatched AI spline, AI spline is for track {configuration.Track}");
+            }
         }
 
         public TrafficMap FromFiles(string folder)
@@ -26,63 +41,71 @@ namespace AssettoServer.Server.Ai
             int idOffset = 0;
             // List of files should be ordered to guarantee consistent IDs for junctions etc.
 
-            var aipPath = Path.Join(folder, "fast_lane.aip");
+            string aipPath = Path.Join(folder, "fast_lane.aip");
             if (File.Exists(aipPath))
             {
                 Log.Information("Loading from AI package {Path}", aipPath);
-                
+
+                _logger = new LoggerConfiguration()
+                    .MinimumLevel.Information()
+                    .WriteTo.Logger(Log.Logger)
+                    .CreateLogger();
+
                 using var aipFile = ZipFile.OpenRead(aipPath);
+
+                var configEntry = aipFile.GetEntry("config.yml");
+                if (configEntry != null)
+                {
+                    using var fileStream = configEntry.Open();
+                    using var reader = new StreamReader(fileStream);
+                        
+                    var deserializer = new DeserializerBuilder().Build();
+                    configuration = deserializer.Deserialize<TrafficConfiguration>(reader);
+                    CheckConfig(configuration);
+                }
                 
                 foreach (var entry in aipFile.Entries)
                 {
-                    if (entry.Name == "config.yml")
-                    {
-                        using var fileStream = entry.Open();
-                        using var reader = new StreamReader(fileStream);
-                        
-                        var deserializer = new DeserializerBuilder().Build();
-                        configuration = deserializer.Deserialize<TrafficConfiguration>(reader);
-                    }
-                    else if(entry.Name.EndsWith(".ai"))
+                    if(entry.Name.EndsWith(".ai"))
                     {
                         using var fileStream = entry.Open();
                         var spline = FromFile(fileStream, entry.Name, idOffset);
                         splines.Add(entry.Name, spline);
                         
-                        Log.Information("Parsed {Path}, id range {MinId} - {MaxId}, min. speed {MinSpeed} km/h", entry, idOffset, idOffset + spline.Points.Length - 1, MathF.Round(spline.MinCorneringSpeed * 3.6f));
+                        _logger.Debug("Parsed {Path}, id range {MinId} - {MaxId}, min. speed {MinSpeed} km/h", entry, idOffset, idOffset + spline.Points.Length - 1, MathF.Round(spline.MinCorneringSpeed * 3.6f));
                         idOffset += spline.Points.Length;
                     }
                 }
             }
             else
             {
-                foreach (string file in Directory.EnumerateFiles(folder, "fast_lane*.ai").OrderBy(f => f))
-                {
-                    string filename = Path.GetFileName(file);
-                    
-                    using var fileStream = File.OpenRead(file);
-                    var spline = FromFile(fileStream, filename, idOffset);
-                    splines.Add(filename, spline);
-
-                    Log.Information("Parsed {Path}, id range {MinId} - {MaxId}, min. speed {MinSpeed} km/h", file, idOffset, idOffset + spline.Points.Length - 1,
-                        MathF.Round(spline.MinCorneringSpeed * 3.6f));
-                    idOffset += spline.Points.Length;
-                }
-
                 string configPath = Path.Join(folder, "config.yml");
                 if (File.Exists(configPath))
                 {
                     using var file = File.OpenText(configPath);
                     var deserializer = new DeserializerBuilder().Build();
                     configuration = deserializer.Deserialize<TrafficConfiguration>(file);
+                    CheckConfig(configuration);
                 }
                 
+                foreach (string file in Directory.EnumerateFiles(folder, "fast_lane*.ai").OrderBy(f => f))
+                {
+                    string filename = Path.GetFileName(file);
+
+                    using var fileStream = File.OpenRead(file);
+                    var spline = FromFile(fileStream, filename, idOffset);
+                    splines.Add(filename, spline);
+
+                    _logger.Debug("Parsed {Path}, id range {MinId} - {MaxId}, min. speed {MinSpeed} km/h", file, idOffset, idOffset + spline.Points.Length - 1,
+                        MathF.Round(spline.MinCorneringSpeed * 3.6f));
+                    idOffset += spline.Points.Length;
+                }
             }
 
             if (splines.Count == 0) 
                 throw new InvalidOperationException($"No AI splines found. Please put at least one AI spline (fast_lane.ai) into {Path.GetFullPath(folder)}");
 
-            return new TrafficMap(splines, _server.Configuration.Extra.AiParams.LaneWidthMeters, configuration);
+            return new TrafficMap(splines, _server.Configuration.Extra.AiParams.LaneWidthMeters, configuration, _logger);
         }
 
         private TrafficSplinePoint[] FromFileV7(BinaryReader reader, int idOffset)
@@ -155,7 +178,7 @@ namespace AssettoServer.Server.Ai
 
         private TrafficSpline FromFile(Stream file, string name, int idOffset = 0)
         {
-            Log.Debug("Loading AI spline {Path}", name);
+            _logger.Debug("Loading AI spline {Path}", name);
             using var reader = new BinaryReader(file);
 
             float minCorneringSpeed = float.MaxValue;
@@ -173,7 +196,7 @@ namespace AssettoServer.Server.Ai
                 // For point-to-point splines the last point might be completely off
                 if (i == points.Length - 1 && points[i].Radius < 1)
                 {
-                    Log.Debug("Resetting radius of last spline point");
+                    _logger.Debug("Resetting radius of last spline point");
                     points[i].Radius = 1000;
                 }
                 
@@ -192,7 +215,7 @@ namespace AssettoServer.Server.Ai
                 points[0].Previous = null;
                 points[^1].Next = null;
                 points[^1].Length = 1;
-                Log.Debug("Distance between spline start and end too big, not closing loop");
+                _logger.Debug("Distance between spline start and end too big, not closing loop");
             }
 
             /*using (var writer = new StreamWriter(Path.GetFileName(filename) + ".csv"))

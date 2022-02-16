@@ -185,7 +185,7 @@ namespace AssettoServer.Server.Ai
                 spawnPoint = spawnPoint.Traverse(direction * 5);
             }
 
-            return spawnPoint;
+            return spawnPoint?.RandomLane(_server.Configuration.Extra.AiParams.TwoWayTraffic);
         }
         
         public void ObstacleDetection()

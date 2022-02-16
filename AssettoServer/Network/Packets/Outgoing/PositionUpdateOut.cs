@@ -9,6 +9,8 @@ public enum CarStatusFlags
     BrakeLightsOn = 0x10,
     LightsOn = 0x20,
     Horn = 0x40,
+    IndicateLeft = 0x800,
+    IndicateRight = 0x1000,
     HazardsOn = 0x2000,
     HighBeamsOff = 0x4000,
     WiperLevel1 = 0x200000,

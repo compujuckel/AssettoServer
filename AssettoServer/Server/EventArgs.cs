@@ -17,11 +17,24 @@ public class ClientAuditEventArgs : EventArgs
     public ACTcpClient? Admin { get; init; }
 }
 
+/// <summary>
+/// Set Cancel to true to reject the connection.
+/// </summary>
 public class ClientHandshakeEventArgs : CancelEventArgs
 {
+    /// <summary>
+    /// The incoming handshake request
+    /// </summary>
     public HandshakeRequest HandshakeRequest { get; init; }
 
+    /// <summary>
+    /// Type of handshake response when Cancel = true.
+    /// </summary>
     public CancelTypeEnum CancelType { get; set; }
+    
+    /// <summary>
+    /// Custom message that will be shown to the client when using CancelType = AuthFailed.
+    /// </summary>
     public string? AuthFailedReason { get; set; }
 
     public enum CancelTypeEnum

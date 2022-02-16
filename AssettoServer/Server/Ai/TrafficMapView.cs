@@ -13,6 +13,11 @@ public class TrafficMapView
         _evaluated.Clear();
     }
 
+    public bool WillTakeJunction(TrafficSplineJunction junction)
+    {
+        return _evaluated.GetOrAdd(junction, Random.Shared.NextDouble() < junction.Probability);
+    }
+
     public TrafficSplinePoint? Next(TrafficSplinePoint? point, int count = 1)
     {
         for (int i = 0; i < count && point != null; i++)
@@ -21,7 +26,7 @@ public class TrafficMapView
             {
                 var junction = point.JunctionStart;
 
-                bool result = _evaluated.GetOrAdd(junction, _ => Random.Shared.NextDouble() < junction.Probability);
+                bool result = WillTakeJunction(junction);
                 point = result ? junction.EndPoint : point.Next;
             }
             else

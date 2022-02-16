@@ -41,6 +41,10 @@ namespace AssettoServer.Server.Ai
         private long _stoppedForCollisionUntil;
         private long _obstacleHonkStart;
         private long _obstacleHonkEnd;
+        private CarStatusFlags _indicator = 0;
+        private TrafficSplineJunction? _nextJunction;
+        private bool _junctionPassed;
+        private float _endIndicatorDistance;
 
         private static readonly ImmutableList<Color> CarColors = new List<Color>()
         {
@@ -110,6 +114,10 @@ namespace AssettoServer.Server.Ai
             _ignoreObstaclesUntil = 0;
             _obstacleHonkEnd = 0;
             _obstacleHonkStart = 0;
+            _indicator = 0;
+            _nextJunction = null;
+            _junctionPassed = false;
+            _endIndicatorDistance = 0;
             _lastTick = Environment.TickCount64;
             SpawnCounter++;
             Initialized = true;
@@ -156,6 +164,25 @@ namespace AssettoServer.Server.Ai
                 CurrentSplinePoint = nextPoint;
                 _currentVecLength = (nextNextPoint.Point - CurrentSplinePoint.Point).Length();
                 recalculateTangents = true;
+
+                if (_junctionPassed)
+                {
+                    _endIndicatorDistance -= _currentVecLength;
+
+                    if (_endIndicatorDistance < 0)
+                    {
+                        _indicator = 0;
+                        _junctionPassed = false;
+                        _endIndicatorDistance = 0;
+                    }
+                }
+                
+                if (_nextJunction != null && CurrentSplinePoint.JunctionEnd == _nextJunction)
+                {
+                    _junctionPassed = true;
+                    _endIndicatorDistance = _nextJunction.IndicateDistancePost;
+                    _nextJunction = null;
+                }
             }
 
             if (recalculateTangents)
@@ -185,6 +212,7 @@ namespace AssettoServer.Server.Ai
             
             AiState? closestAiState = null;
             float closestAiStateDistance = float.MaxValue;
+            bool junctionFound = false;
             float distanceTravelled = 0;
             var point = CurrentSplinePoint ?? throw new InvalidOperationException("CurrentSplinePoint is null");
             float maxSpeed = float.MaxValue;
@@ -195,6 +223,16 @@ namespace AssettoServer.Server.Ai
                 if (point == null)
                     break;
 
+                if (!junctionFound && point.JunctionStart != null && distanceTravelled < point.JunctionStart.IndicateDistancePre)
+                {
+                    var indicator = MapView.WillTakeJunction(point.JunctionStart) ? point.JunctionStart.IndicateWhenTaken : point.JunctionStart.IndicateWhenNotTaken;
+                    if (indicator != 0)
+                    {
+                        _indicator = indicator;
+                        _nextJunction = point.JunctionStart;
+                        junctionFound = true;
+                    }
+                }
 
                 if (closestAiState == null && EntryCar.Server.AiBehavior.AiStatesBySplinePoint.TryGetValue(point, out var candidate))
                 {
@@ -470,7 +508,8 @@ namespace AssettoServer.Server.Ai
                                 | (Environment.TickCount64 < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
                                 | (CurrentSpeed == 0 || Acceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
                                 | (_stoppedForObstacle && Environment.TickCount64 > _obstacleHonkStart && Environment.TickCount64 < _obstacleHonkEnd ? CarStatusFlags.Horn : 0)
-                                | GetWiperSpeed(EntryCar.Server.CurrentWeather.RainIntensity);
+                                | GetWiperSpeed(EntryCar.Server.CurrentWeather.RainIntensity)
+                                | _indicator;
             Status.Gear = 2;
         }
         

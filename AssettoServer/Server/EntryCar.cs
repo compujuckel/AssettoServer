@@ -46,7 +46,14 @@ namespace AssettoServer.Server
         internal EntryCar? TargetCar { get; set; }
         private long LastFallCheckTime{ get; set; }
         
+        /// <summary>
+        /// Fires when a position update is received.
+        /// </summary>
         public event EventHandlerIn<EntryCar, PositionUpdateIn>? PositionUpdateReceived;
+        
+        /// <summary>
+        /// Fires when the state of this car is reset, usually when a new player connects.
+        /// </summary>
         public event EventHandler<EntryCar, EventArgs>? ResetInvoked;
 
         public ILogger Logger { get; private set; } = Log.Logger;

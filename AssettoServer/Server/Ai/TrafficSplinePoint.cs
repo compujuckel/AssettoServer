@@ -33,32 +33,6 @@ namespace AssettoServer.Server.Ai
         [Ignore] public TrafficSplinePoint? Left { get; set; }
         [Ignore] public TrafficSplinePoint? Right { get; set; }
 
-        public TrafficSplinePoint? Traverse(int count)
-        {
-            TrafficSplinePoint ret = this;
-            for (int i = 0; i < count; i++)
-            {
-                if (ret.Next == null)
-                {
-                    return null;
-                }
-
-                ret = ret.Next;
-            }
-
-            for (int i = 0; i > count; i--)
-            {
-                if (ret.Previous == null)
-                {
-                    return null;
-                }
-
-                ret = ret.Previous;
-            }
-
-            return ret;
-        }
-
         public List<TrafficSplinePoint> GetLanes(bool twoWayTraffic = false)
         {
             var ret = new List<TrafficSplinePoint>();

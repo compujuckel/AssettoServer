@@ -6,16 +6,28 @@ namespace AssettoServer.Server.Ai;
 
 public class TrafficMapView
 {
-    private readonly ConcurrentDictionary<TrafficSplineJunction, bool> _evaluated = new();
+    private readonly ConcurrentDictionary<TrafficSplineJunction, bool>? _evaluated;
+
+    public TrafficMapView(bool savesState = true)
+    {
+        if (savesState)
+            _evaluated = new ConcurrentDictionary<TrafficSplineJunction, bool>();
+    }
 
     public void Clear()
     {
-        _evaluated.Clear();
+        _evaluated?.Clear();
     }
 
     public bool WillTakeJunction(TrafficSplineJunction junction)
     {
-        return _evaluated.GetOrAdd(junction, Random.Shared.NextDouble() < junction.Probability);
+        bool result = Random.Shared.NextDouble() < junction.Probability;
+        return _evaluated?.GetOrAdd(junction, result) ?? result;
+    }
+
+    public TrafficSplinePoint? Traverse(TrafficSplinePoint? point, int count = 1)
+    {
+        return count > 0 ? Next(point, count) : Previous(point, -count);
     }
 
     public TrafficSplinePoint? Next(TrafficSplinePoint? point, int count = 1)
@@ -53,14 +65,14 @@ public class TrafficMapView
                 var junction = point.JunctionEnd;
 
                 bool result = false;
-                if (_evaluated.ContainsKey(junction))
+                if (_evaluated != null && _evaluated.ContainsKey(junction))
                 {
                     result = _evaluated[junction];
                 }
                 else if (point.Previous == null)
                 {
                     result = Random.Shared.NextDouble() < junction.Probability;
-                    _evaluated.TryAdd(junction, result);
+                    _evaluated?.TryAdd(junction, result);
                 }
                     
                 point = result ? junction.StartPoint : point.Previous;

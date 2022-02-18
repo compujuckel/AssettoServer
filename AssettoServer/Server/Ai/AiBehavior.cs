@@ -21,6 +21,7 @@ namespace AssettoServer.Server.Ai
         private readonly List<AiState> _initializedAiStates = new();
         private readonly List<AiState> _uninitializedAiStates = new();
         private readonly List<AiDistance> _distances = new();
+        private readonly TrafficMapView _mapView = new(false);
 
         public Dictionary<TrafficSplinePoint, AiState> AiStatesBySplinePoint { get; } = new();
 
@@ -172,7 +173,7 @@ namespace AssettoServer.Server.Ai
             }
             
             int spawnDistance = Random.Shared.Next(_server.Configuration.Extra.AiParams.MinSpawnDistancePoints, _server.Configuration.Extra.AiParams.MaxSpawnDistancePoints);
-            var spawnPoint = targetPlayerSplinePos.point.Traverse(spawnDistance * direction)?.RandomLane(_server.Configuration.Extra.AiParams.TwoWayTraffic);
+            var spawnPoint = _mapView.Traverse(targetPlayerSplinePos.point, spawnDistance * direction)?.RandomLane(_server.Configuration.Extra.AiParams.TwoWayTraffic);
             
             if (spawnPoint != null && spawnPoint.Next != null)
             {
@@ -182,7 +183,7 @@ namespace AssettoServer.Server.Ai
 
             while (spawnPoint != null && !IsPositionSafe(spawnPoint.Point))
             {
-                spawnPoint = spawnPoint.Traverse(direction * 5);
+                spawnPoint = _mapView.Traverse(spawnPoint, direction * 5);
             }
 
             return spawnPoint?.RandomLane(_server.Configuration.Extra.AiParams.TwoWayTraffic);
@@ -318,7 +319,7 @@ namespace AssettoServer.Server.Ai
 
                 foreach (var targetAiState in _uninitializedAiStates)
                 {
-                    if (!targetAiState.CanSpawn(spawnPoint.Point))
+                    if (!targetAiState.CanSpawn(spawnPoint.Point) && _mapView.TryNext(spawnPoint, out _))
                         continue;
                     
                     targetAiState.Teleport(spawnPoint);

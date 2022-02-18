@@ -23,6 +23,9 @@ internal static class Program
 
         [Option("optimize", Required = false, HelpText = "Use file format optimized for AssettoServer")]
         public bool Optimize { get; set; } = false;
+
+        [Option("legacy", Required = false, HelpText = "Use legacy file format compatible with AC (v7)")]
+        public bool Legacy { get; set; } = false;
     }
 
     public static async Task Main(string[] args)
@@ -43,6 +46,9 @@ internal static class Program
 
         if (options.Optimize)
             fastLane.Version = -1;
+
+        if (options.Legacy)
+            fastLane.Version = 7;
 
         Log.Information("Writing output spline to {Path}...", options.Output);
         await using (var outputFile = File.Create(options.Output))

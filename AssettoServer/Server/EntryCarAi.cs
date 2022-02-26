@@ -27,6 +27,11 @@ public partial class EntryCar
     public bool AiEnableColorChanges { get; set; } = false;
     public int AiIdleEngineRpm { get; set; } = 800;
     public int AiMaxEngineRpm { get; set; } = 3000;
+    public float AiAcceleration { get; set; }
+    public float AiDeceleration { get; set; }
+    public float AiCorneringSpeedFactor { get; set; }
+    public float AiCorneringBrakeDistanceFactor { get; set; }
+    public float AiCorneringBrakeForceFactor { get; set; }
     public float AiSplineHeightOffsetMeters { get; set; } = 0;
     
     private readonly List<AiState> _aiStates = new List<AiState>();

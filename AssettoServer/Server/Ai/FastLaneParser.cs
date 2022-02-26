@@ -66,13 +66,13 @@ namespace AssettoServer.Server.Ai
                 
                 foreach (var entry in aipFile.Entries)
                 {
-                    if(entry.Name.EndsWith(".ai"))
+                    if (entry.Name.EndsWith(".ai"))
                     {
                         using var fileStream = entry.Open();
                         var spline = FromFile(fileStream, entry.Name, idOffset);
                         splines.Add(entry.Name, spline);
                         
-                        _logger.Debug("Parsed {Path}, id range {MinId} - {MaxId}, min. speed {MinSpeed} km/h", entry, idOffset, idOffset + spline.Points.Length - 1, MathF.Round(spline.MinCorneringSpeed * 3.6f));
+                        _logger.Debug("Parsed {Path}, id range {MinId} - {MaxId}, min. radius {MinRadius}m", entry, idOffset, idOffset + spline.Points.Length - 1, MathF.Round(spline.MinRadius));
                         idOffset += spline.Points.Length;
                     }
                 }
@@ -96,8 +96,8 @@ namespace AssettoServer.Server.Ai
                     var spline = FromFile(fileStream, filename, idOffset);
                     splines.Add(filename, spline);
 
-                    _logger.Debug("Parsed {Path}, id range {MinId} - {MaxId}, min. speed {MinSpeed} km/h", file, idOffset, idOffset + spline.Points.Length - 1,
-                        MathF.Round(spline.MinCorneringSpeed * 3.6f));
+                    _logger.Debug("Parsed {Path}, id range {MinId} - {MaxId}, min. radius {MinRadius}m", file, idOffset, idOffset + spline.Points.Length - 1,
+                        MathF.Round(spline.MinRadius));
                     idOffset += spline.Points.Length;
                 }
             }
@@ -181,7 +181,7 @@ namespace AssettoServer.Server.Ai
             _logger.Debug("Loading AI spline {Path}", name);
             using var reader = new BinaryReader(file);
 
-            float minCorneringSpeed = float.MaxValue;
+            float minRadius = float.MaxValue;
 
             int version = reader.ReadInt32();
             TrafficSplinePoint[] points = version switch
@@ -200,8 +200,7 @@ namespace AssettoServer.Server.Ai
                     points[i].Radius = 1000;
                 }
                 
-                points[i].MaxCorneringSpeed = PhysicsUtils.CalculateMaxCorneringSpeed(points[i].Radius) * _server.Configuration.Extra.AiParams.CorneringSpeedFactor;
-                minCorneringSpeed = Math.Min(minCorneringSpeed, points[i].MaxCorneringSpeed);
+                minRadius = Math.Min(minRadius, points[i].Radius);
                 
                 points[i].Previous = points[i == 0 ? points.Length - 1 : i - 1];
                 points[i].Next = points[i == points.Length - 1 ? 0 : i + 1];
@@ -228,7 +227,7 @@ namespace AssettoServer.Server.Ai
             {
                 Name = name,
                 Points = points,
-                MinCorneringSpeed = minCorneringSpeed
+                MinRadius = minRadius
             };
         }
     }

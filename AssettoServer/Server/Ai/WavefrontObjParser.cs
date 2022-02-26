@@ -41,7 +41,7 @@ public static class WavefrontObjParser
                         {
                             Name = currentSplineName,
                             Points = points.ToArray(),
-                            MinCorneringSpeed = 0 // TODO
+                            MinRadius = 0 // TODO
                         };
                         splines.Add(currentSplineName, spline);
                         Log.Debug("Spline {Name} finished with {Count} points", spline.Name, spline.Points.Length);
@@ -89,7 +89,7 @@ public static class WavefrontObjParser
             {
                 Name = currentSplineName,
                 Points = points.ToArray(),
-                MinCorneringSpeed = 0 // TODO
+                MinRadius = 0 // TODO
             };
             splines.Add(currentSplineName, spline);
             Log.Debug("Spline {Name} finished with {Count} points", spline.Name, spline.Points.Length);

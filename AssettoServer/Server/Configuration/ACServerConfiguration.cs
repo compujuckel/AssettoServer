@@ -347,6 +347,11 @@ namespace AssettoServer.Server.Configuration
                     LastSeenAiState = new AiState[MaxClients],
                     LastSeenAiSpawn = new byte[MaxClients],
                     AiSplineHeightOffsetMeters = Extra.AiParams.SplineHeightOffsetMeters,
+                    AiAcceleration = Extra.AiParams.DefaultAcceleration,
+                    AiDeceleration = Extra.AiParams.DefaultDeceleration,
+                    AiCorneringSpeedFactor = Extra.AiParams.CorneringSpeedFactor,
+                    AiCorneringBrakeDistanceFactor = Extra.AiParams.CorneringBrakeDistanceFactor,
+                    AiCorneringBrakeForceFactor = Extra.AiParams.CorneringBrakeForceFactor,
                     NetworkDistanceSquared = MathF.Pow(Extra.NetworkBubbleDistance, 2),
                     OutsideNetworkBubbleUpdateRateMs = 1000 / Extra.OutsideNetworkBubbleRefreshRateHz
                 });
@@ -367,6 +372,16 @@ namespace AssettoServer.Server.Configuration
                         car.AiIdleEngineRpm = carOverrides.EngineIdleRpm.Value;
                     if (carOverrides.EngineMaxRpm.HasValue)
                         car.AiMaxEngineRpm = carOverrides.EngineMaxRpm.Value;
+                    if (carOverrides.Acceleration.HasValue)
+                        car.AiAcceleration = carOverrides.Acceleration.Value;
+                    if (carOverrides.Deceleration.HasValue)
+                        car.AiDeceleration = carOverrides.Deceleration.Value;
+                    if (carOverrides.CorneringSpeedFactor.HasValue)
+                        car.AiCorneringSpeedFactor = carOverrides.CorneringSpeedFactor.Value;
+                    if (carOverrides.CorneringBrakeDistanceFactor.HasValue)
+                        car.AiCorneringBrakeDistanceFactor = carOverrides.CorneringBrakeDistanceFactor.Value;
+                    if (carOverrides.CorneringBrakeForceFactor.HasValue)
+                        car.AiCorneringBrakeForceFactor = carOverrides.CorneringBrakeForceFactor.Value;
                 }
                 
                 foreach (var skinOverrides in carOverrides.SkinSpecificOverrides)

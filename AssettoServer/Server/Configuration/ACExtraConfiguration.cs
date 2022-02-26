@@ -48,7 +48,7 @@ namespace AssettoServer.Server.Configuration
         [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
         public bool EnableClientMessages { get; set; } = false;
         [YamlMember(Description = "Send multiple position updates in one packet. Greatly reduces number of packets to be sent. Possible values: None/AiOnly/Full. Experimental!")]
-        public BatchedPositionUpdateBehavior BatchedPositionUpdateBehavior { get; set; } = BatchedPositionUpdateBehavior.None;
+        public BatchedPositionUpdateBehavior BatchedPositionUpdateBehavior { get; set; } = BatchedPositionUpdateBehavior.AiOnly;
         [YamlMember(Description = "Send logs to a Loki instance, e.g. Grafana Cloud", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
         public LokiSettings? LokiSettings { get; set; }
         public AiParams AiParams { get; set; } = new AiParams();
@@ -173,6 +173,17 @@ namespace AssettoServer.Server.Configuration
         public int? EngineMaxRpm { get; set; }
         [YamlMember(Description = "Allow random color changes after respawn")]
         public bool? EnableColorChanges { get; set; }
+        [YamlMember(Description = "AI car deceleration for obstacle/collision detection (m/s^2)")]
+        public float? Acceleration { get; set; }
+        [YamlMember(Description = "AI car acceleration for obstacle/collision detection (m/s^2)")]
+        public float? Deceleration { get; set; }
+        [YamlMember(Description = "AI cornering speed factor. Lower = AI cars will drive slower around corners.")]
+        public float? CorneringSpeedFactor { get; set; }
+        [YamlMember(Description = "AI cornering brake distance factor. Lower = AI cars will brake later for corners.")]
+        public float? CorneringBrakeDistanceFactor { get; set; }
+        [YamlMember(Description = "AI cornering brake force factor. This is multiplied with Deceleration. Lower = AI cars will brake less hard for corners.")]
+        public float? CorneringBrakeForceFactor { get; set; }
+        
         [YamlMember(Description = "Override some settings for specific skins of this car model")]
         public List<SkinSpecificOverrides> SkinSpecificOverrides { get; set; } = new();
     }

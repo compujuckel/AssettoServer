@@ -13,7 +13,7 @@ namespace AssettoServer.Server.Ai
         public Dictionary<string, TrafficSpline> Splines { get; }
         public Dictionary<int, TrafficSplinePoint> PointsById { get; }
         public KDTree<TrafficSplinePoint> KdTree { get; }
-        public float MinCorneringSpeed { get; }
+        public float MinRadius { get; }
 
         private readonly ILogger _logger;
 
@@ -22,7 +22,7 @@ namespace AssettoServer.Server.Ai
             _logger = logger ?? Log.Logger;
             Splines = splines;
             PointsById = new Dictionary<int, TrafficSplinePoint>();
-            MinCorneringSpeed = Splines.Values.Min(s => s.MinCorneringSpeed);
+            MinRadius = Splines.Values.Min(s => s.MinRadius);
 
             foreach (var point in splines.Values.SelectMany(spline => spline.Points))
             {

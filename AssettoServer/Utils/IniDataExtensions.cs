@@ -53,23 +53,27 @@ public static class IniDataExtensions
             var iniSectionAttribute = (IniSectionAttribute)(property.GetCustomAttributes(typeof(IniSectionAttribute), false)[0]);
             
             var propertyType = property.PropertyType;
-            if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(List<>))
+            if (propertyType.IsGenericType)
             {
                 var listEntryType = propertyType.GetGenericArguments()[0];
-                IList list = (IList)Activator.CreateInstance(propertyType)!;
-
-                for (int i = 0;; i++)
+                var listType = typeof(List<>).MakeGenericType(listEntryType);
+                if (propertyType.IsAssignableFrom(listType))
                 {
-                    string listSection = $"{iniSectionAttribute.Section}_{i}";
-                    if (!data.Sections.ContainsSection(listSection))
-                        break;
+                    IList list = (IList)Activator.CreateInstance(listType)!;
 
-                    object listEntry = Activator.CreateInstance(listEntryType)!;
-                    data.Deserialize(listEntry, listEntryType, listSection);
-                    list.Add(listEntry);
+                    for (int i = 0;; i++)
+                    {
+                        string listSection = $"{iniSectionAttribute.Section}_{i}";
+                        if (!data.Sections.ContainsSection(listSection))
+                            break;
+
+                        object listEntry = Activator.CreateInstance(listEntryType)!;
+                        data.Deserialize(listEntry, listEntryType, listSection);
+                        list.Add(listEntry);
+                    }
+
+                    property.SetValue(target, list);
                 }
-
-                property.SetValue(target, list);
             } 
             
             if(!data.Sections.ContainsSection(iniSectionAttribute.Section))

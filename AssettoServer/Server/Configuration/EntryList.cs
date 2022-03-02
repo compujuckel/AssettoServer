@@ -9,7 +9,7 @@ namespace AssettoServer.Server.Configuration;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class EntryList
 {
-    [IniSection("CAR")] public List<Entry> Cars { get; init; } = new();
+    [IniSection("CAR")] public IReadOnlyList<Entry> Cars { get; init; } = new List<Entry>();
     
     [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     public class Entry

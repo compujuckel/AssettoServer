@@ -172,12 +172,6 @@ namespace AssettoServer.Server
                     LastSeenAiState = new AiState[EntryCars.Length],
                     LastSeenAiSpawn = new byte[EntryCars.Length],
                     OtherCarsLastSentUpdateTime = new long[EntryCars.Length],
-                    AiSplineHeightOffsetMeters = Configuration.Extra.AiParams.SplineHeightOffsetMeters,
-                    AiAcceleration = Configuration.Extra.AiParams.DefaultAcceleration,
-                    AiDeceleration = Configuration.Extra.AiParams.DefaultDeceleration,
-                    AiCorneringSpeedFactor = Configuration.Extra.AiParams.CorneringSpeedFactor,
-                    AiCorneringBrakeDistanceFactor = Configuration.Extra.AiParams.CorneringBrakeDistanceFactor,
-                    AiCorneringBrakeForceFactor = Configuration.Extra.AiParams.CorneringBrakeForceFactor,
                     NetworkDistanceSquared = MathF.Pow(Configuration.Extra.NetworkBubbleDistance, 2),
                     OutsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz,
                     Server = this

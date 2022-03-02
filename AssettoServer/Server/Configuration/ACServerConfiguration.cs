@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -20,6 +21,8 @@ public class ACServerConfiguration
     public CMContentConfiguration? ContentConfiguration { get; }
     public string ServerVersion { get; }
     public string? CSPExtraOptions { get; }
+
+    public event EventHandler<ACServerConfiguration, EventArgs>? Reload;
 
     /*
      * Search paths are like this:
@@ -173,15 +176,18 @@ public class ACServerConfiguration
         if (propertyInfo == null)
             throw new ConfigurationException($"Could not find property {key}");
 
+        bool ret = false;
         try
         {
-            return propertyInfo.SetValueFromString(parent, value);
+            ret = propertyInfo.SetValueFromString(parent, value);
         }
         catch (TargetInvocationException)
         {
             // ignored
         }
+        
+        if(ret) Reload?.Invoke(this, EventArgs.Empty);
 
-        return false;
+        return ret;
     }
 }

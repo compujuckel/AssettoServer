@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Numerics;
 using System.Threading;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
+using AssettoServer.Server.Configuration;
 
 namespace AssettoServer.Server;
 
@@ -41,6 +42,19 @@ public partial class EntryCar
     {
         AiName = $"{Server.Configuration.Extra.AiParams.NamePrefix} {SessionId}";
         SetAiOverbooking(0);
+
+        Server.Configuration.Reload += OnConfigReload;
+        OnConfigReload(Server.Configuration, EventArgs.Empty);
+    }
+
+    private void OnConfigReload(ACServerConfiguration sender, EventArgs _)
+    {
+        AiSplineHeightOffsetMeters = Server.Configuration.Extra.AiParams.SplineHeightOffsetMeters;
+        AiAcceleration = Server.Configuration.Extra.AiParams.DefaultAcceleration;
+        AiDeceleration = Server.Configuration.Extra.AiParams.DefaultDeceleration;
+        AiCorneringSpeedFactor = Server.Configuration.Extra.AiParams.CorneringSpeedFactor;
+        AiCorneringBrakeDistanceFactor = Server.Configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
+        AiCorneringBrakeForceFactor = Server.Configuration.Extra.AiParams.CorneringBrakeForceFactor;
         
         foreach (var carOverrides in Server.Configuration.Extra.AiParams.CarSpecificOverrides)
         {

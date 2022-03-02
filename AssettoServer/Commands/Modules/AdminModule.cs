@@ -183,7 +183,7 @@ public class AdminModule : ACModuleBase
         {
             Reply(Context.Server.Configuration.SetProperty(key, value) ? $"Property {key} set to {value}" : $"Could not set property {key}");
         }
-        catch (ConfigurationException ex)
+        catch (Exception ex)
         {
             Reply(ex.Message);
         }

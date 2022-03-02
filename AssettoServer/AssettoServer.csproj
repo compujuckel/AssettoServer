@@ -11,7 +11,7 @@
     <Nullable>enable</Nullable>
     <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-x64'">..\out-linux-x64\</PublishDir>
     <PublishDir Condition="'$(RuntimeIdentifier)' != 'linux-x64'">..\out-win-x64\</PublishDir>
-    <NoWarn>ERP022</NoWarn>
+    <NoWarn>ERP022,EPC12</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

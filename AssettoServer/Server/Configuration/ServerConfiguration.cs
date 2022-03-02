@@ -13,10 +13,10 @@ public class ServerConfiguration
     [IniField("SERVER", "PASSWORD")] public string? Password { get; set; }
     [IniField("SERVER", "ADMIN_PASSWORD")] public string? AdminPassword { get; set; }
     [IniField("SERVER", "MAX_CLIENTS")] public int MaxClients { get; init; }
-    [IniField("SERVER", "UDP_PORT")] public ushort UdpPort { get; init; }
-    [IniField("SERVER", "TCP_PORT")] public ushort TcpPort { get; init; }
-    [IniField("SERVER", "HTTP_PORT")] public int HttpPort { get; init; }
-    [IniField("SERVER", "CLIENT_SEND_INTERVAL_HZ")] public byte RefreshRateHz { get; init; }
+    [IniField("SERVER", "UDP_PORT")] public ushort UdpPort { get; init; } = 9600;
+    [IniField("SERVER", "TCP_PORT")] public ushort TcpPort { get; init; } = 9600;
+    [IniField("SERVER", "HTTP_PORT")] public int HttpPort { get; init; } = 8081;
+    [IniField("SERVER", "CLIENT_SEND_INTERVAL_HZ")] public byte RefreshRateHz { get; init; } = 20;
     [IniField("SERVER", "TRACK")] public string Track { get; init; } = "";
     [IniField("SERVER", "CONFIG_TRACK")] public string TrackConfig { get; init; } = "";
     [IniField("SERVER", "SUN_ANGLE")] public float SunAngle { get; init; }
@@ -46,8 +46,8 @@ public class ServerConfiguration
     [IniField("SERVER", "LEGAL_TYRES")] public string LegalTyres { get; init; } = "";
     [IniField("SERVER", "WELCOME_MESSAGE")] public string WelcomeMessagePath { get; init; } = "";
     [IniField("SERVER", "TIME_OF_DAY_MULT")] public float TimeOfDayMultiplier { get; set; }
-    
-    [IniSection("WEATHER")] public List<WeatherConfiguration> Weathers { get; init; } = new();
+
+    [IniSection("WEATHER")] public IReadOnlyList<WeatherConfiguration> Weathers { get; init; } = new List<WeatherConfiguration>();
     [IniSection("DYNAMIC_TRACK")] public DynamicTrackConfiguration? DynamicTrack { get; init; }
     [IniSection("PRACTICE")] public SessionConfiguration? Practice { get; init; }
     [IniSection("QUALIFY")] public SessionConfiguration? Qualify { get; init; }

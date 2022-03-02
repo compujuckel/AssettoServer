@@ -18,7 +18,7 @@ public class Discord
 
     public Discord(ACServer server, DiscordConfiguration configuration)
     {
-        _serverNameTruncated = server.Configuration.Name.Substring(0, Math.Min(server.Configuration.Name.Length, 80));
+        _serverNameTruncated = server.Configuration.Server.Name.Substring(0, Math.Min(server.Configuration.Server.Name.Length, 80));
         Configuration = configuration;
         
         if (!string.IsNullOrEmpty(Configuration.AuditUrl))

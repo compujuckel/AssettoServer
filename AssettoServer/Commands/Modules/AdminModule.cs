@@ -76,7 +76,7 @@ public class AdminModule : ACModuleBase
     [Command("settimemult")]
     public void SetTimeMult(float multiplier)
     {
-        Context.Server.Configuration.TimeOfDayMultiplier = multiplier;
+        Context.Server.Configuration.Server.TimeOfDayMultiplier = multiplier;
     }
 
     [Command("setweather")]
@@ -169,33 +169,23 @@ public class AdminModule : ACModuleBase
         Reply("SYNTAX ERROR: Use 'ballast [driver numeric id] [kg]'");
     }
 
-    [Command("setsplineheight")]
-    public void SetSplineHeight(float height)
-    {
-        foreach (var entryCar in Context.Server.EntryCars)
-        {
-            entryCar.AiSplineHeightOffsetMeters = height;
-        }
-    }
-
-    [Command("setaioverbooking")]
-    public void SetAiOverbooking(int count)
-    {
-        if (Context.Server.AiBehavior != null)
-        {
-            Context.Server.AiBehavior.SetAiOverbooking(count);
-            Reply($"AI overbooking set to {count}");
-        }
-        else
-        {
-            Reply("AI not enabled");
-        }
-    }
-
     [Command("batchedpositionupdates")]
     public void BatchedPositionUpdates(BatchedPositionUpdateBehavior behavior)
     {
         Context.Server.Configuration.Extra.BatchedPositionUpdateBehavior = behavior;
         Reply($"Set batched position update behavior to {behavior}");
+    }
+
+    [Command("set")]
+    public void Set(string key, [Remainder] string value)
+    {
+        try
+        {
+            Reply(Context.Server.Configuration.SetProperty(key, value) ? $"Property {key} set to {value}" : $"Could not set property {key}");
+        }
+        catch (ConfigurationException ex)
+        {
+            Reply(ex.Message);
+        }
     }
 }

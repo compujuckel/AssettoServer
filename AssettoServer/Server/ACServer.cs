@@ -149,13 +149,41 @@ namespace AssettoServer.Server
                 .Build();
 
             Configuration = configuration;
-            EntryCars = Configuration.EntryCars.ToArray();
+            EntryCars = new EntryCar[Math.Min(Configuration.Server.MaxClients, Configuration.EntryList.Cars.Count)];
             Log.Information("Loaded {Count} cars", EntryCars.Length);
             for (int i = 0; i < EntryCars.Length; i++)
             {
-                EntryCars[i].SessionId = (byte)i;
-                EntryCars[i].Server = this;
-                EntryCars[i].OtherCarsLastSentUpdateTime = new long[EntryCars.Length];
+                var entry = Configuration.EntryList.Cars[i];
+                var driverOptions = CSPDriverOptions.Parse(entry.Skin);
+
+                EntryCars[i] = new EntryCar
+                {
+                    SessionId = (byte)i,
+                    Model = entry.Model,
+                    Skin = entry.Skin ?? "",
+                    SpectatorMode = entry.SpectatorMode,
+                    Ballast = entry.Ballast,
+                    Restrictor = entry.Restrictor,
+                    DriverOptionsFlags = driverOptions,
+                    AiMode = entry.AiMode,
+                    AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange),
+                    AiControlled = entry.AiMode != AiMode.Disabled,
+                    AiPakSequenceIds = new byte[EntryCars.Length],
+                    LastSeenAiState = new AiState[EntryCars.Length],
+                    LastSeenAiSpawn = new byte[EntryCars.Length],
+                    OtherCarsLastSentUpdateTime = new long[EntryCars.Length],
+                    AiSplineHeightOffsetMeters = Configuration.Extra.AiParams.SplineHeightOffsetMeters,
+                    AiAcceleration = Configuration.Extra.AiParams.DefaultAcceleration,
+                    AiDeceleration = Configuration.Extra.AiParams.DefaultDeceleration,
+                    AiCorneringSpeedFactor = Configuration.Extra.AiParams.CorneringSpeedFactor,
+                    AiCorneringBrakeDistanceFactor = Configuration.Extra.AiParams.CorneringBrakeDistanceFactor,
+                    AiCorneringBrakeForceFactor = Configuration.Extra.AiParams.CorneringBrakeForceFactor,
+                    NetworkDistanceSquared = MathF.Pow(Configuration.Extra.NetworkBubbleDistance, 2),
+                    OutsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz,
+                    Server = this
+
+                };
+                
                 EntryCars[i].AiInit();
             }
 
@@ -170,7 +198,7 @@ namespace AssettoServer.Server
             Admins = new GuidListFile(this, "admins.txt");
             Blacklist = new GuidListFile(this, "blacklist.txt");
             Blacklist.Reloaded += OnBlacklistReloaded;
-            UdpServer = new ACUdpServerNano(this, Configuration.UdpPort);
+            UdpServer = new ACUdpServerNano(this, Configuration.Server.UdpPort);
             HttpClient = new HttpClient();
             KunosLobbyRegistration = new KunosLobbyRegistration(this); 
             PluginLoader = loader;
@@ -208,7 +236,7 @@ namespace AssettoServer.Server
 
             TrackParamsProvider = new IniTrackParamsProvider();
             TrackParamsProvider.Initialize().Wait();
-            TrackParams = TrackParamsProvider.GetParamsForTrack(Configuration.Track);
+            TrackParams = TrackParamsProvider.GetParamsForTrack(Configuration.Server.Track);
 
             if (TrackParams == null)
             {
@@ -219,7 +247,7 @@ namespace AssettoServer.Server
                 }
                 else
                 {
-                    throw new ConfigurationException($"No track params found for {Configuration.Track}. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-track-params");
+                    throw new ConfigurationException($"No track params found for {Configuration.Server.Track}. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-track-params");
                 }
             }
             else if (string.IsNullOrEmpty(TrackParams.Timezone))
@@ -231,7 +259,7 @@ namespace AssettoServer.Server
                 }
                 else
                 {
-                    throw new ConfigurationException($"No time zone found for {Configuration.Track}. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-track-params");
+                    throw new ConfigurationException($"No time zone found for {Configuration.Server.Track}. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-track-params");
                 }
             }
             else
@@ -246,7 +274,7 @@ namespace AssettoServer.Server
             }
 
             var startDate = new DateTime(DateTime.UtcNow.Date.Ticks);
-            CurrentDateTime = TimeZoneInfo.ConvertTimeToUtc(startDate + TimeSpan.FromSeconds(WeatherUtils.SecondsFromSunAngle(Configuration.SunAngle)), TimeZone);
+            CurrentDateTime = TimeZoneInfo.ConvertTimeToUtc(startDate + TimeSpan.FromSeconds(WeatherUtils.SecondsFromSunAngle(Configuration.Server.SunAngle)), TimeZone);
             
             WeatherTypeProvider = new DefaultWeatherTypeProvider();
             RainHelper = new RainHelper();
@@ -264,7 +292,7 @@ namespace AssettoServer.Server
             
             if (Configuration.Extra.EnableAi)
             {
-                string mapAiBasePath = "content/tracks/" + Configuration.Track + "/ai/";
+                string mapAiBasePath = "content/tracks/" + Configuration.Server.Track + "/ai/";
                 if (File.Exists(mapAiBasePath + "traffic_map.obj"))
                 {
                     TrafficMap = WavefrontObjParser.ParseFile(mapAiBasePath + "traffic_map.obj", Configuration.Extra.AiParams.LaneWidthMeters);
@@ -278,15 +306,14 @@ namespace AssettoServer.Server
                 if (TrafficMap == null)
                 {
                     Log.Error("AI enabled but no AI spline found. Disabling AI");
-                    Configuration.Extra.EnableAi = false;
+                    AiEnabled = false;
                 }
                 else
                 {
                     AiBehavior = new AiBehavior(this);
+                    AiEnabled = true;
                 }
             }
-
-            AiEnabled = Configuration.Extra.EnableAi;
 
             InitializeChecksums();
 
@@ -318,16 +345,16 @@ namespace AssettoServer.Server
 
             if (Configuration.Sessions.Count - 1 == CurrentSessionIndex)
             {
-                if (Configuration.Loop)
+                if (Configuration.Server.Loop)
                 {
                     Log.Information("Looping sessions");
                 }
-                else if(CurrentSession.Configuration.Type != SessionType.Race || Configuration.InvertedGridPositions == 0 || IsLastRaceInverted)
+                else if(CurrentSession.Configuration.Type != SessionType.Race || Configuration.Server.InvertedGridPositions == 0 || IsLastRaceInverted)
                 {
                     // TODO exit
                 }
 
-                if (CurrentSession.Configuration.Type == SessionType.Race && Configuration.InvertedGridPositions != 0)
+                if (CurrentSession.Configuration.Type == SessionType.Race && Configuration.Server.InvertedGridPositions != 0)
                 {
                     if (Configuration.Sessions.Count <= 1)
                     {
@@ -396,7 +423,7 @@ namespace AssettoServer.Server
             {
                 CurrentSession = CurrentSession.Configuration,
                 Grid = CurrentSession.Grid,
-                TrackGrip = Math.Clamp(Configuration.DynamicTrack.Enabled ? Configuration.DynamicTrack.BaseGrip + (Configuration.DynamicTrack.GripPerLap * Configuration.DynamicTrack.TotalLapCount) : 1, 0, 1),
+                TrackGrip = Math.Clamp(Configuration.Server.DynamicTrack != null ? Configuration.Server.DynamicTrack.BaseGrip + (Configuration.Server.DynamicTrack.GripPerLap * Configuration.Server.DynamicTrack.TotalLapCount) : 1, 0, 1),
             };
 
             if (target == null)
@@ -454,7 +481,7 @@ namespace AssettoServer.Server
                 EntryCars[i].ResetLogger();
             }
 
-            Log.Information("Starting HTTP server on port {HttpPort}", Configuration.HttpPort);
+            Log.Information("Starting HTTP server on port {HttpPort}", Configuration.Server.HttpPort);
             
             HttpServer = WebHost.CreateDefaultBuilder()
                 .ConfigureKestrel(options => options.AllowSynchronousIO = true)
@@ -462,11 +489,11 @@ namespace AssettoServer.Server
                 .UseMetrics(options => { options.EndpointOptions = endpointsOptions => { endpointsOptions.MetricsEndpointOutputFormatter = Metrics.OutputMetricsFormatters.OfType<MetricsPrometheusTextOutputFormatter>().First(); }; })
                 .UseSerilog()
                 .UseStartup(_ => new Startup(this))
-                .UseUrls($"http://0.0.0.0:{Configuration.HttpPort}")
+                .UseUrls($"http://0.0.0.0:{Configuration.Server.HttpPort}")
                 .Build();
             await HttpServer.StartAsync();
             
-            if (Configuration.RegisterToLobby)
+            if (Configuration.Server.RegisterToLobby)
                 _ = KunosLobbyRegistration.LoopAsync();
             
             _ = Task.Factory.StartNew(UpdateAsync, TaskCreationOptions.LongRunning);
@@ -495,7 +522,7 @@ namespace AssettoServer.Server
                         CountryCode = json["countryCode"]
                     };
                     
-                    Log.Information("Server invite link: {ServerInviteLink}", $"https://acstuff.ru/s/q:race/online/join?ip={GeoParams.Ip}&httpPort={Configuration.HttpPort}");
+                    Log.Information("Server invite link: {ServerInviteLink}", $"https://acstuff.ru/s/q:race/online/join?ip={GeoParams.Ip}&httpPort={Configuration.Server.HttpPort}");
                 }
                 else
                 {
@@ -551,7 +578,7 @@ namespace AssettoServer.Server
         
         private void InitializeChecksums()
         {
-            TrackChecksums = ChecksumsProvider.CalculateTrackChecksums(Configuration.Track, Configuration.TrackConfig);
+            TrackChecksums = ChecksumsProvider.CalculateTrackChecksums(Configuration.Server.Track, Configuration.Server.TrackConfig);
             Log.Information("Initialized {Count} track checksums", TrackChecksums.Count);
 
             var carModels = EntryCars.Select(car => car.Model).Distinct().ToList();
@@ -585,7 +612,7 @@ namespace AssettoServer.Server
             {
                 await ConnectSemaphore.WaitAsync();
 
-                if (ConnectedCars.Count >= Configuration.MaxClients)
+                if (ConnectedCars.Count >= Configuration.Server.MaxClients)
                     return false;
 
                 for (int i = 0; i < EntryCars.Length; i++)
@@ -749,7 +776,7 @@ namespace AssettoServer.Server
         private async Task UpdateAsync()
         {
             int failedUpdateLoops = 0;
-            int sleepMs = 1000 / Configuration.RefreshRateHz;
+            int sleepMs = 1000 / Configuration.Server.RefreshRateHz;
             long nextTick = Environment.TickCount64;
             long lastTimeUpdate = Environment.TickCount64;
             Dictionary<EntryCar, CountedArray<PositionUpdateOut>> positionUpdates = new();
@@ -758,7 +785,7 @@ namespace AssettoServer.Server
                 positionUpdates[entryCar] = new CountedArray<PositionUpdateOut>(EntryCars.Length);
             }
 
-            Log.Information("Starting update loop with an update rate of {RefreshRateHz}hz", Configuration.RefreshRateHz);
+            Log.Information("Starting update loop with an update rate of {RefreshRateHz}hz", Configuration.Server.RefreshRateHz);
 
             var timerOptions = new TimerOptions
             {
@@ -854,10 +881,10 @@ namespace AssettoServer.Server
                             }
                             else
                             {
-                                CurrentDateTime += TimeSpan.FromMilliseconds((Environment.TickCount64 - lastTimeUpdate) * Configuration.TimeOfDayMultiplier);
+                                CurrentDateTime += TimeSpan.FromMilliseconds((Environment.TickCount64 - lastTimeUpdate) * Configuration.Server.TimeOfDayMultiplier);
                             }
 
-                            RainHelper.Update(CurrentWeather, Configuration.DynamicTrack.BaseGrip, Configuration.Extra.RainTrackGripReductionPercent, Environment.TickCount64 - lastTimeUpdate);
+                            RainHelper.Update(CurrentWeather, Configuration.Server.DynamicTrack?.BaseGrip ?? 1, Configuration.Extra.RainTrackGripReductionPercent, Environment.TickCount64 - lastTimeUpdate);
                             WeatherImplementation.SendWeather();
 
                             lastTimeUpdate = Environment.TickCount64;
@@ -984,8 +1011,8 @@ namespace AssettoServer.Server
         [SuppressMessage("ReSharper", "FunctionNeverReturns")]
         private async Task AcceptTcpConnectionsAsync()
         {
-            Log.Information("Starting TCP server on port {TcpPort}", Configuration.TcpPort);
-            TcpListener = new TcpListener(IPAddress.Any, Configuration.TcpPort);
+            Log.Information("Starting TCP server on port {TcpPort}", Configuration.Server.TcpPort);
+            TcpListener = new TcpListener(IPAddress.Any, Configuration.Server.TcpPort);
             TcpListener.Start();
 
             while (true)

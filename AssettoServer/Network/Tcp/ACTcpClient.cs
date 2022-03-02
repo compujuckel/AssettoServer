@@ -251,7 +251,7 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new UnsupportedProtocolResponse());
                         else if (Server.IsGuidBlacklisted(handshakeRequest.Guid))
                             SendPacket(new BlacklistedResponse());
-                        else if (Server.Configuration.Password?.Length > 0 && handshakeRequest.Password != Server.Configuration.Password && handshakeRequest.Password != Server.Configuration.AdminPassword)
+                        else if (Server.Configuration.Server.Password?.Length > 0 && handshakeRequest.Password != Server.Configuration.Server.Password && handshakeRequest.Password != Server.Configuration.Server.AdminPassword)
                             SendPacket(new WrongPasswordResponse());
                         else if (!Server.CurrentSession.Configuration.IsOpen)
                             SendPacket(new SessionClosedResponse());
@@ -293,12 +293,12 @@ namespace AssettoServer.Network.Tcp
                             // Gracefully despawn AI cars
                             EntryCar.SetAiOverbooking(0);
 
-                            if (handshakeRequest.Password == Server.Configuration.AdminPassword)
+                            if (handshakeRequest.Password == Server.Configuration.Server.AdminPassword)
                                 IsAdministrator = true;
 
                             Logger.Information("{ClientName} ({ClientSteamId}, {SessionId} ({Car})) has connected", Name, Guid, SessionId, EntryCar.Model + "-" + EntryCar.Skin);
 
-                            ACServerConfiguration cfg = Server.Configuration;
+                            var cfg = Server.Configuration.Server;
                             HandshakeResponse handshakeResponse = new HandshakeResponse
                             {
                                 ABSAllowed = cfg.ABSAllowed,
@@ -334,10 +334,10 @@ namespace AssettoServer.Network.Tcp
                                 CurrentTime = Server.CurrentTime,
                                 LegalTyres = cfg.LegalTyres,
                                 RandomSeed = 123,
-                                SessionCount = (byte)cfg.Sessions.Count,
-                                Sessions = cfg.Sessions,
+                                SessionCount = (byte)Server.Configuration.Sessions.Count,
+                                Sessions = Server.Configuration.Sessions,
                                 SpawnPosition = SessionId,
-                                TrackGrip = Math.Clamp(cfg.DynamicTrack.Enabled ? cfg.DynamicTrack.BaseGrip + (cfg.DynamicTrack.GripPerLap * cfg.DynamicTrack.TotalLapCount) : 1, 0, 1),
+                                TrackGrip = Math.Clamp(cfg.DynamicTrack != null ? cfg.DynamicTrack.BaseGrip + (cfg.DynamicTrack.GripPerLap * cfg.DynamicTrack.TotalLapCount) : 1, 0, 1),
                                 MaxContactsPerKm = cfg.MaxContactsPerKm
                             };
 
@@ -625,7 +625,7 @@ namespace AssettoServer.Network.Tcp
                 {
                     if (Server.CurrentSession.Configuration.Type == SessionType.Race && Server.CurrentSession.Configuration.IsTimedRace)
                     {
-                        if (Server.Configuration.HasExtraLap)
+                        if (Server.Configuration.Server.HasExtraLap)
                         {
                             if (entryCarResult.NumLaps <= Server.CurrentSession.LeaderLapCount)
                             {

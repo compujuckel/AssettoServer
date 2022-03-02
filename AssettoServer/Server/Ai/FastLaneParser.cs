@@ -27,7 +27,7 @@ namespace AssettoServer.Server.Ai
                 Log.Information("Loading AI spline by {Author}, version {Version}", configuration.Author, configuration.Version);
             }
             
-            if (!string.IsNullOrWhiteSpace(configuration.Track) && Path.GetFileName(_server.Configuration.Track) != configuration.Track)
+            if (!string.IsNullOrWhiteSpace(configuration.Track) && Path.GetFileName(_server.Configuration.Server.Track) != configuration.Track)
             {
                 throw new InvalidOperationException($"Mismatched AI spline, AI spline is for track {configuration.Track}");
             }

@@ -41,6 +41,40 @@ public partial class EntryCar
     {
         AiName = $"{Server.Configuration.Extra.AiParams.NamePrefix} {SessionId}";
         SetAiOverbooking(0);
+        
+        foreach (var carOverrides in Server.Configuration.Extra.AiParams.CarSpecificOverrides)
+        {
+            if (carOverrides.Model == Model)
+            {
+                if (carOverrides.EnableColorChanges.HasValue)
+                    AiEnableColorChanges = carOverrides.EnableColorChanges.Value;
+                if (carOverrides.SplineHeightOffsetMeters.HasValue)
+                    AiSplineHeightOffsetMeters = carOverrides.SplineHeightOffsetMeters.Value;
+                if (carOverrides.EngineIdleRpm.HasValue)
+                    AiIdleEngineRpm = carOverrides.EngineIdleRpm.Value;
+                if (carOverrides.EngineMaxRpm.HasValue)
+                    AiMaxEngineRpm = carOverrides.EngineMaxRpm.Value;
+                if (carOverrides.Acceleration.HasValue)
+                    AiAcceleration = carOverrides.Acceleration.Value;
+                if (carOverrides.Deceleration.HasValue)
+                    AiDeceleration = carOverrides.Deceleration.Value;
+                if (carOverrides.CorneringSpeedFactor.HasValue)
+                    AiCorneringSpeedFactor = carOverrides.CorneringSpeedFactor.Value;
+                if (carOverrides.CorneringBrakeDistanceFactor.HasValue)
+                    AiCorneringBrakeDistanceFactor = carOverrides.CorneringBrakeDistanceFactor.Value;
+                if (carOverrides.CorneringBrakeForceFactor.HasValue)
+                    AiCorneringBrakeForceFactor = carOverrides.CorneringBrakeForceFactor.Value;
+                
+                foreach (var skinOverrides in carOverrides.SkinSpecificOverrides)
+                {
+                    if (skinOverrides.Skin == Skin)
+                    {
+                        if (skinOverrides.EnableColorChanges.HasValue)
+                            AiEnableColorChanges = skinOverrides.EnableColorChanges.Value;
+                    }
+                }
+            }
+        }
     }
 
     public void RemoveUnsafeStates()

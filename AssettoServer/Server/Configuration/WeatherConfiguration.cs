@@ -1,24 +1,30 @@
 ﻿using AssettoServer.Server.Weather;
+using AssettoServer.Utils;
+using JetBrains.Annotations;
 
-namespace AssettoServer.Server.Configuration
+namespace AssettoServer.Server.Configuration;
+
+[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
+public class WeatherConfiguration
 {
-    public class WeatherConfiguration
+    [IniField("GRAPHICS")] public string Graphics
     {
-        public string Graphics { get; init; }
-        public float BaseTemperatureAmbient { get; init; }
-        public float BaseTemperatureRoad { get; init; }
-        public float VariationAmbient { get; init; }
-        public float VariationRoad { get; init; }
-        public float WindBaseSpeedMin { get; init; }
-        public float WindBaseSpeedMax { get; init; }
-        public int WindBaseDirection { get; init; }
-        public int WindVariationDirection { get; init; }
-        public WeatherFxParams WeatherFxParams { get; init; }
-
-        public WeatherConfiguration(string graphics)
+        get => _graphics;
+        set
         {
-            Graphics = graphics;
-            WeatherFxParams = WeatherFxParams.FromString(graphics);
+            _graphics = value;
+            WeatherFxParams = WeatherFxParams.FromString(value);
         }
     }
+    [IniField("BASE_TEMPERATURE_AMBIENT")] public float BaseTemperatureAmbient { get; init; }
+    [IniField("BASE_TEMPERATURE_ROAD")] public float BaseTemperatureRoad { get; init; }
+    [IniField("VARIATION_AMBIENT")] public float VariationAmbient { get; init; }
+    [IniField("VARIATION_ROAD")] public float VariationRoad { get; init; }
+    [IniField("WIND_BASE_SPEED_MIN")] public float WindBaseSpeedMin { get; init; }
+    [IniField("WIND_BASE_SPEED_MAX")] public float WindBaseSpeedMax { get; init; }
+    [IniField("WIND_BASE_DIRECTION")] public int WindBaseDirection { get; init; }
+    [IniField("WIND_VARIATION_DIRECTION")] public int WindVariationDirection { get; init; }
+    public WeatherFxParams WeatherFxParams { get; private set; } = null!;
+
+    private string _graphics = "";
 }

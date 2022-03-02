@@ -29,7 +29,7 @@ internal class ReportPlugin
         Server.ClientDisconnected += OnClientDisconnected;
         Server.ChatMessageReceived += OnChatMessage;
         
-        _serverNameTruncated = server.Configuration.Name.Substring(0, Math.Min(server.Configuration.Name.Length, 80));
+        _serverNameTruncated = server.Configuration.Server.Name.Substring(0, Math.Min(server.Configuration.Server.Name.Length, 80));
 
         if (!string.IsNullOrEmpty(_configuration.WebhookUrl))
         {
@@ -40,7 +40,7 @@ internal class ReportPlugin
         }
         
         Key = Guid.NewGuid();
-        string extraOptions = $"\n[REPLAY_CLIPS]\nUPLOAD_URL = 'http://{Server.GeoParams.Ip}:{Server.Configuration.HttpPort}/report?key={Key}'\nDURATION = {_configuration.ClipDurationSeconds}";
+        string extraOptions = $"\n[REPLAY_CLIPS]\nUPLOAD_URL = 'http://{Server.GeoParams.Ip}:{Server.Configuration.Server.HttpPort}/report?key={Key}'\nDURATION = {_configuration.ClipDurationSeconds}";
         Server.CSPServerExtraOptions.ExtraOptions += extraOptions;
 
         Directory.CreateDirectory("reports");

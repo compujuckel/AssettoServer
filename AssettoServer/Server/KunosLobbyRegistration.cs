@@ -39,18 +39,18 @@ internal class KunosLobbyRegistration
 
     private async Task<bool> RegisterToLobbyAsync()
     {
-        ACServerConfiguration cfg = _server.Configuration;
+        var cfg = _server.Configuration.Server;
         var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/register");
         var queryParams = HttpUtility.ParseQueryString(builder.Query);
         queryParams["name"] = cfg.Name;
         queryParams["port"] = cfg.UdpPort.ToString();
         queryParams["tcp_port"] = cfg.TcpPort.ToString();
         queryParams["max_clients"] = cfg.MaxClients.ToString();
-        queryParams["track"] = cfg.FullTrackName;
-        queryParams["cars"] = string.Join(',', cfg.EntryCars.Select(c => c.Model).Distinct());
+        queryParams["track"] = _server.Configuration.FullTrackName;
+        queryParams["cars"] = string.Join(',', _server.EntryCars.Select(c => c.Model).Distinct());
         queryParams["timeofday"] = ((int)cfg.SunAngle).ToString();
-        queryParams["sessions"] = string.Join(',', cfg.Sessions.Select(s => (int)s.Type));
-        queryParams["durations"] = string.Join(',', cfg.Sessions.Select(s => s.IsTimedRace ? s.Time * 60 : s.Laps));
+        queryParams["sessions"] = string.Join(',', _server.Configuration.Sessions.Select(s => (int)s.Type));
+        queryParams["durations"] = string.Join(',', _server.Configuration.Sessions.Select(s => s.IsTimedRace ? s.Time * 60 : s.Laps));
         queryParams["password"] = string.IsNullOrEmpty(cfg.Password) ? "0" : "1";
         queryParams["version"] = "202";
         queryParams["pickup"] = "1";
@@ -87,7 +87,7 @@ internal class KunosLobbyRegistration
         
         queryParams["session"] = ((int)_server.CurrentSession.Configuration.Type).ToString();
         queryParams["timeleft"] = ((int)_server.CurrentSession.TimeLeft.TotalSeconds).ToString();
-        queryParams["port"] = _server.Configuration.UdpPort.ToString();
+        queryParams["port"] = _server.Configuration.Server.UdpPort.ToString();
         queryParams["clients"] = _server.ConnectedCars.Count.ToString();
         queryParams["track"] = _server.Configuration.FullTrackName;
         queryParams["pickup"] = "1";

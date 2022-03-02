@@ -56,8 +56,7 @@ internal static class Program
 
         ACPluginLoader loader = new ACPluginLoader();
 
-        var config = new ACServerConfiguration().FromFiles(options.Preset, options.ServerCfgPath, options.EntryListPath, loader);
-        config.ServerVersion = ThisAssembly.AssemblyInformationalVersion;
+        var config = new ACServerConfiguration(options.Preset, options.ServerCfgPath, options.EntryListPath, loader);
 
         if (config.Extra.LokiSettings != null
             && !string.IsNullOrEmpty(config.Extra.LokiSettings.Url)

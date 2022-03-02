@@ -106,7 +106,7 @@ public class ACUdpServerNano
             }
             else if (packetId == 0xC8)
             {
-                ushort httpPort = (ushort)_server.Configuration.HttpPort;
+                ushort httpPort = (ushort)_server.Configuration.Server.HttpPort;
                 MemoryMarshal.Write(buffer.AsSpan().Slice(1), ref httpPort);
                 Send(address, buffer, 0, 3);
             }

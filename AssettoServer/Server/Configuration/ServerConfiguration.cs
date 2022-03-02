@@ -1,0 +1,62 @@
+﻿using System.Collections.Generic;
+using AssettoServer.Utils;
+using IniParser;
+using IniParser.Model;
+using JetBrains.Annotations;
+
+namespace AssettoServer.Server.Configuration;
+
+[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
+public class ServerConfiguration
+{
+    [IniField("SERVER", "NAME")] public string Name { get; set; } = "AssettoServer";
+    [IniField("SERVER", "PASSWORD")] public string? Password { get; set; }
+    [IniField("SERVER", "ADMIN_PASSWORD")] public string? AdminPassword { get; set; }
+    [IniField("SERVER", "MAX_CLIENTS")] public int MaxClients { get; init; }
+    [IniField("SERVER", "UDP_PORT")] public ushort UdpPort { get; init; }
+    [IniField("SERVER", "TCP_PORT")] public ushort TcpPort { get; init; }
+    [IniField("SERVER", "HTTP_PORT")] public int HttpPort { get; init; }
+    [IniField("SERVER", "CLIENT_SEND_INTERVAL_HZ")] public byte RefreshRateHz { get; init; }
+    [IniField("SERVER", "TRACK")] public string Track { get; init; } = "";
+    [IniField("SERVER", "CONFIG_TRACK")] public string TrackConfig { get; init; } = "";
+    [IniField("SERVER", "SUN_ANGLE")] public float SunAngle { get; init; }
+    [IniField("SERVER", "LOOP_MODE")] public bool Loop { get; init; }
+    [IniField("SERVER", "MAX_BALLAST_KG")] public int MaxBallastKg { get; init; }
+    [IniField("SERVER", "QUALIFY_MAX_WAIT_PERC")] public int QualifyMaxWaitPercentage { get; init; }
+    [IniField("SERVER", "TC_ALLOWED")] public byte TractionControlAllowed { get; init; }
+    [IniField("SERVER", "ABS_ALLOWED")] public byte ABSAllowed { get; init; }
+    [IniField("SERVER", "ALLOWED_TYRES_OUT")] public short AllowedTyresOutCount { get; init; }
+    [IniField("SERVER", "TYRE_BLANKETS_ALLOWED")] public bool AllowTyreBlankets { get; init; }
+    [IniField("SERVER", "AUTOCLUTCH_ALLOWED")] public bool AutoClutchAllowed { get; init; }
+    [IniField("SERVER", "FUEL_RATE", Percent = true)] public float FuelConsumptionRate { get; init; }
+    [IniField("SERVER", "RACE_EXTRA_LAP")] public bool HasExtraLap { get; init; }
+    [IniField("SERVER", "REVERSED_GRID_RACE_POSITIONS")] public short InvertedGridPositions { get; init; }
+    [IniField("SERVER", "RACE_GAS_PENALTY_DISABLED")] public bool IsGasPenaltyDisabled { get; init; }
+    [IniField("SERVER", "FORCE_VIRTUAL_MIRROR")] public bool IsVirtualMirrorForced { get; init; }
+    [IniField("SERVER", "REGISTER_TO_LOBBY")] public bool RegisterToLobby { get; init; }
+    [IniField("SERVER", "START_RULE")] public byte JumpStartPenaltyMode { get; init; }
+    [IniField("SERVER", "DAMAGE_MULTIPLIER", Percent = true)] public float MechanicalDamageRate { get; init; }
+    [IniField("SERVER", "RACE_PIT_WINDOW_START")] public short PitWindowStart { get; init; }
+    [IniField("SERVER", "RACE_PIT_WINDOW_END")] public short PitWindowEnd { get; init; }
+    [IniField("SERVER", "STABILITY_ALLOWED")] public bool StabilityAllowed { get; init; }
+    [IniField("SERVER", "RACE_OVER_TIME")] public int RaceOverTime { get; init; }
+    [IniField("SERVER", "RESULT_SCREEN_TIME")] public int ResultScreenTime { get; init; }
+    [IniField("SERVER", "TYRE_WEAR_RATE", Percent = true)] public float TyreConsumptionRate { get; init; }
+    [IniField("SERVER", "MAX_CONTACTS_PER_KM", IgnoreParsingErrors = true)] public byte MaxContactsPerKm { get; init; }
+    [IniField("SERVER", "LEGAL_TYRES")] public string LegalTyres { get; init; } = "";
+    [IniField("SERVER", "WELCOME_MESSAGE")] public string WelcomeMessagePath { get; init; } = "";
+    [IniField("SERVER", "TIME_OF_DAY_MULT")] public float TimeOfDayMultiplier { get; set; }
+    
+    [IniSection("WEATHER")] public List<WeatherConfiguration> Weathers { get; init; } = new();
+    [IniSection("DYNAMIC_TRACK")] public DynamicTrackConfiguration? DynamicTrack { get; init; }
+    [IniSection("PRACTICE")] public SessionConfiguration? Practice { get; init; }
+    [IniSection("QUALIFY")] public SessionConfiguration? Qualify { get; init; }
+    [IniSection("RACE")] public SessionConfiguration? Race { get; init; }
+
+    public static ServerConfiguration FromFile(string path)
+    {
+        var parser = new FileIniDataParser();
+        IniData data = parser.ReadFile(path);
+        return data.DeserializeObject<ServerConfiguration>();
+    }
+}

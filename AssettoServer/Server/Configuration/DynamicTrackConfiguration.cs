@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using AssettoServer.Utils;
+using JetBrains.Annotations;
 
-namespace AssettoServer.Server.Configuration
+namespace AssettoServer.Server.Configuration;
+
+[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
+public class DynamicTrackConfiguration
 {
-    public class DynamicTrackConfiguration
-    {
-        public bool Enabled { get; internal set; }
-        public float BaseGrip { get; internal set; } = 1;
-        public float TotalLapCount { get; internal set; }
-        public float GripPerLap { get; internal set; }
-    }
+    [IniField("SESSION_START", Percent = true)] public float BaseGrip { get; internal set; } = 1;
+    [IniField("SESSION_TRANSFER", Percent = true)] public float TotalLapCount { get; internal set; }
+    [IniField("LAP_GAIN")] public float GripPerLap { get; internal set; }
+    [IniField("RANDOMNESS")] public float Randomness { get; internal set; }
 }

@@ -20,7 +20,7 @@ internal class Steam
     {
         var serverInit = new SteamServerInit("assettocorsa", "Assetto Corsa")
         {
-            GamePort = _server.Configuration.UdpPort,
+            GamePort = _server.Configuration.Server.UdpPort,
             Secure = true,
         }.WithQueryShareGamePort();
 
@@ -31,14 +31,12 @@ internal class Steam
         catch
         {
             // ignored
-#pragma warning disable ERP022
         }
-#pragma warning restore ERP022
 
         try
         {
-            SteamServer.ServerName = _server.Configuration.Name.Substring(0,Math.Min(_server.Configuration.Name.Length, 63));
-            SteamServer.MapName = _server.Configuration.Track.Substring(0,Math.Min(_server.Configuration.Track.Length, 31));
+            SteamServer.ServerName = _server.Configuration.Server.Name.Substring(0,Math.Min(_server.Configuration.Server.Name.Length, 63));
+            SteamServer.MapName = _server.Configuration.Server.Track.Substring(0,Math.Min(_server.Configuration.Server.Track.Length, 31));
             SteamServer.MaxPlayers = _server.EntryCars.Length;
             SteamServer.LogOnAnonymous();
             SteamServer.OnSteamServersDisconnected += SteamServer_OnSteamServersDisconnected;
@@ -162,9 +160,7 @@ internal class Steam
         catch
         {
             // ignored
-#pragma warning disable ERP022
         }
-#pragma warning restore ERP022
 
         try
         {
@@ -173,9 +169,7 @@ internal class Steam
         catch
         {
             // ignored
-#pragma warning disable ERP022
         }
-#pragma warning restore ERP022
 
         Initialize();
     }

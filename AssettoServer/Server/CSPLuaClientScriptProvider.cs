@@ -16,6 +16,6 @@ public class CSPLuaClientScriptProvider
     public void AddLuaClientScript(string script)
     {
         Scripts.Add(script);
-        _server.CSPServerExtraOptions.ExtraOptions += $"\r\n[SCRIPT_...]\r\nSCRIPT='http://{_server.GeoParams.Ip}:{_server.Configuration.HttpPort}/api/scripts/{Scripts.Count - 1}'\r\n";
+        _server.CSPServerExtraOptions.ExtraOptions += $"\r\n[SCRIPT_...]\r\nSCRIPT='http://{_server.GeoParams.Ip}:{_server.Configuration.Server.HttpPort}/api/scripts/{Scripts.Count - 1}'\r\n";
     }
 }

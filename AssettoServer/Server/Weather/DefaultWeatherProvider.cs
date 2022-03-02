@@ -15,7 +15,7 @@ namespace AssettoServer.Server.Weather
         {
             _server = server;
 
-            int config = Random.Shared.Next(_server.Configuration.Weathers.Count);
+            int config = Random.Shared.Next(_server.Configuration.Server.Weathers.Count);
             if (!SetWeatherConfiguration(config))
                 throw new InvalidOperationException("Could not set initial weather configuration");
         }
@@ -23,10 +23,10 @@ namespace AssettoServer.Server.Weather
         [MemberNotNullWhen(true, nameof(_weatherConfiguration))]
         public bool SetWeatherConfiguration(int id)
         {
-            if (id < 0 || id >= _server.Configuration.Weathers.Count)
+            if (id < 0 || id >= _server.Configuration.Server.Weathers.Count)
                 return false;
             
-            _weatherConfiguration = _server.Configuration.Weathers[id];
+            _weatherConfiguration = _server.Configuration.Server.Weathers[id];
 
             if (_weatherConfiguration.WeatherFxParams.StartTime != null
                 || _weatherConfiguration.WeatherFxParams.TimeMultiplier != null)
@@ -51,7 +51,7 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = weatherType.RainIntensity,
                 RainWater = weatherType.RainWater,
                 RainWetness = weatherType.RainWetness,
-                TrackGrip = _server.Configuration.DynamicTrack.BaseGrip
+                TrackGrip = _server.Configuration.Server.DynamicTrack?.BaseGrip ?? 1
             });
 
             return true;

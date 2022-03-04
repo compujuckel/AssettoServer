@@ -163,9 +163,9 @@ public class AiParams
     [YamlMember(Description = "Maximum speed variation")]
     public float MaxSpeedVariationPercent { get; set; } = 0.15f;
     [YamlMember(Description = "Default AI car deceleration for obstacle/collision detection (m/s^2)")]
-    public float DefaultDeceleration { get; init; } = 8.5f;
+    public float DefaultDeceleration { get; set; } = 8.5f;
     [YamlMember(Description = "Default AI car acceleration for obstacle/collision detection (m/s^2)")]
-    public float DefaultAcceleration { get; init; } = 2.5f;
+    public float DefaultAcceleration { get; set; } = 2.5f;
     [YamlMember(Description = "Maximum AI car target count for AI slot overbooking. This is not an absolute maximum and might be slightly higher")]
     public int MaxAiTargetCount { get; set; } = 300;
     [YamlMember(Description = "Number of AI cars per player the server will try to keep")]
@@ -175,17 +175,17 @@ public class AiParams
     [YamlMember(Description = "Hide AI car nametags and make them invisible on the minimap. CSP 0.1.76+ required, still buggy")]
     public bool HideAiCars { get; set; } = false;
     [YamlMember(Description = "AI spline height offset. Use this if the AI spline is too close to the ground")]
-    public float SplineHeightOffsetMeters { get; init; } = 0;
+    public float SplineHeightOffsetMeters { get; set; } = 0;
     [YamlMember(Description = "Lane width for adjacent lane detection")]
     public float LaneWidthMeters { get; init; } = 3.0f;
     [YamlMember(Description = "Enable two way traffic. This will allow AI cars to spawn in lanes with the opposite direction of travel to the player.")]
     public bool TwoWayTraffic { get; set; } = false;
     [YamlMember(Description = "AI cornering speed factor. Lower = AI cars will drive slower around corners.")]
-    public float CorneringSpeedFactor { get; init; } = 1;
+    public float CorneringSpeedFactor { get; set; } = 1;
     [YamlMember(Description = "AI cornering brake distance factor. Lower = AI cars will brake later for corners.")]
-    public float CorneringBrakeDistanceFactor { get; init; } = 1;
+    public float CorneringBrakeDistanceFactor { get; set; } = 1;
     [YamlMember(Description = "AI cornering brake force factor. This is multiplied with DefaultDeceleration. Lower = AI cars will brake less hard for corners.")]
-    public float CorneringBrakeForceFactor { get; init; } = 1;
+    public float CorneringBrakeForceFactor { get; set; } = 1;
     [YamlMember(Description = "Name prefix for AI cars. Names will be in the form of '<NamePrefix> <SessionId>'")]
     public string NamePrefix { get; init; } = "Traffic";
     [YamlMember(Description = "Override some settings for specific car models/skins")]

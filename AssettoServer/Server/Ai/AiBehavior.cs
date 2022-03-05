@@ -163,8 +163,7 @@ namespace AssettoServer.Server.Ai
 
             if (targetPlayerSplinePos.point.Next == null) return null;
             
-            var forward = targetPlayerSplinePos.point.Next.Point - targetPlayerSplinePos.point.Point;
-            int direction = Vector3.Dot(forward, playerCar.Status.Velocity) > 0 ? 1 : -1;
+            int direction = Vector3.Dot(targetPlayerSplinePos.point.GetForwardVector(), playerCar.Status.Velocity) > 0 ? 1 : -1;
             
             // Do not not spawn if a player is too far away from the AI spline, e.g. in pits or in a part of the map without traffic
             if (targetPlayerSplinePos.distanceSquared > _server.Configuration.Extra.AiParams.MaxPlayerDistanceToAiSplineSquared)
@@ -177,8 +176,7 @@ namespace AssettoServer.Server.Ai
             
             if (spawnPoint != null && spawnPoint.Next != null)
             {
-                forward = spawnPoint.Next.Point - spawnPoint.Point;
-                direction = Vector3.Dot(forward, playerCar.Status.Velocity) > 0 ? 1 : -1;
+                direction = Vector3.Dot(spawnPoint.GetForwardVector(), playerCar.Status.Velocity) > 0 ? 1 : -1;
             }
 
             while (spawnPoint != null && !IsPositionSafe(spawnPoint.Point))
@@ -188,8 +186,8 @@ namespace AssettoServer.Server.Ai
 
             return spawnPoint?.RandomLane(_server.Configuration.Extra.AiParams.TwoWayTraffic);
         }
-        
-        public void ObstacleDetection()
+
+        private void ObstacleDetection()
         {
             using var timer = _server.Metrics.Measure.Timer.Time(_obstacleDetectionDurationMetric);
             AiStatesBySplinePoint.Clear();
@@ -226,7 +224,7 @@ namespace AssettoServer.Server.Ai
             }
         }
 
-        public void AdjustOverbooking()
+        private void AdjustOverbooking()
         {
             int playerCount = _server.EntryCars.Count(car => car.Client != null && car.Client.IsConnected);
             int aiCount = _server.EntryCars.Count(car => car.Client == null && car.AiControlled); // client null check is necessary here so that slots where someone is connecting don't count
@@ -248,8 +246,8 @@ namespace AssettoServer.Server.Ai
                 aiCar.SetAiOverbooking(count);
             }
         }
-        
-        public void Update()
+
+        private void Update()
         {
             using var timer = _server.Metrics.Measure.Timer.Time(_updateDurationMetric);
 

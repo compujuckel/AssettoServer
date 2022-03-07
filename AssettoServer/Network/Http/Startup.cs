@@ -23,8 +23,13 @@ namespace AssettoServer.Network.Http
             services.AddMetrics(_server.Metrics);
             services.AddAppMetricsCollectors();
             services.AddMetricsEndpoints();
+            services.AddControllers().AddNewtonsoftJson();
+            services.AddControllers(options =>
+            {
+                options.OutputFormatters.Add(new LuaOutputFormatter());
+            });
             
-            var mvcBuilder = services.AddControllers().AddNewtonsoftJson();
+            var mvcBuilder = services.AddControllers();
             foreach (var plugin in _server.PluginLoader.LoadedPlugins)
             {
                 mvcBuilder.AddApplicationPart(plugin.Assembly);

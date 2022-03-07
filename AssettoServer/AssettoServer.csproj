@@ -21,6 +21,7 @@
     <PackageReference Include="App.Metrics.Reporting.Console" Version="4.3.0" />
     <PackageReference Include="CommandLineParser" Version="2.9.0-preview1" />
     <PackageReference Include="CsvHelper" Version="27.1.1" />
+    <PackageReference Include="CXuesong.Luaon.Json" Version="0.2.1" />
     <PackageReference Include="ErrorProne.NET.CoreAnalyzers" Version="0.4.0-beta.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

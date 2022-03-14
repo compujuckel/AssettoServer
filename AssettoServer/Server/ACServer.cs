@@ -56,9 +56,9 @@ namespace AssettoServer.Server
         public GeoParams GeoParams { get; private set; } = new GeoParams();
         public IReadOnlyList<string> Features { get; private set; }
         public IMetricsRoot Metrics { get; }
-        public int StartTime { get; } = Environment.TickCount;
+        public int StartTime { get; private set; }
         public int CurrentTime => Environment.TickCount - StartTime;
-        public long StartTime64 { get; } = Environment.TickCount64;
+        public long StartTime64 { get; private set; }
         public long CurrentTime64 => Environment.TickCount64 - StartTime64;
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
@@ -446,6 +446,8 @@ namespace AssettoServer.Server
 
         public async Task StartAsync()
         {
+            StartTime = Environment.TickCount;
+            StartTime64 = Environment.TickCount64;
             NextSession();
 
             await Blacklist.LoadAsync();

@@ -10,7 +10,7 @@ namespace ReportPlugin;
 public class ReportController : ControllerBase
 {
     [HttpPost("/report")]
-    public async Task<ActionResult> PostReport(Guid key, [FromHeader(Name = "X-Car-Id")] int sessionId)
+    public async Task<ActionResult> PostReport(Guid key, [FromHeader(Name = "X-Car-Index")] int sessionId)
     {
         var plugin = ReportPluginHolder.Instance;
         var reporterClient = plugin.Server.EntryCars[sessionId].Client ?? throw new InvalidOperationException("Client not connected");
@@ -22,7 +22,7 @@ public class ReportController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        if (lastReport?.AuditLog?.Timestamp > DateTime.UtcNow - TimeSpan.FromSeconds(30))
+        if (lastReport?.AuditLog.Timestamp > DateTime.UtcNow - TimeSpan.FromSeconds(30))
         {
             reporterClient.SendPacket(new ChatMessage {SessionId = 255, Message = "Please wait a moment before submitting another replay."});
             return StatusCode(StatusCodes.Status429TooManyRequests);

@@ -167,7 +167,7 @@ namespace AssettoServer.Server
                     DriverOptionsFlags = driverOptions,
                     AiMode = entry.AiMode,
                     AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange),
-                    AiControlled = entry.AiMode != AiMode.Disabled,
+                    AiControlled = entry.AiMode != AiMode.None,
                     AiPakSequenceIds = new byte[EntryCars.Length],
                     LastSeenAiState = new AiState[EntryCars.Length],
                     LastSeenAiSpawn = new byte[EntryCars.Length],

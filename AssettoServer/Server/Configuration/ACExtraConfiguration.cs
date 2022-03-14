@@ -188,6 +188,8 @@ public class AiParams
     public float CorneringBrakeForceFactor { get; set; } = 1;
     [YamlMember(Description = "Name prefix for AI cars. Names will be in the form of '<NamePrefix> <SessionId>'")]
     public string NamePrefix { get; init; } = "Traffic";
+    [YamlMember(Description = "Ignore obstacles for some time if the AI car is stopped for longer than x seconds")]
+    public int IgnoreObstaclesAfterSeconds { get; set; } = 10;
     [YamlMember(Description = "Override some settings for specific car models/skins")]
     public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new();
 
@@ -206,6 +208,7 @@ public class AiParams
     [YamlIgnore] public int MaxCollisionStopTimeMilliseconds => MaxCollisionStopTimeSeconds * 1000;
     [YamlIgnore] public float MaxSpeedMs => MaxSpeedKph / 3.6f;
     [YamlIgnore] public float RightLaneOffsetMs => RightLaneOffsetKph / 3.6f;
+    [YamlIgnore] public int IgnoreObstaclesAfterMilliseconds => IgnoreObstaclesAfterSeconds * 1000;
 }
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]

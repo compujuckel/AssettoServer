@@ -141,4 +141,10 @@ If you modify this Program, or any covered work, by linking or combining it
 with the Steamworks SDK by Valve Corporation, containing parts covered by the
 terms of the Steamworks SDK License, the licensors of this Program grant you
 additional permission to convey the resulting work.
+
+Additional permission under GNU AGPL version 3 section 7
+
+If you modify this Program, or any covered work, by linking or combining it 
+with plugins published on https://www.patreon.com/assettoserver, the licensors
+of this Program grant you additional permission to convey the resulting work.
 ```

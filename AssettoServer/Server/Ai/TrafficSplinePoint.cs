@@ -81,7 +81,7 @@ public class TrafficSplinePoint
 
         if (ret.Count >= maxCount)
         {
-            Log.Warning("Possible loop at AI spline point {SplinePointId}", Id);
+            Log.Debug("Possible loop at AI spline point {SplinePointId}", Id);
         }
 
         return ret;

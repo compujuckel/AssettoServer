@@ -16,8 +16,17 @@ public static class ChecksumsProvider
         AddChecksum(builder, "system/data/surfaces.ini");
 
         string trackPath = $"content/tracks/{track}";
-        string surfacesPath = $"{trackPath}/{(!string.IsNullOrEmpty(trackConfig) ? trackConfig + "/" : "")}data/surfaces.ini";
-        AddChecksum(builder, surfacesPath);
+
+        if (string.IsNullOrEmpty(trackConfig))
+        {
+            AddChecksum(builder, $"{trackPath}/data/surfaces.ini");
+            AddChecksum(builder, $"{trackPath}/models.ini");
+        }
+        else
+        {
+            AddChecksum(builder, $"{trackPath}/{trackConfig}/data/surfaces.ini");
+            AddChecksum(builder, $"{trackPath}/models_{trackConfig}.ini");
+        }
         
         ChecksumDirectory(builder, trackPath);
 
@@ -66,7 +75,7 @@ public static class ChecksumsProvider
         {
             string name = Path.GetFileName(file);
 
-            if (name == "surfaces.ini" || name.StartsWith("models_") || name.EndsWith(".kn5"))
+            if (name == "surfaces.ini" || name.EndsWith(".kn5"))
                 AddChecksum(builder, file, file.Replace("\\", "/"));
         }
     }

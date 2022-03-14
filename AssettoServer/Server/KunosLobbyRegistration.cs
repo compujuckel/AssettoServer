@@ -42,7 +42,7 @@ internal class KunosLobbyRegistration
         var cfg = _server.Configuration.Server;
         var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/register");
         var queryParams = HttpUtility.ParseQueryString(builder.Query);
-        queryParams["name"] = cfg.Name;
+        queryParams["name"] = cfg.Name + (_server.Configuration.Extra.EnableServerDetails ? " ℹ" + _server.Configuration.Server.HttpPort : "");
         queryParams["port"] = cfg.UdpPort.ToString();
         queryParams["tcp_port"] = cfg.TcpPort.ToString();
         queryParams["max_clients"] = cfg.MaxClients.ToString();

@@ -1,4 +1,5 @@
 ﻿using AssettoServer.Server;
+using AssettoServer.Server.Plugin;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,12 @@ namespace AssettoServer.Network.Http
             var mvcBuilder = services.AddControllers();
             foreach (var plugin in _server.PluginLoader.LoadedPlugins)
             {
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                if (plugin.Instance is IConfigureServices configureServices)
+                {
+                    configureServices.ConfigureServices(services);
+                }
+                
                 mvcBuilder.AddApplicationPart(plugin.Assembly);
             }
         }

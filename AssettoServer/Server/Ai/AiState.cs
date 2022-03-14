@@ -396,7 +396,7 @@ namespace AssettoServer.Server.Ai
                 _stoppedForObstacle = false;
                 Log.Verbose("AI {SessionId} no longer stopped for obstacle", EntryCar.SessionId);
             }
-            else if (_stoppedForObstacle && Environment.TickCount64 - _stoppedForObstacleSince > 10_000)
+            else if (_stoppedForObstacle && Environment.TickCount64 - _stoppedForObstacleSince > EntryCar.Server.Configuration.Extra.AiParams.IgnoreObstaclesAfterMilliseconds)
             {
                 _ignoreObstaclesUntil = Environment.TickCount64 + 10_000;
                 Log.Verbose("AI {SessionId} ignoring obstacles until {IgnoreObstaclesUntil}", EntryCar.SessionId, _ignoreObstaclesUntil);

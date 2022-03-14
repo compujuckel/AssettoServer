@@ -11,7 +11,7 @@ namespace AssettoServer.Server;
 
 public enum AiMode
 {
-    Disabled,
+    None,
     Auto,
     Fixed
 }

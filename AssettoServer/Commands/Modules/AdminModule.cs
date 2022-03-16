@@ -2,16 +2,12 @@
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
-using AssettoServer.Network.Udp;
 using AssettoServer.Server.Weather;
-using Humanizer;
-using Humanizer.Bytes;
 using Qmmands;
 using System;
 using System.Globalization;
 using System.Numerics;
 using System.Threading.Tasks;
-using AssettoServer.Server.Configuration;
 using JetBrains.Annotations;
 
 namespace AssettoServer.Commands.Modules;
@@ -73,12 +69,6 @@ public class AdminModule : ACModuleBase
         Broadcast("Time has been set.");
     }
 
-    [Command("settimemult")]
-    public void SetTimeMult(float multiplier)
-    {
-        Context.Server.Configuration.Server.TimeOfDayMultiplier = multiplier;
-    }
-
     [Command("setweather")]
     public void SetWeather(int weatherId)
     {
@@ -115,24 +105,6 @@ public class AdminModule : ACModuleBase
         Context.Server.WeatherImplementation.SendWeather();
     }
 
-    [Command("setafktime")]
-    public void SetAfkTime(int time)
-    {
-        time = Math.Max(1, time);
-        Context.Server.Configuration.Extra.MaxAfkTimeMinutes = time;
-
-        Reply($"Maximum AFK time has been set to {time} minutes.");
-    }
-
-    [Command("forcelights")]
-    public void ForceLights(string toggle)
-    {
-        bool forceLights = toggle == "on";
-        Context.Server.Configuration.Extra.ForceLights = forceLights;
-
-        Reply($"Lights {(forceLights ? "will" : "will not")} be forced on.");
-    }
-
     [Command("distance")]
     public void GetDistance([Remainder] ACTcpClient player)
     {
@@ -167,13 +139,6 @@ public class AdminModule : ACModuleBase
     public void Ballast()
     {
         Reply("SYNTAX ERROR: Use 'ballast [driver numeric id] [kg]'");
-    }
-
-    [Command("batchedpositionupdates")]
-    public void BatchedPositionUpdates(BatchedPositionUpdateBehavior behavior)
-    {
-        Context.Server.Configuration.Extra.BatchedPositionUpdateBehavior = behavior;
-        Reply($"Set batched position update behavior to {behavior}");
     }
 
     [Command("set")]

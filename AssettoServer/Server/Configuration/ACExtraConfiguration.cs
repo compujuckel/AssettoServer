@@ -52,7 +52,7 @@ public class ACExtraConfiguration
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
     public bool EnableClientMessages { get; init; } = false;
-    [YamlMember(Description = "Send multiple position updates in one packet. Greatly reduces number of packets to be sent. Possible values: None/AiOnly/Full. Experimental!")]
+    [YamlMember(Description = "Send multiple position updates in one packet. Greatly reduces number of packets to be sent. Possible values: None/AiOnly/Full")]
     public BatchedPositionUpdateBehavior BatchedPositionUpdateBehavior { get; set; } = BatchedPositionUpdateBehavior.AiOnly;
     [YamlMember(Description = "Send logs to a Loki instance, e.g. Grafana Cloud", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public LokiSettings? LokiSettings { get; init; }

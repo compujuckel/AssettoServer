@@ -458,8 +458,7 @@ namespace AssettoServer.Network.Tcp
                 CSPClientMessage clientMessage = reader.ReadPacket<CSPClientMessage>();
                 clientMessage.Type = packetType;
                 clientMessage.SessionId = SessionId;
-
-                Logger.Debug("Unknown CSP client message with type {MessageType} received, data {Data}", clientMessage.Type, Convert.ToHexString(clientMessage.Data));
+                
                 Server.BroadcastPacket(clientMessage);
             }
         }

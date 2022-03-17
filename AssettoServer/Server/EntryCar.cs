@@ -1,10 +1,10 @@
 ﻿using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Server.Ai;
 using AssettoServer.Server.Configuration;
 using Serilog;
 using Serilog.Core;
@@ -14,7 +14,22 @@ namespace AssettoServer.Server
 { 
     public partial class EntryCar
     {
-        [NotNull] public ACServer? Server { get; internal set; }
+        public EntryCar(string model, string? skin, ACServer server, byte sessionId)
+        {
+            Model = model;
+            Skin = skin ?? "";
+            Server = server;
+            SessionId = sessionId;
+            OtherCarsLastSentUpdateTime = new long[Server.EntryCars.Length];
+
+            AiPakSequenceIds = new byte[Server.EntryCars.Length];
+            LastSeenAiState = new AiState[Server.EntryCars.Length];
+            LastSeenAiSpawn = new byte[Server.EntryCars.Length];
+            
+            AiInit();
+        }
+
+        public ACServer Server { get; }
         public ACTcpClient? Client { get; internal set; }
         public CarStatus Status { get; private set; } = new CarStatus();
 
@@ -25,7 +40,7 @@ namespace AssettoServer.Server
         public bool HasSentAfkWarning { get; internal set; }
         public bool HasUpdateToSend { get; internal set; }
         public int TimeOffset { get; internal set; }
-        public byte SessionId { get; internal set; }
+        public byte SessionId { get; }
         public uint LastRemoteTimestamp { get; internal set; }
         public int LastPingTime { get; internal set; }
         public int LastPongTime { get; internal set; }
@@ -33,8 +48,8 @@ namespace AssettoServer.Server
         public DriverOptionsFlags DriverOptionsFlags { get; internal set; }
 
         public bool IsSpectator { get; internal set; }
-        [NotNull] public string? Model { get; internal set; }
-        [NotNull] public string? Skin { get; internal set; }
+        public string Model { get; }
+        public string Skin { get; }
         public int SpectatorMode { get; internal set; }
         public int Ballast { get; internal set; }
         public int Restrictor { get; internal set; }
@@ -42,7 +57,7 @@ namespace AssettoServer.Server
         public float NetworkDistanceSquared { get; internal set; }
         public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }
 
-        [NotNull] internal long[]? OtherCarsLastSentUpdateTime { get; set; }
+        internal long[] OtherCarsLastSentUpdateTime { get; }
         internal EntryCar? TargetCar { get; set; }
         private long LastFallCheckTime{ get; set; }
         

@@ -154,38 +154,6 @@ namespace AssettoServer.Server
                 .Build();
 
             Configuration = configuration;
-            EntryCars = new EntryCar[Math.Min(Configuration.Server.MaxClients, Configuration.EntryList.Cars.Count)];
-            Log.Information("Loaded {Count} cars", EntryCars.Length);
-            for (int i = 0; i < EntryCars.Length; i++)
-            {
-                var entry = Configuration.EntryList.Cars[i];
-                var driverOptions = CSPDriverOptions.Parse(entry.Skin);
-
-                EntryCars[i] = new EntryCar
-                {
-                    SessionId = (byte)i,
-                    Model = entry.Model,
-                    Skin = entry.Skin ?? "",
-                    SpectatorMode = entry.SpectatorMode,
-                    Ballast = entry.Ballast,
-                    Restrictor = entry.Restrictor,
-                    DriverOptionsFlags = driverOptions,
-                    AiMode = entry.AiMode,
-                    AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange),
-                    AiControlled = entry.AiMode != AiMode.None,
-                    AiPakSequenceIds = new byte[EntryCars.Length],
-                    LastSeenAiState = new AiState[EntryCars.Length],
-                    LastSeenAiSpawn = new byte[EntryCars.Length],
-                    OtherCarsLastSentUpdateTime = new long[EntryCars.Length],
-                    NetworkDistanceSquared = MathF.Pow(Configuration.Extra.NetworkBubbleDistance, 2),
-                    OutsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz,
-                    Server = this
-
-                };
-                
-                EntryCars[i].AiInit();
-            }
-
             CSPServerExtraOptions = new CSPServerExtraOptions(Configuration.WelcomeMessage);
             CSPServerExtraOptions.WelcomeMessage += LegalNotice.WelcomeMessage;
             CSPServerExtraOptions.ExtraOptions += "\r\n" + Configuration.CSPExtraOptions;
@@ -286,9 +254,7 @@ namespace AssettoServer.Server
             {
                 WeatherImplementation = new VanillaWeatherImplementation(this);
             }
-            
-            WeatherProvider = new DefaultWeatherProvider(this);
-            
+
             if (Configuration.Extra.EnableAi)
             {
                 string mapAiBasePath = "content/tracks/" + Configuration.Server.Track + "/ai/";
@@ -313,6 +279,30 @@ namespace AssettoServer.Server
                     AiEnabled = true;
                 }
             }
+            
+            EntryCars = new EntryCar[Math.Min(Configuration.Server.MaxClients, Configuration.EntryList.Cars.Count)];
+            Log.Information("Loaded {Count} cars", EntryCars.Length);
+            for (int i = 0; i < EntryCars.Length; i++)
+            {
+                var entry = Configuration.EntryList.Cars[i];
+                var driverOptions = CSPDriverOptions.Parse(entry.Skin);
+                var aiMode = AiEnabled ? entry.AiMode : AiMode.None;
+                
+                EntryCars[i] = new EntryCar(entry.Model, entry.Skin, this, (byte)i)
+                {
+                    SpectatorMode = entry.SpectatorMode,
+                    Ballast = entry.Ballast,
+                    Restrictor = entry.Restrictor,
+                    DriverOptionsFlags = driverOptions,
+                    AiMode = aiMode,
+                    AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange),
+                    AiControlled = aiMode != AiMode.None,
+                    NetworkDistanceSquared = MathF.Pow(Configuration.Extra.NetworkBubbleDistance, 2),
+                    OutsideNetworkBubbleUpdateRateMs = 1000 / Configuration.Extra.OutsideNetworkBubbleRefreshRateHz
+                };
+            }
+            
+            WeatherProvider = new DefaultWeatherProvider(this);
 
             InitializeChecksums();
 

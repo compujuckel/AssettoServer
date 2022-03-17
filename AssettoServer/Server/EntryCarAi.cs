@@ -21,9 +21,9 @@ public partial class EntryCar
     public bool AiControlled { get; set; }
     public AiMode AiMode { get; init; }
     public int TargetAiStateCount { get; private set; } = 1;
-    [NotNull] public byte[]? LastSeenAiSpawn { get; init; }
-    [NotNull] public byte[]? AiPakSequenceIds { get; init; }
-    [NotNull] public AiState?[]? LastSeenAiState { get; init; }
+    public byte[] LastSeenAiSpawn { get; }
+    public byte[] AiPakSequenceIds { get; }
+    public AiState?[] LastSeenAiState { get; }
     public string? AiName { get; private set; }
     public bool AiEnableColorChanges { get; set; } = false;
     public int AiIdleEngineRpm { get; set; } = 800;
@@ -38,7 +38,7 @@ public partial class EntryCar
     private readonly List<AiState> _aiStates = new List<AiState>();
     private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
-    public void AiInit()
+    private void AiInit()
     {
         AiName = $"{Server.Configuration.Extra.AiParams.NamePrefix} {SessionId}";
         SetAiOverbooking(0);

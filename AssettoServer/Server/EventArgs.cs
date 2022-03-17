@@ -58,3 +58,15 @@ public class ChatMessageEventArgs : EventArgs
 {
     public ChatMessage ChatMessage { get; init; }
 }
+
+public class SessionChangedEventArgs : EventArgs
+{
+    public SessionState? PreviousSession { get; }
+    public SessionState NextSession { get; }
+
+    public SessionChangedEventArgs(SessionState? previousSession, SessionState nextSession)
+    {
+        PreviousSession = previousSession;
+        NextSession = nextSession;
+    }
+}

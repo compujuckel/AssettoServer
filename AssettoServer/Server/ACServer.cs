@@ -137,7 +137,12 @@ namespace AssettoServer.Server
         /// Fires when a client has sent a chat message. Set ChatEventArgs.Cancel = true to stop it from being broadcast to other players.
         /// </summary>
         public event EventHandler<ACTcpClient, ChatEventArgs>? ChatMessageReceived;
-        
+
+        /// <summary>
+        /// Fires when a new session is started
+        /// </summary>
+        public event EventHandler<ACServer, SessionChangedEventArgs>? SessionChanged; 
+
         public ACServer(ACServerConfiguration configuration, ACPluginLoader loader)
         {
             Log.Information("Starting server");
@@ -368,9 +373,10 @@ namespace AssettoServer.Server
                 CurrentSessionIndex = 0;
             }
 
+            var previousSession = CurrentSession;
             var previousSessionResults = CurrentSession?.Results;
             
-            CurrentSession = new SessionState(Configuration.Sessions[CurrentSessionIndex])
+            CurrentSession = new SessionState(Configuration.Sessions[CurrentSessionIndex], this)
             {
                 Results = new Dictionary<byte, EntryCarResult>(),
                 StartTime = DateTime.Now,
@@ -408,6 +414,7 @@ namespace AssettoServer.Server
                     .Select(result => EntryCars[result.Key]);
             }
             
+            SessionChanged?.Invoke(this, new SessionChangedEventArgs(previousSession, CurrentSession));
             SendCurrentSession();
         }
         

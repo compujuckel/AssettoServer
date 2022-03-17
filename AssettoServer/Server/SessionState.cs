@@ -12,7 +12,7 @@ public class SessionState
     public long StartTimeTicks { get; set; }
     public TimeSpan TimeLeft => StartTime.AddMinutes(Configuration.Time) - DateTime.Now;
     public TimeSpan SessionTime => DateTime.Now - StartTime;
-    public int SessionTimeTicks => (int)(Environment.TickCount64 - StartTimeTicks);
+    public int SessionTimeTicks => (int)(_server.CurrentTime - StartTimeTicks);
     public int TargetLap { get; set; } = 0;
     public int LeaderLapCount { get; set; } = 0;
     public bool LeaderHasCompletedLastLap { get; set; } = false;
@@ -20,9 +20,12 @@ public class SessionState
     public Dictionary<byte, EntryCarResult>? Results { get; set; }
     public IEnumerable<EntryCar>? Grid { get; set; }
 
-    public SessionState(SessionConfiguration configuration)
+    private readonly ACServer _server;
+
+    public SessionState(SessionConfiguration configuration, ACServer server)
     {
         Configuration = configuration;
+        _server = server;
     }
 }
 

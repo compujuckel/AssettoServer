@@ -8,6 +8,8 @@ namespace AssettoServer.Server.Ai
 {
     public static class AdjacentLaneDetector
     {
+        private const float LaneDetectionRadius = 2.0f;
+        
         private static Vector3 OffsetVec(Vector3 pos, float angle, float offset)
         {
             return new()
@@ -20,6 +22,12 @@ namespace AssettoServer.Server.Ai
 
         public static void DetectAdjacentLanes(TrafficMap map, float laneWidth)
         {
+            const float minRadius = LaneDetectionRadius * 1.05f;
+            if (laneWidth < minRadius)
+            {
+                throw new InvalidOperationException($"Lane width cannot be smaller than {minRadius} meters");
+            }
+            
             Log.Information("Adjacent lane detection...");
             
             using var t = Operation.Time("Adjacent lane detection");
@@ -36,7 +44,7 @@ namespace AssettoServer.Server.Ai
 
                         var found = map.WorldToSpline(targetVec);
 
-                        if (found.distanceSquared < 2 * 2)
+                        if (found.distanceSquared < LaneDetectionRadius * LaneDetectionRadius)
                         {
                             point.Left = found.point;
                             if (point.IsSameDirection(found.point))
@@ -53,7 +61,7 @@ namespace AssettoServer.Server.Ai
 
                         found = map.WorldToSpline(targetVec);
 
-                        if (found.distanceSquared < 2 * 2)
+                        if (found.distanceSquared < LaneDetectionRadius * LaneDetectionRadius)
                         {
                             point.Right = found.point;
                             if (point.IsSameDirection(found.point))

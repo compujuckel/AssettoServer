@@ -121,7 +121,7 @@ namespace AssettoServer.Server.Ai
                 var p = new TrafficSplinePoint
                 {
                     Id = idOffset + i,
-                    Point = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle())
+                    Position = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle())
                 };
 
                 reader.ReadSingle(); // Length
@@ -167,7 +167,7 @@ namespace AssettoServer.Server.Ai
                 points[i] = new TrafficSplinePoint
                 {
                     Id = idOffset + i,
-                    Point = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
+                    Position = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
                     Radius = reader.ReadSingle(),
                     Camber = reader.ReadSingle()
                 };
@@ -205,10 +205,10 @@ namespace AssettoServer.Server.Ai
                 points[i].Previous = points[i == 0 ? points.Length - 1 : i - 1];
                 points[i].Next = points[i == points.Length - 1 ? 0 : i + 1];
 
-                points[i].Length = Vector3.Distance(points[i].Point, points[i].Next!.Point);
+                points[i].Length = Vector3.Distance(points[i].Position, points[i].Next!.Position);
             }
 
-            bool closedLoop = Vector3.Distance(points[0].Point, points[^1].Point) < 50;
+            bool closedLoop = Vector3.Distance(points[0].Position, points[^1].Position) < 50;
             if (!closedLoop)
             {
                 points[0].Previous = null;

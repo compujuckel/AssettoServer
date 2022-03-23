@@ -51,7 +51,7 @@ namespace AssettoServer.Server.Ai
             var data = new List<Vector3>();
             foreach (var point in PointsById)
             {
-                data.Add(point.Value.Point);
+                data.Add(point.Value.Position);
             }
 
             return data.ToArray();
@@ -68,7 +68,7 @@ namespace AssettoServer.Server.Ai
         public (TrafficSplinePoint point, float distanceSquared) WorldToSpline(Vector3 position)
         {
             var nearest = KdTree.NearestNeighbors(position, 1)[0].Item2;
-            float dist = Vector3.DistanceSquared(position, nearest.Point);
+            float dist = Vector3.DistanceSquared(position, nearest.Position);
 
             return (nearest, dist);
         }

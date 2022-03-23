@@ -22,6 +22,7 @@ using AssettoServer.Network.Udp;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Http;
 using AssettoServer.Commands.TypeParsers;
+using AssettoServer.Network.Packets;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using AssettoServer.Network.Packets.Shared;
@@ -74,7 +75,7 @@ namespace AssettoServer.Server
         internal IWebHost? HttpServer { get; private set; }
         internal KunosLobbyRegistration KunosLobbyRegistration { get; }
         internal Steam Steam { get; }
-        internal Dictionary<int, CSPLuaMessageType> CSPLuaMessageTypes { get; } = new();
+        internal Dictionary<int, Action<ACTcpClient, PacketReader>> CSPClientMessageTypes { get; } = new();
 
         internal SemaphoreSlim ConnectSemaphore { get; }
         private HttpClient HttpClient { get; }
@@ -749,20 +750,26 @@ namespace AssettoServer.Server
 
         public void BroadcastPacket<TPacket>(TPacket packet, ACTcpClient? sender = null) where TPacket : IOutgoingNetworkPacket
         {
-            if (!(packet is SunAngleUpdate))
-                Log.Verbose("Broadcasting {PacketName}", typeof(TPacket).Name);
-
-            foreach (EntryCar car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client))
-                car.Client?.SendPacket(packet);
+            for (int i = 0; i < EntryCars.Length; i++)
+            {
+                var car = EntryCars[i];
+                if (car.Client is { HasSentFirstUpdate: true } && car.Client != sender)
+                {
+                    car.Client?.SendPacket(packet);
+                }
+            }
         }
         
         public void BroadcastPacketUdp<TPacket>(TPacket packet, ACTcpClient? sender = null) where TPacket : IOutgoingNetworkPacket
         {
-            if (!(packet is SunAngleUpdate))
-                Log.Verbose("Broadcasting {PacketName}", typeof(TPacket).Name);
-
-            foreach (EntryCar car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate && sender != c.Client && c.Client.HasAssociatedUdp))
-                car.Client?.SendPacketUdp(packet);
+            for (int i = 0; i < EntryCars.Length; i++)
+            {
+                var car = EntryCars[i];
+                if (car.Client is { HasSentFirstUpdate: true, HasAssociatedUdp: true } && car.Client != sender)
+                {
+                    car.Client?.SendPacketUdp(in packet);
+                }
+            }
         }
 
         [SuppressMessage("ReSharper", "FunctionNeverReturns")]
@@ -940,12 +947,12 @@ namespace AssettoServer.Server
             }
         }
 
-        public void RegisterCspLuaMessageType(ushort type, Func<IIncomingNetworkPacket> factoryMethod, Action<ACTcpClient, IIncomingNetworkPacket> handler)
+        public void RegisterCSPClientMessageType(ushort type, Action<ACTcpClient, PacketReader> handler)
         {
-            if (CSPLuaMessageTypes.ContainsKey(type))
+            if (CSPClientMessageTypes.ContainsKey(type))
                 throw new ArgumentException($"Type {type} already registered");
 
-            CSPLuaMessageTypes.Add(type, new CSPLuaMessageType(type, factoryMethod, handler));
+            CSPClientMessageTypes.Add(type, handler);
         }
 
         internal async Task DisconnectClientAsync(ACTcpClient client)
@@ -966,6 +973,7 @@ namespace AssettoServer.Server
                     if (client.HasPassedChecksum)
                         BroadcastPacket(new CarDisconnected { SessionId = client.SessionId });
                     
+                    client.EntryCar.Reset();
                     ClientDisconnected?.Invoke(client, EventArgs.Empty);
                 }
             }

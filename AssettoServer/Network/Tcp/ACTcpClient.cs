@@ -381,7 +381,7 @@ namespace AssettoServer.Network.Tcp
                             if (id == 0x00)
                                 OnSpectateCar(reader);
                             else if (id == 0x03)
-                                OnCspClientMessage(reader);
+                                OnCSPClientMessage(reader);
                         }
                         else if (id == 0x82)
                             OnClientEvent(reader);
@@ -428,19 +428,16 @@ namespace AssettoServer.Network.Tcp
             EntryCar.TargetCar = spectatePacket.SessionId != SessionId ? Server.EntryCars[spectatePacket.SessionId] : null;
         }
 
-        private void OnCspClientMessage(PacketReader reader)
+        private void OnCSPClientMessage(PacketReader reader)
         {
             CSPClientMessageType packetType = (CSPClientMessageType)reader.Read<ushort>();
             if (packetType == CSPClientMessageType.LuaMessage)
             {
                 int luaPacketType = reader.Read<int>();
 
-                if (Server.CSPLuaMessageTypes.TryGetValue(luaPacketType, out var typeRegistration))
+                if (Server.CSPClientMessageTypes.TryGetValue(luaPacketType, out var handler))
                 {
-                    var packet = typeRegistration.FactoryMethod();
-                    packet.FromReader(reader);
-
-                    typeRegistration.Handler(this, packet);
+                    handler(this, reader);
                 }
                 else
                 {

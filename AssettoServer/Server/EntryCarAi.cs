@@ -110,7 +110,7 @@ public partial class EntryCar
                         && Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0) // TODO bad idea for two way traffic?
                     {
                         aiState.Initialized = false;
-                        Logger.Debug("Removed close state from AI {SessionId}", SessionId);
+                        Logger.Verbose("Removed close state from AI {SessionId}", SessionId);
                     }
                 }
             }
@@ -192,7 +192,7 @@ public partial class EntryCar
         }
     }
 
-    public bool IsPositionSafe(Vector3 position)
+    public bool IsPositionSafe(TrafficSplinePoint point)
     {
         _aiStatesLock.EnterReadLock();
         try
@@ -200,7 +200,9 @@ public partial class EntryCar
             for (var i = 0; i < _aiStates.Count; i++)
             {
                 var aiState = _aiStates[i];
-                if (aiState.Initialized && Vector3.DistanceSquared(aiState.Status.Position, position) < aiState.SafetyDistanceSquared)
+                if (aiState.Initialized 
+                    && Vector3.DistanceSquared(aiState.Status.Position, point.Position) < aiState.SafetyDistanceSquared
+                    && aiState.CurrentSplinePoint.IsSameDirection(point))
                 {
                     return false;
                 }

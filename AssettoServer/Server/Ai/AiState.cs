@@ -101,7 +101,7 @@ namespace AssettoServer.Server.Ai
             CurrentSplinePoint = point;
             if (!MapView.TryNext(CurrentSplinePoint, out var nextPoint))
                 throw new InvalidOperationException($"Cannot get next spline point for {CurrentSplinePoint.Id}");
-            _currentVecLength = (nextPoint.Point - CurrentSplinePoint.Point).Length();
+            _currentVecLength = (nextPoint.Position - CurrentSplinePoint.Position).Length();
             _currentVecProgress = 0;
             
             CalculateTangents();
@@ -110,7 +110,8 @@ namespace AssettoServer.Server.Ai
             SetRandomColor();
             
             SpawnProtectionEnds = Environment.TickCount64 + Random.Shared.Next(EntryCar.Server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, EntryCar.Server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
-            SafetyDistanceSquared = Random.Shared.Next(EntryCar.Server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared, EntryCar.Server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared);
+            SafetyDistanceSquared = Random.Shared.Next((int)Math.Round(EntryCar.Server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared * (1.0f / EntryCar.Server.Configuration.Extra.AiParams.TrafficDensity)),
+                (int)Math.Round(EntryCar.Server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared * (1.0f / EntryCar.Server.Configuration.Extra.AiParams.TrafficDensity)));
             _stoppedForCollisionUntil = 0;
             _ignoreObstaclesUntil = 0;
             _obstacleHonkEnd = 0;
@@ -132,20 +133,20 @@ namespace AssettoServer.Server.Ai
             
             if (MapView.TryPrevious(CurrentSplinePoint, out var previousPoint))
             {
-                _startTangent = (nextPoint.Point - previousPoint.Point) * 0.5f;
+                _startTangent = (nextPoint.Position - previousPoint.Position) * 0.5f;
             }
             else
             {
-                _startTangent = (nextPoint.Point - CurrentSplinePoint.Point) * 0.5f;
+                _startTangent = (nextPoint.Position - CurrentSplinePoint.Position) * 0.5f;
             }
 
             if (MapView.TryNext(CurrentSplinePoint, out var nextNextPoint, 2))
             {
-                _endTangent = (nextNextPoint.Point - CurrentSplinePoint.Point) * 0.5f;
+                _endTangent = (nextNextPoint.Position - CurrentSplinePoint.Position) * 0.5f;
             }
             else
             {
-                _endTangent = (nextPoint.Point - CurrentSplinePoint.Point) * 0.5f;
+                _endTangent = (nextPoint.Position - CurrentSplinePoint.Position) * 0.5f;
             }
         }
 
@@ -163,7 +164,7 @@ namespace AssettoServer.Server.Ai
                 }
 
                 CurrentSplinePoint = nextPoint;
-                _currentVecLength = (nextNextPoint.Point - CurrentSplinePoint.Point).Length();
+                _currentVecLength = (nextNextPoint.Position - CurrentSplinePoint.Position).Length();
                 recalculateTangents = true;
 
                 if (_junctionPassed)
@@ -478,8 +479,8 @@ namespace AssettoServer.Server.Ai
                 return;
             }
 
-            CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(CurrentSplinePoint.Point, 
-                nextPoint.Point, 
+            CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(CurrentSplinePoint.Position, 
+                nextPoint.Position, 
                 _startTangent, 
                 _endTangent, 
                 _currentVecProgress / _currentVecLength);

@@ -10,7 +10,7 @@ namespace AssettoServer.Server.Ai;
 public class TrafficSplinePoint
 {
     public int Id { get; init; }
-    public Vector3 Point { get; init; }
+    public Vector3 Position { get; init; }
     
     //public float Gas { get; set; }
     //public float Brake { get; set; }
@@ -109,7 +109,7 @@ public class TrafficSplinePoint
     {
         if (Next != null)
         {
-            return Next.Point - Point;
+            return Next.Position - Position;
         }
 
         return Vector3.Zero;

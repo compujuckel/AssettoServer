@@ -64,7 +64,7 @@ public static class WavefrontObjParser
                     {
                             
                         Id = id++,
-                        Point = new Vector3(x, y, z)
+                        Position = new Vector3(x, y, z)
                     });
                     break;
                 case "l":

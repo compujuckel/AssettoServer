@@ -7,6 +7,7 @@ using App.Metrics;
 using App.Metrics.Gauge;
 using App.Metrics.Timer;
 using AssettoServer.Network.Tcp;
+using AssettoServer.Server.Configuration;
 using Serilog;
 
 namespace AssettoServer.Server.Ai
@@ -14,6 +15,7 @@ namespace AssettoServer.Server.Ai
     public class AiBehavior
     {
         private readonly ACServer _server;
+        private readonly DynamicTrafficDensity? _dynamicTrafficDensity;
         private long _lastAiUpdate = Environment.TickCount64;
         private long _lastAiObstacleDetectionUpdate = Environment.TickCount64;
 
@@ -49,9 +51,20 @@ namespace AssettoServer.Server.Ai
         {
             _server = server;
 
+            if (_server.Configuration.Extra.AiParams.HourlyTrafficDensity != null)
+            {
+                _dynamicTrafficDensity = new DynamicTrafficDensity(server);
+            }
+
             _server.ClientChecksumPassed += OnClientChecksumPassed;
             _server.ClientDisconnected += OnClientDisconnected;
             _server.Update += OnUpdate;
+            _server.Configuration.Reload += OnConfigurationReload;
+        }
+
+        private void OnConfigurationReload(ACServerConfiguration sender, EventArgs args)
+        {
+            AdjustOverbooking();
         }
 
         private void OnUpdate(object sender, EventArgs args)
@@ -109,11 +122,6 @@ namespace AssettoServer.Server.Ai
             }
         }
 
-        private static int GetTriangleNumber(int n)
-        {
-            return (n * (n + 1)) / 2;
-        }
-
         private int GetRandomWeighted(int max)
         {
             // Probabilities for max = 4
@@ -122,7 +130,7 @@ namespace AssettoServer.Server.Ai
             // 2    2/10
             // 3    1/10
             
-            int maxRand = GetTriangleNumber(max);
+            int maxRand = max * (max + 1) / 2;
             int rand = Random.Shared.Next(maxRand);
             int target = 0;
             for (int i = max; i < maxRand; i += (i - 1))
@@ -134,18 +142,18 @@ namespace AssettoServer.Server.Ai
             return target;
         }
 
-        private bool IsPositionSafe(Vector3 position)
+        private bool IsPositionSafe(TrafficSplinePoint point)
         {
             for (var i = 0; i < _server.EntryCars.Length; i++)
             {
                 var entryCar = _server.EntryCars[i];
-                if (entryCar.AiControlled && !entryCar.IsPositionSafe(position))
+                if (entryCar.AiControlled && !entryCar.IsPositionSafe(point))
                 {
                     return false;
                 }
 
                 if (entryCar.Client?.HasSentFirstUpdate == true
-                    && Vector3.DistanceSquared(entryCar.Status.Position, position) < _server.Configuration.Extra.AiParams.SpawnSafetyDistanceToPlayerSquared)
+                    && Vector3.DistanceSquared(entryCar.Status.Position, point.Position) < _server.Configuration.Extra.AiParams.SpawnSafetyDistanceToPlayerSquared)
                 {
                     return false;
                 }
@@ -179,7 +187,7 @@ namespace AssettoServer.Server.Ai
                 direction = Vector3.Dot(spawnPoint.GetForwardVector(), playerCar.Status.Velocity) > 0 ? 1 : -1;
             }
 
-            while (spawnPoint != null && !IsPositionSafe(spawnPoint.Point))
+            while (spawnPoint != null && !IsPositionSafe(spawnPoint))
             {
                 spawnPoint = _mapView.Traverse(spawnPoint, direction * 5);
             }
@@ -227,23 +235,19 @@ namespace AssettoServer.Server.Ai
         private void AdjustOverbooking()
         {
             int playerCount = _server.EntryCars.Count(car => car.Client != null && car.Client.IsConnected);
-            int aiCount = _server.EntryCars.Count(car => car.Client == null && car.AiControlled); // client null check is necessary here so that slots where someone is connecting don't count
+            var aiSlots = _server.EntryCars.Where(car => car.Client == null && car.AiControlled).ToList(); // client null check is necessary here so that slots where someone is connecting don't count
 
-            int targetAiCount = Math.Min(playerCount * Math.Min(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount, aiCount), _server.Configuration.Extra.AiParams.MaxAiTargetCount);
+            int targetAiCount = Math.Min(playerCount * Math.Min((int)Math.Round(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount * _server.Configuration.Extra.AiParams.TrafficDensity), aiSlots.Count), _server.Configuration.Extra.AiParams.MaxAiTargetCount);
 
-            int overbooking = (int) Math.Ceiling((float) targetAiCount / aiCount);
-            Log.Debug("Overbooking update, #Players {NumPlayers} #AIs {NumAis} #Target {TargetAiCount} -> {Overbooking}", playerCount, aiCount, targetAiCount, overbooking);
+            int overbooking = targetAiCount / aiSlots.Count;
+            int rest = targetAiCount % aiSlots.Count;
             
-            SetAiOverbooking(overbooking);
-        }
-        
-        public void SetAiOverbooking(int count)
-        {
-            var aiCars = _server.EntryCars.Where(car => car.AiControlled && car.Client == null);
+            Log.Debug("AI Slot overbooking update - No. players: {NumPlayers} - No. AI Slots: {NumAiSlots} - Target AI count: {TargetAiCount} - Overbooking: {Overbooking} - Rest: {Rest}", 
+                playerCount, aiSlots.Count, targetAiCount, overbooking, rest);
 
-            foreach (var aiCar in aiCars)
+            for (int i = 0; i < aiSlots.Count; i++)
             {
-                aiCar.SetAiOverbooking(count);
+                aiSlots[i].SetAiOverbooking(i < rest ? overbooking + 1 : overbooking);
             }
         }
 
@@ -317,7 +321,7 @@ namespace AssettoServer.Server.Ai
 
                 foreach (var targetAiState in _uninitializedAiStates)
                 {
-                    if (!targetAiState.CanSpawn(spawnPoint.Point) && _mapView.TryNext(spawnPoint, out _))
+                    if (!targetAiState.CanSpawn(spawnPoint.Position) && _mapView.TryNext(spawnPoint, out _))
                         continue;
                     
                     targetAiState.Teleport(spawnPoint);

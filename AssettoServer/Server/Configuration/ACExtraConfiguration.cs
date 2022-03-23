@@ -147,7 +147,7 @@ public class AiParams
     [YamlMember(Description = "")]
     public float StateTieBreakerDistanceMeters { get; set; } = 250;
     [YamlMember(Description = "Minimum spawn distance to players")]
-    public float SpawnSafetyDistanceToPlayerMeters { get; set; } = 100;
+    public float SpawnSafetyDistanceToPlayerMeters { get; set; } = 150;
     [YamlMember(Description = "Minimum time in which a newly spawned AI car cannot despawn")]
     public int MinSpawnProtectionTimeSeconds { get; set; } = 4;
     [YamlMember(Description = "Maximum time in which a newly spawned AI car cannot despawn")]
@@ -190,6 +190,10 @@ public class AiParams
     public string NamePrefix { get; init; } = "Traffic";
     [YamlMember(Description = "Ignore obstacles for some time if the AI car is stopped for longer than x seconds")]
     public int IgnoreObstaclesAfterSeconds { get; set; } = 10;
+    [YamlMember(Description = "Apply scale to some traffic density related settings. Increasing this DOES NOT magically increase your traffic density, it is dependent on your other settings. Values higher than 1 not recommended.")]
+    public float TrafficDensity { get; set; } = 1.0f;
+    [YamlMember(Description = "Dynamic (hourly) traffic density. List must have exactly 24 entries.")]
+    public List<float>? HourlyTrafficDensity { get; set; }
     [YamlMember(Description = "Override some settings for specific car models/skins")]
     public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new();
 

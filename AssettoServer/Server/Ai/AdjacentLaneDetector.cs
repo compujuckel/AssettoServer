@@ -38,12 +38,11 @@ namespace AssettoServer.Server.Ai
                 {
                     if (point.Right == null && point.Next != null)
                     {
-                        float direction = (float) (Math.Atan2(point.Point.Z - point.Next.Point.Z, point.Next.Point.X - point.Point.X) * (180 / Math.PI) * -1);
+                        float direction = (float) (Math.Atan2(point.Position.Z - point.Next.Position.Z, point.Next.Position.X - point.Position.X) * (180 / Math.PI) * -1);
 
-                        var targetVec = OffsetVec(point.Point, -direction + 90, laneWidth);
+                        var targetVec = OffsetVec(point.Position, -direction + 90, laneWidth);
 
                         var found = map.WorldToSpline(targetVec);
-
                         if (found.distanceSquared < LaneDetectionRadius * LaneDetectionRadius)
                         {
                             point.Left = found.point;
@@ -57,10 +56,9 @@ namespace AssettoServer.Server.Ai
                             }
                         }
                         
-                        targetVec = OffsetVec(point.Point, -direction - 90, laneWidth);
+                        targetVec = OffsetVec(point.Position, -direction - 90, laneWidth);
 
                         found = map.WorldToSpline(targetVec);
-
                         if (found.distanceSquared < LaneDetectionRadius * LaneDetectionRadius)
                         {
                             point.Right = found.point;

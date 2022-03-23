@@ -87,13 +87,17 @@ public class ACServerConfiguration
             }
         }
 
-        if (Extra.RainTrackGripReductionPercent is < 0 or > 1)
+        if (Extra.RainTrackGripReductionPercent is < 0 or > 0.5)
         {
-            throw new ConfigurationException("RainTrackGripReductionPercent must be in the range 0..1");
+            throw new ConfigurationException("RainTrackGripReductionPercent must be in the range 0..0.5");
         }
         if (Extra.AiParams.MaxSpeedVariationPercent is < 0 or > 1)
         {
             throw new ConfigurationException("MaxSpeedVariationPercent must be in the range 0..1");
+        }
+        if (Extra.AiParams.HourlyTrafficDensity != null && Extra.AiParams.HourlyTrafficDensity.Count != 24)
+        {
+            throw new ConfigurationException("HourlyTrafficDensity must have exactly 24 entries");
         }
 
         if (Extra.EnableServerDetails)
@@ -186,8 +190,13 @@ public class ACServerConfiguration
             // ignored
         }
         
-        if(ret) Reload?.Invoke(this, EventArgs.Empty);
+        if (ret) TriggerReload();
 
         return ret;
+    }
+
+    public void TriggerReload()
+    {
+        Reload?.Invoke(this, EventArgs.Empty);
     }
 }

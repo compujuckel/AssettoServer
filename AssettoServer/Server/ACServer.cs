@@ -38,7 +38,8 @@ using NanoSockets;
 using Serilog;
 using Qmmands;
 using Newtonsoft.Json;
-using TimeZoneConverter;
+using NodaTime;
+using NodaTime.Extensions;
 
 namespace AssettoServer.Server
 {
@@ -52,8 +53,7 @@ namespace AssettoServer.Server
         public bool MustInvertGrid { get; private set; } = false;
         [NotNull] public SessionState? CurrentSession { get; private set; }
         [NotNull] public WeatherData? CurrentWeather { get; private set; }
-        public DateTime CurrentDateTime { get; set; }
-        public TimeZoneInfo TimeZone { get; }
+        public ZonedDateTime CurrentDateTime { get; set; }
         public GeoParams GeoParams { get; private set; } = new GeoParams();
         public IReadOnlyList<string> Features { get; private set; }
         public IMetricsRoot Metrics { get; }
@@ -128,7 +128,13 @@ namespace AssettoServer.Server
         /// Fires when a client has been banned.
         /// </summary>
         public event EventHandler<ACTcpClient, ClientAuditEventArgs>? ClientBanned;
-        
+
+        /// <summary>
+        /// Fires when a client collided with something. TargetCar will be null for environment collisions.
+        /// There are up to 5 seconds delay before a collision is reported to the server.
+        /// </summary>
+        public event EventHandler<ACTcpClient, CollisionEventArgs>? ClientCollision; 
+
         /// <summary>
         /// Fires on each server tick in the main loop. Don't do resource intensive / long running stuff in here!
         /// </summary>
@@ -206,12 +212,13 @@ namespace AssettoServer.Server
             TrackParamsProvider.Initialize().Wait();
             TrackParams = TrackParamsProvider.GetParamsForTrack(Configuration.Server.Track);
 
+            DateTimeZone? timeZone;
             if (TrackParams == null)
             {
                 if (Configuration.Extra.IgnoreConfigurationErrors.MissingTrackParams)
                 {
                     Log.Warning("Using UTC as default time zone");
-                    TimeZone = TimeZoneInfo.Utc;
+                    timeZone = DateTimeZone.Utc;
                 }
                 else
                 {
@@ -223,7 +230,7 @@ namespace AssettoServer.Server
                 if (Configuration.Extra.IgnoreConfigurationErrors.MissingTrackParams)
                 {
                     Log.Warning("Using UTC as default time zone");
-                    TimeZone = TimeZoneInfo.Utc;
+                    timeZone = DateTimeZone.Utc;
                 }
                 else
                 {
@@ -232,17 +239,15 @@ namespace AssettoServer.Server
             }
             else
             {
-                /*
-                * In theory TZConvert could be removed because .NET 6 supports IANA timezone names natively
-                * In practice the native way is not supported in Windows 10 LTSC 2019, so keeping this in for now
-                * https://docs.microsoft.com/en-us/windows/win32/intl/international-components-for-unicode--icu-
-                * ("icu.dll" is required which was added in Version 1903)
-                */
-                TimeZone = TZConvert.GetTimeZoneInfo(TrackParams.Timezone);
-            }
+                timeZone = DateTimeZoneProviders.Tzdb.GetZoneOrNull(TrackParams.Timezone);
 
-            var startDate = new DateTime(DateTime.UtcNow.Date.Ticks);
-            CurrentDateTime = TimeZoneInfo.ConvertTimeToUtc(startDate + TimeSpan.FromSeconds(WeatherUtils.SecondsFromSunAngle(Configuration.Server.SunAngle)), TimeZone);
+                if (timeZone == null)
+                {
+                    throw new ConfigurationException($"Invalid time zone {TrackParams.Timezone} for track {Configuration.Server.Track}. Please enter a valid time zone for your track in cfg/data_track_params.ini.");
+                }
+            }
+            
+            CurrentDateTime = SystemClock.Instance.InZone(timeZone).GetCurrentDate().AtStartOfDayInZone(timeZone).PlusSeconds((long)WeatherUtils.SecondsFromSunAngle(Configuration.Server.SunAngle));
             
             WeatherTypeProvider = new DefaultWeatherTypeProvider();
             RainHelper = new RainHelper();
@@ -379,7 +384,7 @@ namespace AssettoServer.Server
                 CurrentSession.Results.Add(entryCar.SessionId, new EntryCarResult());
             }
             
-            Log.Information("Next session: {SessionName}", CurrentSession.Configuration.Name);
+            Log.Information("Next session: {SessionName}. Start time (ingame): {StartTime}", CurrentSession.Configuration.Name, CurrentDateTime);
 
             if (CurrentSession.Configuration.Type == SessionType.Race)
             {
@@ -711,7 +716,7 @@ namespace AssettoServer.Server
 
         public void SetTime(float time)
         {
-            CurrentDateTime = TimeZoneInfo.ConvertTimeToUtc(TimeZoneInfo.ConvertTimeFromUtc(CurrentDateTime, TimeZone).Date + TimeSpan.FromSeconds(time), TimeZone);
+            CurrentDateTime = CurrentDateTime.Date.AtStartOfDayInZone(CurrentDateTime.Zone).PlusSeconds((long)time);
         }
         
         public void SendLapCompletedMessage(byte sessionId, int lapTime, int cuts, ACTcpClient? target = null)
@@ -877,11 +882,11 @@ namespace AssettoServer.Server
                         {
                             if (Configuration.Extra.EnableRealTime)
                             {
-                                CurrentDateTime = DateTime.UtcNow;
+                                CurrentDateTime = SystemClock.Instance.InZone(CurrentDateTime.Zone).GetCurrentZonedDateTime();
                             }
                             else
                             {
-                                CurrentDateTime += TimeSpan.FromMilliseconds((Environment.TickCount64 - lastTimeUpdate) * Configuration.Server.TimeOfDayMultiplier);
+                                CurrentDateTime += Duration.FromMilliseconds((Environment.TickCount64 - lastTimeUpdate) * Configuration.Server.TimeOfDayMultiplier);
                             }
 
                             RainHelper.Update(CurrentWeather, Configuration.Server.DynamicTrack?.BaseGrip ?? 1, Configuration.Extra.RainTrackGripReductionPercent, Environment.TickCount64 - lastTimeUpdate);
@@ -1028,6 +1033,7 @@ namespace AssettoServer.Server
                     acClient.ChecksumPassed += OnClientChecksumPassed;
                     acClient.ChatMessageReceived += OnChatMessageReceived;
                     acClient.FirstUpdateSent += OnClientFirstUpdateSent;
+                    acClient.Collision += OnCollision;
                     await acClient.StartAsync();
                 }
                 catch (Exception ex)
@@ -1055,6 +1061,11 @@ namespace AssettoServer.Server
         private void OnClientFirstUpdateSent(ACTcpClient sender, EventArgs args)
         {
             ClientFirstUpdateSent?.Invoke(sender, args);
+        }
+
+        private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
+        {
+            ClientCollision?.Invoke(sender, args);
         }
 
         private void OnChatMessageReceived(ACTcpClient sender, ChatMessageEventArgs args)

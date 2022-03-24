@@ -1,6 +1,6 @@
-﻿using System;
-using AssettoServer.Network.Packets.Outgoing;
+﻿using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Tcp;
+using NodaTime;
 
 namespace AssettoServer.Server.Weather.Implementation;
 
@@ -21,9 +21,9 @@ public class VanillaWeatherImplementation : IWeatherImplementation
         var wfxParams = new WeatherFxParams
         {
             Type = weather.Type.WeatherFxType,
-            StartDate = new DateTimeOffset(TimeZoneInfo.ConvertTimeFromUtc(_server.CurrentDateTime, _server.TimeZone).Date, TimeSpan.Zero).ToUnixTimeSeconds()
+            StartDate = _server.CurrentDateTime.Date.AtStartOfDayInZone(DateTimeZone.Utc).ToInstant().ToUnixTimeSeconds()
         };
-        
+
         var weatherType = _server.WeatherTypeProvider.GetWeatherType(wfxParams.Type) with
         {
             Graphics = wfxParams.ToString(),
@@ -65,7 +65,7 @@ public class VanillaWeatherImplementation : IWeatherImplementation
     {
         return new SunAngleUpdate
         {
-            SunAngle = WeatherUtils.SunAngleFromSeconds((float)TimeZoneInfo.ConvertTimeFromUtc(_server.CurrentDateTime, _server.TimeZone).TimeOfDay.TotalSeconds)
+            SunAngle = (float)WeatherUtils.SunAngleFromTicks(_server.CurrentDateTime.TimeOfDay.TickOfDay)
         };
     }
 }

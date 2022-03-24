@@ -21,7 +21,7 @@ public class DynamicTrafficDensity
         {
             try
             {
-                float hours = (float)TimeZoneInfo.ConvertTimeFromUtc(_server.CurrentDateTime, _server.TimeZone).TimeOfDay.TotalHours;
+                double hours = _server.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0 / 3600.0;
                 _server.Configuration.Extra.AiParams.TrafficDensity = GetDensity(hours);
                 _server.Configuration.TriggerReload();
             }
@@ -31,21 +31,21 @@ public class DynamicTrafficDensity
             }
             finally
             {
-                await Task.Delay(TimeSpan.FromMinutes(1));
+                await Task.Delay(TimeSpan.FromMinutes(10.0 / _server.Configuration.Server.TimeOfDayMultiplier));
             }
         }
     }
 
-    private float GetDensity(float hourOfDay)
+    private float GetDensity(double hourOfDay)
     {
         // ReSharper disable once CompareOfFloatsByEqualityOperator
-        if (MathF.Truncate(hourOfDay) == hourOfDay)
+        if (Math.Truncate(hourOfDay) == hourOfDay)
         {
             return _server.Configuration.Extra.AiParams.HourlyTrafficDensity![(int)hourOfDay];
         }
 
-        int lowerBound = (int)MathF.Floor(hourOfDay);
-        int higherBound = (int)MathF.Ceiling(hourOfDay);
+        int lowerBound = (int)Math.Floor(hourOfDay);
+        int higherBound = (int)Math.Ceiling(hourOfDay) % 24;
 
         return (float)MathUtils.Lerp(_server.Configuration.Extra.AiParams.HourlyTrafficDensity![lowerBound], _server.Configuration.Extra.AiParams.HourlyTrafficDensity![higherBound], hourOfDay - lowerBound);
     }

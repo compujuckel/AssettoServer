@@ -58,8 +58,21 @@ namespace AssettoServer.Server.Ai
 
             _server.ClientChecksumPassed += OnClientChecksumPassed;
             _server.ClientDisconnected += OnClientDisconnected;
+            _server.ClientCollision += OnCollision;
             _server.Update += OnUpdate;
             _server.Configuration.Reload += OnConfigurationReload;
+        }
+
+        private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
+        {
+            if (args.TargetCar?.AiControlled == true)
+            {
+                var targetAiState = args.TargetCar.GetClosestAiState(sender.EntryCar.Status.Position);
+                if (targetAiState.AiState != null && targetAiState.DistanceSquared < 25 * 25)
+                {
+                    targetAiState.AiState.StopForCollision();
+                }
+            }
         }
 
         private void OnConfigurationReload(ACServerConfiguration sender, EventArgs args)

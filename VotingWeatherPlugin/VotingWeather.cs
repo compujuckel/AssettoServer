@@ -118,7 +118,7 @@ public class VotingWeather
         {
             TransitionDuration = 120000.0,
             TemperatureAmbient = last.TemperatureAmbient,
-            TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(TimeZoneInfo.ConvertTimeFromUtc(_server.CurrentDateTime, _server.TimeZone).TimeOfDay.TotalSeconds, last.TemperatureAmbient,
+            TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(_server.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0, last.TemperatureAmbient,
                 winnerType.TemperatureCoefficient),
             Pressure = last.Pressure,
             Humidity = (int)(winnerType.Humidity * 100),

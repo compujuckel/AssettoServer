@@ -83,6 +83,12 @@ namespace AssettoServer.Network.Tcp
         /// </summary>
         public event EventHandler<ACTcpClient, EventArgs>? FirstUpdateSent;
 
+        /// <summary>
+        /// Fires when a client collided with something. TargetCar will be null for environment collisions.
+        /// There are up to 5 seconds delay before a collision is reported to the server.
+        /// </summary>
+        public event EventHandler<ACTcpClient, CollisionEventArgs>? Collision;
+
         public ILogger Logger { get; }
         
         public class ACTcpClientLogEventEnricher : ILogEventEnricher
@@ -323,7 +329,7 @@ namespace AssettoServer.Network.Tcp
                                 ResultScreenTime = cfg.ResultScreenTime,
                                 ServerName = cfg.Name,
                                 SessionId = SessionId,
-                                SunAngle = WeatherUtils.SunAngleFromSeconds((float)TimeZoneInfo.ConvertTimeFromUtc(Server.CurrentDateTime, Server.TimeZone).TimeOfDay.TotalSeconds),
+                                SunAngle = (float)WeatherUtils.SunAngleFromTicks(Server.CurrentDateTime.TimeOfDay.TickOfDay),
                                 TrackConfig = cfg.TrackConfig,
                                 TrackName = cfg.Track,
                                 TyreConsumptionRate = cfg.TyreConsumptionRate,
@@ -406,19 +412,21 @@ namespace AssettoServer.Network.Tcp
 
             foreach (var evt in clientEvent.ClientEvents)
             {
+                EntryCar? targetCar = null;
+                
                 if (evt.Type == ClientEvent.ClientEventType.PlayerCollision)
                 {
-                    var targetCar = Server.EntryCars[evt.TargetSessionId];
-
-                    if (targetCar.AiControlled)
-                    {
-                        var targetAiState = targetCar.GetClosestAiState(EntryCar.Status.Position);
-                        if (targetAiState.AiState != null && targetAiState.DistanceSquared < 25 * 25)
-                        {
-                            targetAiState.AiState.StopForCollision();
-                        }
-                    }
+                    targetCar = Server.EntryCars[evt.TargetSessionId];
+                    Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and {TargetCarName} ({TargetCarSessionId}), rel. speed {Speed:F0}km/h", 
+                        Name, EntryCar.SessionId, targetCar.Client?.Name ?? targetCar.AiName, targetCar.SessionId, evt.Speed);
                 }
+                else
+                {
+                    Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and environment, rel. speed {Speed:F0}km/h", 
+                        Name, EntryCar.SessionId, evt.Speed);
+                }
+                
+                Collision?.Invoke(this, new CollisionEventArgs(targetCar, evt.Speed, evt.Position, evt.RelPosition));
             }
         }
 

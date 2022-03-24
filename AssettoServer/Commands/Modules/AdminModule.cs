@@ -63,10 +63,17 @@ public class AdminModule : ACModuleBase
     }
 
     [Command("settime")]
-    public void SetTime(float time)
+    public void SetTime(string time)
     {
-        Context.Server.SetTime(time);
-        Broadcast("Time has been set.");
+        if (DateTime.TryParseExact(time, "H:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime))
+        {
+            Context.Server.SetTime((int)dateTime.TimeOfDay.TotalSeconds);
+            Broadcast("Time has been set.");
+        }
+        else
+        {
+            Reply("Invalid time format. Usage: /settime 15:31");
+        }
     }
 
     [Command("setweather")]

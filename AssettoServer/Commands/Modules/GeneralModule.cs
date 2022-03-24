@@ -16,7 +16,7 @@ public class GeneralModule : ACModuleBase
 
     [Command("time")]
     public void Time()
-        => Reply($"It is currently {TimeZoneInfo.ConvertTimeFromUtc(Context.Server.CurrentDateTime, Context.Server.TimeZone):H:mm}.");
+        => Reply($"It is currently {Context.Server.CurrentDateTime:H:mm}.");
 
 #if DEBUG
     [Command("test")]

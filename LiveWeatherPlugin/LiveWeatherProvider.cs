@@ -59,7 +59,7 @@ public class LiveWeatherProvider
         {
             TransitionDuration = 120000.0,
             TemperatureAmbient = response.TemperatureAmbient,
-            TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(TimeZoneInfo.ConvertTimeFromUtc(_server.CurrentDateTime, _server.TimeZone).TimeOfDay.TotalSeconds, response.TemperatureAmbient,
+            TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(_server.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0, response.TemperatureAmbient,
                 weatherType.TemperatureCoefficient),
             Pressure = response.Pressure,
             Humidity = response.Humidity,

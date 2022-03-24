@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using AssettoServer.Server.Configuration;
+using NodaTime;
 using Serilog;
 
 namespace AssettoServer.Server.Weather
@@ -34,9 +35,10 @@ namespace AssettoServer.Server.Weather
                 Log.Warning("Do not use WeatherFX start times or time multipliers. Use the original config values instead");
             }
 
-            DateTimeOffset offset = _weatherConfiguration.WeatherFxParams.StartDate.HasValue ? DateTimeOffset.FromUnixTimeSeconds(_weatherConfiguration.WeatherFxParams.StartDate.Value) : DateTime.UtcNow.Date;
-
-            _server.CurrentDateTime = TimeZoneInfo.ConvertTimeToUtc(offset.DateTime + TimeZoneInfo.ConvertTimeFromUtc(_server.CurrentDateTime, _server.TimeZone).TimeOfDay, _server.TimeZone);
+            var startDate = _weatherConfiguration.WeatherFxParams.StartDate.HasValue
+                ? Instant.FromUnixTimeSeconds(_weatherConfiguration.WeatherFxParams.StartDate.Value)
+                : SystemClock.Instance.GetCurrentInstant();
+            _server.CurrentDateTime = _server.CurrentDateTime.TimeOfDay.On(startDate.InUtc().Date).InZoneLeniently(_server.CurrentDateTime.Zone);
 
             var weatherType = _server.WeatherTypeProvider.GetWeatherType(_weatherConfiguration.WeatherFxParams.Type);
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Numerics;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Shared;
@@ -68,5 +69,21 @@ public class SessionChangedEventArgs : EventArgs
     {
         PreviousSession = previousSession;
         NextSession = nextSession;
+    }
+}
+
+public class CollisionEventArgs : EventArgs
+{
+    public EntryCar? TargetCar { get; }
+    public float Speed { get; }
+    public Vector3 Position { get; }
+    public Vector3 RelPosition { get; }
+
+    public CollisionEventArgs(EntryCar? targetCar, float speed, Vector3 position, Vector3 relPosition)
+    {
+        TargetCar = targetCar;
+        Speed = speed;
+        Position = position;
+        RelPosition = relPosition;
     }
 }

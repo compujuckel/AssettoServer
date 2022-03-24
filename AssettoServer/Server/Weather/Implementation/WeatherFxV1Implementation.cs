@@ -17,7 +17,7 @@ public class WeatherFxV1Implementation : IWeatherImplementation
     {
         var weather = new CSPWeatherUpdate
         {
-            UnixTimestamp = (ulong) new DateTimeOffset(_server.CurrentDateTime).ToUnixTimeSeconds(),
+            UnixTimestamp = (ulong) _server.CurrentDateTime.ToInstant().ToUnixTimeSeconds(),
             WeatherType = (byte) _server.CurrentWeather.Type.WeatherFxType,
             UpcomingWeatherType = (byte) _server.CurrentWeather.UpcomingType.WeatherFxType,
             TransitionValue = _server.CurrentWeather.TransitionValue,

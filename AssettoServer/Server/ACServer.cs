@@ -528,7 +528,7 @@ namespace AssettoServer.Server
                     Log.Error("Failed to get IP geolocation parameters");
                 }
             }
-            catch (HttpRequestException e)
+            catch (Exception e)
             {
                 Log.Error(e, "Failed to get IP geolocation parameters");
             }

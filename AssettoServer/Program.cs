@@ -41,7 +41,7 @@ internal static class Program
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .WriteTo.Console()
+            .WriteTo.Async(a => a.Console())
             .WriteTo.File($"logs/{logPrefix}-.txt",
                 rollingInterval: RollingInterval.Day)
             .CreateLogger();
@@ -81,7 +81,7 @@ internal static class Program
                     filtrationLabels: new [] { "MachineName", "Preset" },
                     textFormatter: new LokiJsonTextFormatter(),
                     outputTemplate: "[{Level:u3}] {Message:lj}{NewLine}{Exception}")
-                .WriteTo.Console()
+                .WriteTo.Async(a => a.Console())
                 .WriteTo.File($"logs/{logPrefix}-.txt",
                     rollingInterval: RollingInterval.Day)
                 .CreateLogger();

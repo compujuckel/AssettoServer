@@ -94,7 +94,7 @@ namespace AssettoServer.Network.Packets.Outgoing.Handshake
 
             writer.Write(TrackGrip);
             writer.Write(SessionId);
-            writer.Write(CurrentTime - CurrentSession.StartTimeTicks);
+            writer.Write((long)CurrentTime - CurrentSession.StartTimeTicks64);
 
             writer.Write(ChecksumCount);
             if (ChecksumPaths != null)

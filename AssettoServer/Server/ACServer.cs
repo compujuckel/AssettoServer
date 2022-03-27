@@ -375,7 +375,7 @@ namespace AssettoServer.Server
             CurrentSession = new SessionState(Configuration.Sessions[CurrentSessionIndex], this)
             {
                 Results = new Dictionary<byte, EntryCarResult>(),
-                StartTimeTicks = CurrentTime
+                StartTimeTicks64 = CurrentTime64
             };
             
             foreach (var entryCar in EntryCars)
@@ -387,7 +387,7 @@ namespace AssettoServer.Server
 
             if (CurrentSession.Configuration.Type == SessionType.Race)
             {
-                CurrentSession.StartTimeTicks = CurrentTime + (CurrentSession.Configuration.WaitTime * 1000);
+                CurrentSession.StartTimeTicks64 = CurrentTime64 + (CurrentSession.Configuration.WaitTime * 1000);
             }
             else
             {
@@ -426,7 +426,7 @@ namespace AssettoServer.Server
             {
                 foreach (var car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate))
                 {
-                    packet.StartTime = CurrentSession.StartTimeTicks - car.TimeOffset;
+                    packet.StartTime = CurrentSession.StartTimeTicks64 - car.TimeOffset;
                     car.Client?.SendPacket(packet);
                 }
             }
@@ -440,7 +440,7 @@ namespace AssettoServer.Server
         {
             if (CurrentSession.Configuration.Type != SessionType.Race)
             {
-                return (CurrentTime - CurrentSession.StartTimeTicks) > 60_000 * CurrentSession.Configuration.Time;
+                return (CurrentTime - CurrentSession.StartTimeTicks64) > 60_000 * CurrentSession.Configuration.Time;
             }
 
             return false;

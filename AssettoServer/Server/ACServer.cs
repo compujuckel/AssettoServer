@@ -375,7 +375,6 @@ namespace AssettoServer.Server
             CurrentSession = new SessionState(Configuration.Sessions[CurrentSessionIndex], this)
             {
                 Results = new Dictionary<byte, EntryCarResult>(),
-                StartTime = DateTime.Now,
                 StartTimeTicks = CurrentTime
             };
             

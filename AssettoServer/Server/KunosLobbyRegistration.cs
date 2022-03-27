@@ -86,7 +86,7 @@ internal class KunosLobbyRegistration
         var queryParams = HttpUtility.ParseQueryString(builder.Query);
         
         queryParams["session"] = ((int)_server.CurrentSession.Configuration.Type).ToString();
-        queryParams["timeleft"] = ((int)_server.CurrentSession.TimeLeft.TotalSeconds).ToString();
+        queryParams["timeleft"] = (_server.CurrentSession.TimeLeftTicks / 1000).ToString();
         queryParams["port"] = _server.Configuration.Server.UdpPort.ToString();
         queryParams["clients"] = _server.ConnectedCars.Count.ToString();
         queryParams["track"] = _server.Configuration.FullTrackName;

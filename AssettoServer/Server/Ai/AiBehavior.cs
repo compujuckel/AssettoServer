@@ -329,12 +329,12 @@ namespace AssettoServer.Server.Ai
                     spawnPoint = GetSpawnPoint(targetPlayerCar);
                 }
 
-                if (spawnPoint == null)
+                if (spawnPoint == null || !_mapView.TryNext(spawnPoint, out _))
                     continue;
 
                 foreach (var targetAiState in _uninitializedAiStates)
                 {
-                    if (!targetAiState.CanSpawn(spawnPoint.Position) && _mapView.TryNext(spawnPoint, out _))
+                    if (!targetAiState.CanSpawn(spawnPoint.Position))
                         continue;
                     
                     targetAiState.Teleport(spawnPoint);

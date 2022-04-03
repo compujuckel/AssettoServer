@@ -7,7 +7,7 @@ public struct CSPClientMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
 {
     public byte SessionId;
     public CSPClientMessageType Type;
-    public int? LuaType;
+    public uint? LuaType;
     public byte[] Data;
     
     public void ToWriter(ref PacketWriter writer)

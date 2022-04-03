@@ -75,7 +75,7 @@ namespace AssettoServer.Server
         internal IWebHost? HttpServer { get; private set; }
         internal KunosLobbyRegistration KunosLobbyRegistration { get; }
         internal Steam Steam { get; }
-        internal Dictionary<int, Action<ACTcpClient, PacketReader>> CSPClientMessageTypes { get; } = new();
+        internal Dictionary<uint, Action<ACTcpClient, PacketReader>> CSPClientMessageTypes { get; } = new();
 
         internal SemaphoreSlim ConnectSemaphore { get; }
         private HttpClient HttpClient { get; }
@@ -951,7 +951,7 @@ namespace AssettoServer.Server
             }
         }
 
-        public void RegisterCSPClientMessageType(ushort type, Action<ACTcpClient, PacketReader> handler)
+        public void RegisterCSPClientMessageType(uint type, Action<ACTcpClient, PacketReader> handler)
         {
             if (CSPClientMessageTypes.ContainsKey(type))
                 throw new ArgumentException($"Type {type} already registered");

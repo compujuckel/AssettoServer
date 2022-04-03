@@ -441,7 +441,7 @@ namespace AssettoServer.Network.Tcp
             CSPClientMessageType packetType = (CSPClientMessageType)reader.Read<ushort>();
             if (packetType == CSPClientMessageType.LuaMessage)
             {
-                int luaPacketType = reader.Read<int>();
+                uint luaPacketType = reader.Read<uint>();
 
                 if (Server.CSPClientMessageTypes.TryGetValue(luaPacketType, out var handler))
                 {

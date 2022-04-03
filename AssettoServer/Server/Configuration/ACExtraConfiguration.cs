@@ -54,6 +54,8 @@ public class ACExtraConfiguration
     public bool EnableClientMessages { get; init; } = false;
     [YamlMember(Description = "Send multiple position updates in one packet. Greatly reduces number of packets to be sent. Possible values: None/AiOnly/Full")]
     public BatchedPositionUpdateBehavior BatchedPositionUpdateBehavior { get; set; } = BatchedPositionUpdateBehavior.AiOnly;
+    [YamlMember(Description = "Enable CSP custom position updates. This is an improved version of batched position updates, reducing network traffic even further. CSP 0.1.77+ required")]
+    public bool EnableCustomUpdate { get; set; } = false;
     [YamlMember(Description = "Send logs to a Loki instance, e.g. Grafana Cloud", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public LokiSettings? LokiSettings { get; init; }
     public AiParams AiParams { get; init; } = new AiParams();

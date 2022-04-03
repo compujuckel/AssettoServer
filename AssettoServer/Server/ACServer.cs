@@ -163,6 +163,10 @@ namespace AssettoServer.Server
             Configuration = configuration;
             CSPServerExtraOptions = new CSPServerExtraOptions(Configuration.WelcomeMessage);
             CSPServerExtraOptions.WelcomeMessage += LegalNotice.WelcomeMessage;
+            if (Configuration.Extra.EnableCustomUpdate)
+            {
+                CSPServerExtraOptions.ExtraOptions += "\r\n" + $"[EXTRA_DATA]\r\nCUSTOM_UPDATE_FORMAT = '{CSPPositionUpdate.CustomUpdateFormat}'";
+            }
             CSPServerExtraOptions.ExtraOptions += "\r\n" + Configuration.CSPExtraOptions;
             CSPLuaClientScriptProvider = new CSPLuaClientScriptProvider(this);
             
@@ -202,6 +206,9 @@ namespace AssettoServer.Server
                 features.Add("CLIENT_MESSAGES");
                 CSPClientMessageOutgoing.ChatEncoded = false;
             }
+            
+            if (Configuration.Extra.EnableCustomUpdate)
+                features.Add("CUSTOM_UPDATE");
 
             features.Add("SPECTATING_AWARE");
             features.Add("LOWER_CLIENTS_SENDING_RATE");
@@ -843,7 +850,8 @@ namespace AssettoServer.Server
                                         || !fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
 
                                     if (Configuration.Extra.BatchedPositionUpdateBehavior == BatchedPositionUpdateBehavior.Full
-                                        || (fromCar.AiControlled && Configuration.Extra.BatchedPositionUpdateBehavior == BatchedPositionUpdateBehavior.AiOnly))
+                                             || toClient.SupportsCSPCustomUpdate 
+                                             || (fromCar.AiControlled && Configuration.Extra.BatchedPositionUpdateBehavior == BatchedPositionUpdateBehavior.AiOnly))
                                     {
                                         positionUpdates[toCar].Add(update);
                                     }
@@ -855,26 +863,32 @@ namespace AssettoServer.Server
                             }
                         }
 
-                        if (Configuration.Extra.BatchedPositionUpdateBehavior != BatchedPositionUpdateBehavior.None)
+                       
+                        foreach (var (toCar, updates) in positionUpdates)
                         {
-                            foreach (var (toCar, updates) in positionUpdates)
+                            if (updates.Count == 0) continue;
+                            
+                            var toClient = toCar.Client;
+                            if (toClient != null)
                             {
-                                if (updates.Count == 0) continue;
-                                
-                                var toClient = toCar.Client;
-                                if (toClient != null)
+                                const int chunkSize = 20;
+                                for (int i = 0; i < updates.Count; i += chunkSize)
                                 {
-                                    const int chunkSize = 20;
-                                    for (int i = 0; i < updates.Count; i += chunkSize)
+                                    if (toClient.SupportsCSPCustomUpdate)
                                     {
-                                        var batchedUpdate = new BatchedPositionUpdate((uint)(CurrentTime - toCar.TimeOffset), toCar.Ping,
+                                        var packet = new CSPPositionUpdate(new ArraySegment<PositionUpdateOut>(updates.Array, i, Math.Min(chunkSize, updates.Count - i)));
+                                        toClient.SendPacketUdp(in packet);
+                                    }
+                                    else
+                                    {
+                                        var packet = new BatchedPositionUpdate((uint)(CurrentTime - toCar.TimeOffset), toCar.Ping,
                                             new ArraySegment<PositionUpdateOut>(updates.Array, i, Math.Min(chunkSize, updates.Count - i)));
-                                        toClient.SendPacketUdp(in batchedUpdate);
+                                        toClient.SendPacketUdp(in packet);
                                     }
                                 }
-                                
-                                updates.Clear();
                             }
+                            
+                            updates.Clear();
                         }
 
                         if (Environment.TickCount64 - lastTimeUpdate > 1000)

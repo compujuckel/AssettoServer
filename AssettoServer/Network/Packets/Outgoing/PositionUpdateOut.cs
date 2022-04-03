@@ -106,4 +106,26 @@ public readonly struct PositionUpdateOut : IOutgoingNetworkPacket
             writer.Write(Gas);
         }
     }
+
+    public void ToWriterCustom(ref PacketWriter writer)
+    {
+        writer.Write(SessionId);
+        writer.Write(PakSequenceId);
+        writer.Write(Timestamp);
+        writer.Write(Ping);
+        writer.Write(Position);
+        writer.Write(Rotation);
+        writer.Write(Velocity);
+        writer.Write(TyreAngularSpeedFL);
+        writer.Write(TyreAngularSpeedFR);
+        writer.Write(TyreAngularSpeedRL);
+        writer.Write(TyreAngularSpeedRR);
+        writer.Write(SteerAngle);
+        writer.Write(WheelAngle);
+        writer.Write(EngineRpm);
+        writer.Write(Gear);
+        writer.Write((uint)StatusFlag);
+        writer.Write(Gas);
+        writer.Write(PerformanceDelta);
+    }
 }

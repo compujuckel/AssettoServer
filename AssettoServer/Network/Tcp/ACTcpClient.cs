@@ -44,6 +44,7 @@ namespace AssettoServer.Network.Tcp
 
         internal Address? UdpEndpoint { get; private set; }
         internal bool HasAssociatedUdp { get; private set; }
+        internal bool SupportsCSPCustomUpdate { get; private set; }
 
         private ThreadLocal<byte[]> UdpSendBuffer { get; }
         private Memory<byte> TcpSendBuffer { get; }
@@ -295,6 +296,7 @@ namespace AssettoServer.Network.Tcp
                             Team = handshakeRequest.Team;
                             NationCode = handshakeRequest.Nation;
                             Guid = handshakeRequest.Guid;
+                            SupportsCSPCustomUpdate = Server.Configuration.Extra.EnableCustomUpdate && cspFeatures.Contains("CUSTOM_UPDATE");
 
                             // Gracefully despawn AI cars
                             EntryCar.SetAiOverbooking(0);

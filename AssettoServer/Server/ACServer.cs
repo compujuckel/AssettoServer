@@ -849,9 +849,7 @@ namespace AssettoServer.Server
                                     if (toCar == fromCar || toClient == null || !toClient.HasSentFirstUpdate
                                         || !fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
 
-                                    if (Configuration.Extra.BatchedPositionUpdateBehavior == BatchedPositionUpdateBehavior.Full
-                                             || toClient.SupportsCSPCustomUpdate 
-                                             || (fromCar.AiControlled && Configuration.Extra.BatchedPositionUpdateBehavior == BatchedPositionUpdateBehavior.AiOnly))
+                                    if (toClient.SupportsCSPCustomUpdate || fromCar.AiControlled)
                                     {
                                         positionUpdates[toCar].Add(update);
                                     }

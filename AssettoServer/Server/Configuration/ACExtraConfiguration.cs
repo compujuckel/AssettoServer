@@ -52,8 +52,8 @@ public class ACExtraConfiguration
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
     public bool EnableClientMessages { get; init; } = false;
-    [YamlMember(Description = "Send multiple position updates in one packet. Greatly reduces number of packets to be sent. Possible values: None/AiOnly/Full")]
-    public BatchedPositionUpdateBehavior BatchedPositionUpdateBehavior { get; set; } = BatchedPositionUpdateBehavior.AiOnly;
+    [YamlMember(Description = "Deprecated. Will be removed in a future release", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
+    public string? BatchedPositionUpdateBehavior { get; set; }
     [YamlMember(Description = "Enable CSP custom position updates. This is an improved version of batched position updates, reducing network traffic even further. CSP 0.1.77+ required")]
     public bool EnableCustomUpdate { get; set; } = false;
     [YamlMember(Description = "Send logs to a Loki instance, e.g. Grafana Cloud", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
@@ -258,11 +258,4 @@ public enum AfkKickBehavior
 {
     PlayerInput,
     MinimumSpeed
-}
-
-public enum BatchedPositionUpdateBehavior
-{
-    None = 0,
-    AiOnly,
-    Full
 }

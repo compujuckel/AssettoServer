@@ -91,24 +91,28 @@ public class ACServerConfiguration
         {
             throw new ConfigurationException("RainTrackGripReductionPercent must be in the range 0..0.5");
         }
+        
         if (Extra.AiParams.MaxSpeedVariationPercent is < 0 or > 1)
         {
             throw new ConfigurationException("MaxSpeedVariationPercent must be in the range 0..1");
         }
+        
         if (Extra.AiParams.HourlyTrafficDensity != null && Extra.AiParams.HourlyTrafficDensity.Count != 24)
         {
             throw new ConfigurationException("HourlyTrafficDensity must have exactly 24 entries");
+        }
+        
+        if (Extra.BatchedPositionUpdateBehavior != null)
+        {
+            Log.Warning("The option BatchedPositionUpdateBehavior is deprecated and will be removed in a future release");
         }
 
         if (Extra.EnableServerDetails)
         {
             string cmContentPath = Path.Join(configBaseFolder, "cm_content/content.json");
-            // Only load if the file already exists, otherwise this will fail if the content directory does not exist
             if (File.Exists(cmContentPath))
             {
-                var cmContent = JsonConvert.DeserializeObject<CMContentConfiguration>(File.ReadAllText(cmContentPath));
-                File.WriteAllText(cmContentPath, JsonConvert.SerializeObject(cmContent, Formatting.Indented));
-                ContentConfiguration = cmContent;
+                ContentConfiguration = JsonConvert.DeserializeObject<CMContentConfiguration>(File.ReadAllText(cmContentPath));
             }
         }
 

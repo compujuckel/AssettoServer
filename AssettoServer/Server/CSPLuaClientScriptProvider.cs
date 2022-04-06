@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using IniParser.Model;
 using Serilog;
 
 namespace AssettoServer.Server;
@@ -14,22 +15,35 @@ public class CSPLuaClientScriptProvider
         _server = server;
     }
     
-    public void AddLuaClientScript(string script, string? debugFilename = null)
+    public void AddLuaClientScript(string script, string? debugFilename = null, Dictionary<string, object>? configuration = null)
     {
         bool debug = false;
         #if DEBUG
         debug = true;
         #endif
-        
+
+        var data = new IniData();
+        var scriptSection = data["SCRIPT_..."];
+
         if (debug && !string.IsNullOrEmpty(debugFilename))
         {
             Log.Warning("Loading Lua script {File} locally, don't forget to sync changes for release", debugFilename);
-            _server.CSPServerExtraOptions.ExtraOptions += $"\r\n[SCRIPT_...]\r\nSCRIPT='{debugFilename}'\r\n";
+            scriptSection["SCRIPT"] = debugFilename;
         }
         else
         {
             Scripts.Add(script);
-            _server.CSPServerExtraOptions.ExtraOptions += $"\r\n[SCRIPT_...]\r\nSCRIPT='http://{_server.GeoParams.Ip}:{_server.Configuration.Server.HttpPort}/api/scripts/{Scripts.Count - 1}'\r\n";
+            scriptSection["SCRIPT"] = $"'http://{_server.GeoParams.Ip}:{_server.Configuration.Server.HttpPort}/api/scripts/{Scripts.Count - 1}'";
         }
+
+        if (configuration != null)
+        {
+            foreach ((string key, object value) in configuration)
+            {
+                scriptSection.AddKey(key, value.ToString());
+            }
+        }
+
+        _server.CSPServerExtraOptions.ExtraOptions += $"\r\n{data}\r\n";
     }
 }

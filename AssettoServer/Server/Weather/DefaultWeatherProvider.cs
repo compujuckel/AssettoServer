@@ -39,6 +39,7 @@ namespace AssettoServer.Server.Weather
                 ? Instant.FromUnixTimeSeconds(_weatherConfiguration.WeatherFxParams.StartDate.Value)
                 : SystemClock.Instance.GetCurrentInstant();
             _server.CurrentDateTime = _server.CurrentDateTime.TimeOfDay.On(startDate.InUtc().Date).InZoneLeniently(_server.CurrentDateTime.Zone);
+            _server.UpdateSunPosition();
 
             var weatherType = _server.WeatherTypeProvider.GetWeatherType(_weatherConfiguration.WeatherFxParams.Type);
 

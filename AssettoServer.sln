@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportPlugin", "ReportPlugi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastLaneUtils", "FastLaneUtils\FastLaneUtils.csproj", "{12A71A2F-CB26-4452-8B24-D3DA2A32466E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeDilationPlugin", "TimeDilationPlugin\TimeDilationPlugin.csproj", "{F479976E-7BB0-49EB-A97E-5389C0601D91}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +77,10 @@ Global
 		{12A71A2F-CB26-4452-8B24-D3DA2A32466E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{12A71A2F-CB26-4452-8B24-D3DA2A32466E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{12A71A2F-CB26-4452-8B24-D3DA2A32466E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F479976E-7BB0-49EB-A97E-5389C0601D91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F479976E-7BB0-49EB-A97E-5389C0601D91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F479976E-7BB0-49EB-A97E-5389C0601D91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F479976E-7BB0-49EB-A97E-5389C0601D91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

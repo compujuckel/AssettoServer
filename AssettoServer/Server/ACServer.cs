@@ -40,6 +40,8 @@ using Qmmands;
 using Newtonsoft.Json;
 using NodaTime;
 using NodaTime.Extensions;
+using SunCalcNet;
+using SunCalcNet.Model;
 
 namespace AssettoServer.Server
 {
@@ -54,6 +56,7 @@ namespace AssettoServer.Server
         [NotNull] public SessionState? CurrentSession { get; private set; }
         [NotNull] public WeatherData? CurrentWeather { get; private set; }
         public ZonedDateTime CurrentDateTime { get; set; }
+        public SunPosition? CurrentSunPosition { get; private set; }
         public GeoParams GeoParams { get; private set; } = new GeoParams();
         public IReadOnlyList<string> Features { get; private set; }
         public IMetricsRoot Metrics { get; }
@@ -723,6 +726,7 @@ namespace AssettoServer.Server
         public void SetTime(float time)
         {
             CurrentDateTime = CurrentDateTime.Date.AtStartOfDayInZone(CurrentDateTime.Zone).PlusSeconds((long)time);
+            UpdateSunPosition();
         }
         
         public void SendLapCompletedMessage(byte sessionId, int lapTime, int cuts, ACTcpClient? target = null)
@@ -899,6 +903,8 @@ namespace AssettoServer.Server
                             {
                                 CurrentDateTime += Duration.FromMilliseconds((Environment.TickCount64 - lastTimeUpdate) * Configuration.Server.TimeOfDayMultiplier);
                             }
+                            
+                            UpdateSunPosition();
 
                             RainHelper.Update(CurrentWeather, Configuration.Server.DynamicTrack?.BaseGrip ?? 1, Configuration.Extra.RainTrackGripReductionPercent, Environment.TickCount64 - lastTimeUpdate);
                             WeatherImplementation.SendWeather();
@@ -960,6 +966,14 @@ namespace AssettoServer.Server
                         Environment.Exit(1);
                     }
                 }
+            }
+        }
+
+        public void UpdateSunPosition()
+        {
+            if (TrackParams != null)
+            {
+                CurrentSunPosition = SunCalc.GetSunPosition(CurrentDateTime.ToDateTimeUtc(), TrackParams.Latitude, TrackParams.Longitude);
             }
         }
 

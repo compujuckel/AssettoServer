@@ -51,6 +51,7 @@
     <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="7.1.0" />
     <PackageReference Include="SerilogTimings" Version="2.3.1-dev-00010" />
     <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.6" />
+    <PackageReference Include="SunCalcNet" Version="1.2.0" />
     <PackageReference Include="YamlDotNet" Version="11.2.1" />
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.244" PrivateAssets="all" Condition="!Exists('packages.config')" />
   </ItemGroup>

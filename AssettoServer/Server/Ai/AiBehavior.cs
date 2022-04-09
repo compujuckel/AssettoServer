@@ -178,22 +178,22 @@ namespace AssettoServer.Server.Ai
         private TrafficSplinePoint? GetSpawnPoint(EntryCar playerCar)
         {
             if (!_server.AiEnabled)
-                throw new InvalidOperationException("Ai disabled");
-            
-            var targetPlayerSplinePos = _server.TrafficMap.WorldToSpline(playerCar.Status.Position);
+                throw new InvalidOperationException("AI disabled");
+            if (playerCar.CurrentSplinePoint == null)
+                throw new InvalidOperationException("Player has no current AI spline point");
 
-            if (targetPlayerSplinePos.point.Next == null) return null;
+            if (playerCar.CurrentSplinePoint.Next == null) return null;
             
-            int direction = Vector3.Dot(targetPlayerSplinePos.point.GetForwardVector(), playerCar.Status.Velocity) > 0 ? 1 : -1;
+            int direction = Vector3.Dot(playerCar.CurrentSplinePoint.GetForwardVector(), playerCar.Status.Velocity) > 0 ? 1 : -1;
             
             // Do not not spawn if a player is too far away from the AI spline, e.g. in pits or in a part of the map without traffic
-            if (targetPlayerSplinePos.distanceSquared > _server.Configuration.Extra.AiParams.MaxPlayerDistanceToAiSplineSquared)
+            if (playerCar.CurrentSplinePointDistanceSquared > _server.Configuration.Extra.AiParams.MaxPlayerDistanceToAiSplineSquared)
             {
                 return null;
             }
             
             int spawnDistance = Random.Shared.Next(_server.Configuration.Extra.AiParams.MinSpawnDistancePoints, _server.Configuration.Extra.AiParams.MaxSpawnDistancePoints);
-            var spawnPoint = _mapView.Traverse(targetPlayerSplinePos.point, spawnDistance * direction)?.RandomLane(_server.Configuration.Extra.AiParams.TwoWayTraffic);
+            var spawnPoint = _mapView.Traverse(playerCar.CurrentSplinePoint, spawnDistance * direction)?.RandomLane(_server.Configuration.Extra.AiParams.TwoWayTraffic);
             
             if (spawnPoint != null && spawnPoint.Next != null)
             {

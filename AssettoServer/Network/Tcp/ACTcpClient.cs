@@ -26,21 +26,22 @@ namespace AssettoServer.Network.Tcp
     public class ACTcpClient
     {
         public ACServer Server { get; }
+        public ILogger Logger { get; }
         public byte SessionId { get; set; }
         public string? Name { get; private set; }
         public string? Team { get; private set; }
         public string? NationCode { get; private set; }
         public bool IsAdministrator { get; internal set; }
         public string? Guid { get; internal set; }
-        [NotNull] public EntryCar? EntryCar { get; set; }
+        public EntryCar EntryCar { get; internal set; } = null!;
         public bool IsDisconnectRequested => _disconnectRequested == 1;
-
+        public bool HasSentFirstUpdate { get; private set; }
+        public bool IsConnected { get; set; }
         public TcpClient TcpClient { get; }
+        
         internal NetworkStream TcpStream { get; }
-        internal bool HasSentFirstUpdate { get; private set; }
         [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode), nameof(Guid))] internal bool HasStartedHandshake { get; private set; }
         internal bool HasPassedChecksum { get; private set; }
-        internal bool IsConnected { get; set; }
 
         internal Address? UdpEndpoint { get; private set; }
         internal bool HasAssociatedUdp { get; private set; }
@@ -50,7 +51,7 @@ namespace AssettoServer.Network.Tcp
         private Memory<byte> TcpSendBuffer { get; }
         private Channel<IOutgoingNetworkPacket> OutgoingPacketChannel { get; }
         private CancellationTokenSource DisconnectTokenSource { get; }
-        [NotNull] private Task? SendLoopTask { get; set; }
+        private Task SendLoopTask { get; set; } = null!;
         private long LastChatTime { get; set; }
         private int _disconnectRequested = 0;
 
@@ -90,8 +91,6 @@ namespace AssettoServer.Network.Tcp
         /// </summary>
         public event EventHandler<ACTcpClient, CollisionEventArgs>? Collision;
 
-        public ILogger Logger { get; }
-        
         public class ACTcpClientLogEventEnricher : ILogEventEnricher
         {
             private readonly ACTcpClient _client;

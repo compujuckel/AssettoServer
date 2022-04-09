@@ -32,6 +32,8 @@ namespace AssettoServer.Server
         public ACServer Server { get; }
         public ACTcpClient? Client { get; internal set; }
         public CarStatus Status { get; private set; } = new CarStatus();
+        public TrafficSplinePoint? CurrentSplinePoint { get; private set; }
+        public float CurrentSplinePointDistanceSquared { get; private set; }
 
         public bool ForceLights { get; internal set; }
         public int HighPingSeconds { get; internal set; }
@@ -60,7 +62,7 @@ namespace AssettoServer.Server
         internal long[] OtherCarsLastSentUpdateTime { get; }
         internal EntryCar? TargetCar { get; set; }
         private long LastFallCheckTime{ get; set; }
-        
+
         /// <summary>
         /// Fires when a position update is received.
         /// </summary>
@@ -124,7 +126,7 @@ namespace AssettoServer.Server
 
             long timeAfk = Environment.TickCount64 - LastActiveTime;
             if (timeAfk > Server.Configuration.Extra.MaxAfkTimeMilliseconds)
-                _ = Server.KickAsync(Client, Network.Packets.Outgoing.KickReason.Kicked, $"{Client?.Name} has been kicked for being AFK.");
+                _ = Server.KickAsync(Client, KickReason.Kicked, $"{Client?.Name} has been kicked for being AFK.");
             else if (!HasSentAfkWarning && Server.Configuration.Extra.MaxAfkTimeMilliseconds - timeAfk < 60000)
             {
                 HasSentAfkWarning = true;
@@ -181,6 +183,11 @@ namespace AssettoServer.Server
             Status.PerformanceDelta = positionUpdate.PerformanceDelta;
             Status.Gas = positionUpdate.Gas;
             Status.NormalizedPosition = positionUpdate.NormalizedPosition;
+
+            if (Server.TrafficMap != null)
+            {
+                (CurrentSplinePoint, CurrentSplinePointDistanceSquared) = Server.TrafficMap.WorldToSpline(Status.Position);
+            }
         }
 
         public bool GetPositionUpdateForCar(EntryCar toCar, out PositionUpdateOut positionUpdateOut)

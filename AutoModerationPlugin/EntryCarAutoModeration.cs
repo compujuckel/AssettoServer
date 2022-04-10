@@ -1,10 +1,14 @@
 ﻿using AssettoServer.Server;
+using AssettoServer.Server.Ai;
 
 namespace AutoModerationPlugin;
 
 internal class EntryCarAutoModeration
 {
     public EntryCar EntryCar { get; }
+    
+    public TrafficSplinePoint? CurrentSplinePoint { get; private set; }
+    public float CurrentSplinePointDistanceSquared { get; private set; }
 
     public int NoLightSeconds { get; set; }
     public bool HasSentNoLightWarning { get; set; }
@@ -29,5 +33,13 @@ internal class EntryCarAutoModeration
         HasSentNoLightWarning = false;
         BlockingRoadSeconds = 0;
         HasSentBlockingRoadWarning = false;
+    }
+
+    public void UpdateSplinePoint()
+    {
+        if (EntryCar.Server.TrafficMap != null)
+        {
+            (CurrentSplinePoint, CurrentSplinePointDistanceSquared) = EntryCar.Server.TrafficMap.WorldToSpline(EntryCar.Status.Position);
+        }
     }
 }

@@ -69,6 +69,8 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                     var client = instance.EntryCar.Client;
                     if (client == null || !client.HasSentFirstUpdate || client.IsAdministrator)
                         continue;
+                    
+                    instance.UpdateSplinePoint();
 
                     if (_configuration.NoLightsKick.Enabled)
                     {
@@ -96,9 +98,9 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
 
                     if (_configuration.WrongWayKick.Enabled)
                     {
-                        if (instance.EntryCar.CurrentSplinePointDistanceSquared < _laneRadiusSquared
+                        if (instance.CurrentSplinePointDistanceSquared < _laneRadiusSquared
                             && instance.EntryCar.Status.Velocity.LengthSquared() > _configuration.WrongWayKick.MinimumSpeedMs * _configuration.WrongWayKick.MinimumSpeedMs
-                            && Vector3.Dot(instance.EntryCar.CurrentSplinePoint!.GetForwardVector(), instance.EntryCar.Status.Velocity) < 0)
+                            && Vector3.Dot(instance.CurrentSplinePoint!.GetForwardVector(), instance.EntryCar.Status.Velocity) < 0)
                         {
                             instance.WrongWaySeconds++;
                             if (instance.WrongWaySeconds > _configuration.WrongWayKick.DurationSeconds)
@@ -120,7 +122,7 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
 
                     if (_configuration.BlockingRoadKick.Enabled)
                     {
-                        if (instance.EntryCar.CurrentSplinePointDistanceSquared < _laneRadiusSquared
+                        if (instance.CurrentSplinePointDistanceSquared < _laneRadiusSquared
                             && instance.EntryCar.Status.Velocity.LengthSquared() < _configuration.BlockingRoadKick.MaximumSpeedMs * _configuration.BlockingRoadKick.MaximumSpeedMs)
                         {
                             instance.BlockingRoadSeconds++;

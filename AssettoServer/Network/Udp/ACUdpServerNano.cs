@@ -139,7 +139,7 @@ public class ACUdpServerNano
                 }
                 else if (packetId == 0xF8)
                 {
-                    int currentTime = _server.CurrentTime;
+                    int currentTime = (int)_server.ServerTimeMilliseconds;
                     car.Ping = (ushort)(currentTime - packetReader.Read<int>());
                     car.TimeOffset = currentTime - ((car.Ping / 2) + packetReader.Read<int>());
                     car.LastPongTime = currentTime;

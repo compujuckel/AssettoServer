@@ -338,7 +338,7 @@ namespace AssettoServer.Network.Tcp
                                 CurrentSession = Server.CurrentSession,
                                 ChecksumCount = (byte)Server.TrackChecksums.Count,
                                 ChecksumPaths = Server.TrackChecksums.Keys,
-                                CurrentTime = Server.CurrentTime,
+                                CurrentTime = (int)Server.ServerTimeMilliseconds,
                                 LegalTyres = cfg.LegalTyres,
                                 RandomSeed = 123,
                                 SessionCount = (byte)Server.Configuration.Sessions.Count,
@@ -509,9 +509,10 @@ namespace AssettoServer.Network.Tcp
 
         private void OnChat(PacketReader reader)
         {
-            if (Environment.TickCount64 - LastChatTime < 1000)
+            long currentTime = Server.ServerTimeMilliseconds;
+            if (currentTime - LastChatTime < 1000)
                 return;
-            LastChatTime = Environment.TickCount64;
+            LastChatTime = currentTime;
 
             if (Server.Configuration.Extra.AfkKickBehavior == AfkKickBehavior.PlayerInput)
             {
@@ -590,7 +591,7 @@ namespace AssettoServer.Network.Tcp
 
         private bool OnLapCompleted(LapCompletedIncoming lap)
         {
-            int timestamp = Server.CurrentTime;
+            int timestamp = (int)Server.ServerTimeMilliseconds;
 
             var entryCarResult = Server.CurrentSession.Results?[SessionId] ?? throw new InvalidOperationException("Current session does not have results set");
 
@@ -624,7 +625,7 @@ namespace AssettoServer.Network.Tcp
                     Server.CurrentSession.LeaderLapCount = entryCarResult.NumLaps;
                 }
 
-                entryCarResult.TotalTime = Server.CurrentSession.SessionTimeTicks - (EntryCar.Ping / 2);
+                entryCarResult.TotalTime = Server.CurrentSession.SessionTimeMilliseconds - (EntryCar.Ping / 2);
 
                 if (Server.CurrentSession.SessionOverFlag)
                 {
@@ -715,7 +716,7 @@ namespace AssettoServer.Network.Tcp
                 return;
 
             TcpClient.ReceiveTimeout = 0;
-            EntryCar.LastPongTime = Server.CurrentTime;
+            EntryCar.LastPongTime = (int)Server.ServerTimeMilliseconds;
             HasSentFirstUpdate = true;
 
             List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();

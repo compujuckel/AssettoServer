@@ -62,9 +62,9 @@ namespace AssettoServer.Network.Http
                 Port = _server.Configuration.Server.UdpPort,
                 SessionTypes = _server.Configuration.Sessions.Select(s => s.Id + 1),
                 Timed = false,
-                TimeLeft = _server.CurrentSession.TimeLeftTicks / 1000,
+                TimeLeft = _server.CurrentSession.TimeLeftMilliseconds / 1000,
                 TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_server.CurrentDateTime.TimeOfDay.TickOfDay),
-                Timestamp = _server.CurrentTime,
+                Timestamp = (int)_server.ServerTimeMilliseconds,
                 TPort = _server.Configuration.Server.TcpPort,
                 Track = _server.Configuration.Server.Track + (string.IsNullOrEmpty(_server.Configuration.Server.TrackConfig) ? null : "-" + _server.Configuration.Server.TrackConfig),
                 PoweredBy = "AssettoServer " + _server.Configuration.ServerVersion
@@ -121,9 +121,9 @@ namespace AssettoServer.Network.Http
                 Port = _server.Configuration.Server.UdpPort,
                 SessionTypes = _server.Configuration.Sessions.Select(s => s.Id + 1),
                 Timed = false,
-                TimeLeft = _server.CurrentSession.TimeLeftTicks / 1000,
+                TimeLeft = _server.CurrentSession.TimeLeftMilliseconds / 1000,
                 TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_server.CurrentDateTime.TimeOfDay.TickOfDay),
-                Timestamp = _server.CurrentTime,
+                Timestamp = (int)_server.ServerTimeMilliseconds,
                 TPort = _server.Configuration.Server.TcpPort,
                 Track = _server.Configuration.Server.Track + (string.IsNullOrEmpty(_server.Configuration.Server.TrackConfig) ? null : "-" + _server.Configuration.Server.TrackConfig),
                 Players = new DetailResponsePlayerList
@@ -141,7 +141,7 @@ namespace AssettoServer.Network.Http
                         ID = IdFromGuid(ec.Client?.Guid)
                     }).ToList(),
                 },
-                Until = DateTimeOffset.Now.ToUnixTimeSeconds() + _server.CurrentSession.TimeLeftTicks / 1000,
+                Until = DateTimeOffset.Now.ToUnixTimeSeconds() + _server.CurrentSession.TimeLeftMilliseconds / 1000,
                 Content = _server.Configuration.ContentConfiguration,
                 TrackBase = _server.Configuration.Server.Track,
                 City = _server.GeoParams.City,

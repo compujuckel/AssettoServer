@@ -127,7 +127,7 @@ public class Race
                     return;
                 }
 
-                if(Server.CurrentTime64 - LastOvertakeTime > 60000)
+                if(Server.ServerTimeMilliseconds - LastOvertakeTime > 60000)
                     return;
 
                 await Task.Delay(250);
@@ -149,7 +149,7 @@ public class Race
         bool isFirstUpdate = false;
         if (Leader == null)
         {
-            LastOvertakeTime = Server.CurrentTime64;
+            LastOvertakeTime = Server.ServerTimeMilliseconds;
             Leader = Challenger;
             Follower = Challenged;
             LastLeaderPosition = Leader.Status.Position;
@@ -195,7 +195,7 @@ public class Race
             if (!isFirstUpdate)
                 SendMessage($"{Leader.Client?.Name} has overtaken {oldLeader.Client?.Name}");
 
-            LastOvertakeTime = Server.CurrentTime64;
+            LastOvertakeTime = Server.ServerTimeMilliseconds;
             LastLeaderPosition = Leader.Status.Position;
         }
     }

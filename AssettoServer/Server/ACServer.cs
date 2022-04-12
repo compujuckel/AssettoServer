@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using App.Metrics;
@@ -60,10 +61,7 @@ namespace AssettoServer.Server
         public GeoParams GeoParams { get; private set; } = new GeoParams();
         public IReadOnlyList<string> Features { get; private set; }
         public IMetricsRoot Metrics { get; }
-        public int StartTime { get; private set; }
-        public int CurrentTime => Environment.TickCount - StartTime;
-        public long StartTime64 { get; private set; }
-        public long CurrentTime64 => Environment.TickCount64 - StartTime64;
+        public long ServerTimeMilliseconds => ServerTimeSource.ElapsedMilliseconds;
 
         internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; }
         internal ConcurrentDictionary<Address, EntryCar> EndpointCars { get; }
@@ -96,6 +94,8 @@ namespace AssettoServer.Server
         public ACPluginLoader PluginLoader { get; }
         
         private List<PosixSignalRegistration> SignalHandlers { get; }
+
+        private Stopwatch ServerTimeSource { get; } = new();
 
         /// <summary>
         /// Fires when a client has started a handshake. At this point it is still possible to reject the connection by setting ClientHandshakeEventArgs.Cancel = true.
@@ -385,7 +385,7 @@ namespace AssettoServer.Server
             CurrentSession = new SessionState(Configuration.Sessions[CurrentSessionIndex], this)
             {
                 Results = new Dictionary<byte, EntryCarResult>(),
-                StartTimeTicks64 = CurrentTime64
+                StartTimeMilliseconds = ServerTimeMilliseconds
             };
             
             foreach (var entryCar in EntryCars)
@@ -397,7 +397,7 @@ namespace AssettoServer.Server
 
             if (CurrentSession.Configuration.Type == SessionType.Race)
             {
-                CurrentSession.StartTimeTicks64 = CurrentTime64 + (CurrentSession.Configuration.WaitTime * 1000);
+                CurrentSession.StartTimeMilliseconds = ServerTimeMilliseconds + (CurrentSession.Configuration.WaitTime * 1000);
             }
             else
             {
@@ -436,7 +436,7 @@ namespace AssettoServer.Server
             {
                 foreach (var car in EntryCars.Where(c => c.Client != null && c.Client.HasSentFirstUpdate))
                 {
-                    packet.StartTime = CurrentSession.StartTimeTicks64 - car.TimeOffset;
+                    packet.StartTime = CurrentSession.StartTimeMilliseconds - car.TimeOffset;
                     car.Client?.SendPacket(packet);
                 }
             }
@@ -450,7 +450,7 @@ namespace AssettoServer.Server
         {
             if (CurrentSession.Configuration.Type != SessionType.Race)
             {
-                return (CurrentTime - CurrentSession.StartTimeTicks64) > 60_000 * CurrentSession.Configuration.Time;
+                return (ServerTimeMilliseconds - CurrentSession.StartTimeMilliseconds) > 60_000 * CurrentSession.Configuration.Time;
             }
 
             return false;
@@ -458,8 +458,7 @@ namespace AssettoServer.Server
 
         public async Task StartAsync()
         {
-            StartTime = Environment.TickCount;
-            StartTime64 = Environment.TickCount64;
+            ServerTimeSource.Start();
             NextSession();
 
             await Blacklist.LoadAsync();
@@ -792,8 +791,8 @@ namespace AssettoServer.Server
         {
             int failedUpdateLoops = 0;
             int sleepMs = 1000 / Configuration.Server.RefreshRateHz;
-            long nextTick = Environment.TickCount64;
-            long lastTimeUpdate = Environment.TickCount64;
+            long nextTick = ServerTimeMilliseconds;
+            long lastTimeUpdate = nextTick;
             Dictionary<EntryCar, CountedArray<PositionUpdateOut>> positionUpdates = new();
             foreach (var entryCar in EntryCars)
             {
@@ -829,13 +828,13 @@ namespace AssettoServer.Server
                         {
                             var fromCar = EntryCars[i];
                             var fromClient = fromCar.Client;
-                            if (fromClient != null && fromClient.HasSentFirstUpdate && (CurrentTime - fromCar.LastPingTime) > 1000)
+                            if (fromClient != null && fromClient.HasSentFirstUpdate && (ServerTimeMilliseconds - fromCar.LastPingTime) > 1000)
                             {
                                 fromCar.CheckAfk();
-                                fromCar.LastPingTime = CurrentTime;
-                                fromClient.SendPacketUdp(new PingUpdate(CurrentTime, fromCar.Ping));
+                                fromCar.LastPingTime = (int)ServerTimeMilliseconds;
+                                fromClient.SendPacketUdp(new PingUpdate(fromCar.LastPingTime, fromCar.Ping));
 
-                                if (CurrentTime - fromCar.LastPongTime > 15000)
+                                if (ServerTimeMilliseconds - fromCar.LastPongTime > 15000)
                                 {
                                     fromClient.Logger.Information("{ClientName} has not sent a ping response for over 15 seconds", fromClient.Name);
                                     _ = fromClient.DisconnectAsync();
@@ -883,7 +882,7 @@ namespace AssettoServer.Server
                                     }
                                     else
                                     {
-                                        var packet = new BatchedPositionUpdate((uint)(CurrentTime - toCar.TimeOffset), toCar.Ping,
+                                        var packet = new BatchedPositionUpdate((uint)(ServerTimeMilliseconds - toCar.TimeOffset), toCar.Ping,
                                             new ArraySegment<PositionUpdateOut>(updates.Array, i, Math.Min(chunkSize, updates.Count - i)));
                                         toClient.SendPacketUdp(in packet);
                                     }
@@ -893,7 +892,7 @@ namespace AssettoServer.Server
                             updates.Clear();
                         }
 
-                        if (Environment.TickCount64 - lastTimeUpdate > 1000)
+                        if (ServerTimeMilliseconds - lastTimeUpdate > 1000)
                         {
                             if (Configuration.Extra.EnableRealTime)
                             {
@@ -901,15 +900,15 @@ namespace AssettoServer.Server
                             }
                             else
                             {
-                                CurrentDateTime += Duration.FromMilliseconds((Environment.TickCount64 - lastTimeUpdate) * Configuration.Server.TimeOfDayMultiplier);
+                                CurrentDateTime += Duration.FromMilliseconds((ServerTimeMilliseconds - lastTimeUpdate) * Configuration.Server.TimeOfDayMultiplier);
                             }
                             
                             UpdateSunPosition();
 
-                            RainHelper.Update(CurrentWeather, Configuration.Server.DynamicTrack?.BaseGrip ?? 1, Configuration.Extra.RainTrackGripReductionPercent, Environment.TickCount64 - lastTimeUpdate);
+                            RainHelper.Update(CurrentWeather, Configuration.Server.DynamicTrack?.BaseGrip ?? 1, Configuration.Extra.RainTrackGripReductionPercent, ServerTimeMilliseconds - lastTimeUpdate);
                             WeatherImplementation.SendWeather();
 
-                            lastTimeUpdate = Environment.TickCount64;
+                            lastTimeUpdate = ServerTimeMilliseconds;
                         }
 
                         if (IsSessionOver())
@@ -923,7 +922,7 @@ namespace AssettoServer.Server
                         long tickDelta;
                         do
                         {
-                            long currentTick = Environment.TickCount64;
+                            long currentTick = ServerTimeMilliseconds;
                             tickDelta = nextTick - currentTick;
 
                             if (tickDelta > 0)
@@ -940,13 +939,13 @@ namespace AssettoServer.Server
                         } while (tickDelta > 0);
 
                         if (nextTick == 0)
-                            nextTick = Environment.TickCount64;
+                            nextTick = ServerTimeMilliseconds;
 
                         nextTick += sleepMs;
                     }
                     else
                     {
-                        nextTick = Environment.TickCount64;
+                        nextTick = ServerTimeMilliseconds;
                         await Task.Delay(500);
                     }
 

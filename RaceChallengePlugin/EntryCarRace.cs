@@ -34,7 +34,7 @@ internal class EntryCarRace
 
     private void OnPositionUpdateReceived(EntryCar sender, in PositionUpdateIn positionUpdate)
     {
-        long currentTick = Environment.TickCount64;
+        long currentTick = _server.ServerTimeMilliseconds;
         if(((_entryCar.Status.StatusFlag & CarStatusFlags.LightsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.LightsOn) != 0) || ((_entryCar.Status.StatusFlag & CarStatusFlags.HighBeamsOff) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HighBeamsOff) != 0))
         {
             LastLightFlashTime = currentTick;

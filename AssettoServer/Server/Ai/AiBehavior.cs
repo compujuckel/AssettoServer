@@ -16,8 +16,8 @@ namespace AssettoServer.Server.Ai
     {
         private readonly ACServer _server;
         private readonly DynamicTrafficDensity? _dynamicTrafficDensity;
-        private long _lastAiUpdate = Environment.TickCount64;
-        private long _lastAiObstacleDetectionUpdate = Environment.TickCount64;
+        private long _lastAiUpdate;
+        private long _lastAiObstacleDetectionUpdate;
 
         private readonly List<EntryCar> _playerCars = new();
         private readonly List<AiState> _initializedAiStates = new();
@@ -56,6 +56,9 @@ namespace AssettoServer.Server.Ai
                 _dynamicTrafficDensity = new DynamicTrafficDensity(server);
             }
 
+            _lastAiUpdate = _server.ServerTimeMilliseconds;
+            _lastAiObstacleDetectionUpdate = _lastAiUpdate;
+
             _server.ClientChecksumPassed += OnClientChecksumPassed;
             _server.ClientDisconnected += OnClientDisconnected;
             _server.ClientCollision += OnCollision;
@@ -91,16 +94,18 @@ namespace AssettoServer.Server.Ai
                 }
             }
 
-            if (Environment.TickCount64 - _lastAiUpdate > 500)
+            long currentTime = _server.ServerTimeMilliseconds;
+            
+            if (currentTime - _lastAiUpdate > 500)
             {
-                _lastAiUpdate = Environment.TickCount64;
+                _lastAiUpdate = currentTime;
                 Task.Run(Update)
                     .ContinueWith(t => Log.Error(t.Exception, "Error in AI update"), TaskContinuationOptions.OnlyOnFaulted);
             }
 
-            if (Environment.TickCount64 - _lastAiObstacleDetectionUpdate > 100)
+            if (currentTime - _lastAiObstacleDetectionUpdate > 100)
             {
-                _lastAiObstacleDetectionUpdate = Environment.TickCount64;
+                _lastAiObstacleDetectionUpdate = currentTime;
                 Task.Run(ObstacleDetection)
                     .ContinueWith(t => Log.Error(t.Exception, "Error in AI obstacle detection"), TaskContinuationOptions.OnlyOnFaulted);
             }
@@ -277,7 +282,7 @@ namespace AssettoServer.Server.Ai
                 var entryCar = _server.EntryCars[i];
                 if (!entryCar.AiControlled
                     && entryCar.Client?.HasSentFirstUpdate == true
-                    && Environment.TickCount64 - entryCar.LastActiveTime < _server.Configuration.Extra.AiParams.PlayerAfkTimeoutMilliseconds)
+                    && _server.ServerTimeMilliseconds - entryCar.LastActiveTime < _server.Configuration.Extra.AiParams.PlayerAfkTimeoutMilliseconds)
                 {
                     _playerCars.Add(entryCar);
                 }
@@ -303,7 +308,7 @@ namespace AssettoServer.Server.Ai
             _uninitializedAiStates.AddRange(from distance in _distances
                 group distance by distance.AiCar
                 into aiGroup
-                where Environment.TickCount64 > aiGroup.Key.SpawnProtectionEnds && aiGroup.Min(d => d.DistanceSquared) > _server.Configuration.Extra.AiParams.PlayerRadiusSquared
+                where _server.ServerTimeMilliseconds > aiGroup.Key.SpawnProtectionEnds && aiGroup.Min(d => d.DistanceSquared) > _server.Configuration.Extra.AiParams.PlayerRadiusSquared
                 orderby aiGroup.Min(d => d.DistanceSquared) descending
                 select aiGroup.Key);
             

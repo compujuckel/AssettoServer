@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Numerics;
 using AssettoServer.Network.Packets.Outgoing;
@@ -13,10 +12,11 @@ namespace AssettoServer.Server.Ai
 {
     public class AiState
     {
-        public CarStatus Status = new CarStatus();
-        public EntryCar EntryCar { get; internal set; }
+        public CarStatus Status { get; } = new();
+        public EntryCar EntryCar { get; }
+        public ACServer Server { get; }
         public bool Initialized { get; set; }
-        [NotNull] public TrafficSplinePoint? CurrentSplinePoint { get; private set; }
+        public TrafficSplinePoint CurrentSplinePoint { get; private set; } = null!;
         public TrafficMapView MapView { get; private set; }
         public long SpawnProtectionEnds { get; set; }
         public float SafetyDistanceSquared { get; set; } = 20 * 20;
@@ -35,7 +35,7 @@ namespace AssettoServer.Server.Ai
 
         private float _currentVecLength;
         private float _currentVecProgress;
-        private long _lastTick = Environment.TickCount64;
+        private long _lastTick;
         private bool _stoppedForObstacle;
         private long _stoppedForObstacleSince;
         private long _ignoreObstaclesUntil;
@@ -72,19 +72,22 @@ namespace AssettoServer.Server.Ai
         public AiState(EntryCar entryCar)
         {
             EntryCar = entryCar;
+            Server = entryCar.Server;
             MapView = new TrafficMapView();
+
+            _lastTick = Server.ServerTimeMilliseconds;
         }
 
         private void SetRandomSpeed()
         {
-            float variation = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs * EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedVariationPercent;
+            float variation = Server.Configuration.Extra.AiParams.MaxSpeedMs * Server.Configuration.Extra.AiParams.MaxSpeedVariationPercent;
 
             float fastLaneOffset = 0;
             if (CurrentSplinePoint.Left != null)
             {
-                fastLaneOffset = EntryCar.Server.Configuration.Extra.AiParams.RightLaneOffsetMs;
+                fastLaneOffset = Server.Configuration.Extra.AiParams.RightLaneOffsetMs;
             }
-            InitialMaxSpeed = EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs + fastLaneOffset - (variation / 2) + (float)Random.Shared.NextDouble() * variation;
+            InitialMaxSpeed = Server.Configuration.Extra.AiParams.MaxSpeedMs + fastLaneOffset - (variation / 2) + (float)Random.Shared.NextDouble() * variation;
             CurrentSpeed = InitialMaxSpeed;
             TargetSpeed = InitialMaxSpeed;
             MaxSpeed = InitialMaxSpeed;
@@ -109,9 +112,9 @@ namespace AssettoServer.Server.Ai
             SetRandomSpeed();
             SetRandomColor();
             
-            SpawnProtectionEnds = Environment.TickCount64 + Random.Shared.Next(EntryCar.Server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, EntryCar.Server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
-            SafetyDistanceSquared = Random.Shared.Next((int)Math.Round(EntryCar.Server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared * (1.0f / EntryCar.Server.Configuration.Extra.AiParams.TrafficDensity)),
-                (int)Math.Round(EntryCar.Server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared * (1.0f / EntryCar.Server.Configuration.Extra.AiParams.TrafficDensity)));
+            SpawnProtectionEnds = Server.ServerTimeMilliseconds + Random.Shared.Next(Server.Configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, Server.Configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
+            SafetyDistanceSquared = Random.Shared.Next((int)Math.Round(Server.Configuration.Extra.AiParams.MinAiSafetyDistanceSquared * (1.0f / Server.Configuration.Extra.AiParams.TrafficDensity)),
+                (int)Math.Round(Server.Configuration.Extra.AiParams.MaxAiSafetyDistanceSquared * (1.0f / Server.Configuration.Extra.AiParams.TrafficDensity)));
             _stoppedForCollisionUntil = 0;
             _ignoreObstaclesUntil = 0;
             _obstacleHonkEnd = 0;
@@ -120,7 +123,7 @@ namespace AssettoServer.Server.Ai
             _nextJunction = null;
             _junctionPassed = false;
             _endIndicatorDistance = 0;
-            _lastTick = Environment.TickCount64;
+            _lastTick = Server.ServerTimeMilliseconds;
             SpawnCounter++;
             Initialized = true;
             Update();
@@ -204,10 +207,10 @@ namespace AssettoServer.Server.Ai
 
         private (AiState? ClosestAiState, float ClosestAiStateDistance, float MaxSpeed) SplineLookahead()
         {
-            if (!EntryCar.Server.AiEnabled)
+            if (!Server.AiEnabled)
                 throw new InvalidOperationException("AI disabled");
 
-            float maxCornerBrakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - PhysicsUtils.CalculateMaxCorneringSpeed(EntryCar.Server.TrafficMap.MinRadius, EntryCar.AiCorneringSpeedFactor), 
+            float maxCornerBrakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - PhysicsUtils.CalculateMaxCorneringSpeed(Server.TrafficMap.MinRadius, EntryCar.AiCorneringSpeedFactor), 
                                                  EntryCar.AiDeceleration * EntryCar.AiCorneringBrakeForceFactor) 
                                              * EntryCar.AiCorneringBrakeDistanceFactor;
             float maxBrakingDistance = Math.Max(maxCornerBrakingDistance, 50);
@@ -236,7 +239,7 @@ namespace AssettoServer.Server.Ai
                     }
                 }
 
-                if (closestAiState == null && EntryCar.Server.AiBehavior.AiStatesBySplinePoint.TryGetValue(point, out var candidate))
+                if (closestAiState == null && Server.AiBehavior.AiStatesBySplinePoint.TryGetValue(point, out var candidate))
                 {
                     closestAiState = candidate;
                     closestAiStateDistance = Vector3.Distance(Status.Position, closestAiState.Status.Position);
@@ -263,9 +266,9 @@ namespace AssettoServer.Server.Ai
         {
             EntryCar? closestCar = null;
             float minDistance = float.MaxValue;
-            for (var i = 0; i < EntryCar.Server.EntryCars.Length; i++)
+            for (var i = 0; i < Server.EntryCars.Length; i++)
             {
-                var playerCar = EntryCar.Server.EntryCars[i];
+                var playerCar = Server.EntryCars[i];
                 if (playerCar.Client?.HasSentFirstUpdate == true)
                 {
                     float distance = Vector3.DistanceSquared(playerCar.Status.Position, Status.Position);
@@ -323,13 +326,13 @@ namespace AssettoServer.Server.Ai
         {
             if (!Initialized) return;
             
-            if (Environment.TickCount64 < _ignoreObstaclesUntil)
+            if (Server.ServerTimeMilliseconds < _ignoreObstaclesUntil)
             {
                 SetTargetSpeed(MaxSpeed);
                 return;
             }
 
-            if (Environment.TickCount64 < _stoppedForCollisionUntil)
+            if (Server.ServerTimeMilliseconds < _stoppedForCollisionUntil)
             {
                 SetTargetSpeed(0);
                 return;
@@ -387,7 +390,7 @@ namespace AssettoServer.Server.Ai
             if (CurrentSpeed == 0 && !_stoppedForObstacle)
             {
                 _stoppedForObstacle = true;
-                _stoppedForObstacleSince = Environment.TickCount64;
+                _stoppedForObstacleSince = Server.ServerTimeMilliseconds;
                 _obstacleHonkStart = _stoppedForObstacleSince + Random.Shared.Next(3000, 7000);
                 _obstacleHonkEnd = _obstacleHonkStart + Random.Shared.Next(500, 1500);
                 Log.Verbose("AI {SessionId} stopped for obstacle", EntryCar.SessionId);
@@ -397,9 +400,9 @@ namespace AssettoServer.Server.Ai
                 _stoppedForObstacle = false;
                 Log.Verbose("AI {SessionId} no longer stopped for obstacle", EntryCar.SessionId);
             }
-            else if (_stoppedForObstacle && Environment.TickCount64 - _stoppedForObstacleSince > EntryCar.Server.Configuration.Extra.AiParams.IgnoreObstaclesAfterMilliseconds)
+            else if (_stoppedForObstacle && Server.ServerTimeMilliseconds - _stoppedForObstacleSince > Server.Configuration.Extra.AiParams.IgnoreObstaclesAfterMilliseconds)
             {
-                _ignoreObstaclesUntil = Environment.TickCount64 + 10_000;
+                _ignoreObstaclesUntil = Server.ServerTimeMilliseconds + 10_000;
                 Log.Verbose("AI {SessionId} ignoring obstacles until {IgnoreObstaclesUntil}", EntryCar.SessionId, _ignoreObstaclesUntil);
             }
 
@@ -414,7 +417,7 @@ namespace AssettoServer.Server.Ai
 
         public void StopForCollision()
         {
-            _stoppedForCollisionUntil = Environment.TickCount64 + Random.Shared.Next(EntryCar.Server.Configuration.Extra.AiParams.MinCollisionStopTimeMilliseconds, EntryCar.Server.Configuration.Extra.AiParams.MaxCollisionStopTimeMilliseconds);
+            _stoppedForCollisionUntil = Server.ServerTimeMilliseconds + Random.Shared.Next(Server.Configuration.Extra.AiParams.MinCollisionStopTimeMilliseconds, Server.Configuration.Extra.AiParams.MaxCollisionStopTimeMilliseconds);
         }
 
         public float GetAngleToCar(CarStatus car)
@@ -456,9 +459,10 @@ namespace AssettoServer.Server.Ai
         {
             if (!Initialized)
                 return;
-            
-            long dt = Environment.TickCount64 - _lastTick;
-            _lastTick = Environment.TickCount64;
+
+            long currentTime = Server.ServerTimeMilliseconds;
+            long dt = currentTime - _lastTick;
+            _lastTick = currentTime;
 
             if (Acceleration != 0)
             {
@@ -495,7 +499,7 @@ namespace AssettoServer.Server.Ai
             float tyreAngularSpeed = GetTyreAngularSpeed(CurrentSpeed, 0.65f);
             byte encodedTyreAngularSpeed =  (byte) (Math.Clamp(MathF.Round(MathF.Log10(tyreAngularSpeed + 1.0f) * 20.0f) * Math.Sign(tyreAngularSpeed), -100.0f, 154.0f) + 100.0f);
 
-            Status.Timestamp = EntryCar.Server.CurrentTime;
+            Status.Timestamp = Server.ServerTimeMilliseconds;
             Status.Position = smoothPos.Position with { Y = smoothPos.Position.Y + EntryCar.AiSplineHeightOffsetMeters };
             Status.Rotation = rotation;
             Status.Velocity = smoothPos.Tangent * CurrentSpeed;
@@ -505,13 +509,13 @@ namespace AssettoServer.Server.Ai
             Status.TyreAngularSpeed[1] = encodedTyreAngularSpeed;
             Status.TyreAngularSpeed[2] = encodedTyreAngularSpeed;
             Status.TyreAngularSpeed[3] = encodedTyreAngularSpeed;
-            Status.EngineRpm = (ushort)MathUtils.Lerp(EntryCar.AiIdleEngineRpm, EntryCar.AiMaxEngineRpm, CurrentSpeed / EntryCar.Server.Configuration.Extra.AiParams.MaxSpeedMs);
+            Status.EngineRpm = (ushort)MathUtils.Lerp(EntryCar.AiIdleEngineRpm, EntryCar.AiMaxEngineRpm, CurrentSpeed / Server.Configuration.Extra.AiParams.MaxSpeedMs);
             Status.StatusFlag = CarStatusFlags.LightsOn
                                 | CarStatusFlags.HighBeamsOff
-                                | (Environment.TickCount64 < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
+                                | (Server.ServerTimeMilliseconds < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
                                 | (CurrentSpeed == 0 || Acceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
-                                | (_stoppedForObstacle && Environment.TickCount64 > _obstacleHonkStart && Environment.TickCount64 < _obstacleHonkEnd ? CarStatusFlags.Horn : 0)
-                                | GetWiperSpeed(EntryCar.Server.CurrentWeather.RainIntensity)
+                                | (_stoppedForObstacle && Server.ServerTimeMilliseconds > _obstacleHonkStart && Server.ServerTimeMilliseconds < _obstacleHonkEnd ? CarStatusFlags.Horn : 0)
+                                | GetWiperSpeed(Server.CurrentWeather.RainIntensity)
                                 | _indicator;
             Status.Gear = 2;
         }

@@ -122,7 +122,7 @@ namespace AssettoServer.Server
             if (!Server.Configuration.Extra.EnableAntiAfk || Client?.IsAdministrator == true)
                 return;
 
-            long timeAfk = Environment.TickCount64 - LastActiveTime;
+            long timeAfk = Server.ServerTimeMilliseconds - LastActiveTime;
             if (timeAfk > Server.Configuration.Extra.MaxAfkTimeMilliseconds)
                 _ = Server.KickAsync(Client, KickReason.Kicked, $"{Client?.Name} has been kicked for being AFK.");
             else if (!HasSentAfkWarning && Server.Configuration.Extra.MaxAfkTimeMilliseconds - timeAfk < 60000)
@@ -134,7 +134,7 @@ namespace AssettoServer.Server
 
         internal void SetActive()
         {
-            LastActiveTime = Environment.TickCount64;
+            LastActiveTime = Server.ServerTimeMilliseconds;
             HasSentAfkWarning = false;
         }
 
@@ -152,9 +152,9 @@ namespace AssettoServer.Server
                 SetActive();
             }
             
-            if (Status.Velocity.Y < -75 && Environment.TickCount64 - LastFallCheckTime > 1000)
+            if (Status.Velocity.Y < -75 && Server.ServerTimeMilliseconds - LastFallCheckTime > 1000)
             {
-                LastFallCheckTime = Environment.TickCount64;
+                LastFallCheckTime = Server.ServerTimeMilliseconds;
                 if(Client != null)
                     Server.SendCurrentSession(Client);
             }
@@ -240,13 +240,13 @@ namespace AssettoServer.Server
             float distanceSquared = Vector3.DistanceSquared(status.Position, targetCarStatus.Position);
             if (TargetCar != null || distanceSquared > NetworkDistanceSquared)
             {
-                if ((Environment.TickCount64 - OtherCarsLastSentUpdateTime[toCar.SessionId]) < OutsideNetworkBubbleUpdateRateMs)
+                if ((Server.ServerTimeMilliseconds - OtherCarsLastSentUpdateTime[toCar.SessionId]) < OutsideNetworkBubbleUpdateRateMs)
                 {
                     positionUpdateOut = default;
                     return false;
                 }
 
-                OtherCarsLastSentUpdateTime[toCar.SessionId] = Environment.TickCount64;
+                OtherCarsLastSentUpdateTime[toCar.SessionId] = Server.ServerTimeMilliseconds;
             }
 
             positionUpdateOut = new PositionUpdateOut(SessionId,

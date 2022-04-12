@@ -8,9 +8,9 @@ public class SessionState
 {
     public SessionConfiguration Configuration { get; init; }
     public int EndTime { get; set; } // TODO
-    public long StartTimeTicks64 { get; set; }
-    public int TimeLeftTicks => (int)(StartTimeTicks64 + Configuration.Time * 60_000 - _server.CurrentTime);
-    public int SessionTimeTicks => (int)(_server.CurrentTime - StartTimeTicks64);
+    public long StartTimeMilliseconds { get; set; }
+    public int TimeLeftMilliseconds => (int)(StartTimeMilliseconds + Configuration.Time * 60_000 - _server.ServerTimeMilliseconds);
+    public int SessionTimeMilliseconds => (int)(_server.ServerTimeMilliseconds - StartTimeMilliseconds);
     public int TargetLap { get; set; } = 0;
     public int LeaderLapCount { get; set; } = 0;
     public bool LeaderHasCompletedLastLap { get; set; } = false;

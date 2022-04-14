@@ -66,6 +66,21 @@ namespace AssettoServer.Network.Packets
             _writePosition += bytesWritten;
         }
 
+        public void WriteStringFixed(string? str, Encoding encoding, int capacity, bool pad = true)
+        {
+            str ??= string.Empty;
+
+            int bytesWritten = encoding.GetBytes(str, Buffer.Slice(_writePosition, capacity).Span);
+            _writePosition += bytesWritten;
+
+            if (pad)
+            {
+                int remaining = capacity - bytesWritten;
+                Buffer.Slice(_writePosition, remaining).Span.Fill(0);
+                _writePosition += remaining;
+            }
+        }
+
         public void Write<T>(T value) where T : struct
         {
             WriteBytes(MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value, 1)));

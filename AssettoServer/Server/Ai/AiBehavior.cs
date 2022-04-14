@@ -255,6 +255,12 @@ namespace AssettoServer.Server.Ai
             int playerCount = _server.EntryCars.Count(car => car.Client != null && car.Client.IsConnected);
             var aiSlots = _server.EntryCars.Where(car => car.Client == null && car.AiControlled).ToList(); // client null check is necessary here so that slots where someone is connecting don't count
 
+            if (aiSlots.Count == 0)
+            {
+                Log.Debug("AI Slot overbooking update - no AI slots available");
+                return;
+            }
+            
             int targetAiCount = Math.Min(playerCount * Math.Min((int)Math.Round(_server.Configuration.Extra.AiParams.AiPerPlayerTargetCount * _server.Configuration.Extra.AiParams.TrafficDensity), aiSlots.Count), _server.Configuration.Extra.AiParams.MaxAiTargetCount);
 
             int overbooking = targetAiCount / aiSlots.Count;

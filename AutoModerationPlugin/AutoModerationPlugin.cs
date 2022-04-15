@@ -1,10 +1,13 @@
 ﻿using System.Numerics;
+using System.Reflection;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
+using AutoModerationPlugin.Packets;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace AutoModerationPlugin;
@@ -33,6 +36,12 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
         if (_server.TrafficMap != null)
         {
             _laneRadiusSquared = MathF.Pow(_server.Configuration.Extra.AiParams.LaneWidthMeters / 2.0f * 1.25f, 2);
+        }
+
+        if (_server.Configuration.Extra.EnableClientMessages)
+        {
+            using var streamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("AutoModerationPlugin.lua.automoderation.lua")!);
+            _server.CSPLuaClientScriptProvider.AddLuaClientScript(streamReader.ReadToEnd(), "automoderation.lua");
         }
         
         foreach (var entryCar in server.EntryCars)
@@ -69,7 +78,8 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                     var client = instance.EntryCar.Client;
                     if (client == null || !client.HasSentFirstUpdate || client.IsAdministrator)
                         continue;
-                    
+
+                    var oldFlags = instance.CurrentFlags;
                     instance.UpdateSplinePoint();
 
                     if (_configuration.NoLightsKick.Enabled)
@@ -78,6 +88,8 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                             && (instance.EntryCar.Status.StatusFlag & CarStatusFlags.LightsOn) == 0
                             && instance.EntryCar.Status.Velocity.LengthSquared() > _configuration.NoLightsKick.MinimumSpeedMs * _configuration.NoLightsKick.MinimumSpeedMs)
                         {
+                            instance.CurrentFlags |= Flags.NoLights;
+                            
                             instance.NoLightSeconds++;
                             if (instance.NoLightSeconds > _configuration.NoLightsKick.DurationSeconds)
                             {
@@ -91,6 +103,7 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                         }
                         else
                         {
+                            instance.CurrentFlags &= ~Flags.NoLights;
                             instance.NoLightSeconds = 0;
                             instance.HasSentNoLightWarning = false;
                         }
@@ -102,6 +115,8 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                             && instance.EntryCar.Status.Velocity.LengthSquared() > _configuration.WrongWayKick.MinimumSpeedMs * _configuration.WrongWayKick.MinimumSpeedMs
                             && Vector3.Dot(instance.CurrentSplinePoint!.GetForwardVector(), instance.EntryCar.Status.Velocity) < 0)
                         {
+                            instance.CurrentFlags |= Flags.WrongWay;
+                            
                             instance.WrongWaySeconds++;
                             if (instance.WrongWaySeconds > _configuration.WrongWayKick.DurationSeconds)
                             {
@@ -115,6 +130,7 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                         }
                         else
                         {
+                            instance.CurrentFlags &= ~Flags.WrongWay;
                             instance.WrongWaySeconds = 0;
                             instance.HasSentWrongWayWarning = false;
                         }
@@ -125,6 +141,8 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                         if (instance.CurrentSplinePointDistanceSquared < _laneRadiusSquared
                             && instance.EntryCar.Status.Velocity.LengthSquared() < _configuration.BlockingRoadKick.MaximumSpeedMs * _configuration.BlockingRoadKick.MaximumSpeedMs)
                         {
+                            instance.CurrentFlags |= Flags.NoParking;
+                            
                             instance.BlockingRoadSeconds++;
                             if (instance.BlockingRoadSeconds > _configuration.BlockingRoadKick.DurationSeconds)
                             {
@@ -138,9 +156,18 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                         }
                         else
                         {
+                            instance.CurrentFlags &= ~Flags.NoParking;
                             instance.BlockingRoadSeconds = 0;
                             instance.HasSentBlockingRoadWarning = false;
                         }
+                    }
+
+                    if (_server.Configuration.Extra.EnableClientMessages && oldFlags != instance.CurrentFlags)
+                    {
+                        client.SendPacket(new AutoModerationFlags
+                        {
+                            Flags = instance.CurrentFlags
+                        });
                     }
                 }
             }

@@ -1,5 +1,6 @@
 ﻿using AssettoServer.Server;
 using AssettoServer.Server.Ai;
+using AutoModerationPlugin.Packets;
 
 namespace AutoModerationPlugin;
 
@@ -18,6 +19,8 @@ internal class EntryCarAutoModeration
     
     public int BlockingRoadSeconds { get; set; }
     public bool HasSentBlockingRoadWarning { get; set; }
+    
+    public Flags CurrentFlags { get; set; }
 
     internal EntryCarAutoModeration(EntryCar entryEntryCar)
     {
@@ -33,6 +36,7 @@ internal class EntryCarAutoModeration
         HasSentNoLightWarning = false;
         BlockingRoadSeconds = 0;
         HasSentBlockingRoadWarning = false;
+        CurrentFlags = 0;
     }
 
     public void UpdateSplinePoint()

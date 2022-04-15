@@ -7,6 +7,9 @@ Plugin to automatically kick players when they violate rules:
 
 Admins are exempt from these rules.
 
+When `EnableClientMessages` is enabled, wrong way / no parking / no lights signs will be shown to the player.  
+Included in the `Flags` folder are Japanese-style signs. You can replace these with custom signs.
+
 ## Configuration
 Enable the plugin in `extra_cfg.yml`
 ```yaml

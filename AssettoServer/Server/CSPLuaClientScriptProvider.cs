@@ -33,7 +33,7 @@ public class CSPLuaClientScriptProvider
         else
         {
             Scripts.Add(script);
-            scriptSection["SCRIPT"] = $"'http://{_server.GeoParams.Ip}:{_server.Configuration.Server.HttpPort}/api/scripts/{Scripts.Count - 1}'";
+            scriptSection["SCRIPT"] = $"'http://{{ServerIP}}:{{ServerHTTPPort}}/api/scripts/{Scripts.Count - 1}'";
         }
 
         if (configuration != null)

@@ -41,6 +41,7 @@ internal static class Program
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
             .WriteTo.Async(a => a.Console())
             .WriteTo.File($"logs/{logPrefix}-.txt",
                 rollingInterval: RollingInterval.Day)

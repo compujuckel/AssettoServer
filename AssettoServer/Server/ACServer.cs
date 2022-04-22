@@ -73,10 +73,11 @@ namespace AssettoServer.Server
         internal CommandService CommandService { get; }
         internal TcpListener? TcpListener { get; set; }
         internal ACUdpServerNano UdpServer { get; }
-        internal IWebHost? HttpServer { get; private set; }
+        public IWebHost HttpServer { get; private set; } = null!;
         internal KunosLobbyRegistration KunosLobbyRegistration { get; }
         internal Steam Steam { get; }
         internal Dictionary<uint, Action<ACTcpClient, PacketReader>> CSPClientMessageTypes { get; } = new();
+        internal Uri? GrpcChannelUri { get; private set; }
 
         internal SemaphoreSlim ConnectSemaphore { get; }
         private HttpClient HttpClient { get; }
@@ -187,6 +188,11 @@ namespace AssettoServer.Server
             {
                 DefaultRunMode = RunMode.Parallel
             });
+
+            if (!string.IsNullOrEmpty(Configuration.Extra.HubAddress))
+            {
+                GrpcChannelUri = new Uri(Configuration.Extra.HubAddress);
+            }
 
             CommandService.AddModules(Assembly.GetEntryAssembly());
             CommandService.AddTypeParser(new ACClientTypeParser());
@@ -1018,7 +1024,7 @@ namespace AssettoServer.Server
 
         internal async Task ProcessCommandAsync(ACTcpClient client, ChatMessage message)
         {
-            ACCommandContext context = new ACCommandContext(this, client, message);
+            ACCommandContext context = new ACCommandContext(this, client, message, HttpServer.Services);
             IResult result = await CommandService.ExecuteAsync(message.Message, context);
 
             if (result is ChecksFailedResult checksFailedResult)

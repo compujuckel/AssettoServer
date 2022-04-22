@@ -1,9 +1,11 @@
-﻿using AssettoServer.Server;
+﻿using AssettoServer.Hub.Contracts;
+using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using ProtoBuf.Grpc.ClientFactory;
 
 namespace AssettoServer.Network.Http
 {
@@ -29,7 +31,13 @@ namespace AssettoServer.Network.Http
             {
                 options.OutputFormatters.Add(new LuaOutputFormatter());
             });
-            
+
+            if (_server.GrpcChannelUri != null)
+            {
+                services.AddCodeFirstGrpcClient<IPlayerClient>(o => { o.Address = _server.GrpcChannelUri; });
+                services.AddCodeFirstGrpcClient<IRaceChallengeLeaderboardClient>(o => { o.Address = _server.GrpcChannelUri; });
+            }
+
             var mvcBuilder = services.AddControllers();
             foreach (var plugin in _server.PluginLoader.LoadedPlugins)
             {

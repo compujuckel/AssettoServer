@@ -36,40 +36,6 @@ namespace AssettoServer.Network.Http
             {
                 options.OutputFormatters.Add(new LuaOutputFormatter());
             });
-            
-            if (_server.GrpcChannelUri != null && _server.Configuration.Extra.HubConnection != null)
-            {
-                void grpcOptions(GrpcClientFactoryOptions options)
-                {
-                    options.Address = _server.GrpcChannelUri;
-                    options.ChannelOptionsActions.Add(o =>
-                    {
-                        o.ServiceConfig = new ServiceConfig
-                        {
-                            MethodConfigs =
-                            {
-                                new MethodConfig
-                                {
-                                    Names = { MethodName.Default },
-                                    RetryPolicy = new RetryPolicy
-                                    {
-                                        MaxAttempts = 5,
-                                        InitialBackoff = TimeSpan.FromSeconds(1),
-                                        MaxBackoff = TimeSpan.FromSeconds(10),
-                                        BackoffMultiplier = 1.5,
-                                        RetryableStatusCodes = { StatusCode.Unavailable }
-                                    }
-                                }
-                            }
-                        };
-                        o.HttpHandler = new SocketsHttpHandler { EnableMultipleHttp2Connections = true };
-                    });
-                }
-
-                services.AddScoped<AuthInterceptor>();
-                services.AddCodeFirstGrpcClient<IPlayerClient>(grpcOptions).AddInterceptor<AuthInterceptor>();
-                services.AddCodeFirstGrpcClient<IRaceChallengeLeaderboardClient>(grpcOptions).AddInterceptor<AuthInterceptor>();
-            }
 
             var mvcBuilder = services.AddControllers();
             foreach (var plugin in _server.PluginLoader.LoadedPlugins)

@@ -5,7 +5,7 @@ using ProtoBuf.Grpc;
 namespace AssettoServer.Hub.Contracts;
 
 [DataContract]
-public class UpdateNameRequest
+public class OnPlayerConnectedRequest
 {
     [DataMember(Order = 1)]
     public ulong Guid { get; set; }
@@ -17,5 +17,5 @@ public class UpdateNameRequest
 public interface IPlayerClient
 {
     [OperationContract]
-    Task UpdateNameAsync(UpdateNameRequest request, CallContext context = default);
+    Task OnPlayerConnectedAsync(OnPlayerConnectedRequest request, CallContext context = default);
 }

@@ -58,8 +58,6 @@ public class ACExtraConfiguration
     public bool EnableCustomUpdate { get; set; } = false;
     [YamlMember(Description = "Send logs to a Loki instance, e.g. Grafana Cloud", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public LokiSettings? LokiSettings { get; init; }
-    [YamlMember(Description = "Address of a central AssettoServer hub to synchronize some things between servers")]
-    public AssettoServerHubConfiguration? HubConnection { get; set; }
     public AiParams AiParams { get; init; } = new AiParams();
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
@@ -260,11 +258,4 @@ public enum AfkKickBehavior
 {
     PlayerInput,
     MinimumSpeed
-}
-
-[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
-public class AssettoServerHubConfiguration
-{
-    public string Address { get; set; } = null!;
-    public string Key { get; set; } = null!;
 }

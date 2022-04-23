@@ -189,9 +189,11 @@ namespace AssettoServer.Server
                 DefaultRunMode = RunMode.Parallel
             });
 
-            if (!string.IsNullOrEmpty(Configuration.Extra.HubAddress))
+            if (Configuration.Extra.HubConnection != null 
+                && !string.IsNullOrEmpty(Configuration.Extra.HubConnection.Address)
+                && !string.IsNullOrEmpty(Configuration.Extra.HubConnection.Key))
             {
-                GrpcChannelUri = new Uri(Configuration.Extra.HubAddress);
+                GrpcChannelUri = new Uri(Configuration.Extra.HubConnection.Address);
             }
 
             CommandService.AddModules(Assembly.GetEntryAssembly());

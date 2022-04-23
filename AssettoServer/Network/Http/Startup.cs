@@ -1,6 +1,11 @@
-﻿using AssettoServer.Hub.Contracts;
+﻿using System;
+using System.Net.Http;
+using AssettoServer.Hub.Contracts;
 using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
+using Grpc.Core;
+using Grpc.Net.Client.Configuration;
+using Grpc.Net.ClientFactory;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,11 +36,39 @@ namespace AssettoServer.Network.Http
             {
                 options.OutputFormatters.Add(new LuaOutputFormatter());
             });
-
-            if (_server.GrpcChannelUri != null)
+            
+            if (_server.GrpcChannelUri != null && _server.Configuration.Extra.HubConnection != null)
             {
-                services.AddCodeFirstGrpcClient<IPlayerClient>(o => { o.Address = _server.GrpcChannelUri; });
-                services.AddCodeFirstGrpcClient<IRaceChallengeLeaderboardClient>(o => { o.Address = _server.GrpcChannelUri; });
+                void grpcOptions(GrpcClientFactoryOptions options)
+                {
+                    options.Address = _server.GrpcChannelUri;
+                    options.ChannelOptionsActions.Add(o =>
+                    {
+                        o.ServiceConfig = new ServiceConfig
+                        {
+                            MethodConfigs =
+                            {
+                                new MethodConfig
+                                {
+                                    Names = { MethodName.Default },
+                                    RetryPolicy = new RetryPolicy
+                                    {
+                                        MaxAttempts = 5,
+                                        InitialBackoff = TimeSpan.FromSeconds(1),
+                                        MaxBackoff = TimeSpan.FromSeconds(10),
+                                        BackoffMultiplier = 1.5,
+                                        RetryableStatusCodes = { StatusCode.Unavailable }
+                                    }
+                                }
+                            }
+                        };
+                        o.HttpHandler = new SocketsHttpHandler { EnableMultipleHttp2Connections = true };
+                    });
+                }
+
+                services.AddScoped<AuthInterceptor>();
+                services.AddCodeFirstGrpcClient<IPlayerClient>(grpcOptions).AddInterceptor<AuthInterceptor>();
+                services.AddCodeFirstGrpcClient<IRaceChallengeLeaderboardClient>(grpcOptions).AddInterceptor<AuthInterceptor>();
             }
 
             var mvcBuilder = services.AddControllers();

@@ -9,6 +9,12 @@ public class OnStartupRequest
 {
     [DataMember(Order = 1)] 
     public string Ping { get; set; } = "";
+    [DataMember(Order = 2)]
+    public string Track { get; set; } = "";
+    [DataMember(Order = 3)]
+    public string TrackConfig { get; set; } = "";
+    [DataMember(Order = 4)]
+    public IEnumerable<string> Cars { get; set; } = new List<string>();
 }
 
 [DataContract]

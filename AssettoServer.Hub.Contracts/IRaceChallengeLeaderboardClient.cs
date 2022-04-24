@@ -5,7 +5,7 @@ using ProtoBuf.Grpc;
 namespace AssettoServer.Hub.Contracts;
 
 [DataContract]
-public class LeaderboardRequest
+public class RaceChallengeLeaderboardRequest
 {
     [DataMember(Order = 1)]
     public string LeaderboardName { get; set; } = null!;
@@ -16,7 +16,7 @@ public class LeaderboardRequest
 }
 
 [DataContract]
-public class LeaderboardEntry
+public class RaceChallengeLeaderboardEntry
 {
     [DataMember(Order = 1)]
     public string Name { get; set; } = null!;
@@ -25,14 +25,14 @@ public class LeaderboardEntry
 }
 
 [DataContract]
-public class LeaderboardResponse
+public class RaceChallengeLeaderboardResponse
 {
     [DataMember(Order = 1)] 
-    public IEnumerable<LeaderboardEntry> Entries { get; set; } = new List<LeaderboardEntry>();
+    public IEnumerable<RaceChallengeLeaderboardEntry> Entries { get; set; } = new List<RaceChallengeLeaderboardEntry>();
 }
 
 [DataContract]
-public class GetRatingRequest
+public class GetRaceChallengeRatingRequest
 {
     [DataMember(Order = 1)]
     public string LeaderboardName { get; set; } = null!;
@@ -41,7 +41,7 @@ public class GetRatingRequest
 }
 
 [DataContract]
-public class GetRatingResponse
+public class GetRaceChallengeRatingResponse
 {
     [DataMember(Order = 1)]
     public int Rating { get; set; }
@@ -50,7 +50,7 @@ public class GetRatingResponse
 }
 
 [DataContract]
-public class SetRatingRequest
+public class SetRaceChallengeRatingRequest
 {
     [DataMember(Order = 1)]
     public string LeaderboardName { get; set; } = null!;
@@ -61,7 +61,7 @@ public class SetRatingRequest
 }
 
 [DataContract]
-public class CreateLeaderboardRequest
+public class CreateRaceChallengeLeaderboardRequest
 {
     [DataMember(Order = 1)]
     public string Name { get; set; } = null!;
@@ -71,14 +71,14 @@ public class CreateLeaderboardRequest
 public interface IRaceChallengeLeaderboardClient
 {
     [OperationContract]
-    Task<LeaderboardResponse> GetLeaderboard(LeaderboardRequest request, CallContext context = default);
+    Task<RaceChallengeLeaderboardResponse> GetLeaderboard(RaceChallengeLeaderboardRequest request, CallContext context = default);
 
     [OperationContract]
-    Task<GetRatingResponse> GetRating(GetRatingRequest request, CallContext context = default);
+    Task<GetRaceChallengeRatingResponse> GetRating(GetRaceChallengeRatingRequest request, CallContext context = default);
 
     [OperationContract]
-    Task SetRating(SetRatingRequest request, CallContext context = default);
+    Task SetRating(SetRaceChallengeRatingRequest request, CallContext context = default);
 
     [OperationContract]
-    Task CreateLeaderboard(CreateLeaderboardRequest request, CallContext context = default);
+    Task CreateLeaderboard(CreateRaceChallengeLeaderboardRequest request, CallContext context = default);
 }

@@ -8,6 +8,9 @@ using System;
 using System.Globalization;
 using System.Numerics;
 using System.Threading.Tasks;
+using AssettoServer.Server;
+using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Weather.Implementation;
 using JetBrains.Annotations;
 
 namespace AssettoServer.Commands.Modules;
@@ -16,6 +19,21 @@ namespace AssettoServer.Commands.Modules;
 [UsedImplicitly(ImplicitUseKindFlags.Access, ImplicitUseTargetFlags.WithMembers)]
 public class AdminModule : ACModuleBase
 {
+    private readonly IWeatherImplementation _weatherImplementation;
+    private readonly WeatherManager _weatherManager;
+    private readonly DefaultWeatherProvider _weatherProvider;
+    private readonly ACServerConfiguration _configuration;
+    private readonly SessionManager _sessionManager;
+
+    public AdminModule(IWeatherImplementation weatherImplementation, WeatherManager weatherManager, DefaultWeatherProvider weatherProvider, ACServerConfiguration configuration, SessionManager sessionManager)
+    {
+        _weatherImplementation = weatherImplementation;
+        _weatherManager = weatherManager;
+        _weatherProvider = weatherProvider;
+        _configuration = configuration;
+        _sessionManager = sessionManager;
+    }
+
     [Command("kick", "kick_id")]
     public Task KickAsync(ACTcpClient player, [Remainder] string? reason = null)
     {
@@ -55,7 +73,7 @@ public class AdminModule : ACModuleBase
     [Command("pit")]
     public void TeleportToPits([Remainder] ACTcpClient player)
     {
-        Context.Server.SendCurrentSession(player);
+        _sessionManager.SendCurrentSession(player);
         player.SendPacket(new ChatMessage { SessionId = 255, Message = "You have been teleported to the pits." });
 
         if (player.SessionId != Context.Client.SessionId)
@@ -67,7 +85,7 @@ public class AdminModule : ACModuleBase
     {
         if (DateTime.TryParseExact(time, "H:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime))
         {
-            Context.Server.SetTime((int)dateTime.TimeOfDay.TotalSeconds);
+            _weatherManager.SetTime((int)dateTime.TimeOfDay.TotalSeconds);
             Broadcast("Time has been set.");
         }
         else
@@ -79,7 +97,7 @@ public class AdminModule : ACModuleBase
     [Command("setweather")]
     public void SetWeather(int weatherId)
     {
-        if (Context.Server.WeatherProvider.SetWeatherConfiguration(weatherId))
+        if (_weatherProvider.SetWeatherConfiguration(weatherId))
         {
             Reply("Weather configuration has been set.");
         }
@@ -92,24 +110,24 @@ public class AdminModule : ACModuleBase
     [Command("setcspweather")]
     public void SetCspWeather(int upcoming, int duration)
     {
-        Context.Server.SetCspWeather((WeatherFxType)upcoming, duration);
+        _weatherManager.SetCspWeather((WeatherFxType)upcoming, duration);
         Reply("Weather has been set.");
     }
 
     [Command("setrain")]
     public void SetRain(float intensity, float wetness, float water)
     {
-        Context.Server.CurrentWeather.RainIntensity = intensity;
-        Context.Server.CurrentWeather.RainWetness = wetness;
-        Context.Server.CurrentWeather.RainWater = water;
-        Context.Server.WeatherImplementation.SendWeather();
+        _weatherManager.CurrentWeather.RainIntensity = intensity;
+        _weatherManager.CurrentWeather.RainWetness = wetness;
+        _weatherManager.CurrentWeather.RainWater = water;
+        _weatherManager.SendWeather();
     }
 
     [Command("setgrip")]
     public void SetGrip(float grip)
     {
-        Context.Server.CurrentWeather.TrackGrip = grip;
-        Context.Server.WeatherImplementation.SendWeather();
+        _weatherManager.CurrentWeather.TrackGrip = grip;
+        _weatherManager.SendWeather();
     }
 
     [Command("distance")]
@@ -153,7 +171,7 @@ public class AdminModule : ACModuleBase
     {
         try
         {
-            Reply(Context.Server.Configuration.SetProperty(key, value) ? $"Property {key} set to {value}" : $"Could not set property {key}");
+            Reply(_configuration.SetProperty(key, value) ? $"Property {key} set to {value}" : $"Could not set property {key}");
         }
         catch (Exception ex)
         {

@@ -85,7 +85,7 @@ public class ACExtraConfiguration
         {
             loader.LoadPlugin(pluginName);
         }
-                
+        
         var deserializerBuilder = new DeserializerBuilder().WithoutNodeTypeResolver(typeof(PreventUnknownTagsNodeTypeResolver));
         foreach (var plugin in loader.LoadedPlugins)
         {

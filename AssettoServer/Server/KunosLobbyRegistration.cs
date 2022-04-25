@@ -3,21 +3,44 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
+using AssettoServer.Server.Configuration;
 using Serilog;
 
 namespace AssettoServer.Server;
 
 internal class KunosLobbyRegistration
 {
+    private readonly ACServerConfiguration _configuration;
     private readonly ACServer _server;
+    private readonly SessionManager _sessionManager;
+    private readonly EntryCarManager _entryCarManager;
     private readonly HttpClient _httpClient = new();
+
+    private bool _initialized = false;
     
-    internal KunosLobbyRegistration(ACServer server)
+    public KunosLobbyRegistration(ACServer server, ACServerConfiguration configuration, SessionManager sessionManager, EntryCarManager entryCarManager)
     {
         _server = server;
+        _configuration = configuration;
+        _sessionManager = sessionManager;
+        _entryCarManager = entryCarManager;
+        if (_configuration.Server.RegisterToLobby)
+        {
+            _sessionManager.SessionChanged += OnSessionChanged;
+        }
+    }
+
+    private void OnSessionChanged(SessionManager sender, EventArgs args)
+    {
+        if (!_initialized)
+        {
+            _initialized = true;
+            _sessionManager.SessionChanged -= OnSessionChanged;
+            _ = LoopAsync();
+        }
     }
     
-    internal async Task LoopAsync()
+    private async Task LoopAsync()
     {
         if (!await RegisterToLobbyAsync())
             return;
@@ -38,18 +61,18 @@ internal class KunosLobbyRegistration
 
     private async Task<bool> RegisterToLobbyAsync()
     {
-        var cfg = _server.Configuration.Server;
+        var cfg = _configuration.Server;
         var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/register");
         var queryParams = HttpUtility.ParseQueryString(builder.Query);
-        queryParams["name"] = cfg.Name + (_server.Configuration.Extra.EnableServerDetails ? " ℹ" + _server.Configuration.Server.HttpPort : "");
+        queryParams["name"] = cfg.Name + (_configuration.Extra.EnableServerDetails ? " ℹ" + _configuration.Server.HttpPort : "");
         queryParams["port"] = cfg.UdpPort.ToString();
         queryParams["tcp_port"] = cfg.TcpPort.ToString();
         queryParams["max_clients"] = cfg.MaxClients.ToString();
-        queryParams["track"] = _server.Configuration.FullTrackName;
-        queryParams["cars"] = string.Join(',', _server.EntryCars.Select(c => c.Model).Distinct());
+        queryParams["track"] = _configuration.FullTrackName;
+        queryParams["cars"] = string.Join(',', _entryCarManager.EntryCars.Select(c => c.Model).Distinct());
         queryParams["timeofday"] = ((int)cfg.SunAngle).ToString();
-        queryParams["sessions"] = string.Join(',', _server.Configuration.Sessions.Select(s => (int)s.Type));
-        queryParams["durations"] = string.Join(',', _server.Configuration.Sessions.Select(s => s.IsTimedRace ? s.Time * 60 : s.Laps));
+        queryParams["sessions"] = string.Join(',', _configuration.Sessions.Select(s => (int)s.Type));
+        queryParams["durations"] = string.Join(',', _configuration.Sessions.Select(s => s.IsTimedRace ? s.Time * 60 : s.Laps));
         queryParams["password"] = string.IsNullOrEmpty(cfg.Password) ? "0" : "1";
         queryParams["version"] = "202";
         queryParams["pickup"] = "1";
@@ -84,11 +107,11 @@ internal class KunosLobbyRegistration
         var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/ping");
         var queryParams = HttpUtility.ParseQueryString(builder.Query);
         
-        queryParams["session"] = ((int)_server.CurrentSession.Configuration.Type).ToString();
-        queryParams["timeleft"] = (_server.CurrentSession.TimeLeftMilliseconds / 1000).ToString();
-        queryParams["port"] = _server.Configuration.Server.UdpPort.ToString();
+        queryParams["session"] = ((int)_sessionManager.CurrentSession.Configuration.Type).ToString();
+        queryParams["timeleft"] = (_sessionManager.CurrentSession.TimeLeftMilliseconds / 1000).ToString();
+        queryParams["port"] = _configuration.Server.UdpPort.ToString();
         queryParams["clients"] = _server.ConnectedCars.Count.ToString();
-        queryParams["track"] = _server.Configuration.FullTrackName;
+        queryParams["track"] = _configuration.FullTrackName;
         queryParams["pickup"] = "1";
         builder.Query = queryParams.ToString();
         

@@ -3,9 +3,18 @@ using AssettoServer.Server.Configuration;
 using System;
 using System.Globalization;
 using System.Threading.Tasks;
+using App.Metrics;
+using App.Metrics.AspNetCore;
+using App.Metrics.Formatters.Prometheus;
+using AssettoServer.Network.Http;
 using AssettoServer.Server.Plugin;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
 using CommandLine;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.Grafana.Loki;
@@ -88,10 +97,18 @@ internal static class Program
                 .CreateLogger();
         }
 
-        ACServer server = new ACServer(config, loader);
-
-        await server.StartAsync();
-        await Task.Delay(-1);
+        var host = Host.CreateDefaultBuilder()
+            .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+            .ConfigureWebHostDefaults(webHostBuilder =>
+            {
+                webHostBuilder.ConfigureKestrel(serverOptions => serverOptions.AllowSynchronousIO = true)
+                    .UseSerilog()
+                    .UseStartup(_ => new Startup(config, loader))
+                    .UseUrls($"http://0.0.0.0:{config.Server.HttpPort}");
+            })
+            .Build();
+        
+        await host.RunAsync();
     }
 
     private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)

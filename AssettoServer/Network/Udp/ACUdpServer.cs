@@ -1,30 +1,36 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Packets;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using Microsoft.Extensions.Hosting;
 using NanoSockets;
 using Serilog;
 
 namespace AssettoServer.Network.Udp;
 
-public class ACUdpServerNano
+public class ACUdpServer : BackgroundService
 {
+    private readonly ACServerConfiguration _configuration;
     private readonly ACServer _server;
+    private readonly SessionManager _sessionManager;
     private readonly ushort _port;
     private Socket _socket;
 
-    public ACUdpServerNano(ACServer server, ushort port)
+    public ACUdpServer(ACServer server, SessionManager sessionManager, ACServerConfiguration configuration)
     {
         _server = server;
-        _port = port;
+        _sessionManager = sessionManager;
+        _configuration = configuration;
+        _port = _configuration.Server.UdpPort;
     }
     
-    public void Start()
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Log.Information("Starting UDP server on port {Port}", _port);
         
@@ -46,7 +52,7 @@ public class ACUdpServerNano
             throw new InvalidOperationException($"Could not bind UDP socket. Maybe the port is already in use?");
         }
         
-        _ = Task.Factory.StartNew(ReceiveLoop, TaskCreationOptions.LongRunning);
+        await Task.Factory.StartNew(ReceiveLoop, TaskCreationOptions.LongRunning);
     }
 
     private void ReceiveLoop()
@@ -106,7 +112,7 @@ public class ACUdpServerNano
             }
             else if (packetId == 0xC8)
             {
-                ushort httpPort = (ushort)_server.Configuration.Server.HttpPort;
+                ushort httpPort = (ushort)_configuration.Server.HttpPort;
                 MemoryMarshal.Write(buffer.AsSpan().Slice(1), ref httpPort);
                 Send(address, buffer, 0, 3);
             }
@@ -127,8 +133,8 @@ public class ACUdpServerNano
             {
                 if (packetId == 0x4F)
                 {
-                    if (_server.CurrentSession.Configuration.Type != packetReader.Read<SessionType>())
-                        _server.SendCurrentSession(car.Client);
+                    if (_sessionManager.CurrentSession.Configuration.Type != packetReader.Read<SessionType>())
+                        _sessionManager.SendCurrentSession(car.Client);
                 }
                 else if (packetId == 0x46)
                 {
@@ -139,15 +145,15 @@ public class ACUdpServerNano
                 }
                 else if (packetId == 0xF8)
                 {
-                    int currentTime = (int)_server.ServerTimeMilliseconds;
+                    int currentTime = (int)_sessionManager.ServerTimeMilliseconds;
                     car.Ping = (ushort)(currentTime - packetReader.Read<int>());
                     car.TimeOffset = currentTime - ((car.Ping / 2) + packetReader.Read<int>());
                     car.LastPongTime = currentTime;
 
-                    if (car.Ping > _server.Configuration.Extra.MaxPing)
+                    if (car.Ping > _configuration.Extra.MaxPing)
                     {
                         car.HighPingSeconds++;
-                        if (car.HighPingSeconds > _server.Configuration.Extra.MaxPingSeconds)
+                        if (car.HighPingSeconds > _configuration.Extra.MaxPingSeconds)
                             _ = _server.KickAsync(car.Client, KickReason.Kicked, $"{car.Client?.Name} has been kicked for high ping ({car.Ping}ms).");
                     }
                     else car.HighPingSeconds = 0;

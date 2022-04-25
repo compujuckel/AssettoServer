@@ -4,18 +4,18 @@ using Serilog;
 
 namespace AssettoServer.Server;
 
-public class CSPLuaClientScriptProvider
+public class CSPServerScriptProvider
 {
     internal List<string> Scripts { get; } = new();
     
     private readonly ACServer _server;
 
-    public CSPLuaClientScriptProvider(ACServer server)
+    public CSPServerScriptProvider(ACServer server)
     {
         _server = server;
     }
     
-    public void AddLuaClientScript(string script, string? debugFilename = null, Dictionary<string, object>? configuration = null)
+    public void AddScript(string script, string? debugFilename = null, Dictionary<string, object>? configuration = null)
     {
         bool debug = false;
         #if DEBUG

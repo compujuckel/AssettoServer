@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Numerics;
+using AssettoServer.Server.Configuration;
 using Serilog;
 using YamlDotNet.Serialization;
 
@@ -11,13 +12,13 @@ namespace AssettoServer.Server.Ai
 {
     public class FastLaneParser
     {
-        private readonly ACServer _server;
+        private readonly ACServerConfiguration _configuration;
 
         private ILogger _logger = Log.Logger;
 
-        public FastLaneParser(ACServer server)
+        public FastLaneParser(ACServerConfiguration configuration)
         {
-            _server = server;
+            _configuration = configuration;
         }
 
         private void CheckConfig(TrafficConfiguration configuration)
@@ -27,7 +28,7 @@ namespace AssettoServer.Server.Ai
                 Log.Information("Loading AI spline by {Author}, version {Version}", configuration.Author, configuration.Version);
             }
             
-            if (!string.IsNullOrWhiteSpace(configuration.Track) && Path.GetFileName(_server.Configuration.Server.Track) != configuration.Track)
+            if (!string.IsNullOrWhiteSpace(configuration.Track) && Path.GetFileName(_configuration.Server.Track) != configuration.Track)
             {
                 throw new InvalidOperationException($"Mismatched AI spline, AI spline is for track {configuration.Track}");
             }
@@ -105,7 +106,7 @@ namespace AssettoServer.Server.Ai
             if (splines.Count == 0) 
                 throw new InvalidOperationException($"No AI splines found. Please put at least one AI spline (fast_lane.ai) into {Path.GetFullPath(folder)}");
 
-            return new TrafficMap(splines, _server.Configuration.Extra.AiParams.LaneWidthMeters, configuration, _logger);
+            return new TrafficMap(splines, _configuration.Extra.AiParams.LaneWidthMeters, configuration, _logger);
         }
 
         private TrafficSplinePoint[] FromFileV7(BinaryReader reader, int idOffset)

@@ -41,7 +41,7 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
         if (_server.Configuration.Extra.EnableClientMessages)
         {
             using var streamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("AutoModerationPlugin.lua.automoderation.lua")!);
-            _server.CSPLuaClientScriptProvider.AddLuaClientScript(streamReader.ReadToEnd(), "automoderation.lua");
+            // TODO _server.CSPServerScriptProvider.AddScript(streamReader.ReadToEnd(), "automoderation.lua");
         }
         
         foreach (var entryCar in server.EntryCars)

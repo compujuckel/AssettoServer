@@ -8,6 +8,13 @@ namespace AssettoServer.Commands.TypeParsers
 {
     public class ACClientTypeParser : TypeParser<ACTcpClient>
     {
+        private readonly EntryCarManager _entryCarManager;
+
+        public ACClientTypeParser(EntryCarManager entryCarManager)
+        {
+            _entryCarManager = entryCarManager;
+        }
+
         public override ValueTask<TypeParserResult<ACTcpClient>> ParseAsync(Parameter parameter, string value, CommandContext context)
         {
             if (context is ACCommandContext acContext)
@@ -23,7 +30,7 @@ namespace AssettoServer.Commands.TypeParsers
                 if (value.StartsWith("@"))
                     value = value.Substring(1);
 
-                foreach (EntryCar entryCar in acContext.Server.EntryCars)
+                foreach (EntryCar entryCar in _entryCarManager.EntryCars)
                 {
                     ACTcpClient? client = entryCar.Client;
                     if (client != null && client.Name != null)

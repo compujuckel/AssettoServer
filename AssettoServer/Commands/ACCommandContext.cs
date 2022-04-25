@@ -13,11 +13,14 @@ namespace AssettoServer.Commands
         public ACTcpClient Client { get; }
         public ChatMessage Message { get; }
 
-        public ACCommandContext(ACServer server, ACTcpClient client, ChatMessage message, IServiceProvider? serviceProvider = null) : base(serviceProvider)
+        private readonly EntryCarManager _entryCarManager;
+
+        public ACCommandContext(ACServer server, ACTcpClient client, ChatMessage message, EntryCarManager entryCarManager, IServiceProvider? serviceProvider = null) : base(serviceProvider)
         {
             Server = server;
             Client = client;
             Message = message;
+            _entryCarManager = entryCarManager;
         }
 
         public void Reply(string message)
@@ -28,7 +31,7 @@ namespace AssettoServer.Commands
         public void Broadcast(string message)
         {
             Log.Information("Broadcast: {Message}", message);
-            Server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = message });
+            _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = message });
         }
     }
 }

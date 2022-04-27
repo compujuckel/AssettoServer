@@ -15,14 +15,22 @@ public class Steam : BackgroundService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly IBlacklistService _blacklistService;
-    public Steam(ACServerConfiguration configuration, IBlacklistService blacklistService)
+    private readonly CSPFeatureManager _cspFeatureManager;
+    public Steam(ACServerConfiguration configuration, IBlacklistService blacklistService, CSPFeatureManager cspFeatureManager)
     {
         _configuration = configuration;
         _blacklistService = blacklistService;
+        _cspFeatureManager = cspFeatureManager;
     }
 
     private void Initialize()
     {
+        _cspFeatureManager.Add(new CSPFeature
+        {
+            Name = "STEAM_TICKET",
+            Mandatory = true
+        });
+        
         var serverInit = new SteamServerInit("assettocorsa", "Assetto Corsa")
         {
             GamePort = _configuration.Server.UdpPort,

@@ -34,10 +34,11 @@ public class SessionManager
         _sessionStateFactory = sessionStateFactory;
         _entryCarManager = entryCarManager;
     }
-    
-    internal void StartTime()
+
+    internal void Initialize()
     {
         _timeSource.Start();
+        NextSession();
     }
 
     public void NextSession()

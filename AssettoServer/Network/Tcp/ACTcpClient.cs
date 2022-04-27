@@ -41,10 +41,11 @@ namespace AssettoServer.Network.Tcp
         public bool HasSentFirstUpdate { get; private set; }
         public bool IsConnected { get; set; }
         public TcpClient TcpClient { get; }
-        
-        internal NetworkStream TcpStream { get; }
-        [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode), nameof(Guid))] internal bool HasStartedHandshake { get; private set; }
-        internal bool HasPassedChecksum { get; private set; }
+
+        private NetworkStream TcpStream { get; }
+        [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode), nameof(Guid))] 
+        public bool HasStartedHandshake { get; private set; }
+        public bool HasPassedChecksum { get; private set; }
 
         internal Address? UdpEndpoint { get; private set; }
         internal bool HasAssociatedUdp { get; private set; }
@@ -64,6 +65,8 @@ namespace AssettoServer.Network.Tcp
         private readonly EntryCarManager _entryCarManager;
         private readonly ACServerConfiguration _configuration;
         private readonly IBlacklistService _blacklist;
+        private readonly ChecksumManager _checksumManager;
+        private readonly CSPFeatureManager _cspFeatureManager;
 
         /// <summary>
         /// Fires when a client has started a handshake. At this point it is still possible to reject the connection by setting ClientHandshakeEventArgs.Cancel = true.
@@ -120,7 +123,7 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        public ACTcpClient(ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist)
+        public ACTcpClient(ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager)
         {
             Server = server;
             UdpServer = udpServer;
@@ -139,6 +142,8 @@ namespace AssettoServer.Network.Tcp
             _configuration = configuration;
             _entryCarManager = entryCarManager;
             _blacklist = blacklist;
+            _checksumManager = checksumManager;
+            _cspFeatureManager = cspFeatureManager;
             tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
             tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
             tcpClient.LingerState = new LingerOption(true, 2);
@@ -278,14 +283,13 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new WrongPasswordResponse());
                         else if (!_sessionManager.CurrentSession.Configuration.IsOpen)
                             SendPacket(new SessionClosedResponse());
-                        else if ((_configuration.Extra.EnableWeatherFx && !cspFeatures.Contains("WEATHERFX_V1"))
-                                 || (_configuration.Extra.UseSteamAuth && !cspFeatures.Contains("STEAM_TICKET")))
-                            SendPacket(new AuthFailedResponse("Content Manager version not supported. Please update Content Manager to v0.8.2329.38887 or above."));
+                        else if (!_cspFeatureManager.ValidateHandshake(cspFeatures))
+                            SendPacket(new AuthFailedResponse("Missing CSP features. Please update CSP and/or Content Manager."));
                         else if (_configuration.Extra.UseSteamAuth && !await _steam.ValidateSessionTicketAsync(handshakeRequest.SessionTicket, handshakeRequest.Guid, this))
                             SendPacket(new AuthFailedResponse("Steam authentication failed."));
                         else if (string.IsNullOrEmpty(handshakeRequest.Guid) || !(handshakeRequest.Guid.Length >= 6))
                             SendPacket(new AuthFailedResponse("Invalid Guid."));
-                        else if (!await Server.TrySecureSlotAsync(this, handshakeRequest))
+                        else if (!await _entryCarManager.TrySecureSlotAsync(this, handshakeRequest))
                             SendPacket(new NoSlotsAvailableResponse());
                         else
                         {
@@ -353,8 +357,8 @@ namespace AssettoServer.Network.Tcp
                                 TyreConsumptionRate = cfg.TyreConsumptionRate,
                                 UdpPort = cfg.UdpPort,
                                 CurrentSession = _sessionManager.CurrentSession,
-                                ChecksumCount = (byte)Server.TrackChecksums.Count,
-                                ChecksumPaths = Server.TrackChecksums.Keys,
+                                ChecksumCount = (byte)_checksumManager.TrackChecksums.Count,
+                                ChecksumPaths = _checksumManager.TrackChecksums.Keys,
                                 CurrentTime = (int)_sessionManager.ServerTimeMilliseconds,
                                 LegalTyres = cfg.LegalTyres,
                                 RandomSeed = 123,
@@ -489,13 +493,13 @@ namespace AssettoServer.Network.Tcp
         private async ValueTask OnChecksumAsync(PacketReader reader)
         {
             bool passedChecksum = false;
-            byte[] fullChecksum = new byte[16 * (Server.TrackChecksums.Count + 1)];
+            byte[] fullChecksum = new byte[16 * (_checksumManager.TrackChecksums.Count + 1)];
             if (reader.Buffer.Length == fullChecksum.Length + 1)
             {
                 reader.ReadBytes(fullChecksum);
-                passedChecksum = !Server.CarChecksums.TryGetValue(EntryCar.Model, out byte[]? modelChecksum) || fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(modelChecksum);
+                passedChecksum = !_checksumManager.CarChecksums.TryGetValue(EntryCar.Model, out byte[]? modelChecksum) || fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(modelChecksum);
 
-                KeyValuePair<string, byte[]>[] allChecksums = Server.TrackChecksums.ToArray();
+                KeyValuePair<string, byte[]>[] allChecksums = _checksumManager.TrackChecksums.ToArray();
                 for (int i = 0; i < allChecksums.Length; i++)
                     if (!allChecksums[i].Value.AsSpan().SequenceEqual(fullChecksum.AsSpan().Slice(i * 16, 16)))
                     {
@@ -509,7 +513,7 @@ namespace AssettoServer.Network.Tcp
             if (!passedChecksum)
             {
                 ChecksumFailed?.Invoke(this, EventArgs.Empty);
-                await Server.KickAsync(this, KickReason.ChecksumFailed, $"{Name} failed the checksum check and has been kicked.", false);
+                await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, $"{Name} failed the checksum check and has been kicked.", false);
             }
             else
             {
@@ -770,7 +774,7 @@ namespace AssettoServer.Network.Tcp
             {
                 if (!HasPassedChecksum && IsConnected)
                 {
-                    await Server.KickAsync(this, KickReason.ChecksumFailed, $"{Name} did not send the requested checksums.", false);
+                    await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, $"{Name} did not send the requested checksums.", false);
                 }
             });
             
@@ -810,9 +814,9 @@ namespace AssettoServer.Network.Tcp
                     DisconnectTokenSource.Dispose();
                 }
                 catch (ObjectDisposedException) { }
-
+                
                 if (IsConnected)
-                    await Server.DisconnectClientAsync(this);
+                    await _entryCarManager.DisconnectClientAsync(this);
 
                 TcpClient.Dispose();
             }

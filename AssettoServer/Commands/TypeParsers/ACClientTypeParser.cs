@@ -19,7 +19,7 @@ namespace AssettoServer.Commands.TypeParsers
         {
             if (context is ACCommandContext acContext)
             {
-                if (int.TryParse(value, out int result) && acContext.Server.ConnectedCars.TryGetValue(result, out EntryCar? car) && car.Client != null)
+                if (int.TryParse(value, out int result) && _entryCarManager.ConnectedCars.TryGetValue(result, out EntryCar? car) && car.Client != null)
                     return TypeParserResult<ACTcpClient>.Successful(car.Client);
 
                 ACTcpClient? exactMatch = null;

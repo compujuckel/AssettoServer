@@ -15,8 +15,6 @@ public class ACTcpServer : BackgroundService
     private readonly ACServerConfiguration _configuration;
     private readonly Func<TcpClient, ACTcpClient> _acTcpClientFactory;
 
-    public event EventHandler<ACTcpClient, EventArgs>? ClientConnecting; 
-
     public ACTcpServer(Func<TcpClient, ACTcpClient> acTcpClientFactory, ACServerConfiguration configuration)
     {
         _acTcpClientFactory = acTcpClientFactory;
@@ -36,7 +34,6 @@ public class ACTcpServer : BackgroundService
                 TcpClient tcpClient = await listener.AcceptTcpClientAsync(stoppingToken);
 
                 ACTcpClient acClient = _acTcpClientFactory(tcpClient);
-                ClientConnecting?.Invoke(acClient, EventArgs.Empty);
                 await acClient.StartAsync();
             }
             catch (OperationCanceledException) { }

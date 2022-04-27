@@ -9,9 +9,10 @@ public class WeatherFxV1Implementation : IWeatherImplementation
 {
     private readonly EntryCarManager _entryCarManager;
 
-    public WeatherFxV1Implementation(EntryCarManager entryCarManager)
+    public WeatherFxV1Implementation(EntryCarManager entryCarManager, CSPFeatureManager cspFeatureManager)
     {
         _entryCarManager = entryCarManager;
+        cspFeatureManager.Add(new CSPFeature { Name = "WEATHERFX_V1", Mandatory = true });
     }
 
     public void SendWeather(WeatherData weather, ZonedDateTime dateTime, ACTcpClient? client = null)

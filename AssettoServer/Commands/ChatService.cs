@@ -24,9 +24,9 @@ public class ChatService
 
     public ChatService(ACTcpServer tcpServer, ACPluginLoader loader, Func<ACTcpClient, ChatMessage, ACCommandContext> contextFactory, ACClientTypeParser acClientTypeParser, EntryCarManager entryCarManager)
     {
-        tcpServer.ClientConnecting += OnClientConnecting;
         _contextFactory = contextFactory;
         _entryCarManager = entryCarManager;
+        _entryCarManager.ClientConnected += OnClientConnected;
 
         _commandService.AddModules(Assembly.GetEntryAssembly());
         _commandService.AddTypeParser(acClientTypeParser);
@@ -38,7 +38,7 @@ public class ChatService
         }
     }
 
-    private void OnClientConnecting(ACTcpClient sender, EventArgs args)
+    private void OnClientConnected(ACTcpClient sender, EventArgs args)
     {
         sender.ChatMessageReceived += OnChatMessageReceived;
     }

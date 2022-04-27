@@ -5,6 +5,7 @@ using AssettoServer.Commands.TypeParsers;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
+using AssettoServer.Server.Admin;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
@@ -46,7 +47,9 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<SessionState>().AsSelf();
             builder.RegisterType<ACClientTypeParser>().AsSelf();
             builder.RegisterType<ChatService>().AsSelf().SingleInstance();
-            builder.RegisterType<KunosLobbyRegistration>().AsSelf().SingleInstance().AutoActivate();
+            builder.RegisterType<CSPFeatureManager>().AsSelf().SingleInstance();
+            builder.RegisterType<KunosLobbyRegistration>().AsSelf().SingleInstance();
+            builder.RegisterType<DefaultAdminService>().As<IAdminService>().SingleInstance();
             builder.RegisterType<DefaultBlacklistService>().As<IBlacklistService>().SingleInstance();
             builder.RegisterType<IniTrackParamsProvider>().As<ITrackParamsProvider>().SingleInstance();
             builder.RegisterType<CSPServerScriptProvider>().AsSelf().SingleInstance();
@@ -55,8 +58,9 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<EntryCarManager>().AsSelf().SingleInstance();
             builder.RegisterType<IpApiGeoParamsProvider>().As<IGeoParamsProvider>();
             builder.RegisterType<GeoParamsManager>().AsSelf().SingleInstance();
-            builder.RegisterType<ACUdpServer>().AsSelf().As<IHostedService>().SingleInstance();
-            builder.RegisterType<ACTcpServer>().AsSelf().As<IHostedService>().SingleInstance();
+            builder.RegisterType<ChecksumManager>().AsSelf().SingleInstance();
+            builder.RegisterType<ACUdpServer>().AsSelf().SingleInstance();
+            builder.RegisterType<ACTcpServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
         }
         

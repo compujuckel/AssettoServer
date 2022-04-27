@@ -22,8 +22,9 @@ namespace AssettoServer.Network.Http
         private readonly SessionManager _sessionManager;
         private readonly EntryCarManager _entryCarManager;
         private readonly GeoParamsManager _geoParamsManager;
+        private readonly CSPFeatureManager _cspFeatureManager;
 
-        public HttpController(ACServer server, CSPServerScriptProvider serverScriptProvider, WeatherManager weatherManager, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager)
+        public HttpController(ACServer server, CSPServerScriptProvider serverScriptProvider, WeatherManager weatherManager, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager, CSPFeatureManager cspFeatureManager)
         {
             _server = server;
             _serverScriptProvider = serverScriptProvider;
@@ -32,6 +33,7 @@ namespace AssettoServer.Network.Http
             _configuration = configuration;
             _entryCarManager = entryCarManager;
             _geoParamsManager = geoParamsManager;
+            _cspFeatureManager = cspFeatureManager;
         }
 
         private string? IdFromGuid(string? guid)
@@ -60,7 +62,7 @@ namespace AssettoServer.Network.Http
             InfoResponse responseObj = new InfoResponse()
             {
                 Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct(),
-                Clients = _server.ConnectedCars.Count,
+                Clients = _entryCarManager.ConnectedCars.Count,
                 Country = new string[] { _geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode },
                 CPort = _configuration.Server.HttpPort,
                 Durations = _configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps),
@@ -100,12 +102,12 @@ namespace AssettoServer.Network.Http
                     Model = ec.Model,
                     Skin = ec.Skin,
                     IsEntryList = ec.AiMode != AiMode.Fixed && (isAdmin || _configuration.Extra.AiParams.MaxPlayerCount == 0 ||
-                                                                _server.ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount),
+                                                                _entryCarManager.ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount),
                     DriverName = ec.Client?.Name,
                     DriverTeam = ec.Client?.Team,
                     IsConnected = ec.Client != null
                 }).ToList(),
-                Features = _server.Features
+                Features = _cspFeatureManager.Features.Keys
             };
 
             return responseObj;
@@ -119,7 +121,7 @@ namespace AssettoServer.Network.Http
             DetailResponse responseObj = new DetailResponse()
             {
                 Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct(),
-                Clients = _server.ConnectedCars.Count,
+                Clients = _entryCarManager.ConnectedCars.Count,
                 Country = new string[] { _geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode },
                 CPort = _configuration.Server.HttpPort,
                 Durations = _configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps),
@@ -147,7 +149,7 @@ namespace AssettoServer.Network.Http
                         Model = ec.Model,
                         Skin = ec.Skin,
                         IsEntryList = ec.AiMode != AiMode.Fixed && (isAdmin || _configuration.Extra.AiParams.MaxPlayerCount == 0 ||
-                                                                    _server.ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount),
+                                                                    _entryCarManager.ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount),
                         DriverName = ec.Client?.Name,
                         DriverTeam = ec.Client?.Team,
                         DriverNation = ec.Client?.NationCode,
@@ -181,7 +183,7 @@ namespace AssettoServer.Network.Http
                 WindDirection = _weatherManager.CurrentWeather.WindDirection,
                 Description = _configuration.Extra.ServerDescription,
                 Grip = _weatherManager.CurrentWeather.TrackGrip * 100,
-                Features = _server.Features,
+                Features = _cspFeatureManager.Features.Keys,
                 PoweredBy = "AssettoServer " + _configuration.ServerVersion
             };
             

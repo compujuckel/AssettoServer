@@ -62,13 +62,13 @@ namespace AssettoServer.Server.Ai
             _lastAiUpdate = _sessionManager.ServerTimeMilliseconds;
             _lastAiObstacleDetectionUpdate = _lastAiUpdate;
 
-            tcpServer.ClientConnecting += (client, _) =>
+            _entryCarManager.ClientConnected += (client, _) =>
             {
                 client.ChecksumPassed += OnClientChecksumPassed;
                 client.Collision += OnCollision;
             };
 
-            _server.ClientDisconnected += OnClientDisconnected;
+            _entryCarManager.ClientDisconnected += OnClientDisconnected;
             _server.Update += OnUpdate;
             _configuration.Reload += OnConfigurationReload;
         }

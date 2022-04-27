@@ -24,14 +24,16 @@ public class AdminModule : ACModuleBase
     private readonly DefaultWeatherProvider _weatherProvider;
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
+    private readonly EntryCarManager _entryCarManager;
 
-    public AdminModule(IWeatherImplementation weatherImplementation, WeatherManager weatherManager, DefaultWeatherProvider weatherProvider, ACServerConfiguration configuration, SessionManager sessionManager)
+    public AdminModule(IWeatherImplementation weatherImplementation, WeatherManager weatherManager, DefaultWeatherProvider weatherProvider, ACServerConfiguration configuration, SessionManager sessionManager, EntryCarManager entryCarManager)
     {
         _weatherImplementation = weatherImplementation;
         _weatherManager = weatherManager;
         _weatherProvider = weatherProvider;
         _configuration = configuration;
         _sessionManager = sessionManager;
+        _entryCarManager = entryCarManager;
     }
 
     [Command("kick", "kick_id")]
@@ -46,7 +48,7 @@ public class AdminModule : ACModuleBase
             Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
                 
             string kickMessage = reason == null ? $"{player.Name} has been kicked." : $"{player.Name} has been kicked for: {reason}.";
-            return Context.Server.KickAsync(player, KickReason.Kicked, kickMessage, true, Context.Client);
+            return _entryCarManager.KickAsync(player, KickReason.Kicked, kickMessage, true, Context.Client);
         }
 
         return Task.CompletedTask;
@@ -64,7 +66,7 @@ public class AdminModule : ACModuleBase
             Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
                 
             string kickMessage = reason == null ? $"{player.Name} has been banned." : $"{player.Name} has been banned for: {reason}.";
-            return Context.Server.BanAsync(player, KickReason.VoteBlacklisted, kickMessage, Context.Client);
+            return _entryCarManager.BanAsync(player, KickReason.VoteBlacklisted, kickMessage, Context.Client);
         }
 
         return Task.CompletedTask;

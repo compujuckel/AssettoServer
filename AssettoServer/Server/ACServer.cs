@@ -3,8 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using App.Metrics;
@@ -14,14 +12,13 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Packets;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Network.Packets.Shared;
-using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Network.Udp;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
 using Microsoft.Extensions.Hosting;
-using NanoSockets;
 using Serilog;
 
 namespace AssettoServer.Server
@@ -29,12 +26,7 @@ namespace AssettoServer.Server
     public class ACServer : BackgroundService
     {
         public CSPServerExtraOptions CSPServerExtraOptions { get; }
-        public IReadOnlyList<string> Features { get; private set; }
-        internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; } = new();
-        internal ConcurrentDictionary<Address, EntryCar> EndpointCars { get; } = new();
         internal GuidListFile Admins { get; } = new("admins.txt");
-        [NotNull] internal ImmutableDictionary<string, byte[]>? TrackChecksums { get; private set; }
-        [NotNull] internal ImmutableDictionary<string, byte[]>? CarChecksums { get; private set; }
         internal Dictionary<uint, Action<ACTcpClient, PacketReader>> CSPClientMessageTypes { get; } = new();
         private List<PosixSignalRegistration> SignalHandlers { get; }
 
@@ -46,22 +38,10 @@ namespace AssettoServer.Server
         private readonly GeoParamsManager _geoParamsManager;
         private readonly IMetricsRoot _metrics;
         private readonly IBlacklistService _blacklist;
-        private readonly SemaphoreSlim _connectSemaphore = new(1, 1);
-
-        /// <summary>
-        /// Fires when a player has disconnected.
-        /// </summary>
-        public event EventHandler<ACTcpClient, EventArgs>? ClientDisconnected;
-
-        /// <summary>
-        /// Fires when a client has been kicked.
-        /// </summary>
-        public event EventHandler<ACTcpClient, ClientAuditEventArgs>? ClientKicked;
-        
-        /// <summary>
-        /// Fires when a client has been banned.
-        /// </summary>
-        public event EventHandler<ACTcpClient, ClientAuditEventArgs>? ClientBanned;
+        private readonly ChecksumManager _checksumManager;
+        private readonly ACTcpServer _tcpServer;
+        private readonly ACUdpServer _udpServer;
+        private readonly KunosLobbyRegistration _lobby;
 
         /// <summary>
         /// Fires on each server tick in the main loop. Don't do resource intensive / long running stuff in here!
@@ -74,7 +54,13 @@ namespace AssettoServer.Server
             SessionManager sessionManager, 
             EntryCarManager entryCarManager, 
             WeatherManager weatherManager, 
-            GeoParamsManager geoParamsManager, IMetricsRoot metrics)
+            GeoParamsManager geoParamsManager, 
+            IMetricsRoot metrics, 
+            ChecksumManager checksumManager, 
+            ACTcpServer tcpServer, 
+            ACUdpServer udpServer, 
+            KunosLobbyRegistration lobby, 
+            CSPFeatureManager cspFeatureManager)
         {
             Log.Information("Starting server");
             
@@ -85,7 +71,11 @@ namespace AssettoServer.Server
             _weatherManager = weatherManager;
             _geoParamsManager = geoParamsManager;
             _metrics = metrics;
-            
+            _checksumManager = checksumManager;
+            _tcpServer = tcpServer;
+            _udpServer = udpServer;
+            _lobby = lobby;
+
             CSPServerExtraOptions = new CSPServerExtraOptions(_configuration.WelcomeMessage);
             CSPServerExtraOptions.WelcomeMessage += LegalNotice.WelcomeMessage;
             if (_configuration.Extra.EnableCustomUpdate)
@@ -96,27 +86,20 @@ namespace AssettoServer.Server
 
             _blacklist.Blacklisted += OnBlacklisted;
             _pluginLoader = loader;
-
-            var features = new List<string>();
-            if (_configuration.Extra.UseSteamAuth)
-                features.Add("STEAM_TICKET");
             
-            if(_configuration.Extra.EnableWeatherFx)
-                features.Add("WEATHERFX_V1");
+            cspFeatureManager.Add(new CSPFeature { Name = "SPECTATING_AWARE" });
+            cspFeatureManager.Add(new CSPFeature { Name = "LOWER_CLIENTS_SENDING_RATE" });
 
             if (_configuration.Extra.EnableClientMessages)
             {
-                features.Add("CLIENT_MESSAGES");
+                cspFeatureManager.Add(new CSPFeature { Name = "CLIENT_MESSAGES", Mandatory = true });
                 CSPClientMessageOutgoing.ChatEncoded = false;
             }
-            
+
             if (_configuration.Extra.EnableCustomUpdate)
-                features.Add("CUSTOM_UPDATE");
-
-            features.Add("SPECTATING_AWARE");
-            features.Add("LOWER_CLIENTS_SENDING_RATE");
-
-            Features = features;
+            {
+                cspFeatureManager.Add(new CSPFeature { Name = "CUSTOM_UPDATE" });
+            }
 
             SignalHandlers = new List<PosixSignalRegistration>()
             {
@@ -145,13 +128,17 @@ namespace AssettoServer.Server
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             await _geoParamsManager.InitializeAsync();
-            _entryCarManager.Initialize();
-            InitializeChecksums();
-            
-            _sessionManager.StartTime();
-            _sessionManager.NextSession();
-            
             await Admins.LoadAsync();
+            _entryCarManager.Initialize();
+            _checksumManager.Initialize();
+            _sessionManager.Initialize();
+            await _tcpServer.StartAsync(stoppingToken);
+            await _udpServer.StartAsync(stoppingToken);
+
+            if (_configuration.Server.RegisterToLobby)
+            {
+                await _lobby.StartAsync(stoppingToken);
+            }
 
             if (!_configuration.Extra.UseSteamAuth && Admins.List.Any())
             {
@@ -174,7 +161,7 @@ namespace AssettoServer.Server
 
             Log.Information("Starting HTTP server on port {HttpPort}", _configuration.Server.HttpPort);
 
-            _ = Task.Factory.StartNew(UpdateAsync, TaskCreationOptions.LongRunning);
+            _ = Task.Factory.StartNew(() => UpdateAsync(stoppingToken), TaskCreationOptions.LongRunning);
             
             foreach (var plugin in _pluginLoader.LoadedPlugins)
             {
@@ -203,7 +190,7 @@ namespace AssettoServer.Server
         {
             string guidStr = args.Guid.ToString();
             
-            foreach (var client in ConnectedCars.Values.Select(c => c.Client))
+            foreach (var client in _entryCarManager.ConnectedCars.Values.Select(c => c.Client))
             {
                 if (client != null && client.Guid != null && client.Guid == guidStr)
                 {
@@ -212,122 +199,6 @@ namespace AssettoServer.Server
                     
                     _ = client.DisconnectAsync();
                 }
-            }
-        }
-
-        private void InitializeChecksums()
-        {
-            TrackChecksums = ChecksumsProvider.CalculateTrackChecksums(_configuration.Server.Track, _configuration.Server.TrackConfig);
-            Log.Information("Initialized {Count} track checksums", TrackChecksums.Count);
-
-            var carModels = _entryCarManager.EntryCars.Select(car => car.Model).Distinct().ToList();
-            CarChecksums = ChecksumsProvider.CalculateCarChecksums(carModels);
-            Log.Information("Initialized {Count} car checksums", CarChecksums.Count);
-
-            var modelsWithoutChecksums = carModels.Except(CarChecksums.Keys).ToList();
-            if (modelsWithoutChecksums.Count > 0)
-            {
-                string models = string.Join(", ", modelsWithoutChecksums);
-
-                if (_configuration.Extra.IgnoreConfigurationErrors.MissingCarChecksums)
-                {
-                    Log.Warning("No data.acd found for {CarModels}. This will allow players to cheat using modified data. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-car-checksums", models);
-                }
-                else
-                {
-                    throw new ConfigurationException($"No data.acd found for {models}. This will allow players to cheat using modified data. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#missing-car-checksums");
-                }
-            }
-        }
-
-        public async Task<bool> TrySecureSlotAsync(ACTcpClient client, HandshakeRequest handshakeRequest)
-        {
-            try
-            {
-                await _connectSemaphore.WaitAsync();
-
-                if (ConnectedCars.Count >= _configuration.Server.MaxClients)
-                    return false;
-
-                for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
-                {
-                    EntryCar entryCar = _entryCarManager.EntryCars[i];
-                    if (entryCar.Client != null && entryCar.Client.Guid == client.Guid)
-                        return false;
-
-                    var isAdmin = !string.IsNullOrEmpty(handshakeRequest.Guid) && Admins.Contains(handshakeRequest.Guid);
-                    
-                    if (entryCar.AiMode != AiMode.Fixed 
-                        && (isAdmin || _configuration.Extra.AiParams.MaxPlayerCount == 0 || ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount) 
-                        && entryCar.Client == null && handshakeRequest.RequestedCar == entryCar.Model)
-                    {
-                        entryCar.Reset();
-                        entryCar.Client = client;
-                        client.EntryCar = entryCar;
-                        client.SessionId = entryCar.SessionId;
-                        client.IsConnected = true;
-                        client.IsAdministrator = isAdmin;
-
-                        ConnectedCars[client.SessionId] = entryCar;
-
-                        return true;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                client.Logger.Error(ex, "Error securing slot for {ClientName}", client.Name);
-            }
-            finally
-            {
-                _connectSemaphore.Release();
-            }
-
-            return false;
-        }
-
-        public async Task KickAsync(ACTcpClient? client, KickReason reason, string? reasonStr = null, bool broadcastMessage = true, ACTcpClient? admin = null)
-        {
-            if (client != null && !client.IsDisconnectRequested)
-            {
-                if (reasonStr != null && broadcastMessage)
-                    _entryCarManager.BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
-                
-                client.Logger.Information("{ClientName} was kicked. Reason: {Reason}", client.Name, reasonStr ?? "No reason given.");
-                client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
-
-                var args = new ClientAuditEventArgs
-                {
-                    Reason = reason,
-                    ReasonStr = reasonStr,
-                    Admin = admin
-                };
-                ClientKicked?.Invoke(client, args);
-                
-                await client.DisconnectAsync();
-            }
-        }
-
-        public async Task BanAsync(ACTcpClient? client, KickReason reason, string? reasonStr = null, ACTcpClient? admin = null)
-        {
-            if (client != null && client.Guid != null && !client.IsDisconnectRequested)
-            {
-                if (reasonStr != null)
-                    _entryCarManager.BroadcastPacket(new ChatMessage {SessionId = 255, Message = reasonStr});
-                
-                client.Logger.Information("{ClientName} was banned. Reason: {Reason}", client.Name, reasonStr ?? "No reason given.");
-                client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = reason});
-                
-                var args = new ClientAuditEventArgs
-                {
-                    Reason = reason,
-                    ReasonStr = reasonStr,
-                    Admin = admin
-                };
-                ClientBanned?.Invoke(client, args);
-                
-                await client.DisconnectAsync();
-                await _blacklist.AddAsync(ulong.Parse(client.Guid));
             }
         }
 
@@ -366,7 +237,7 @@ namespace AssettoServer.Server
         }
 
         [SuppressMessage("ReSharper", "FunctionNeverReturns")]
-        private async Task UpdateAsync()
+        private async Task UpdateAsync(CancellationToken stoppingToken)
         {
             int failedUpdateLoops = 0;
             int sleepMs = 1000 / _configuration.Server.RefreshRateHz;
@@ -395,7 +266,7 @@ namespace AssettoServer.Server
             };
             _metrics.Measure.Counter.Increment(updateLoopLateOptions, 0);
             
-            while (true)
+            while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
@@ -477,7 +348,7 @@ namespace AssettoServer.Server
                         }
                     }
 
-                    if (ConnectedCars.Count > 0)
+                    if (_entryCarManager.ConnectedCars.Count > 0)
                     {
                         long tickDelta;
                         do
@@ -534,38 +405,6 @@ namespace AssettoServer.Server
                 throw new ArgumentException($"Type {type} already registered");
 
             CSPClientMessageTypes.Add(type, handler);
-        }
-
-        internal async Task DisconnectClientAsync(ACTcpClient client)
-        {
-            try
-            {
-                await _connectSemaphore.WaitAsync();
-                if (client.IsConnected && client.EntryCar.Client == client && ConnectedCars.TryRemove(client.SessionId, out _))
-                {
-                    client.Logger.Information("{ClientName} has disconnected", client.Name);
-
-                    if (client.UdpEndpoint.HasValue)
-                        EndpointCars.TryRemove(client.UdpEndpoint.Value, out _);
-
-                    client.EntryCar.Client = null;
-                    client.IsConnected = false;
-
-                    if (client.HasPassedChecksum)
-                        _entryCarManager.BroadcastPacket(new CarDisconnected { SessionId = client.SessionId });
-
-                    client.EntryCar.Reset();
-                    ClientDisconnected?.Invoke(client, EventArgs.Empty);
-                }
-            }
-            catch (Exception ex)
-            {
-                client.Logger.Error(ex, "Error disconnecting {ClientName}", client.Name);
-            }
-            finally
-            {
-                _connectSemaphore.Release();
-            }
         }
     }
 }

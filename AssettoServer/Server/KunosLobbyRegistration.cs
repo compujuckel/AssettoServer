@@ -1,55 +1,40 @@
 ﻿using System;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using AssettoServer.Server.Configuration;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AssettoServer.Server;
 
-internal class KunosLobbyRegistration
+public class KunosLobbyRegistration : BackgroundService
 {
     private readonly ACServerConfiguration _configuration;
-    private readonly ACServer _server;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
-    private readonly HttpClient _httpClient = new();
+    private readonly HttpClient _httpClient;
 
-    private bool _initialized = false;
-    
-    public KunosLobbyRegistration(ACServer server, ACServerConfiguration configuration, SessionManager sessionManager, EntryCarManager entryCarManager)
+    public KunosLobbyRegistration(ACServerConfiguration configuration, SessionManager sessionManager, EntryCarManager entryCarManager, HttpClient httpClient)
     {
-        _server = server;
         _configuration = configuration;
         _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
-        if (_configuration.Server.RegisterToLobby)
-        {
-            _sessionManager.SessionChanged += OnSessionChanged;
-        }
+        _httpClient = httpClient;
     }
 
-    private void OnSessionChanged(SessionManager sender, EventArgs args)
-    {
-        if (!_initialized)
-        {
-            _initialized = true;
-            _sessionManager.SessionChanged -= OnSessionChanged;
-            _ = LoopAsync();
-        }
-    }
-    
-    private async Task LoopAsync()
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!await RegisterToLobbyAsync())
             return;
 
-        while (true)
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                await Task.Delay(TimeSpan.FromMinutes(1));
+                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
                 await PingLobbyAsync();
             }
             catch (Exception ex)
@@ -110,7 +95,7 @@ internal class KunosLobbyRegistration
         queryParams["session"] = ((int)_sessionManager.CurrentSession.Configuration.Type).ToString();
         queryParams["timeleft"] = (_sessionManager.CurrentSession.TimeLeftMilliseconds / 1000).ToString();
         queryParams["port"] = _configuration.Server.UdpPort.ToString();
-        queryParams["clients"] = _server.ConnectedCars.Count.ToString();
+        queryParams["clients"] = _entryCarManager.ConnectedCars.Count.ToString();
         queryParams["track"] = _configuration.FullTrackName;
         queryParams["pickup"] = "1";
         builder.Query = queryParams.ToString();

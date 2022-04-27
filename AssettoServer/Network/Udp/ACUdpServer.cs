@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 using AssettoServer.Network.Packets;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -17,16 +19,18 @@ namespace AssettoServer.Network.Udp;
 public class ACUdpServer : BackgroundService
 {
     private readonly ACServerConfiguration _configuration;
-    private readonly ACServer _server;
     private readonly SessionManager _sessionManager;
+    private readonly EntryCarManager _entryCarManager;
     private readonly ushort _port;
     private Socket _socket;
 
-    public ACUdpServer(ACServer server, SessionManager sessionManager, ACServerConfiguration configuration)
+    private readonly ConcurrentDictionary<Address, EntryCar> _endpointCars = new();
+
+    public ACUdpServer(SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager)
     {
-        _server = server;
         _sessionManager = sessionManager;
         _configuration = configuration;
+        _entryCarManager = entryCarManager;
         _port = _configuration.Server.UdpPort;
     }
     
@@ -99,11 +103,12 @@ public class ACUdpServer : BackgroundService
             if (packetId == 0x4E)
             {
                 int sessionId = packetReader.Read<byte>();
-                if (_server.ConnectedCars.TryGetValue(sessionId, out EntryCar? car) && car.Client != null)
+                if (_entryCarManager.ConnectedCars.TryGetValue(sessionId, out EntryCar? car) && car.Client != null)
                 {
                     if (car.Client.TryAssociateUdp(address))
                     {
-                        _server.EndpointCars[address] = car;
+                        _endpointCars[address] = car;
+                        car.Client.Disconnecting += OnClientDisconnecting;
 
                         byte[] response = new byte[1] { 0x4E };
                         Send(address, response, 0, 1);
@@ -129,7 +134,7 @@ public class ACUdpServer : BackgroundService
                     Server.Steam.HandleIncomingPacket(data, remoteEp);
                 }
             }*/
-            else if (_server.EndpointCars.TryGetValue(address, out EntryCar? car) && car.Client != null)
+            else if (_endpointCars.TryGetValue(address, out EntryCar? car) && car.Client != null)
             {
                 if (packetId == 0x4F)
                 {
@@ -154,7 +159,7 @@ public class ACUdpServer : BackgroundService
                     {
                         car.HighPingSeconds++;
                         if (car.HighPingSeconds > _configuration.Extra.MaxPingSeconds)
-                            _ = _server.KickAsync(car.Client, KickReason.Kicked, $"{car.Client?.Name} has been kicked for high ping ({car.Ping}ms).");
+                            _ = _entryCarManager.KickAsync(car.Client, KickReason.Kicked, $"{car.Client?.Name} has been kicked for high ping ({car.Ping}ms).");
                     }
                     else car.HighPingSeconds = 0;
                 }
@@ -163,6 +168,14 @@ public class ACUdpServer : BackgroundService
         catch (Exception ex)
         {
             Log.Error(ex, "Error while receiving a UDP packet");
+        }
+    }
+
+    private void OnClientDisconnecting(ACTcpClient sender, EventArgs args)
+    {
+        if (sender.UdpEndpoint.HasValue)
+        {
+            _endpointCars.TryRemove(sender.UdpEndpoint.Value, out _);
         }
     }
 }

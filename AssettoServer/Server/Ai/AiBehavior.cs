@@ -14,7 +14,6 @@ namespace AssettoServer.Server.Ai
 {
     public class AiBehavior
     {
-        private readonly ACServer _server;
         private readonly ACServerConfiguration _configuration;
         private readonly SessionManager _sessionManager;
         private readonly EntryCarManager _entryCarManager;
@@ -51,9 +50,8 @@ namespace AssettoServer.Server.Ai
             RateUnit = TimeUnit.Milliseconds
         };
 
-        public AiBehavior(ACServer server, ACTcpServer tcpServer, SessionManager sessionManager, ACServerConfiguration configuration, TrafficMap trafficMap, EntryCarManager entryCarManager, IMetricsRoot metrics)
+        public AiBehavior(ACServer server, SessionManager sessionManager, ACServerConfiguration configuration, TrafficMap trafficMap, EntryCarManager entryCarManager, IMetricsRoot metrics)
         {
-            _server = server;
             _sessionManager = sessionManager;
             _configuration = configuration;
             _trafficMap = trafficMap;
@@ -69,11 +67,11 @@ namespace AssettoServer.Server.Ai
             };
 
             _entryCarManager.ClientDisconnected += OnClientDisconnected;
-            _server.Update += OnUpdate;
+            server.Update += OnUpdate;
             _configuration.Reload += OnConfigurationReload;
         }
 
-        private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
+        private static void OnCollision(ACTcpClient sender, CollisionEventArgs args)
         {
             if (args.TargetCar?.AiControlled == true)
             {

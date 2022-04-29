@@ -29,8 +29,7 @@ namespace AssettoServer.Server
         internal GuidListFile Admins { get; } = new("admins.txt");
         internal Dictionary<uint, Action<ACTcpClient, PacketReader>> CSPClientMessageTypes { get; } = new();
         private List<PosixSignalRegistration> SignalHandlers { get; }
-
-        private readonly ACPluginLoader _pluginLoader;
+        
         private readonly ACServerConfiguration _configuration;
         private readonly SessionManager _sessionManager;
         private readonly EntryCarManager _entryCarManager;
@@ -42,14 +41,14 @@ namespace AssettoServer.Server
         private readonly ACTcpServer _tcpServer;
         private readonly ACUdpServer _udpServer;
         private readonly KunosLobbyRegistration _lobby;
+        private readonly IEnumerable<IAssettoServerAutostart> _autostartServices;
 
         /// <summary>
         /// Fires on each server tick in the main loop. Don't do resource intensive / long running stuff in here!
         /// </summary>
         public event EventHandler<ACServer, EventArgs>? Update;
 
-        public ACServer(ACServerConfiguration configuration, 
-            ACPluginLoader loader,
+        public ACServer(ACServerConfiguration configuration,
             IBlacklistService blacklistService,
             SessionManager sessionManager, 
             EntryCarManager entryCarManager, 
@@ -60,7 +59,7 @@ namespace AssettoServer.Server
             ACTcpServer tcpServer, 
             ACUdpServer udpServer, 
             KunosLobbyRegistration lobby, 
-            CSPFeatureManager cspFeatureManager)
+            CSPFeatureManager cspFeatureManager, IEnumerable<IAssettoServerAutostart> autostartServices)
         {
             Log.Information("Starting server");
             
@@ -75,6 +74,7 @@ namespace AssettoServer.Server
             _tcpServer = tcpServer;
             _udpServer = udpServer;
             _lobby = lobby;
+            _autostartServices = autostartServices;
 
             CSPServerExtraOptions = new CSPServerExtraOptions(_configuration.WelcomeMessage);
             CSPServerExtraOptions.WelcomeMessage += LegalNotice.WelcomeMessage;
@@ -85,8 +85,7 @@ namespace AssettoServer.Server
             CSPServerExtraOptions.ExtraOptions += "\r\n" + _configuration.CSPExtraOptions;
 
             _blacklist.Blacklisted += OnBlacklisted;
-            _pluginLoader = loader;
-            
+
             cspFeatureManager.Add(new CSPFeature { Name = "SPECTATING_AWARE" });
             cspFeatureManager.Add(new CSPFeature { Name = "LOWER_CLIENTS_SENDING_RATE" });
 
@@ -135,6 +134,11 @@ namespace AssettoServer.Server
             await _tcpServer.StartAsync(stoppingToken);
             await _udpServer.StartAsync(stoppingToken);
 
+            foreach (var service in _autostartServices)
+            {
+                await service.StartAsync(stoppingToken);
+            }
+
             if (_configuration.Server.RegisterToLobby)
             {
                 await _lobby.StartAsync(stoppingToken);
@@ -162,11 +166,6 @@ namespace AssettoServer.Server
             Log.Information("Starting HTTP server on port {HttpPort}", _configuration.Server.HttpPort);
 
             _ = Task.Factory.StartNew(() => UpdateAsync(stoppingToken), TaskCreationOptions.LongRunning);
-            
-            foreach (var plugin in _pluginLoader.LoadedPlugins)
-            {
-                plugin.Instance.Initialize(this);
-            }
         }
         
         private void TerminateHandler(PosixSignalContext context)

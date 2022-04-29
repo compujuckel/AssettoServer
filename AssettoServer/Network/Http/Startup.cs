@@ -25,17 +25,18 @@ namespace AssettoServer.Network.Http
     public class Startup
     {
         private readonly ACServerConfiguration _configuration;
-        private readonly ACPluginLoader _loader;
-        
-        public Startup(ACServerConfiguration configuration, ACPluginLoader loader)
+        private readonly ACPluginLoader _loader = new();
+
+        public Startup(ACServerConfiguration configuration)
         {
             _configuration = configuration;
-            _loader = loader;
         }
 
         [UsedImplicitly]
         public void ConfigureContainer(ContainerBuilder builder)
         {
+            _configuration.LoadExtraConfig(_loader, builder);
+
             builder.RegisterInstance(_configuration);
             builder.RegisterInstance(_loader);
             builder.RegisterModule(new WeatherModule(_configuration));
@@ -62,6 +63,11 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<ACUdpServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACTcpServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
+
+            foreach (var plugin in _loader.LoadedPlugins)
+            {
+                builder.RegisterModule(plugin.Instance);
+            }
         }
         
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -83,12 +89,7 @@ namespace AssettoServer.Network.Http
             var mvcBuilder = services.AddControllers();
             foreach (var plugin in _loader.LoadedPlugins)
             {
-                // ReSharper disable once SuspiciousTypeConversion.Global
-                if (plugin.Instance is IConfigureServices configureServices)
-                {
-                    configureServices.ConfigureServices(services);
-                }
-                
+                plugin.Instance.ConfigureServices(services);
                 mvcBuilder.AddApplicationPart(plugin.Assembly);
             }
         }

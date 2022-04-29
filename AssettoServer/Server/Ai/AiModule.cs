@@ -17,10 +17,11 @@ public class AiModule : Module
     protected override void Load(ContainerBuilder builder)
     {
         builder.RegisterType<AiState>().AsSelf();
-        builder.RegisterType<AiBehavior>().AsSelf().SingleInstance().AutoActivate();
-        
+
         if (_configuration.Extra.EnableAi)
         {
+            builder.RegisterType<AiBehavior>().AsSelf().SingleInstance().AutoActivate();
+            
             if (_configuration.Extra.AiParams.HourlyTrafficDensity != null)
             {
                 builder.RegisterType<DynamicTrafficDensity>().As<IHostedService>().SingleInstance();

@@ -47,27 +47,8 @@ internal static class Program
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
 
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
-            .WriteTo.Async(a => a.Console())
-            .WriteTo.File($"logs/{logPrefix}-.txt",
-                rollingInterval: RollingInterval.Day)
-            .CreateLogger();
-
-        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
-
-        Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
-        if (!string.IsNullOrEmpty(options.Preset))
-        {
-            Log.Information("Using preset {Preset}", options.Preset);
-        }
-
-        ACPluginLoader loader = new ACPluginLoader();
-
-        var config = new ACServerConfiguration(options.Preset, options.ServerCfgPath, options.EntryListPath, loader);
-
+        var config = new ACServerConfiguration(options.Preset, options.ServerCfgPath, options.EntryListPath);
+        
         if (config.Extra.LokiSettings != null
             && !string.IsNullOrEmpty(config.Extra.LokiSettings.Url)
             && !string.IsNullOrEmpty(config.Extra.LokiSettings.Login)
@@ -80,7 +61,7 @@ internal static class Program
                 .Enrich.WithMachineName()
                 .Enrich.WithProperty("Preset", options.Preset)
                 .WriteTo.GrafanaLoki(config.Extra.LokiSettings.Url,
-                    credentials: new LokiCredentials()
+                    credentials: new LokiCredentials
                     {
                         Login = config.Extra.LokiSettings.Login,
                         Password = config.Extra.LokiSettings.Password
@@ -96,14 +77,33 @@ internal static class Program
                     rollingInterval: RollingInterval.Day)
                 .CreateLogger();
         }
+        else
+        {
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
+                .WriteTo.Async(a => a.Console())
+                .WriteTo.File($"logs/{logPrefix}-.txt",
+                    rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+        }
 
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+
+        Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
+        if (!string.IsNullOrEmpty(options.Preset))
+        {
+            Log.Information("Using preset {Preset}", options.Preset);
+        }
+        
         var host = Host.CreateDefaultBuilder()
             .UseServiceProviderFactory(new AutofacServiceProviderFactory())
             .ConfigureWebHostDefaults(webHostBuilder =>
             {
                 webHostBuilder.ConfigureKestrel(serverOptions => serverOptions.AllowSynchronousIO = true)
                     .UseSerilog()
-                    .UseStartup(_ => new Startup(config, loader))
+                    .UseStartup(_ => new Startup(config))
                     .UseUrls($"http://0.0.0.0:{config.Server.HttpPort}");
             })
             .Build();

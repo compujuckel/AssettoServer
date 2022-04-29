@@ -22,7 +22,7 @@ public class ChatService
 
     public event EventHandler<ACTcpClient, ChatEventArgs>? MessageReceived;
 
-    public ChatService(ACTcpServer tcpServer, ACPluginLoader loader, Func<ACTcpClient, ChatMessage, ACCommandContext> contextFactory, ACClientTypeParser acClientTypeParser, EntryCarManager entryCarManager)
+    public ChatService(ACPluginLoader loader, Func<ACTcpClient, ChatMessage, ACCommandContext> contextFactory, ACClientTypeParser acClientTypeParser, EntryCarManager entryCarManager)
     {
         _contextFactory = contextFactory;
         _entryCarManager = entryCarManager;

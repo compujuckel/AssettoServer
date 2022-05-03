@@ -2,8 +2,10 @@
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using AssettoServer.Network.Http.Responses;
 using AssettoServer.Server;
+using AssettoServer.Server.Admin;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Weather;
@@ -14,8 +16,6 @@ namespace AssettoServer.Network.Http
     [ApiController]
     public class HttpController : ControllerBase
     {
-
-        private readonly ACServer _server;
         private readonly ACServerConfiguration _configuration;
         private readonly CSPServerScriptProvider _serverScriptProvider;
         private readonly WeatherManager _weatherManager;
@@ -23,10 +23,10 @@ namespace AssettoServer.Network.Http
         private readonly EntryCarManager _entryCarManager;
         private readonly GeoParamsManager _geoParamsManager;
         private readonly CSPFeatureManager _cspFeatureManager;
+        private readonly IAdminService _adminService;
 
-        public HttpController(ACServer server, CSPServerScriptProvider serverScriptProvider, WeatherManager weatherManager, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager, CSPFeatureManager cspFeatureManager)
+        public HttpController(CSPServerScriptProvider serverScriptProvider, WeatherManager weatherManager, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager, CSPFeatureManager cspFeatureManager, IAdminService adminService)
         {
-            _server = server;
             _serverScriptProvider = serverScriptProvider;
             _weatherManager = weatherManager;
             _sessionManager = sessionManager;
@@ -34,6 +34,7 @@ namespace AssettoServer.Network.Http
             _entryCarManager = entryCarManager;
             _geoParamsManager = geoParamsManager;
             _cspFeatureManager = cspFeatureManager;
+            _adminService = adminService;
         }
 
         private string? IdFromGuid(string? guid)
@@ -90,10 +91,10 @@ namespace AssettoServer.Network.Http
         }
 
         [HttpGet("/JSON{guid}")]
-        public EntryListResponse GetEntryList(string guid)
+        public async Task<EntryListResponse> GetEntryList(string guid)
         {
             guid = guid.Substring(1);
-            bool isAdmin = !string.IsNullOrEmpty(guid) && _server.Admins.Contains(guid);
+            bool isAdmin = !string.IsNullOrEmpty(guid) && await _adminService.IsAdminAsync(ulong.Parse(guid));
 
             EntryListResponse responseObj = new EntryListResponse
             {
@@ -114,9 +115,9 @@ namespace AssettoServer.Network.Http
         }
 
         [HttpGet("/api/details")]
-        public DetailResponse GetDetails(string? guid)
+        public async Task<DetailResponse> GetDetails(string? guid)
         {
-            bool isAdmin = !string.IsNullOrEmpty(guid) && _server.Admins.Contains(guid);
+            bool isAdmin = !string.IsNullOrEmpty(guid) && await _adminService.IsAdminAsync(ulong.Parse(guid));
 
             DetailResponse responseObj = new DetailResponse()
             {

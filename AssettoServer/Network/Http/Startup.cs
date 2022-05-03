@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System.Collections.Generic;
+using System.Net.Http;
 using App.Metrics;
 using AssettoServer.Commands;
 using AssettoServer.Commands.TypeParsers;
@@ -19,6 +20,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 
 namespace AssettoServer.Network.Http
 {
@@ -35,8 +37,6 @@ namespace AssettoServer.Network.Http
         [UsedImplicitly]
         public void ConfigureContainer(ContainerBuilder builder)
         {
-            _configuration.LoadExtraConfig(_loader, builder);
-
             builder.RegisterInstance(_configuration);
             builder.RegisterInstance(_loader);
             builder.RegisterModule(new WeatherModule(_configuration));
@@ -47,10 +47,10 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<ACCommandContext>().AsSelf();
             builder.RegisterType<SessionState>().AsSelf();
             builder.RegisterType<ACClientTypeParser>().AsSelf();
-            builder.RegisterType<ChatService>().AsSelf().SingleInstance();
+            builder.RegisterType<ChatService>().AsSelf().SingleInstance().AutoActivate();
             builder.RegisterType<CSPFeatureManager>().AsSelf().SingleInstance();
             builder.RegisterType<KunosLobbyRegistration>().AsSelf().SingleInstance();
-            builder.RegisterType<DefaultAdminService>().As<IAdminService>().SingleInstance();
+            builder.RegisterType<DefaultAdminService>().As<IAdminService>().As<IHostedService>().SingleInstance();
             builder.RegisterType<DefaultBlacklistService>().As<IBlacklistService>().SingleInstance();
             builder.RegisterType<IniTrackParamsProvider>().As<ITrackParamsProvider>().SingleInstance();
             builder.RegisterType<CSPServerScriptProvider>().AsSelf().SingleInstance();
@@ -60,14 +60,18 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<IpApiGeoParamsProvider>().As<IGeoParamsProvider>();
             builder.RegisterType<GeoParamsManager>().AsSelf().SingleInstance();
             builder.RegisterType<ChecksumManager>().AsSelf().SingleInstance();
+            builder.RegisterType<CSPServerExtraOptions>().AsSelf().SingleInstance();
             builder.RegisterType<ACUdpServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACTcpServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
 
             foreach (var plugin in _loader.LoadedPlugins)
             {
+                if (plugin.ConfigurationType != null) builder.RegisterType(plugin.ConfigurationType).AsSelf();
                 builder.RegisterModule(plugin.Instance);
             }
+
+            _configuration.Extra.LoadPluginConfig(_loader, builder);
         }
         
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -86,7 +90,14 @@ namespace AssettoServer.Network.Http
                 options.OutputFormatters.Add(new LuaOutputFormatter());
             });
 
+            Log.Debug("Plugins: {Plugins}", string.Join(", ", _loader.LoadedPlugins));
             var mvcBuilder = services.AddControllers();
+            
+            foreach (string pluginName in _configuration.Extra.EnablePlugins ?? new List<string>())
+            {
+                _loader.LoadPlugin(pluginName);
+            }
+            
             foreach (var plugin in _loader.LoadedPlugins)
             {
                 plugin.Instance.ConfigureServices(services);

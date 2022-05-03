@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Autofac;
 using McMaster.NETCore.Plugins;
 using Serilog;
 
@@ -31,7 +30,7 @@ public class ACPluginLoader
         }
     }
 
-    public void LoadPlugin(string name, ContainerBuilder builder)
+    public void LoadPlugin(string name)
     {
         if (!AvailablePlugins.TryGetValue(name, out var loader))
         {
@@ -51,7 +50,6 @@ public class ACPluginLoader
                 if (baseType.IsGenericType && baseType.GetGenericTypeDefinition() == typeof(AssettoServerModule<>))
                 {
                     configType = baseType.GetGenericArguments()[0];
-                    builder.RegisterType(configType).AsSelf();
                 }
 
                 LoadedPlugins.Add(new Plugin(name, assembly, instance, configType));
@@ -59,13 +57,5 @@ public class ACPluginLoader
         }
         
         Log.Information("Loaded plugin {PluginName}", name);
-    }
-
-    public void LoadConfiguration(object? configuration, ContainerBuilder builder)
-    {
-        if (configuration != null)
-        {
-            builder.RegisterInstance(configuration).AsSelf();
-        }
     }
 }

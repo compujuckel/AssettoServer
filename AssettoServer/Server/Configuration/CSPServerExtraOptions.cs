@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using AssettoServer.Network.Packets.Outgoing;
 using Serilog;
 
 namespace AssettoServer.Server.Configuration;
@@ -37,6 +38,16 @@ public class CSPServerExtraOptions
 
     private string _welcomeMessage = "";
     private string _extraOptions = "";
+
+    public CSPServerExtraOptions(ACServerConfiguration configuration) : this(configuration.WelcomeMessage)
+    {
+        WelcomeMessage += LegalNotice.WelcomeMessage;
+        if (configuration.Extra.EnableCustomUpdate)
+        {
+            ExtraOptions += "\r\n" + $"[EXTRA_DATA]\r\nCUSTOM_UPDATE_FORMAT = '{CSPPositionUpdate.CustomUpdateFormat}'";
+        }
+        ExtraOptions += "\r\n" + configuration.CSPExtraOptions;
+    }
 
     public CSPServerExtraOptions(string welcomeMessage)
     {

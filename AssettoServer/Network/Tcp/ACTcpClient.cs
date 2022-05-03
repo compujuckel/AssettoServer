@@ -67,6 +67,7 @@ namespace AssettoServer.Network.Tcp
         private readonly IBlacklistService _blacklist;
         private readonly ChecksumManager _checksumManager;
         private readonly CSPFeatureManager _cspFeatureManager;
+        private readonly CSPServerExtraOptions _cspServerExtraOptions;
 
         /// <summary>
         /// Fires when a client has started a handshake. At this point it is still possible to reject the connection by setting ClientHandshakeEventArgs.Cancel = true.
@@ -123,7 +124,7 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        public ACTcpClient(ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager)
+        public ACTcpClient(ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions)
         {
             Server = server;
             UdpServer = udpServer;
@@ -144,13 +145,14 @@ namespace AssettoServer.Network.Tcp
             _blacklist = blacklist;
             _checksumManager = checksumManager;
             _cspFeatureManager = cspFeatureManager;
+            _cspServerExtraOptions = cspServerExtraOptions;
             tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
             tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
             tcpClient.LingerState = new LingerOption(true, 2);
 
             TcpStream = tcpClient.GetStream();
 
-            TcpSendBuffer = new byte[8192 + (server.CSPServerExtraOptions.EncodedWelcomeMessage.Length * 4) + 2];
+            TcpSendBuffer = new byte[8192 + (_cspServerExtraOptions.EncodedWelcomeMessage.Length * 4) + 2];
             OutgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(256);
             DisconnectTokenSource = new CancellationTokenSource();
         }
@@ -321,7 +323,7 @@ namespace AssettoServer.Network.Tcp
                             // Gracefully despawn AI cars
                             EntryCar.SetAiOverbooking(0);
 
-                            if (handshakeRequest.Password == _configuration.Server.AdminPassword)
+                            if (!string.IsNullOrWhiteSpace(_configuration.Server.AdminPassword) && handshakeRequest.Password == _configuration.Server.AdminPassword)
                                 IsAdministrator = true;
 
                             Logger.Information("{ClientName} ({ClientSteamId}, {SessionId} ({Car})) has connected", Name, Guid, SessionId, EntryCar.Model + "-" + EntryCar.Skin);
@@ -746,8 +748,8 @@ namespace AssettoServer.Network.Tcp
 
             List<EntryCar> connectedCars = _entryCarManager.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
-            if (!string.IsNullOrEmpty(Server.CSPServerExtraOptions.EncodedWelcomeMessage))
-                SendPacket(new WelcomeMessage { Message = Server.CSPServerExtraOptions.EncodedWelcomeMessage });
+            if (!string.IsNullOrEmpty(_cspServerExtraOptions.EncodedWelcomeMessage))
+                SendPacket(new WelcomeMessage { Message = _cspServerExtraOptions.EncodedWelcomeMessage });
 
             SendPacket(new DriverInfoUpdate { ConnectedCars = connectedCars });
             _weatherManager.SendWeather(this);

@@ -63,6 +63,8 @@ public class ACExtraConfiguration
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
 
+    public string Path { get; private set; } = null!;
+
     public void ToFile(string path)
     {
         using var stream = File.CreateText(path);
@@ -70,7 +72,7 @@ public class ACExtraConfiguration
         serializer.Serialize(stream, this);
     }
         
-    public static ACExtraConfiguration FromFile(string path, ACPluginLoader? loader, ContainerBuilder? builder)
+    public static ACExtraConfiguration FromFile(string path)
     {
         using var stream = File.OpenText(path);
 
@@ -82,32 +84,35 @@ public class ACExtraConfiguration
 
         var extraCfg = deserializer.Deserialize<ACExtraConfiguration>(yamlParser);
 
-        if (loader != null && builder != null)
+        extraCfg.Path = path;
+        return extraCfg;
+    }
+
+    internal void LoadPluginConfig(ACPluginLoader loader, ContainerBuilder builder)
+    {
+        using var stream = File.OpenText(Path);
+
+        var yamlParser = new Parser(stream);
+        yamlParser.Consume<StreamStart>();
+        yamlParser.Accept<DocumentStart>(out _);
+        yamlParser.Accept<DocumentStart>(out _);
+        
+        var deserializerBuilder = new DeserializerBuilder().WithoutNodeTypeResolver(typeof(PreventUnknownTagsNodeTypeResolver));
+        foreach (var plugin in loader.LoadedPlugins)
         {
-            foreach (string pluginName in extraCfg.EnablePlugins ?? new List<string>())
+            if (plugin.ConfigurationType != null)
             {
-                loader.LoadPlugin(pluginName, builder);
-            }
-
-            var deserializerBuilder = new DeserializerBuilder().WithoutNodeTypeResolver(typeof(PreventUnknownTagsNodeTypeResolver));
-            foreach (var plugin in loader.LoadedPlugins)
-            {
-                if (plugin.ConfigurationType != null)
-                {
-                    deserializerBuilder.WithTagMapping("!" + plugin.ConfigurationType.Name, plugin.ConfigurationType);
-                }
-            }
-
-            deserializer = deserializerBuilder.Build();
-
-            while (yamlParser.Accept<DocumentStart>(out _))
-            {
-                var pluginConfig = deserializer.Deserialize(yamlParser)!;
-                loader.LoadConfiguration(pluginConfig, builder);
+                deserializerBuilder.WithTagMapping("!" + plugin.ConfigurationType.Name, plugin.ConfigurationType);
             }
         }
 
-        return extraCfg;
+        var deserializer = deserializerBuilder.Build();
+
+        while (yamlParser.Accept<DocumentStart>(out _))
+        {
+            var pluginConfig = deserializer.Deserialize(yamlParser)!;
+            builder.RegisterInstance(pluginConfig).AsSelf();
+        }
     }
 }
 

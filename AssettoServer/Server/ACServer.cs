@@ -25,8 +25,6 @@ namespace AssettoServer.Server
 {
     public class ACServer : BackgroundService
     {
-        public CSPServerExtraOptions CSPServerExtraOptions { get; }
-        internal GuidListFile Admins { get; } = new("admins.txt");
         internal Dictionary<uint, Action<ACTcpClient, PacketReader>> CSPClientMessageTypes { get; } = new();
         private List<PosixSignalRegistration> SignalHandlers { get; }
         
@@ -48,7 +46,8 @@ namespace AssettoServer.Server
         /// </summary>
         public event EventHandler<ACServer, EventArgs>? Update;
 
-        public ACServer(ACServerConfiguration configuration,
+        public ACServer(
+            ACServerConfiguration configuration,
             IBlacklistService blacklistService,
             SessionManager sessionManager, 
             EntryCarManager entryCarManager, 
@@ -59,7 +58,8 @@ namespace AssettoServer.Server
             ACTcpServer tcpServer, 
             ACUdpServer udpServer, 
             KunosLobbyRegistration lobby, 
-            CSPFeatureManager cspFeatureManager, IEnumerable<IAssettoServerAutostart> autostartServices)
+            CSPFeatureManager cspFeatureManager, 
+            IEnumerable<IAssettoServerAutostart> autostartServices)
         {
             Log.Information("Starting server");
             
@@ -75,14 +75,6 @@ namespace AssettoServer.Server
             _udpServer = udpServer;
             _lobby = lobby;
             _autostartServices = autostartServices;
-
-            CSPServerExtraOptions = new CSPServerExtraOptions(_configuration.WelcomeMessage);
-            CSPServerExtraOptions.WelcomeMessage += LegalNotice.WelcomeMessage;
-            if (_configuration.Extra.EnableCustomUpdate)
-            {
-                CSPServerExtraOptions.ExtraOptions += "\r\n" + $"[EXTRA_DATA]\r\nCUSTOM_UPDATE_FORMAT = '{CSPPositionUpdate.CustomUpdateFormat}'";
-            }
-            CSPServerExtraOptions.ExtraOptions += "\r\n" + _configuration.CSPExtraOptions;
 
             _blacklist.Blacklisted += OnBlacklisted;
 
@@ -107,11 +99,6 @@ namespace AssettoServer.Server
                 PosixSignalRegistration.Create(PosixSignal.SIGTERM, TerminateHandler),
                 PosixSignalRegistration.Create(PosixSignal.SIGHUP, TerminateHandler),
             };
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                SignalHandlers.Add(PosixSignalRegistration.Create((PosixSignal)10 /* SIGUSR1 */, ReloadHandler));
-            }
         }
 
         private bool IsSessionOver()
@@ -127,7 +114,6 @@ namespace AssettoServer.Server
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             await _geoParamsManager.InitializeAsync();
-            await Admins.LoadAsync();
             _entryCarManager.Initialize();
             _checksumManager.Initialize();
             _sessionManager.Initialize();
@@ -142,20 +128,6 @@ namespace AssettoServer.Server
             if (_configuration.Server.RegisterToLobby)
             {
                 await _lobby.StartAsync(stoppingToken);
-            }
-
-            if (!_configuration.Extra.UseSteamAuth && Admins.List.Any())
-            {
-                const string errorMsg =
-                    "Admin whitelist is enabled but Steam auth is disabled. This is unsafe because it allows players to gain admin rights by SteamID spoofing. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#unsafe-admin-whitelist";
-                if (_configuration.Extra.IgnoreConfigurationErrors.UnsafeAdminWhitelist)
-                {
-                    Log.Warning(errorMsg);
-                }
-                else
-                {
-                    throw new ConfigurationException(errorMsg);
-                }
             }
 
             for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
@@ -176,13 +148,6 @@ namespace AssettoServer.Server
             // Allow some time for the chat messages to be sent
             Thread.Sleep(250);
             Log.CloseAndFlush();
-        }
-        
-        private void ReloadHandler(PosixSignalContext context)
-        {
-            Log.Information("Reloading adminlist...");
-            _ = Admins.LoadAsync();
-            context.Cancel = true;
         }
 
         private void OnBlacklisted(IBlacklistService sender, BlacklistedEventArgs args)

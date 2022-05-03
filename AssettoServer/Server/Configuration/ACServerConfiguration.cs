@@ -106,14 +106,12 @@ public class ACServerConfiguration
         LoadExtraConfig();
     }
 
-    public void LoadExtraConfig() => LoadExtraConfig(null, null);
-    
-    public void LoadExtraConfig(ACPluginLoader? loader, ContainerBuilder? builder) {
+    public void LoadExtraConfig() {
 
         string extraCfgPath = Path.Join(_configBaseFolder, "extra_cfg.yml");
         if (File.Exists(extraCfgPath))
         {
-            Extra = ACExtraConfiguration.FromFile(extraCfgPath, loader, builder);
+            Extra = ACExtraConfiguration.FromFile(extraCfgPath);
         }
         else
         {

@@ -4,7 +4,7 @@ using AutoModerationPlugin.Packets;
 
 namespace AutoModerationPlugin;
 
-internal class EntryCarAutoModeration
+public class EntryCarAutoModeration
 {
     public EntryCar EntryCar { get; }
     
@@ -22,10 +22,13 @@ internal class EntryCarAutoModeration
     
     public Flags CurrentFlags { get; set; }
 
-    internal EntryCarAutoModeration(EntryCar entryEntryCar)
+    private readonly TrafficMap? _trafficMap;
+    
+    public EntryCarAutoModeration(EntryCar entryCar, TrafficMap? trafficMap = null)
     {
-        EntryCar = entryEntryCar;
+        EntryCar = entryCar;
         EntryCar.ResetInvoked += OnResetInvoked;
+        _trafficMap = trafficMap;
     }
 
     private void OnResetInvoked(EntryCar sender, EventArgs args)
@@ -41,9 +44,9 @@ internal class EntryCarAutoModeration
 
     public void UpdateSplinePoint()
     {
-        if (EntryCar.Server.TrafficMap != null)
+        if (_trafficMap != null)
         {
-            (CurrentSplinePoint, CurrentSplinePointDistanceSquared) = EntryCar.Server.TrafficMap.WorldToSpline(EntryCar.Status.Position);
+            (CurrentSplinePoint, CurrentSplinePointDistanceSquared) = _trafficMap.WorldToSpline(EntryCar.Status.Position);
         }
     }
 }

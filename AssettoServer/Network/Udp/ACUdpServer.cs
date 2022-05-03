@@ -159,7 +159,7 @@ public class ACUdpServer : BackgroundService
                     {
                         car.HighPingSeconds++;
                         if (car.HighPingSeconds > _configuration.Extra.MaxPingSeconds)
-                            _ = _entryCarManager.KickAsync(car.Client, KickReason.Kicked, $"{car.Client?.Name} has been kicked for high ping ({car.Ping}ms).");
+                            _ = Task.Run(() => _entryCarManager.KickAsync(car.Client, KickReason.Kicked, $"{car.Client?.Name} has been kicked for high ping ({car.Ping}ms)."));
                     }
                     else car.HighPingSeconds = 0;
                 }

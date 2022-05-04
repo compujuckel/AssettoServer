@@ -1,16 +1,21 @@
 ﻿using AssettoServer.Commands;
-using JetBrains.Annotations;
 using Qmmands;
 
 namespace ReportPlugin;
 
-[UsedImplicitly(ImplicitUseKindFlags.Access, ImplicitUseTargetFlags.WithMembers)]
 public class ReportCommandModule : ACModuleBase
 {
+    private readonly ReportPlugin _plugin;
+
+    public ReportCommandModule(ReportPlugin plugin)
+    {
+        _plugin = plugin;
+    }
+
     [Command("report")]
     public async Task Report([Remainder] string reason)
     {
-        var report = Context.Client.GetLastReplay();
+        var report = _plugin.GetLastReplay(Context.Client);
 
         if (report == null)
         {
@@ -24,7 +29,7 @@ public class ReportCommandModule : ACModuleBase
         {
             Context.Client.Logger.Information("Report received from {ClientName} ({SessionId}), ID: {Id}, Reason: {Reason}",
                 Context.Client.Name, Context.Client.SessionId, report.Guid, reason);
-            await ReportPluginHolder.Instance.SubmitReport(Context.Client, report, reason);
+            await _plugin.SubmitReport(Context.Client, report, reason);
             Reply("Your report has been submitted.");
             report.Submitted = true;
         }

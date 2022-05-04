@@ -1,7 +1,9 @@
-﻿using Qmmands;
+﻿using JetBrains.Annotations;
+using Qmmands;
 
 namespace AssettoServer.Commands
 {
+    [UsedImplicitly(ImplicitUseTargetFlags.WithInheritors)]
     public class ACModuleBase : ModuleBase<ACCommandContext>
     {
         public void Reply(string message)

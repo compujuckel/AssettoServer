@@ -18,6 +18,7 @@ using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -38,7 +39,6 @@ namespace AssettoServer.Server
         private readonly ChecksumManager _checksumManager;
         private readonly ACTcpServer _tcpServer;
         private readonly ACUdpServer _udpServer;
-        private readonly KunosLobbyRegistration _lobby;
         private readonly IEnumerable<IAssettoServerAutostart> _autostartServices;
 
         /// <summary>
@@ -57,7 +57,6 @@ namespace AssettoServer.Server
             ChecksumManager checksumManager, 
             ACTcpServer tcpServer, 
             ACUdpServer udpServer, 
-            KunosLobbyRegistration lobby, 
             CSPFeatureManager cspFeatureManager, 
             IEnumerable<IAssettoServerAutostart> autostartServices)
         {
@@ -73,7 +72,6 @@ namespace AssettoServer.Server
             _checksumManager = checksumManager;
             _tcpServer = tcpServer;
             _udpServer = udpServer;
-            _lobby = lobby;
             _autostartServices = autostartServices;
 
             _blacklist.Blacklisted += OnBlacklisted;
@@ -113,10 +111,11 @@ namespace AssettoServer.Server
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await _geoParamsManager.InitializeAsync();
             _entryCarManager.Initialize();
             _checksumManager.Initialize();
             _sessionManager.Initialize();
+            await _geoParamsManager.InitializeAsync();
+            await _weatherManager.StartAsync(stoppingToken);
             await _tcpServer.StartAsync(stoppingToken);
             await _udpServer.StartAsync(stoppingToken);
 
@@ -125,14 +124,9 @@ namespace AssettoServer.Server
                 await service.StartAsync(stoppingToken);
             }
 
-            if (_configuration.Server.RegisterToLobby)
-            {
-                await _lobby.StartAsync(stoppingToken);
-            }
-
             for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
             {
-                _entryCarManager.EntryCars[i].ResetLogger();
+                _entryCarManager.EntryCars[i].ResetLogger(); // TODO is this still necessary?
             }
 
             Log.Information("Starting HTTP server on port {HttpPort}", _configuration.Server.HttpPort);
@@ -199,14 +193,12 @@ namespace AssettoServer.Server
                 target.SendPacket(packet);
             }
         }
-
-        [SuppressMessage("ReSharper", "FunctionNeverReturns")]
+        
         private async Task UpdateAsync(CancellationToken stoppingToken)
         {
             int failedUpdateLoops = 0;
             int sleepMs = 1000 / _configuration.Server.RefreshRateHz;
             long nextTick = _sessionManager.ServerTimeMilliseconds;
-            long lastTimeUpdate = nextTick;
             Dictionary<EntryCar, CountedArray<PositionUpdateOut>> positionUpdates = new();
             foreach (var entryCar in _entryCarManager.EntryCars)
             {
@@ -215,7 +207,7 @@ namespace AssettoServer.Server
 
             Log.Information("Starting update loop with an update rate of {RefreshRateHz}hz", _configuration.Server.RefreshRateHz);
 
-            var timerOptions = new TimerOptions
+            var updateLoopTimer = new TimerOptions
             {
                 Name = "ACServer.UpdateAsync",
                 MeasurementUnit = Unit.Calls,
@@ -223,18 +215,18 @@ namespace AssettoServer.Server
                 RateUnit = TimeUnit.Milliseconds
             };
 
-            var updateLoopLateOptions = new CounterOptions
+            var updateLoopLateCounter = new CounterOptions
             {
                 Name = "ACServer.UpdateAsync.Late",
                 MeasurementUnit = Unit.None
             };
-            _metrics.Measure.Counter.Increment(updateLoopLateOptions, 0);
+            _metrics.Measure.Counter.Increment(updateLoopLateCounter, 0);
             
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    using (_metrics.Measure.Timer.Time(timerOptions))
+                    using (_metrics.Measure.Timer.Time(updateLoopTimer))
                     {
                         Update?.Invoke(this, EventArgs.Empty);
 
@@ -278,7 +270,6 @@ namespace AssettoServer.Server
                             }
                         }
 
-                       
                         foreach (var (toCar, updates) in positionUpdates)
                         {
                             if (updates.Count == 0) continue;
@@ -321,13 +312,13 @@ namespace AssettoServer.Server
                             tickDelta = nextTick - currentTick;
 
                             if (tickDelta > 0)
-                                await Task.Delay((int)tickDelta);
+                                await Task.Delay((int)tickDelta, stoppingToken);
                             else if (tickDelta < -sleepMs)
                             {
                                 if (tickDelta < -1000)
                                     Log.Warning("Server is running {TickDelta}ms behind", -tickDelta);
 
-                                _metrics.Measure.Counter.Increment(updateLoopLateOptions, -tickDelta);
+                                _metrics.Measure.Counter.Increment(updateLoopLateCounter, -tickDelta);
                                 nextTick = 0;
                                 break;
                             }
@@ -341,7 +332,7 @@ namespace AssettoServer.Server
                     else
                     {
                         nextTick = _sessionManager.ServerTimeMilliseconds;
-                        await Task.Delay(500);
+                        await Task.Delay(500, stoppingToken);
                     }
 
                     failedUpdateLoops = 0;

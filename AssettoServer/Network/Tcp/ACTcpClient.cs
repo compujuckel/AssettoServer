@@ -70,11 +70,6 @@ namespace AssettoServer.Network.Tcp
         private readonly CSPServerExtraOptions _cspServerExtraOptions;
 
         /// <summary>
-        /// Fires when a client has started a handshake. At this point it is still possible to reject the connection by setting ClientHandshakeEventArgs.Cancel = true.
-        /// </summary>
-        public event EventHandler<ACTcpClient, ClientHandshakeEventArgs>? HandshakeStarted;
-        
-        /// <summary>
         /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
         /// </summary>
         public event EventHandler<ACTcpClient, EventArgs>? ChecksumPassed;
@@ -291,28 +286,14 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new AuthFailedResponse("Steam authentication failed."));
                         else if (string.IsNullOrEmpty(handshakeRequest.Guid) || !(handshakeRequest.Guid.Length >= 6))
                             SendPacket(new AuthFailedResponse("Invalid Guid."));
+                        else if (!_entryCarManager.ValidateHandshake(this, handshakeRequest, out var response))
+                            SendPacket(response);
                         else if (!await _entryCarManager.TrySecureSlotAsync(this, handshakeRequest))
                             SendPacket(new NoSlotsAvailableResponse());
                         else
                         {
                             if (EntryCar == null)
                                 throw new InvalidOperationException("No EntryCar set even though handshake started");
-                            
-                            var args = new ClientHandshakeEventArgs
-                            {
-                                HandshakeRequest = handshakeRequest
-                            };
-                            HandshakeStarted?.Invoke(this, args);
-
-                            if (args.Cancel)
-                            {
-                                if (args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.Blacklisted)
-                                    SendPacket(new BlacklistedResponse());
-                                else if (args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.AuthFailed)
-                                    SendPacket(new AuthFailedResponse(args.AuthFailedReason ?? "No reason specified"));
-
-                                return;
-                            }
 
                             EntryCar.SetActive();
                             Team = handshakeRequest.Team;

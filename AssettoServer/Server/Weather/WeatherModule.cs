@@ -1,7 +1,6 @@
 ﻿using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather.Implementation;
 using Autofac;
-using Microsoft.Extensions.Hosting;
 
 namespace AssettoServer.Server.Weather;
 
@@ -28,6 +27,6 @@ public class WeatherModule : Module
         builder.RegisterType<RainHelper>().AsSelf();
         builder.RegisterType<DefaultWeatherTypeProvider>().As<IWeatherTypeProvider>().SingleInstance();
         builder.RegisterType<DefaultWeatherProvider>().AsSelf().SingleInstance().AutoActivate();
-        builder.RegisterType<WeatherManager>().AsSelf().As<IHostedService>().SingleInstance();
+        builder.RegisterType<WeatherManager>().AsSelf().SingleInstance();
     }
 }

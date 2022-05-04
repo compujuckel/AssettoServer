@@ -7,6 +7,6 @@ public class DiscordAuditModule : AssettoServerModule<DiscordConfiguration>
 {
     protected override void Load(ContainerBuilder builder)
     {
-        builder.RegisterType<Discord>().AsSelf().AutoActivate();
+        builder.RegisterType<Discord>().AsSelf().AutoActivate().SingleInstance();
     }
 }

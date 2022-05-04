@@ -5,9 +5,16 @@ namespace VotingWeatherPlugin;
 
 public class VotingCommandModule : ACModuleBase
 {
+    private readonly VotingWeather _votingWeather;
+
+    public VotingCommandModule(VotingWeather votingWeather)
+    {
+        _votingWeather = votingWeather;
+    }
+
     [Command("w")]
     public void VoteWeather(int choice)
     {
-        VotingWeatherPlugin.Instance?.CountVote(Context.Client, choice);
+        _votingWeather.CountVote(Context.Client, choice);
     }
 }

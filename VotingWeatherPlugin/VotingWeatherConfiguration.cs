@@ -1,8 +1,10 @@
 ﻿using AssettoServer.Server.Weather;
+using JetBrains.Annotations;
 using YamlDotNet.Serialization;
 
 namespace VotingWeatherPlugin;
 
+[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class VotingWeatherConfiguration
 {
     public List<WeatherFxType> BlacklistedWeathers { get; init; } = new();

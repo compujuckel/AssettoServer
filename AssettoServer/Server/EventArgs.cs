@@ -21,7 +21,7 @@ public class ClientAuditEventArgs : EventArgs
 /// <summary>
 /// Set Cancel to true to reject the connection.
 /// </summary>
-public class ClientHandshakeEventArgs : CancelEventArgs
+public class ClientConnectingEventArgs : CancelEventArgs
 {
     /// <summary>
     /// The incoming handshake request

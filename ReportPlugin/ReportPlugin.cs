@@ -1,35 +1,38 @@
 ﻿using System.Collections.Concurrent;
 using System.Drawing;
+using AssettoServer.Commands;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
+using AssettoServer.Server.Configuration;
+using AssettoServer.Server.GeoParams;
 using CSharpDiscordWebhook.NET.Discord;
 using Serilog;
 
 namespace ReportPlugin;
 
-internal class ReportPlugin
+public class ReportPlugin
 {
     private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":", "@" };
     
-    internal ACServer Server { get; }
     internal Guid Key { get; }
-    internal Dictionary<ACTcpClient, Replay> Reports { get; } = new();
-
+    
     private readonly ReportConfiguration _configuration;
-    private readonly ConcurrentQueue<AuditEvent> _events = new();
     private readonly DiscordWebhook? _webhook;
     private readonly string _serverNameTruncated;
+    private readonly EntryCarManager _entryCarManager;
+    private readonly Dictionary<ACTcpClient, Replay> _reports = new();
+    private readonly ConcurrentQueue<AuditEvent> _events = new();
 
-    internal ReportPlugin(ACServer server, ReportConfiguration configuration)
+    internal ReportPlugin(ReportConfiguration configuration, EntryCarManager entryCarManager, ChatService chatService, CSPServerExtraOptions cspServerExtraOptions, ACServerConfiguration serverConfiguration, GeoParamsManager geoParamsManager)
     {
-        Server = server;
         _configuration = configuration;
+        _entryCarManager = entryCarManager;
 
-        Server.ClientFirstUpdateSent += OnClientFirstUpdateSent;
-        Server.ClientDisconnected += OnClientDisconnected;
-        Server.ChatMessageReceived += OnChatMessage;
+        _entryCarManager.ClientConnected += (sender, _) =>  sender.FirstUpdateSent += OnClientFirstUpdateSent;
+        _entryCarManager.ClientDisconnected += OnClientDisconnected;
+        chatService.MessageReceived += OnChatMessage;
         
-        _serverNameTruncated = server.Configuration.Server.Name.Substring(0, Math.Min(server.Configuration.Server.Name.Length, 80));
+        _serverNameTruncated = serverConfiguration.Server.Name.Substring(0, Math.Min(serverConfiguration.Server.Name.Length, 80));
 
         if (!string.IsNullOrEmpty(_configuration.WebhookUrl))
         {
@@ -40,8 +43,8 @@ internal class ReportPlugin
         }
         
         Key = Guid.NewGuid();
-        string extraOptions = $"\n[REPLAY_CLIPS]\nUPLOAD_URL = 'http://{Server.GeoParams.Ip}:{Server.Configuration.Server.HttpPort}/report?key={Key}'\nDURATION = {_configuration.ClipDurationSeconds}";
-        Server.CSPServerExtraOptions.ExtraOptions += extraOptions;
+        string extraOptions = $"\n[REPLAY_CLIPS]\nUPLOAD_URL = 'http://{geoParamsManager.GeoParams.Ip}:{serverConfiguration.Server.HttpPort}/report?key={Key}'\nDURATION = {_configuration.ClipDurationSeconds}";
+        cspServerExtraOptions.ExtraOptions += extraOptions;
 
         Directory.CreateDirectory("reports");
     }
@@ -68,7 +71,7 @@ internal class ReportPlugin
             _events.Enqueue(auditEvent);
             DeleteOldEvents();
 
-            Reports.Remove(sender);
+            _reports.Remove(sender);
         }
         catch (Exception ex)
         {
@@ -117,7 +120,7 @@ internal class ReportPlugin
     internal AuditLog GetAuditLog(DateTime timestamp)
     {
         DeleteOldEvents();
-        var entryList = Server.EntryCars.Select(car => new AuditClient(car));
+        var entryList = _entryCarManager.EntryCars.Select(car => new AuditClient(car));
         return new AuditLog(timestamp, entryList, _events.ToList());
     }
 
@@ -153,4 +156,12 @@ internal class ReportPlugin
 
         await _webhook.SendAsync(msg, new FileInfo(Path.Join("reports", $"{replay.Guid}.zip")), new FileInfo(Path.Join("reports", $"{replay.Guid}.json")));
     }
+    
+    public Replay? GetLastReplay(ACTcpClient client)
+    {
+        _reports.TryGetValue(client, out var report);
+        return report;
+    }
+
+    public void SetLastReplay(ACTcpClient client, Replay replay) => _reports[client] = replay;
 }

@@ -7,10 +7,13 @@ using AssettoServer.Server;
 
 namespace RaceChallengePlugin;
 
-internal class EntryCarRace
+public class EntryCarRace
 {
-    private readonly ACServer _server;
+    private readonly SessionManager _sessionManager;
+    private readonly EntryCarManager _entryCarManager;
+    private readonly RaceChallengePlugin _plugin;
     private readonly EntryCar _entryCar;
+    private readonly Race.Factory _raceFactory;
     
     public int LightFlashCount { get; internal set; }
     
@@ -19,10 +22,13 @@ internal class EntryCarRace
     private long LastLightFlashTime { get; set; }
     private long LastRaceChallengeTime { get; set; }
 
-    internal EntryCarRace(EntryCar entryCar)
+    public EntryCarRace(EntryCar entryCar, SessionManager sessionManager, EntryCarManager entryCarManager, RaceChallengePlugin plugin, Race.Factory raceFactory)
     {
-        _server = entryCar.Server;
         _entryCar = entryCar;
+        _sessionManager = sessionManager;
+        _entryCarManager = entryCarManager;
+        _plugin = plugin;
+        _raceFactory = raceFactory;
         _entryCar.PositionUpdateReceived += OnPositionUpdateReceived;
         _entryCar.ResetInvoked += OnResetInvoked;
     }
@@ -34,7 +40,7 @@ internal class EntryCarRace
 
     private void OnPositionUpdateReceived(EntryCar sender, in PositionUpdateIn positionUpdate)
     {
-        long currentTick = _server.ServerTimeMilliseconds;
+        long currentTick = _sessionManager.ServerTimeMilliseconds;
         if(((_entryCar.Status.StatusFlag & CarStatusFlags.LightsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.LightsOn) != 0) || ((_entryCar.Status.StatusFlag & CarStatusFlags.HighBeamsOff) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HighBeamsOff) != 0))
         {
             LastLightFlashTime = currentTick;
@@ -83,7 +89,7 @@ internal class EntryCarRace
                 Reply("You cannot challenge yourself to a race.");
             else
             {
-                currentRace = car.GetRace().CurrentRace;
+                currentRace = _plugin.GetRace(car).CurrentRace;
                 if (currentRace != null)
                 {
                     if (currentRace.HasStarted)
@@ -93,9 +99,9 @@ internal class EntryCarRace
                 }
                 else
                 {
-                    currentRace = new Race(_server, _entryCar, car, lineUpRequired);
+                    currentRace = _raceFactory(_entryCar, car, lineUpRequired);
                     CurrentRace = currentRace;
-                    car.GetRace().CurrentRace = currentRace;
+                    _plugin.GetRace(car).CurrentRace = currentRace;
 
                     _entryCar.Client?.SendPacket(new ChatMessage { SessionId = 255, Message = $"You have challenged {car.Client?.Name} to a race." });
 
@@ -110,7 +116,7 @@ internal class EntryCarRace
                         if (!currentRace.HasStarted)
                         {
                             CurrentRace = null;
-                            car.GetRace().CurrentRace = null;
+                            _plugin.GetRace(car).CurrentRace = null;
 
                             ChatMessage timeoutMessage = new ChatMessage { SessionId = 255, Message = $"Race request has timed out." };
                             _entryCar.Client?.SendPacket(timeoutMessage);
@@ -127,7 +133,7 @@ internal class EntryCarRace
         EntryCar? bestMatch = null;
         float distanceSquared = 30 * 30;
 
-        foreach(EntryCar car in _server.EntryCars)
+        foreach(EntryCar car in _entryCarManager.EntryCars)
         {
             ACTcpClient? carClient = car.Client;
             if(carClient != null && car != _entryCar)

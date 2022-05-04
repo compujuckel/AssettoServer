@@ -10,13 +10,13 @@ public class GeoIP
 {
     private readonly DatabaseReader _database;
 
-    public GeoIP(ACServer server, GeoIPConfiguration configuration)
+    public GeoIP(EntryCarManager entryCarManager, GeoIPConfiguration configuration)
     {
         _database = new DatabaseReader(configuration.DatabasePath ?? throw new ConfigurationException("No GeoIP database path set"));
-        server.ClientHandshakeStarted += OnClientHandshakeStarted;
+        entryCarManager.ClientConnected += OnClientConnected;
     }
 
-    private void OnClientHandshakeStarted(ACTcpClient sender, EventArgs e)
+    private void OnClientConnected(ACTcpClient sender, EventArgs args)
     {
         try
         {

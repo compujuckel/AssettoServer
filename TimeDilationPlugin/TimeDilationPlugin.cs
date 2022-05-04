@@ -1,52 +1,45 @@
-﻿using AssettoServer.Server;
-using AssettoServer.Server.Configuration;
+﻿using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Server.Weather;
 using AssettoServer.Utils;
-using JetBrains.Annotations;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace TimeDilationPlugin;
 
-[UsedImplicitly]
-public class TimeDilationPlugin : IAssettoServerPlugin<TimeDilationConfiguration>
+public class TimeDilationPlugin : BackgroundService, IAssettoServerAutostart
 {
-    private TimeDilationConfiguration? Configuration { get; set; }
-    private ACServer Server { get; set; } = null!;
-    private LookupTable LookupTable { get; set; } = null!;
-    
-    public void SetConfiguration(TimeDilationConfiguration configuration)
-    {
-        Configuration = configuration;
-    }
+    private readonly LookupTable _lookupTable;
+    private readonly WeatherManager _weatherManager;
+    private readonly ACServerConfiguration _configuration;
 
-    public void Initialize(ACServer server)
+    public TimeDilationPlugin(TimeDilationConfiguration configuration, WeatherManager weatherManager, ACServerConfiguration serverConfiguration)
     {
-        Server = server;
-
-        if (Configuration?.LookupTable == null || Configuration.LookupTable.Count == 0)
+        if (configuration.LookupTable == null || configuration.LookupTable.Count == 0)
         {
             throw new ConfigurationException("No configuration found for TimeDilationPlugin or lookup table empty");
         }
 
-        LookupTable = new LookupTable(Configuration.LookupTable.Select(entry => new KeyValuePair<double, double>(entry.SunAngle, entry.TimeMult)).ToList());
+        _weatherManager = weatherManager;
+        _configuration = serverConfiguration;
 
-        _ = UpdateLoopAsync();
+        _lookupTable = new LookupTable(configuration.LookupTable.Select(entry => new KeyValuePair<double, double>(entry.SunAngle, entry.TimeMult)).ToList());
     }
-
-    private async Task UpdateLoopAsync()
+    
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!Server.CurrentSunPosition.HasValue)
+        if (!_weatherManager.CurrentSunPosition.HasValue)
         {
             Log.Error("TimeDilationPlugin cannot get current sun position, aborting");
             return;
         }
         
-        while (true)
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                double sunAltitudeDeg = Server.CurrentSunPosition.Value.Altitude * 180.0 / Math.PI;
-                Server.Configuration.Server.TimeOfDayMultiplier = (float)LookupTable.GetValue(sunAltitudeDeg);
+                double sunAltitudeDeg = _weatherManager.CurrentSunPosition.Value.Altitude * 180.0 / Math.PI;
+                _configuration.Server.TimeOfDayMultiplier = (float)_lookupTable.GetValue(sunAltitudeDeg);
             }
             catch (Exception ex)
             {
@@ -54,7 +47,7 @@ public class TimeDilationPlugin : IAssettoServerPlugin<TimeDilationConfiguration
             }
             finally
             {
-                await Task.Delay(1000);
+                await Task.Delay(1000, stoppingToken);
             }
         }
     }

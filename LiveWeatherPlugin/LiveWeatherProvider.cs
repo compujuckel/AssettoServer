@@ -1,35 +1,36 @@
-﻿using AssettoServer.Server;
+﻿using AssettoServer.Server.Plugin;
 using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace LiveWeatherPlugin;
 
-public class LiveWeatherProvider
+public class LiveWeatherProvider : BackgroundService, IAssettoServerAutostart
 {
-    private readonly ACServer _server;
     private readonly LiveWeatherConfiguration _configuration;
     private readonly OpenWeatherMapWeatherProvider _liveWeatherProvider;
+    private readonly WeatherManager _weatherManager;
+    private readonly IWeatherTypeProvider _weatherTypeProvider;
+    private TrackParams _trackParams = null!; 
 
-    private readonly TrackParams _trackParams; 
-
-    public LiveWeatherProvider(ACServer server, LiveWeatherConfiguration configuration)
+    public LiveWeatherProvider(LiveWeatherConfiguration configuration, WeatherManager weatherManager, IWeatherTypeProvider weatherTypeProvider)
     {
-        _server = server;
         _configuration = configuration;
+        _weatherManager = weatherManager;
+        _weatherTypeProvider = weatherTypeProvider;
 
         if (string.IsNullOrWhiteSpace(_configuration.OpenWeatherMapApiKey))
             throw new InvalidOperationException("OpenWeatherMap API key not set. Cannot enable live weather");
-        if (_server.TrackParams == null)
-            throw new InvalidOperationException("No track params set for track");
 
         _liveWeatherProvider = new OpenWeatherMapWeatherProvider(_configuration.OpenWeatherMapApiKey);
-        _trackParams = _server.TrackParams;
     }
 
-    internal async Task LoopAsync()
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (true)
+        _trackParams = _weatherManager.TrackParams ?? throw new InvalidOperationException("No track params set for track");
+        
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
@@ -41,25 +42,24 @@ public class LiveWeatherProvider
             }
             finally
             {
-                await Task.Delay(_configuration.UpdateIntervalMilliseconds);
+                await Task.Delay(_configuration.UpdateIntervalMilliseconds, stoppingToken);
             }
         }
-        // ReSharper disable once FunctionNeverReturns
     }
 
     private async Task UpdateAsync()
     {
-        var last = _server.CurrentWeather;
+        var last = _weatherManager.CurrentWeather;
         var response = await _liveWeatherProvider.GetWeatherAsync(_trackParams.Latitude, _trackParams.Longitude);
-        var weatherType = _server.WeatherTypeProvider.GetWeatherType(response.WeatherType);
+        var weatherType = _weatherTypeProvider.GetWeatherType(response.WeatherType);
             
         Log.Debug("Live weather: {WeatherType}, ambient {TemperatureAmbient}°C", response.WeatherType, response.TemperatureAmbient);
 
-        _server.SetWeather(new WeatherData(last.Type, weatherType)
+        _weatherManager.SetWeather(new WeatherData(last.Type, weatherType)
         {
             TransitionDuration = 120000.0,
             TemperatureAmbient = response.TemperatureAmbient,
-            TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(_server.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0, response.TemperatureAmbient,
+            TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0, response.TemperatureAmbient,
                 weatherType.TemperatureCoefficient),
             Pressure = response.Pressure,
             Humidity = response.Humidity,

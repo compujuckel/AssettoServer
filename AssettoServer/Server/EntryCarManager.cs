@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Admin;
@@ -23,6 +25,11 @@ public class EntryCarManager
     private readonly EntryCar.Factory _entryCarFactory;
     private readonly IAdminService _adminService;
     private readonly SemaphoreSlim _connectSemaphore = new(1, 1);
+    
+    /// <summary>
+    /// Fires when a client has started a handshake. At this point it is still possible to reject the connection by setting ClientHandshakeEventArgs.Cancel = true.
+    /// </summary>
+    public event EventHandler<ACTcpClient, ClientConnectingEventArgs>? ClientConnecting;
     
     /// <summary>
     /// Fires when a client has secured a slot and established a TCP connection.
@@ -155,6 +162,30 @@ public class EntryCarManager
                 car.Client?.SendPacketUdp(in packet);
             }
         }
+    }
+
+    internal bool ValidateHandshake(ACTcpClient client, HandshakeRequest handshakeRequest, [NotNullWhen(false)] out IOutgoingNetworkPacket? handshakeResponse)
+    {
+        var args = new ClientConnectingEventArgs
+        {
+            HandshakeRequest = handshakeRequest
+        };
+        ClientConnecting?.Invoke(client, args);
+
+        if (args.Cancel)
+        {
+            if (args.CancelType == ClientConnectingEventArgs.CancelTypeEnum.Blacklisted)
+                handshakeResponse = new BlacklistedResponse();
+            else if (args.CancelType == ClientConnectingEventArgs.CancelTypeEnum.AuthFailed)
+                handshakeResponse = new AuthFailedResponse(args.AuthFailedReason ?? "No reason specified");
+            else
+                throw new InvalidOperationException("Invalid cancel type specified");
+
+            return false;
+        }
+
+        handshakeResponse = null;
+        return true;
     }
     
     internal async Task<bool> TrySecureSlotAsync(ACTcpClient client, HandshakeRequest handshakeRequest)

@@ -1,17 +1,30 @@
 ﻿using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
+using Microsoft.Extensions.Hosting;
 
 namespace RaceChallengePlugin;
 
-public class RaceChallengePlugin : IAssettoServerPlugin
+public class RaceChallengePlugin : BackgroundService, IAssettoServerAutostart
 {
-    internal static readonly Dictionary<int, EntryCarRace> Instances = new();
+    private readonly EntryCarManager _entryCarManager;
+    private readonly Func<EntryCar, EntryCarRace> _entryCarRaceFactory;
+    private readonly Dictionary<int, EntryCarRace> _instances = new();
     
-    public void Initialize(ACServer server)
+    public RaceChallengePlugin(EntryCarManager entryCarManager, Func<EntryCar, EntryCarRace> entryCarRaceFactory)
     {
-        foreach (var entryCar in server.EntryCars)
-        {
-            Instances.Add(entryCar.SessionId, new EntryCarRace(entryCar));
-        }
+        _entryCarManager = entryCarManager;
+        _entryCarRaceFactory = entryCarRaceFactory;
     }
+
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        foreach (var entryCar in _entryCarManager.EntryCars)
+        {
+            _instances.Add(entryCar.SessionId, _entryCarRaceFactory(entryCar));
+        }
+
+        return Task.CompletedTask;
+    }
+    
+    internal EntryCarRace GetRace(EntryCar entryCar) => _instances[entryCar.SessionId];
 }

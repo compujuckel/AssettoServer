@@ -3,8 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
 using App.Metrics;
 using App.Metrics.Counter;
 using App.Metrics.Timer;
@@ -27,8 +25,7 @@ namespace AssettoServer.Server
     public class ACServer : BackgroundService
     {
         internal Dictionary<uint, Action<ACTcpClient, PacketReader>> CSPClientMessageTypes { get; } = new();
-        private List<PosixSignalRegistration> SignalHandlers { get; }
-        
+
         private readonly ACServerConfiguration _configuration;
         private readonly SessionManager _sessionManager;
         private readonly EntryCarManager _entryCarManager;
@@ -39,7 +36,9 @@ namespace AssettoServer.Server
         private readonly ChecksumManager _checksumManager;
         private readonly ACTcpServer _tcpServer;
         private readonly ACUdpServer _udpServer;
+        private readonly KunosLobbyRegistration _kunosLobbyRegistration;
         private readonly IEnumerable<IAssettoServerAutostart> _autostartServices;
+        private readonly IHostApplicationLifetime _applicationLifetime;
 
         /// <summary>
         /// Fires on each server tick in the main loop. Don't do resource intensive / long running stuff in here!
@@ -49,16 +48,18 @@ namespace AssettoServer.Server
         public ACServer(
             ACServerConfiguration configuration,
             IBlacklistService blacklistService,
-            SessionManager sessionManager, 
-            EntryCarManager entryCarManager, 
-            WeatherManager weatherManager, 
-            GeoParamsManager geoParamsManager, 
-            IMetricsRoot metrics, 
-            ChecksumManager checksumManager, 
-            ACTcpServer tcpServer, 
-            ACUdpServer udpServer, 
-            CSPFeatureManager cspFeatureManager, 
-            IEnumerable<IAssettoServerAutostart> autostartServices)
+            SessionManager sessionManager,
+            EntryCarManager entryCarManager,
+            WeatherManager weatherManager,
+            GeoParamsManager geoParamsManager,
+            IMetricsRoot metrics,
+            ChecksumManager checksumManager,
+            ACTcpServer tcpServer,
+            ACUdpServer udpServer,
+            CSPFeatureManager cspFeatureManager,
+            IEnumerable<IAssettoServerAutostart> autostartServices,
+            KunosLobbyRegistration kunosLobbyRegistration,
+            IHostApplicationLifetime applicationLifetime)
         {
             Log.Information("Starting server");
             
@@ -73,6 +74,8 @@ namespace AssettoServer.Server
             _tcpServer = tcpServer;
             _udpServer = udpServer;
             _autostartServices = autostartServices;
+            _kunosLobbyRegistration = kunosLobbyRegistration;
+            _applicationLifetime = applicationLifetime;
 
             _blacklist.Blacklisted += OnBlacklisted;
 
@@ -89,14 +92,6 @@ namespace AssettoServer.Server
             {
                 cspFeatureManager.Add(new CSPFeature { Name = "CUSTOM_UPDATE" });
             }
-
-            SignalHandlers = new List<PosixSignalRegistration>()
-            {
-                PosixSignalRegistration.Create(PosixSignal.SIGINT, TerminateHandler),
-                PosixSignalRegistration.Create(PosixSignal.SIGQUIT, TerminateHandler),
-                PosixSignalRegistration.Create(PosixSignal.SIGTERM, TerminateHandler),
-                PosixSignalRegistration.Create(PosixSignal.SIGHUP, TerminateHandler),
-            };
         }
 
         private bool IsSessionOver()
@@ -109,8 +104,16 @@ namespace AssettoServer.Server
             return false;
         }
 
+        private void OnApplicationStopping()
+        {
+            Log.Information("Server shutting down");
+            _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = "*** Server shutting down ***" });
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            Log.Information("Starting HTTP server on port {HttpPort}", _configuration.Server.HttpPort);
+            
             _entryCarManager.Initialize();
             _checksumManager.Initialize();
             _sessionManager.Initialize();
@@ -123,25 +126,16 @@ namespace AssettoServer.Server
             {
                 await service.StartAsync(stoppingToken);
             }
+            
+            await _kunosLobbyRegistration.StartAsync(stoppingToken);
 
             for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
             {
                 _entryCarManager.EntryCars[i].ResetLogger(); // TODO is this still necessary?
             }
 
-            Log.Information("Starting HTTP server on port {HttpPort}", _configuration.Server.HttpPort);
-
+            _ = _applicationLifetime.ApplicationStopping.Register(OnApplicationStopping);
             _ = Task.Factory.StartNew(() => UpdateAsync(stoppingToken), TaskCreationOptions.LongRunning);
-        }
-        
-        private void TerminateHandler(PosixSignalContext context)
-        {
-            Log.Information("Caught signal, server shutting down");
-            _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = "*** Server shutting down ***" });
-            
-            // Allow some time for the chat messages to be sent
-            Thread.Sleep(250);
-            Log.CloseAndFlush();
         }
 
         private void OnBlacklisted(IBlacklistService sender, BlacklistedEventArgs args)
@@ -337,6 +331,7 @@ namespace AssettoServer.Server
 
                     failedUpdateLoops = 0;
                 }
+                catch (TaskCanceledException) { }
                 catch (Exception ex)
                 {
                     if (failedUpdateLoops < 10)
@@ -347,8 +342,7 @@ namespace AssettoServer.Server
                     else
                     {
                         Log.Fatal(ex, "Cannot recover from update loop error, shutting down");
-                        Log.CloseAndFlush();
-                        Environment.Exit(1);
+                        _applicationLifetime.StopApplication();
                     }
                 }
             }

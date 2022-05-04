@@ -16,34 +16,20 @@ public class KunosLobbyRegistration : BackgroundService
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly HttpClient _httpClient;
-    private readonly IHostApplicationLifetime _applicationLifetime;
 
-    public KunosLobbyRegistration(ACServerConfiguration configuration, SessionManager sessionManager, EntryCarManager entryCarManager, HttpClient httpClient, IHostApplicationLifetime applicationLifetime)
+    public KunosLobbyRegistration(ACServerConfiguration configuration, SessionManager sessionManager, EntryCarManager entryCarManager, HttpClient httpClient)
     {
         _configuration = configuration;
         _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
         _httpClient = httpClient;
-        _applicationLifetime = applicationLifetime;
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (_configuration.Server.RegisterToLobby)
-        {
-            _ = _applicationLifetime.ApplicationStarted.Register(() => OnStarted(stoppingToken));
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private void OnStarted(CancellationToken stoppingToken)
-    {
-        _ = Task.Run(() => LoopAsync(stoppingToken), stoppingToken);
-    }
-
-    private async Task LoopAsync(CancellationToken stoppingToken)
-    {
+        if (!_configuration.Server.RegisterToLobby)
+            return;
+        
         try
         {
             if (!await RegisterToLobbyAsync())
@@ -52,6 +38,7 @@ public class KunosLobbyRegistration : BackgroundService
         catch (Exception ex)
         {
             Log.Error(ex, "Error during Kunos lobby registration");
+            return;
         }
 
         while (!stoppingToken.IsCancellationRequested)

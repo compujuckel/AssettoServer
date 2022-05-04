@@ -49,7 +49,7 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<ACClientTypeParser>().AsSelf();
             builder.RegisterType<ChatService>().AsSelf().SingleInstance().AutoActivate();
             builder.RegisterType<CSPFeatureManager>().AsSelf().SingleInstance();
-            builder.RegisterType<KunosLobbyRegistration>().AsSelf().As<IHostedService>().SingleInstance();
+            builder.RegisterType<KunosLobbyRegistration>().AsSelf().SingleInstance();
             builder.RegisterType<DefaultAdminService>().As<IAdminService>().As<IHostedService>().SingleInstance(); // TODO IHostedService is probably bad here if we want to replace the service later
             builder.RegisterType<DefaultBlacklistService>().As<IBlacklistService>().SingleInstance();
             builder.RegisterType<IniTrackParamsProvider>().As<ITrackParamsProvider>().SingleInstance();

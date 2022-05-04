@@ -49,6 +49,7 @@ public class VotingWeather : BackgroundService, IAssettoServerAutostart
             {
                 await UpdateAsync(stoppingToken);
             }
+            catch (TaskCanceledException) { }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error during voting weather update");

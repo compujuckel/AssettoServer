@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30420.98
@@ -28,6 +28,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeDilationPlugin", "TimeDilationPlugin\TimeDilationPlugin.csproj", "{F479976E-7BB0-49EB-A97E-5389C0601D91}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoModerationPlugin", "AutoModerationPlugin\AutoModerationPlugin.csproj", "{59C320A4-11D8-4BAE-81F1-226D012F5484}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChangeWeatherPlugin", "ChangeWeatherPlugin\ChangeWeatherPlugin.csproj", "{3EB20D09-B045-45ED-855F-4D8650266692}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

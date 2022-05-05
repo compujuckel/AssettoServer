@@ -7,7 +7,6 @@ using App.Metrics;
 using App.Metrics.Counter;
 using App.Metrics.Timer;
 using AssettoServer.Network.Tcp;
-using AssettoServer.Network.Packets;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Packets.Outgoing;
@@ -24,15 +23,12 @@ namespace AssettoServer.Server
 {
     public class ACServer : BackgroundService
     {
-        internal Dictionary<uint, Action<ACTcpClient, PacketReader>> CSPClientMessageTypes { get; } = new();
-
         private readonly ACServerConfiguration _configuration;
         private readonly SessionManager _sessionManager;
         private readonly EntryCarManager _entryCarManager;
         private readonly WeatherManager _weatherManager;
         private readonly GeoParamsManager _geoParamsManager;
         private readonly IMetricsRoot _metrics;
-        private readonly IBlacklistService _blacklist;
         private readonly ChecksumManager _checksumManager;
         private readonly ACTcpServer _tcpServer;
         private readonly ACUdpServer _udpServer;
@@ -64,7 +60,6 @@ namespace AssettoServer.Server
             Log.Information("Starting server");
             
             _configuration = configuration;
-            _blacklist = blacklistService;
             _sessionManager = sessionManager;
             _entryCarManager = entryCarManager;
             _weatherManager = weatherManager;
@@ -77,7 +72,7 @@ namespace AssettoServer.Server
             _kunosLobbyRegistration = kunosLobbyRegistration;
             _applicationLifetime = applicationLifetime;
 
-            _blacklist.Blacklisted += OnBlacklisted;
+            blacklistService.Blacklisted += OnBlacklisted;
 
             cspFeatureManager.Add(new CSPFeature { Name = "SPECTATING_AWARE" });
             cspFeatureManager.Add(new CSPFeature { Name = "LOWER_CLIENTS_SENDING_RATE" });
@@ -341,14 +336,6 @@ namespace AssettoServer.Server
                     }
                 }
             }
-        }
-
-        public void RegisterCSPClientMessageType(uint type, Action<ACTcpClient, PacketReader> handler)
-        {
-            if (CSPClientMessageTypes.ContainsKey(type))
-                throw new ArgumentException($"Type {type} already registered");
-
-            CSPClientMessageTypes.Add(type, handler);
         }
     }
 }

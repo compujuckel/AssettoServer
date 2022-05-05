@@ -78,7 +78,7 @@ public class SessionManager
         }
 
         var previousSession = CurrentSession;
-        var previousSessionResults = CurrentSession?.Results;
+        var previousSessionResults = CurrentSession.Results;
 
         CurrentSession = _sessionStateFactory(_configuration.Sessions[CurrentSessionIndex]);
         CurrentSession.Results = new Dictionary<byte, EntryCarResult>();

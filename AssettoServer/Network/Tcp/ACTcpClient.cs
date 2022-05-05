@@ -68,6 +68,7 @@ namespace AssettoServer.Network.Tcp
         private readonly ChecksumManager _checksumManager;
         private readonly CSPFeatureManager _cspFeatureManager;
         private readonly CSPServerExtraOptions _cspServerExtraOptions;
+        private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
 
         /// <summary>
         /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
@@ -119,7 +120,7 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        public ACTcpClient(ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions)
+        public ACTcpClient(ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions, CSPClientMessageTypeManager cspClientMessageTypeManager)
         {
             Server = server;
             UdpServer = udpServer;
@@ -141,6 +142,7 @@ namespace AssettoServer.Network.Tcp
             _checksumManager = checksumManager;
             _cspFeatureManager = cspFeatureManager;
             _cspServerExtraOptions = cspServerExtraOptions;
+            _cspClientMessageTypeManager = cspClientMessageTypeManager;
             tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
             tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
             tcpClient.LingerState = new LingerOption(true, 2);
@@ -448,7 +450,7 @@ namespace AssettoServer.Network.Tcp
             {
                 uint luaPacketType = reader.Read<uint>();
 
-                if (Server.CSPClientMessageTypes.TryGetValue(luaPacketType, out var handler))
+                if (_cspClientMessageTypeManager.MessageTypes.TryGetValue(luaPacketType, out var handler))
                 {
                     handler(this, reader);
                 }

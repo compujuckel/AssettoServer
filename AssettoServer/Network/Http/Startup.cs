@@ -54,6 +54,7 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<DefaultBlacklistService>().As<IBlacklistService>().SingleInstance();
             builder.RegisterType<IniTrackParamsProvider>().As<ITrackParamsProvider>().SingleInstance();
             builder.RegisterType<CSPServerScriptProvider>().AsSelf().SingleInstance();
+            builder.RegisterType<CSPClientMessageTypeManager>().AsSelf().SingleInstance();
             builder.RegisterType<Steam>().As<IHostedService>().AsSelf().SingleInstance();
             builder.RegisterType<SessionManager>().AsSelf().SingleInstance();
             builder.RegisterType<EntryCarManager>().AsSelf().SingleInstance();

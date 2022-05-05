@@ -89,8 +89,7 @@ namespace AssettoServer.Network.Http
             {
                 options.OutputFormatters.Add(new LuaOutputFormatter());
             });
-
-            Log.Debug("Plugins: {Plugins}", string.Join(", ", _loader.LoadedPlugins));
+            
             var mvcBuilder = services.AddControllers();
             
             foreach (string pluginName in _configuration.Extra.EnablePlugins ?? new List<string>())

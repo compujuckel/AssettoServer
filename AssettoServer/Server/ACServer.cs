@@ -129,11 +129,6 @@ namespace AssettoServer.Server
             
             await _kunosLobbyRegistration.StartAsync(stoppingToken);
 
-            for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
-            {
-                _entryCarManager.EntryCars[i].ResetLogger(); // TODO is this still necessary?
-            }
-
             _ = _applicationLifetime.ApplicationStopping.Register(OnApplicationStopping);
             _ = Task.Factory.StartNew(() => UpdateAsync(stoppingToken), TaskCreationOptions.LongRunning);
         }

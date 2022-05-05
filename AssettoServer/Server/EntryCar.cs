@@ -13,27 +13,7 @@ using Serilog.Events;
 namespace AssettoServer.Server
 { 
     public partial class EntryCar
-    {
-        public EntryCar(ACServer server, string model, string? skin, byte sessionId, Func<EntryCar, AiState> aiStateFactory, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager)
-        {
-            Model = model;
-            Skin = skin ?? "";
-            Server = server;
-            SessionId = sessionId;
-            _sessionManager = sessionManager;
-            _configuration = configuration;
-            _entryCarManager = entryCarManager;
-            _aiStateFactory = aiStateFactory;
-            OtherCarsLastSentUpdateTime = new long[entryCarManager.EntryCars.Length];
-
-            AiPakSequenceIds = new byte[entryCarManager.EntryCars.Length];
-            LastSeenAiState = new AiState[entryCarManager.EntryCars.Length];
-            LastSeenAiSpawn = new byte[entryCarManager.EntryCars.Length];
-            
-            AiInit();
-        }
-
-        private ACServer Server { get; }
+    { 
         public ACTcpClient? Client { get; internal set; }
         public CarStatus Status { get; private set; } = new CarStatus();
 
@@ -99,16 +79,31 @@ namespace AssettoServer.Server
                 logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("CarSkin", _entryCar.Skin));
             }
         }
-
-        public void ResetLogger()
+        
+        public EntryCar(string model, string? skin, byte sessionId, Func<EntryCar, AiState> aiStateFactory, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager)
         {
+            Model = model;
+            Skin = skin ?? "";
+            SessionId = sessionId;
+            _sessionManager = sessionManager;
+            _configuration = configuration;
+            _entryCarManager = entryCarManager;
+            _aiStateFactory = aiStateFactory;
+            OtherCarsLastSentUpdateTime = new long[entryCarManager.EntryCars.Length];
+
+            AiPakSequenceIds = new byte[entryCarManager.EntryCars.Length];
+            LastSeenAiState = new AiState[entryCarManager.EntryCars.Length];
+            LastSeenAiSpawn = new byte[entryCarManager.EntryCars.Length];
+            
             Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.With(new EntryCarLogEventEnricher(this))
                 .WriteTo.Logger(Log.Logger)
                 .CreateLogger();
+            
+            AiInit();
         }
-        
+
         internal void Reset()
         {
             ResetInvoked?.Invoke(this, EventArgs.Empty);

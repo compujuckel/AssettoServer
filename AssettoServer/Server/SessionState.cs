@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using AssettoServer.Server.Configuration;
 
 namespace AssettoServer.Server;
@@ -20,7 +19,7 @@ public class SessionState
 
     private readonly SessionManager _timeSource;
 
-    public SessionState(SessionConfiguration configuration, ACServer server, SessionManager timeSource)
+    public SessionState(SessionConfiguration configuration, SessionManager timeSource)
     {
         Configuration = configuration;
         _timeSource = timeSource;

@@ -81,7 +81,7 @@ namespace AssettoServer.Network.Http
                 Timed = false,
                 TimeLeft = _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
                 TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay),
-                Timestamp = (int)_sessionManager.ServerTimeMilliseconds,
+                Timestamp = _sessionManager.ServerTimeMilliseconds,
                 TPort = _configuration.Server.TcpPort,
                 Track = _configuration.Server.Track + (string.IsNullOrEmpty(_configuration.Server.TrackConfig) ? null : "-" + _configuration.Server.TrackConfig),
                 PoweredBy = "AssettoServer " + _configuration.ServerVersion
@@ -140,7 +140,7 @@ namespace AssettoServer.Network.Http
                 Timed = false,
                 TimeLeft = _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
                 TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay),
-                Timestamp = (int)_sessionManager.ServerTimeMilliseconds,
+                Timestamp = _sessionManager.ServerTimeMilliseconds,
                 TPort = _configuration.Server.TcpPort,
                 Track = _configuration.Server.Track + (string.IsNullOrEmpty(_configuration.Server.TrackConfig) ? null : "-" + _configuration.Server.TrackConfig),
                 Players = new DetailResponsePlayerList

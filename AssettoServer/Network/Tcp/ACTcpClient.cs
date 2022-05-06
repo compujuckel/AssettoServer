@@ -344,7 +344,7 @@ namespace AssettoServer.Network.Tcp
                                 CurrentSession = _sessionManager.CurrentSession,
                                 ChecksumCount = (byte)_checksumManager.TrackChecksums.Count,
                                 ChecksumPaths = _checksumManager.TrackChecksums.Keys,
-                                CurrentTime = (int)_sessionManager.ServerTimeMilliseconds,
+                                CurrentTime = _sessionManager.ServerTimeMilliseconds,
                                 LegalTyres = cfg.LegalTyres,
                                 RandomSeed = 123,
                                 SessionCount = (byte)_configuration.Sessions.Count,
@@ -726,7 +726,7 @@ namespace AssettoServer.Network.Tcp
                 return;
 
             TcpClient.ReceiveTimeout = 0;
-            EntryCar.LastPongTime = (int)_sessionManager.ServerTimeMilliseconds;
+            EntryCar.LastPongTime = _sessionManager.ServerTimeMilliseconds;
             HasSentFirstUpdate = true;
 
             List<EntryCar> connectedCars = _entryCarManager.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();

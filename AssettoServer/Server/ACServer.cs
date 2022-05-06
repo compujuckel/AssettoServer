@@ -221,8 +221,8 @@ namespace AssettoServer.Server
                             if (fromClient != null && fromClient.HasSentFirstUpdate && (_sessionManager.ServerTimeMilliseconds - fromCar.LastPingTime) > 1000)
                             {
                                 fromCar.CheckAfk();
-                                fromCar.LastPingTime = (int)_sessionManager.ServerTimeMilliseconds;
-                                fromClient.SendPacketUdp(new PingUpdate(fromCar.LastPingTime, fromCar.Ping));
+                                fromCar.LastPingTime = _sessionManager.ServerTimeMilliseconds;
+                                fromClient.SendPacketUdp(new PingUpdate((uint)fromCar.LastPingTime, fromCar.Ping));
 
                                 if (_sessionManager.ServerTimeMilliseconds - fromCar.LastPongTime > 15000)
                                 {

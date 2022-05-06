@@ -43,7 +43,7 @@ namespace AssettoServer.Network.Packets.Outgoing.Handshake
         public IEnumerable<string> ChecksumPaths;
         public string LegalTyres;
         public int RandomSeed;
-        public int CurrentTime;
+        public long CurrentTime;
 
 
         public readonly void ToWriter(ref PacketWriter writer)
@@ -94,7 +94,7 @@ namespace AssettoServer.Network.Packets.Outgoing.Handshake
 
             writer.Write(TrackGrip);
             writer.Write(SessionId);
-            writer.Write((long)CurrentTime - CurrentSession.StartTimeMilliseconds);
+            writer.Write<long>(CurrentTime - CurrentSession.StartTimeMilliseconds);
 
             writer.Write(ChecksumCount);
             if (ChecksumPaths != null)
@@ -103,7 +103,7 @@ namespace AssettoServer.Network.Packets.Outgoing.Handshake
 
             writer.WriteASCIIString(LegalTyres);
             writer.Write(RandomSeed);
-            writer.Write(CurrentTime);
+            writer.Write<uint>((uint)CurrentTime);
         }
     }
 }

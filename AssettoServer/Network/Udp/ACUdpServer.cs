@@ -150,9 +150,9 @@ public class ACUdpServer : BackgroundService
                 }
                 else if (packetId == 0xF8)
                 {
-                    int currentTime = (int)_sessionManager.ServerTimeMilliseconds;
+                    long currentTime = _sessionManager.ServerTimeMilliseconds;
                     car.Ping = (ushort)(currentTime - packetReader.Read<int>());
-                    car.TimeOffset = currentTime - ((car.Ping / 2) + packetReader.Read<int>());
+                    car.TimeOffset = (int)currentTime - ((car.Ping / 2) + packetReader.Read<int>());
                     car.LastPongTime = currentTime;
 
                     if (car.Ping > _configuration.Extra.MaxPing)

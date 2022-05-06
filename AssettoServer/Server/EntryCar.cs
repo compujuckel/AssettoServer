@@ -26,8 +26,8 @@ namespace AssettoServer.Server
         public int TimeOffset { get; internal set; }
         public byte SessionId { get; }
         public uint LastRemoteTimestamp { get; internal set; }
-        public int LastPingTime { get; internal set; }
-        public int LastPongTime { get; internal set; }
+        public long LastPingTime { get; internal set; }
+        public long LastPongTime { get; internal set; }
         public ushort Ping { get; internal set; }
         public DriverOptionsFlags DriverOptionsFlags { get; internal set; }
 

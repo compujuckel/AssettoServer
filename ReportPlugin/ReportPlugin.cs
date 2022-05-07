@@ -5,12 +5,14 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
+using AssettoServer.Server.Plugin;
 using CSharpDiscordWebhook.NET.Discord;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace ReportPlugin;
 
-public class ReportPlugin
+public class ReportPlugin : BackgroundService, IAssettoServerAutostart
 {
     private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":", "@" };
     
@@ -20,13 +22,25 @@ public class ReportPlugin
     private readonly DiscordWebhook? _webhook;
     private readonly string _serverNameTruncated;
     private readonly EntryCarManager _entryCarManager;
+    private readonly CSPServerExtraOptions _cspServerExtraOptions;
+    private readonly GeoParamsManager _geoParamsManager;
+    private readonly ACServerConfiguration _serverConfiguration;
     private readonly Dictionary<ACTcpClient, Replay> _reports = new();
     private readonly ConcurrentQueue<AuditEvent> _events = new();
 
-    internal ReportPlugin(ReportConfiguration configuration, EntryCarManager entryCarManager, ChatService chatService, CSPServerExtraOptions cspServerExtraOptions, ACServerConfiguration serverConfiguration, GeoParamsManager geoParamsManager)
+    public ReportPlugin(
+        ReportConfiguration configuration,
+        EntryCarManager entryCarManager,
+        ChatService chatService,
+        CSPServerExtraOptions cspServerExtraOptions,
+        ACServerConfiguration serverConfiguration,
+        GeoParamsManager geoParamsManager)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;
+        _cspServerExtraOptions = cspServerExtraOptions;
+        _serverConfiguration = serverConfiguration;
+        _geoParamsManager = geoParamsManager;
 
         _entryCarManager.ClientConnected += (sender, _) =>  sender.FirstUpdateSent += OnClientFirstUpdateSent;
         _entryCarManager.ClientDisconnected += OnClientDisconnected;
@@ -43,10 +57,15 @@ public class ReportPlugin
         }
         
         Key = Guid.NewGuid();
-        string extraOptions = $"\n[REPLAY_CLIPS]\nUPLOAD_URL = 'http://{geoParamsManager.GeoParams.Ip}:{serverConfiguration.Server.HttpPort}/report?key={Key}'\nDURATION = {_configuration.ClipDurationSeconds}";
-        cspServerExtraOptions.ExtraOptions += extraOptions;
-
         Directory.CreateDirectory("reports");
+    }
+    
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        // can't do this in constructor because geo params won't be initialized yet
+        string extraOptions = $"\n[REPLAY_CLIPS]\nUPLOAD_URL = 'http://{_geoParamsManager.GeoParams.Ip}:{_serverConfiguration.Server.HttpPort}/report?key={Key}'\nDURATION = {_configuration.ClipDurationSeconds}";
+        _cspServerExtraOptions.ExtraOptions += extraOptions;
+        return Task.CompletedTask;
     }
 
     private void OnClientFirstUpdateSent(ACTcpClient sender, EventArgs args)

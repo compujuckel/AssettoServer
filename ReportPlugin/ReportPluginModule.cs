@@ -7,6 +7,6 @@ public class ReportPluginModule : AssettoServerModule<ReportConfiguration>
 {
     protected override void Load(ContainerBuilder builder)
     {
-        builder.RegisterType<ReportPlugin>().AsSelf().SingleInstance().AutoActivate();
+        builder.RegisterType<ReportPlugin>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
     }
 }

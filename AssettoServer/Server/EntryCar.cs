@@ -2,6 +2,7 @@
 using AssettoServer.Network.Tcp;
 using System;
 using System.Numerics;
+using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
@@ -145,6 +146,13 @@ namespace AssettoServer.Server
 
         internal void UpdatePosition(in PositionUpdateIn positionUpdate)
         {
+            if (!positionUpdate.IsValid())
+            {
+                Log.Debug("Invalid position update received from {Name}, disconnecting", Client?.Name);
+                if (Client != null) _ = Task.Run(Client.DisconnectAsync);
+                return;
+            }
+
             PositionUpdateReceived?.Invoke(this, in positionUpdate);
             
             HasUpdateToSend = true;

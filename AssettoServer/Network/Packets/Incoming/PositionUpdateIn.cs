@@ -24,4 +24,11 @@ public readonly struct PositionUpdateIn
     public readonly short PerformanceDelta;
     public readonly byte Gas;
     public readonly float NormalizedPosition;
+
+    public bool IsValid()
+    {
+        return !(float.IsNaN(Position.X) || float.IsNaN(Position.Y) || float.IsNaN(Position.Z)
+               || float.IsNaN(Rotation.X) || float.IsNaN(Rotation.Y) || float.IsNaN(Rotation.Z)
+               || float.IsNaN(Velocity.X) || float.IsNaN(Velocity.Y) || float.IsNaN(Velocity.Z));
+    }
 }

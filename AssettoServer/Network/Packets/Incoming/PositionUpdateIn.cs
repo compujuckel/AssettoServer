@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using AssettoServer.Network.Packets.Outgoing;
 
@@ -25,10 +26,12 @@ public readonly struct PositionUpdateIn
     public readonly byte Gas;
     public readonly float NormalizedPosition;
 
+    [SuppressMessage("ReSharper", "EqualExpressionComparison")]
     public bool IsValid()
     {
-        return !(float.IsNaN(Position.X) || float.IsNaN(Position.Y) || float.IsNaN(Position.Z)
-               || float.IsNaN(Rotation.X) || float.IsNaN(Rotation.Y) || float.IsNaN(Rotation.Z)
-               || float.IsNaN(Velocity.X) || float.IsNaN(Velocity.Y) || float.IsNaN(Velocity.Z));
+        // Check if any vector component contains NaN. Equality check NaN == NaN returns false
+        #pragma warning disable CS1718
+        return Position == Position && Rotation == Rotation && Velocity == Velocity;
+        #pragma warning restore CS1718
     }
 }

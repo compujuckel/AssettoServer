@@ -148,8 +148,14 @@ namespace AssettoServer.Server
         {
             if (!positionUpdate.IsValid())
             {
-                Log.Debug("Invalid position update received from {Name}, disconnecting", Client?.Name);
-                if (Client != null) _ = Task.Run(Client.DisconnectAsync);
+                _ = Task.Run(async () =>
+                {
+                    var client = Client;
+                    if (client == null) return;
+                    client.Logger.Debug("Invalid position update received from {Name} ({SessionId}), disconnecting", client.Name, client.SessionId);
+                    await client.DisconnectAsync();
+                });
+                
                 return;
             }
 

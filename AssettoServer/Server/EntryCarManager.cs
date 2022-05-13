@@ -59,56 +59,61 @@ public class EntryCarManager
         _adminService = adminService;
     }
 
-    /// <summary>
-    /// Kick a client from the server.
-    /// </summary>
-    /// <param name="client">The client.</param>
-    /// <param name="reason">Kick reason that will be shown to the kicked player in the red screen.</param>
-    /// <param name="reasonStr">Reason for the kick, will be shown in the broadcasted message and in logs.</param>
-    /// <param name="broadcastMessage">When true, announce the kick to all connected players.</param>
-    /// <param name="admin">The admin that kicked the player.</param>
-    public async Task KickAsync(ACTcpClient? client, KickReason reason, string? reasonStr = null, bool broadcastMessage = true, ACTcpClient? admin = null)
+    public async Task KickAsync(ACTcpClient? client, string? reason = null, ACTcpClient? admin = null)
     {
-        if (client != null && !client.IsDisconnectRequested)
-        {
-            if (reasonStr != null && broadcastMessage)
-                BroadcastPacket(new ChatMessage { SessionId = 255, Message = reasonStr });
+        if (client == null) return;
+        
+        string? clientReason = reason != null ? $"You have been kicked for {reason}" : null;
+        string broadcastReason = reason != null ? $"{client.Name} has been kicked for {reason}." : $"{client.Name} has been kicked.";
 
-            client.Logger.Information("{ClientName} was kicked. Reason: {Reason}", client.Name, reasonStr ?? "No reason given.");
-            client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = reason });
+        await KickAsync(client, KickReason.Kicked, reason, clientReason, broadcastReason, admin);
+    }
+    
+    public async Task BanAsync(ACTcpClient? client, string? reason = null, ACTcpClient? admin = null)
+    {
+        if (client == null || client.Guid == null) return;
+        
+        string? clientReason = reason != null ? $"You have been banned for {reason}" : "You have been banned from the server";
+        string broadcastReason = reason != null ? $"{client.Name} has been banned for {reason}." : $"{client.Name} has been banned.";
 
-            var args = new ClientAuditEventArgs
-            {
-                Reason = reason,
-                ReasonStr = reasonStr,
-                Admin = admin
-            };
-            ClientKicked?.Invoke(client, args);
-
-            await client.DisconnectAsync();
-        }
+        await KickAsync(client, KickReason.VoteBlacklisted, reason, clientReason, broadcastReason, admin);
+        await _blacklist.AddAsync(ulong.Parse(client.Guid));
     }
 
-    public async Task BanAsync(ACTcpClient? client, KickReason reason, string? reasonStr = null, ACTcpClient? admin = null)
+    public async Task KickAsync(ACTcpClient? client, KickReason reason, string? auditReason = null, string? clientReason = null, string? broadcastReason = null, ACTcpClient? admin = null)
     {
         if (client != null && client.Guid != null && !client.IsDisconnectRequested)
         {
-            if (reasonStr != null)
-                BroadcastPacket(new ChatMessage { SessionId = 255, Message = reasonStr });
+            if (broadcastReason != null)
+            {
+                BroadcastPacket(new ChatMessage { SessionId = 255, Message = broadcastReason });
+            }
 
-            client.Logger.Information("{ClientName} was banned. Reason: {Reason}", client.Name, reasonStr ?? "No reason given.");
+            if (clientReason != null)
+            {
+                client.SendPacket(new CSPKickBanMessageOverride { Message = clientReason });
+            }
+            
             client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = reason });
-
+            
             var args = new ClientAuditEventArgs
             {
                 Reason = reason,
-                ReasonStr = reasonStr,
+                ReasonStr = broadcastReason,
                 Admin = admin
             };
-            ClientBanned?.Invoke(client, args);
+            if (reason is KickReason.Kicked or KickReason.VoteKicked)
+            {
+                client.Logger.Information("{ClientName} was kicked. Reason: {Reason}", client.Name, auditReason ?? "No reason given.");
+                ClientKicked?.Invoke(client, args);
+            }
+            else if (reason is KickReason.VoteBanned or KickReason.VoteBlacklisted)
+            {
+                client.Logger.Information("{ClientName} was banned. Reason: {Reason}", client.Name, auditReason ?? "No reason given.");
+                ClientBanned?.Invoke(client, args);
+            }
 
             await client.DisconnectAsync();
-            await _blacklist.AddAsync(ulong.Parse(client.Guid));
         }
     }
 

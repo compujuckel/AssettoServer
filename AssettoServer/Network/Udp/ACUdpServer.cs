@@ -56,15 +56,15 @@ public class ACUdpServer : BackgroundService
             throw new InvalidOperationException($"Could not bind UDP socket. Maybe the port is already in use?");
         }
         
-        await Task.Factory.StartNew(ReceiveLoop, TaskCreationOptions.LongRunning);
+        await Task.Factory.StartNew(() => ReceiveLoop(stoppingToken), TaskCreationOptions.LongRunning);
     }
 
-    private void ReceiveLoop()
+    private void ReceiveLoop(CancellationToken stoppingToken)
     {
         byte[] buffer = new byte[1500];
         var address = new Address();
         
-        while (true)
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
@@ -159,7 +159,7 @@ public class ACUdpServer : BackgroundService
                     {
                         car.HighPingSeconds++;
                         if (car.HighPingSeconds > _configuration.Extra.MaxPingSeconds)
-                            _ = Task.Run(() => _entryCarManager.KickAsync(car.Client, KickReason.Kicked, $"{car.Client?.Name} has been kicked for high ping ({car.Ping}ms)."));
+                            _ = Task.Run(() => _entryCarManager.KickAsync(car.Client, $"high ping ({car.Ping}ms)"));
                     }
                     else car.HighPingSeconds = 0;
                 }

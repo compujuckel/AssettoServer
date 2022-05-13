@@ -498,7 +498,7 @@ namespace AssettoServer.Network.Tcp
             if (!passedChecksum)
             {
                 ChecksumFailed?.Invoke(this, EventArgs.Empty);
-                await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, $"{Name} failed the checksum check and has been kicked.", false);
+                await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} failed the checksum check and has been kicked.");
             }
             else
             {
@@ -759,7 +759,7 @@ namespace AssettoServer.Network.Tcp
             {
                 if (!HasPassedChecksum && IsConnected)
                 {
-                    await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, $"{Name} did not send the requested checksums.", false);
+                    await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} did not send the requested checksums.");
                 }
             });
             

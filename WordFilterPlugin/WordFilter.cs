@@ -36,7 +36,7 @@ public class WordFilter
         {
             args.Cancel = true;
             sender.Logger.Information("Chat message from {ClientName} ({SessionId}) filtered and banned: {ChatMessage}", sender.Name, sender.SessionId, args.Message);
-            Task.Run(() => _entryCarManager.BanAsync(sender, KickReason.VoteBlacklisted, "Prohibited language"));
+            Task.Run(() => _entryCarManager.BanAsync(sender, "prohibited language"));
         }
         else if (_configuration.ProhibitedChatPatterns.Any(regex => Regex.Match(args.Message, regex, RegexOptions.IgnoreCase).Success))
         {

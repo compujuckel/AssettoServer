@@ -46,9 +46,7 @@ public class AdminModule : ACModuleBase
         else
         {
             Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
-                
-            string kickMessage = reason == null ? $"{player.Name} has been kicked." : $"{player.Name} has been kicked for: {reason}.";
-            return _entryCarManager.KickAsync(player, KickReason.Kicked, kickMessage, true, Context.Client);
+            return _entryCarManager.KickAsync(player, reason, Context.Client);
         }
 
         return Task.CompletedTask;
@@ -64,9 +62,7 @@ public class AdminModule : ACModuleBase
         else
         {
             Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
-                
-            string kickMessage = reason == null ? $"{player.Name} has been banned." : $"{player.Name} has been banned for: {reason}.";
-            return _entryCarManager.BanAsync(player, KickReason.VoteBlacklisted, kickMessage, Context.Client);
+            return _entryCarManager.BanAsync(player, reason, Context.Client);
         }
 
         return Task.CompletedTask;

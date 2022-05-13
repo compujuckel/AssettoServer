@@ -227,7 +227,7 @@ namespace AssettoServer.Server
                                 if (_sessionManager.ServerTimeMilliseconds - fromCar.LastPongTime > 15000)
                                 {
                                     fromClient.Logger.Information("{ClientName} has not sent a ping response for over 15 seconds", fromClient.Name);
-                                    _ = fromClient.DisconnectAsync();
+                                    _ = Task.Run(fromClient.DisconnectAsync, stoppingToken);
                                 }
                             }
 

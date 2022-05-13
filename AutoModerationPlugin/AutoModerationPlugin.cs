@@ -103,7 +103,7 @@ public class AutoModerationPlugin : BackgroundService, IAssettoServerAutostart
                             instance.NoLightSeconds++;
                             if (instance.NoLightSeconds > _configuration.NoLightsKick.DurationSeconds)
                             {
-                                _ = _entryCarManager.KickAsync(client, KickReason.Kicked, $"{client.Name} has been kicked for driving without lights.");
+                                _ = _entryCarManager.KickAsync(client, "driving without lights");
                             }
                             else if (!instance.HasSentNoLightWarning && instance.NoLightSeconds > _configuration.NoLightsKick.DurationSeconds / 2)
                             {
@@ -130,7 +130,7 @@ public class AutoModerationPlugin : BackgroundService, IAssettoServerAutostart
                             instance.WrongWaySeconds++;
                             if (instance.WrongWaySeconds > _configuration.WrongWayKick.DurationSeconds)
                             {
-                                _ = _entryCarManager.KickAsync(client, KickReason.Kicked, $"{client.Name} has been kicked for driving the wrong way.");
+                                _ = _entryCarManager.KickAsync(client, "driving the wrong way");
                             }
                             else if (!instance.HasSentWrongWayWarning && instance.WrongWaySeconds > _configuration.WrongWayKick.DurationSeconds / 2)
                             {
@@ -156,7 +156,7 @@ public class AutoModerationPlugin : BackgroundService, IAssettoServerAutostart
                             instance.BlockingRoadSeconds++;
                             if (instance.BlockingRoadSeconds > _configuration.BlockingRoadKick.DurationSeconds)
                             {
-                                _ = _entryCarManager.KickAsync(client, KickReason.Kicked, $"{client.Name} has been kicked for blocking the road.");
+                                _ = _entryCarManager.KickAsync(client, KickReason.Kicked, "blocking the road");
                             }
                             else if (!instance.HasSentBlockingRoadWarning && instance.BlockingRoadSeconds > _configuration.BlockingRoadKick.DurationSeconds / 2)
                             {

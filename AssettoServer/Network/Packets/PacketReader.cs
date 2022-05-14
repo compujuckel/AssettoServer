@@ -28,23 +28,21 @@ namespace AssettoServer.Network.Packets
         public string ReadASCIIString(bool bigLength = false)
         {
             short stringLength = bigLength ? Read<short>() : Read<byte>();
-
-            Span<char> stringChars = stringLength < 256 ? stackalloc char[stringLength] : new char[stringLength];
-            Encoding.ASCII.GetChars(Buffer.Slice(ReadPosition, stringLength).Span, stringChars);
+            
+            var ret = string.Create(stringLength, this, (span, self) => Encoding.ASCII.GetChars(self.Buffer.Slice(self.ReadPosition, span.Length).Span, span));
             ReadPosition += stringLength;
 
-            return new string(stringChars);
+            return ret;
         }
 
         public string ReadUTF32String()
         {
             byte stringLength = Read<byte>();
 
-            Span<char> stringChars = stackalloc char[stringLength];
-            Encoding.UTF32.GetChars(Buffer.Slice(ReadPosition, stringLength * 4).Span, stringChars);
+            var ret = string.Create(stringLength, this, (span, self) => Encoding.UTF32.GetChars(self.Buffer.Slice(self.ReadPosition, span.Length * 4).Span, span));
             ReadPosition += stringLength * 4;
 
-            return new string(stringChars);
+            return ret;
         }
 
         public T Read<T>() where T : unmanaged

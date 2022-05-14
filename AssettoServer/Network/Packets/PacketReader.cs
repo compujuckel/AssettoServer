@@ -29,7 +29,7 @@ namespace AssettoServer.Network.Packets
         {
             short stringLength = bigLength ? Read<short>() : Read<byte>();
 
-            Span<char> stringChars = stackalloc char[stringLength];
+            Span<char> stringChars = stringLength < 256 ? stackalloc char[stringLength] : new char[stringLength];
             Encoding.ASCII.GetChars(Buffer.Slice(ReadPosition, stringLength).Span, stringChars);
             ReadPosition += stringLength;
 

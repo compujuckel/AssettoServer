@@ -94,7 +94,7 @@ namespace AssettoServer.Network.Http
         public async Task<EntryListResponse> GetEntryList(string guid)
         {
             guid = guid.Substring(1);
-            bool isAdmin = !string.IsNullOrEmpty(guid) && await _adminService.IsAdminAsync(ulong.Parse(guid));
+            bool isAdmin = !string.IsNullOrEmpty(guid) && ulong.TryParse(guid, out ulong ulongGuid) && await _adminService.IsAdminAsync(ulongGuid);
 
             EntryListResponse responseObj = new EntryListResponse
             {
@@ -117,7 +117,7 @@ namespace AssettoServer.Network.Http
         [HttpGet("/api/details")]
         public async Task<DetailResponse> GetDetails(string? guid)
         {
-            bool isAdmin = !string.IsNullOrEmpty(guid) && await _adminService.IsAdminAsync(ulong.Parse(guid));
+            bool isAdmin = !string.IsNullOrEmpty(guid) && ulong.TryParse(guid, out ulong ulongGuid) && await _adminService.IsAdminAsync(ulongGuid);
 
             DetailResponse responseObj = new DetailResponse()
             {

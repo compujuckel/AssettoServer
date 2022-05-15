@@ -25,12 +25,6 @@ public class Steam : BackgroundService
 
     private void Initialize()
     {
-        _cspFeatureManager.Add(new CSPFeature
-        {
-            Name = "STEAM_TICKET",
-            Mandatory = true
-        });
-        
         var serverInit = new SteamServerInit("assettocorsa", "Assetto Corsa")
         {
             GamePort = _configuration.Server.UdpPort,
@@ -48,9 +42,6 @@ public class Steam : BackgroundService
 
         try
         {
-            SteamServer.ServerName = _configuration.Server.Name.Substring(0,Math.Min(_configuration.Server.Name.Length, 63));
-            SteamServer.MapName = _configuration.Server.Track.Substring(0,Math.Min(_configuration.Server.Track.Length, 31));
-            // TODO SteamServer.MaxPlayers = _server.EntryCars.Length;
             SteamServer.LogOnAnonymous();
             SteamServer.OnSteamServersDisconnected += SteamServer_OnSteamServersDisconnected;
             SteamServer.OnSteamServersConnected += SteamServer_OnSteamServersConnected;
@@ -159,9 +150,9 @@ public class Steam : BackgroundService
         Log.Information("Connected to Steam Servers");
     }
 
-    private void SteamServer_OnSteamServersDisconnected(Result obj)
+    private void SteamServer_OnSteamServersDisconnected(Result result)
     {
-        Log.Error("Disconnected from Steam Servers");
+        Log.Error("Disconnected from Steam Servers ({Reason})", result);
         SteamServer.OnSteamServersConnected -= SteamServer_OnSteamServersConnected;
         SteamServer.OnSteamServersDisconnected -= SteamServer_OnSteamServersDisconnected;
         SteamServer.OnSteamServerConnectFailure -= SteamServer_OnSteamServerConnectFailure;
@@ -189,11 +180,19 @@ public class Steam : BackgroundService
 
     private void SteamServer_OnSteamServerConnectFailure(Result result, bool stillTrying)
     {
-        Log.Error("Failed to connect to Steam servers. Result {Result}, still trying = {StillTrying}", result, stillTrying);
+        Log.Error("Failed to connect to Steam servers ({Reason}), still trying = {StillTrying}", result, stillTrying);
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        return _configuration.Extra.UseSteamAuth ? Task.Run(Initialize, stoppingToken) : Task.CompletedTask;
+        if (_configuration.Extra.UseSteamAuth)
+        {
+            _cspFeatureManager.Add(new CSPFeature
+            {
+                Name = "STEAM_TICKET",
+                Mandatory = true
+            });
+            await Task.Run(Initialize, stoppingToken);
+        }
     }
 }

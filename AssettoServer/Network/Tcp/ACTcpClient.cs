@@ -169,7 +169,7 @@ namespace AssettoServer.Network.Tcp
                 if (!OutgoingPacketChannel.Writer.TryWrite(packet) && !(packet is SunAngleUpdate) && !IsDisconnectRequested)
                 {
                     Logger.Warning("Cannot write packet to TCP packet queue for {ClientName}, disconnecting", Name);
-                    _ = DisconnectAsync();
+                    _ = Task.Run(DisconnectAsync);
                 }
             }
             catch (Exception ex)

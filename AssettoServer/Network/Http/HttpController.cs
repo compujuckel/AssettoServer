@@ -2,8 +2,12 @@
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using AssettoServer.Network.Http.Responses;
 using AssettoServer.Server;
+using AssettoServer.Server.Admin;
+using AssettoServer.Server.Configuration;
+using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Weather;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,12 +16,25 @@ namespace AssettoServer.Network.Http
     [ApiController]
     public class HttpController : ControllerBase
     {
+        private readonly ACServerConfiguration _configuration;
+        private readonly CSPServerScriptProvider _serverScriptProvider;
+        private readonly WeatherManager _weatherManager;
+        private readonly SessionManager _sessionManager;
+        private readonly EntryCarManager _entryCarManager;
+        private readonly GeoParamsManager _geoParamsManager;
+        private readonly CSPFeatureManager _cspFeatureManager;
+        private readonly IAdminService _adminService;
 
-        private readonly ACServer _server;
-
-        public HttpController(ACServer server)
+        public HttpController(CSPServerScriptProvider serverScriptProvider, WeatherManager weatherManager, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager, CSPFeatureManager cspFeatureManager, IAdminService adminService)
         {
-            _server = server;
+            _serverScriptProvider = serverScriptProvider;
+            _weatherManager = weatherManager;
+            _sessionManager = sessionManager;
+            _configuration = configuration;
+            _entryCarManager = entryCarManager;
+            _geoParamsManager = geoParamsManager;
+            _cspFeatureManager = cspFeatureManager;
+            _adminService = adminService;
         }
 
         private string? IdFromGuid(string? guid)
@@ -45,95 +62,95 @@ namespace AssettoServer.Network.Http
         {
             InfoResponse responseObj = new InfoResponse()
             {
-                Cars = _server.EntryCars.Select(c => c.Model).Distinct(),
-                Clients = _server.ConnectedCars.Count,
-                Country = new string[] { _server.GeoParams.Country, _server.GeoParams.CountryCode },
-                CPort = _server.Configuration.Server.HttpPort,
-                Durations = _server.Configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps),
-                Extra = _server.Configuration.Server.HasExtraLap,
-                Inverted = _server.Configuration.Server.InvertedGridPositions,
-                Ip = _server.GeoParams.Ip,
-                MaxClients = _server.Configuration.Server.MaxClients,
-                Name = _server.Configuration.Server.Name + (_server.Configuration.Extra.EnableServerDetails ? " ℹ" + _server.Configuration.Server.HttpPort : ""),
-                Pass = !string.IsNullOrEmpty(_server.Configuration.Server.Password),
+                Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct(),
+                Clients = _entryCarManager.ConnectedCars.Count,
+                Country = new string[] { _geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode },
+                CPort = _configuration.Server.HttpPort,
+                Durations = _configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps),
+                Extra = _configuration.Server.HasExtraLap,
+                Inverted = _configuration.Server.InvertedGridPositions,
+                Ip = _geoParamsManager.GeoParams.Ip,
+                MaxClients = _configuration.Server.MaxClients,
+                Name = _configuration.Server.Name + (_configuration.Extra.EnableServerDetails ? " ℹ" + _configuration.Server.HttpPort : ""),
+                Pass = !string.IsNullOrEmpty(_configuration.Server.Password),
                 Pickup = true,
                 Pit = false,
-                Session = _server.CurrentSession.Configuration.Id,
-                Port = _server.Configuration.Server.UdpPort,
-                SessionTypes = _server.Configuration.Sessions.Select(s => s.Id + 1),
+                Session = _sessionManager.CurrentSession.Configuration.Id,
+                Port = _configuration.Server.UdpPort,
+                SessionTypes = _configuration.Sessions.Select(s => s.Id + 1),
                 Timed = false,
-                TimeLeft = _server.CurrentSession.TimeLeftMilliseconds / 1000,
-                TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_server.CurrentDateTime.TimeOfDay.TickOfDay),
-                Timestamp = (int)_server.ServerTimeMilliseconds,
-                TPort = _server.Configuration.Server.TcpPort,
-                Track = _server.Configuration.Server.Track + (string.IsNullOrEmpty(_server.Configuration.Server.TrackConfig) ? null : "-" + _server.Configuration.Server.TrackConfig),
-                PoweredBy = "AssettoServer " + _server.Configuration.ServerVersion
+                TimeLeft = _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
+                TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay),
+                Timestamp = _sessionManager.ServerTimeMilliseconds,
+                TPort = _configuration.Server.TcpPort,
+                Track = _configuration.Server.Track + (string.IsNullOrEmpty(_configuration.Server.TrackConfig) ? null : "-" + _configuration.Server.TrackConfig),
+                PoweredBy = "AssettoServer " + _configuration.ServerVersion
             };
 
             return responseObj;
         }
 
         [HttpGet("/JSON{guid}")]
-        public EntryListResponse GetEntryList(string guid)
+        public async Task<EntryListResponse> GetEntryList(string guid)
         {
             guid = guid.Substring(1);
-            bool isAdmin = !string.IsNullOrEmpty(guid) && _server.Admins.Contains(guid);
+            bool isAdmin = !string.IsNullOrEmpty(guid) && ulong.TryParse(guid, out ulong ulongGuid) && await _adminService.IsAdminAsync(ulongGuid);
 
             EntryListResponse responseObj = new EntryListResponse
             {
-                Cars = _server.EntryCars.Select(ec => new EntryListResponseCar
+                Cars = _entryCarManager.EntryCars.Select(ec => new EntryListResponseCar
                 {
                     Model = ec.Model,
                     Skin = ec.Skin,
-                    IsEntryList = ec.AiMode != AiMode.Fixed && (isAdmin || _server.Configuration.Extra.AiParams.MaxPlayerCount == 0 ||
-                                                                _server.ConnectedCars.Count < _server.Configuration.Extra.AiParams.MaxPlayerCount),
+                    IsEntryList = ec.AiMode != AiMode.Fixed && (isAdmin || _configuration.Extra.AiParams.MaxPlayerCount == 0 ||
+                                                                _entryCarManager.ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount),
                     DriverName = ec.Client?.Name,
                     DriverTeam = ec.Client?.Team,
                     IsConnected = ec.Client != null
                 }).ToList(),
-                Features = _server.Features
+                Features = _cspFeatureManager.Features.Keys
             };
 
             return responseObj;
         }
 
         [HttpGet("/api/details")]
-        public DetailResponse GetDetails(string? guid)
+        public async Task<DetailResponse> GetDetails(string? guid)
         {
-            bool isAdmin = !string.IsNullOrEmpty(guid) && _server.Admins.Contains(guid);
+            bool isAdmin = !string.IsNullOrEmpty(guid) && ulong.TryParse(guid, out ulong ulongGuid) && await _adminService.IsAdminAsync(ulongGuid);
 
             DetailResponse responseObj = new DetailResponse()
             {
-                Cars = _server.EntryCars.Select(c => c.Model).Distinct(),
-                Clients = _server.ConnectedCars.Count,
-                Country = new string[] { _server.GeoParams.Country, _server.GeoParams.CountryCode },
-                CPort = _server.Configuration.Server.HttpPort,
-                Durations = _server.Configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps),
-                Extra = _server.Configuration.Server.HasExtraLap,
-                Inverted = _server.Configuration.Server.InvertedGridPositions,
-                Ip = _server.GeoParams.Ip,
-                MaxClients = _server.Configuration.Server.MaxClients,
-                Name = _server.Configuration.Server.Name,
-                Pass = !string.IsNullOrEmpty(_server.Configuration.Server.Password),
+                Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct(),
+                Clients = _entryCarManager.ConnectedCars.Count,
+                Country = new string[] { _geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode },
+                CPort = _configuration.Server.HttpPort,
+                Durations = _configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps),
+                Extra = _configuration.Server.HasExtraLap,
+                Inverted = _configuration.Server.InvertedGridPositions,
+                Ip = _geoParamsManager.GeoParams.Ip,
+                MaxClients = _configuration.Server.MaxClients,
+                Name = _configuration.Server.Name,
+                Pass = !string.IsNullOrEmpty(_configuration.Server.Password),
                 Pickup = true,
                 Pit = false,
-                Session = _server.CurrentSession.Configuration.Id,
-                Port = _server.Configuration.Server.UdpPort,
-                SessionTypes = _server.Configuration.Sessions.Select(s => s.Id + 1),
+                Session = _sessionManager.CurrentSession.Configuration.Id,
+                Port = _configuration.Server.UdpPort,
+                SessionTypes = _configuration.Sessions.Select(s => s.Id + 1),
                 Timed = false,
-                TimeLeft = _server.CurrentSession.TimeLeftMilliseconds / 1000,
-                TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_server.CurrentDateTime.TimeOfDay.TickOfDay),
-                Timestamp = (int)_server.ServerTimeMilliseconds,
-                TPort = _server.Configuration.Server.TcpPort,
-                Track = _server.Configuration.Server.Track + (string.IsNullOrEmpty(_server.Configuration.Server.TrackConfig) ? null : "-" + _server.Configuration.Server.TrackConfig),
+                TimeLeft = _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
+                TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay),
+                Timestamp = _sessionManager.ServerTimeMilliseconds,
+                TPort = _configuration.Server.TcpPort,
+                Track = _configuration.Server.Track + (string.IsNullOrEmpty(_configuration.Server.TrackConfig) ? null : "-" + _configuration.Server.TrackConfig),
                 Players = new DetailResponsePlayerList
                 {
-                    Cars = _server.EntryCars.Select(ec => new DetailResponseCar
+                    Cars = _entryCarManager.EntryCars.Select(ec => new DetailResponseCar
                     {
                         Model = ec.Model,
                         Skin = ec.Skin,
-                        IsEntryList = ec.AiMode != AiMode.Fixed && (isAdmin || _server.Configuration.Extra.AiParams.MaxPlayerCount == 0 ||
-                                                                    _server.ConnectedCars.Count < _server.Configuration.Extra.AiParams.MaxPlayerCount),
+                        IsEntryList = ec.AiMode != AiMode.Fixed && (isAdmin || _configuration.Extra.AiParams.MaxPlayerCount == 0 ||
+                                                                    _entryCarManager.ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount),
                         DriverName = ec.Client?.Name,
                         DriverTeam = ec.Client?.Team,
                         DriverNation = ec.Client?.NationCode,
@@ -141,34 +158,34 @@ namespace AssettoServer.Network.Http
                         ID = IdFromGuid(ec.Client?.Guid)
                     }).ToList(),
                 },
-                Until = DateTimeOffset.Now.ToUnixTimeSeconds() + _server.CurrentSession.TimeLeftMilliseconds / 1000,
-                Content = _server.Configuration.ContentConfiguration,
-                TrackBase = _server.Configuration.Server.Track,
-                City = _server.GeoParams.City,
-                Frequency = _server.Configuration.Server.RefreshRateHz,
+                Until = DateTimeOffset.Now.ToUnixTimeSeconds() + _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
+                Content = _configuration.ContentConfiguration,
+                TrackBase = _configuration.Server.Track,
+                City = _geoParamsManager.GeoParams.City,
+                Frequency = _configuration.Server.RefreshRateHz,
                 Assists = new DetailResponseAssists
                 {
-                    AbsState = _server.Configuration.Server.ABSAllowed,
-                    TcState = _server.Configuration.Server.TractionControlAllowed,
-                    FuelRate = (int)(_server.Configuration.Server.FuelConsumptionRate * 100),
-                    DamageMultiplier = (int)(_server.Configuration.Server.MechanicalDamageRate * 100),
-                    TyreWearRate = (int)(_server.Configuration.Server.TyreConsumptionRate * 100),
-                    AllowedTyresOut = _server.Configuration.Server.AllowedTyresOutCount,
-                    StabilityAllowed = _server.Configuration.Server.StabilityAllowed,
-                    AutoclutchAllowed = _server.Configuration.Server.AutoClutchAllowed,
-                    TyreBlanketsAllowed = _server.Configuration.Server.AllowTyreBlankets,
-                    ForceVirtualMirror = _server.Configuration.Server.IsVirtualMirrorForced
+                    AbsState = _configuration.Server.ABSAllowed,
+                    TcState = _configuration.Server.TractionControlAllowed,
+                    FuelRate = (int)(_configuration.Server.FuelConsumptionRate * 100),
+                    DamageMultiplier = (int)(_configuration.Server.MechanicalDamageRate * 100),
+                    TyreWearRate = (int)(_configuration.Server.TyreConsumptionRate * 100),
+                    AllowedTyresOut = _configuration.Server.AllowedTyresOutCount,
+                    StabilityAllowed = _configuration.Server.StabilityAllowed,
+                    AutoclutchAllowed = _configuration.Server.AutoClutchAllowed,
+                    TyreBlanketsAllowed = _configuration.Server.AllowTyreBlankets,
+                    ForceVirtualMirror = _configuration.Server.IsVirtualMirrorForced
                 },
-                WrappedPort = _server.Configuration.Server.HttpPort,
-                AmbientTemperature = _server.CurrentWeather.TemperatureAmbient,
-                RoadTemperature = _server.CurrentWeather.TemperatureRoad,
-                CurrentWeatherId = _server.CurrentWeather.Type.WeatherFxType == WeatherFxType.None ? _server.CurrentWeather.Type.Graphics : _server.CurrentWeather.Type.WeatherFxType.ToString(),
-                WindSpeed = (int)_server.CurrentWeather.WindSpeed,
-                WindDirection = _server.CurrentWeather.WindDirection,
-                Description = _server.Configuration.Extra.ServerDescription,
-                Grip = _server.CurrentWeather.TrackGrip * 100,
-                Features = _server.Features,
-                PoweredBy = "AssettoServer " + _server.Configuration.ServerVersion
+                WrappedPort = _configuration.Server.HttpPort,
+                AmbientTemperature = _weatherManager.CurrentWeather.TemperatureAmbient,
+                RoadTemperature = _weatherManager.CurrentWeather.TemperatureRoad,
+                CurrentWeatherId = _weatherManager.CurrentWeather.Type.WeatherFxType == WeatherFxType.None ? _weatherManager.CurrentWeather.Type.Graphics : _weatherManager.CurrentWeather.Type.WeatherFxType.ToString(),
+                WindSpeed = (int)_weatherManager.CurrentWeather.WindSpeed,
+                WindDirection = _weatherManager.CurrentWeather.WindDirection,
+                Description = _configuration.Extra.ServerDescription,
+                Grip = _weatherManager.CurrentWeather.TrackGrip * 100,
+                Features = _cspFeatureManager.Features.Keys,
+                PoweredBy = "AssettoServer " + _configuration.ServerVersion
             };
             
             return responseObj;
@@ -177,9 +194,9 @@ namespace AssettoServer.Network.Http
         [HttpGet("/api/scripts/{scriptId:int}")]
         public ActionResult<string> GetScript(int scriptId)
         {
-            if (scriptId < _server.CSPLuaClientScriptProvider.Scripts.Count)
+            if (scriptId < _serverScriptProvider.Scripts.Count)
             {
-                return _server.CSPLuaClientScriptProvider.Scripts[scriptId];
+                return _serverScriptProvider.Scripts[scriptId];
             }
 
             return NotFound();

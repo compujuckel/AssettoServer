@@ -1,26 +1,33 @@
 ﻿using System;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
+using AssettoServer.Server.Blacklist;
+using AssettoServer.Server.Configuration;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 using Steamworks;
 
 namespace AssettoServer.Server;
 
-internal class Steam
+public class Steam : BackgroundService
 {
-    private readonly ACServer _server;
-    
-    internal Steam(ACServer server)
+    private readonly ACServerConfiguration _configuration;
+    private readonly IBlacklistService _blacklistService;
+    private readonly CSPFeatureManager _cspFeatureManager;
+    public Steam(ACServerConfiguration configuration, IBlacklistService blacklistService, CSPFeatureManager cspFeatureManager)
     {
-        _server = server;
+        _configuration = configuration;
+        _blacklistService = blacklistService;
+        _cspFeatureManager = cspFeatureManager;
     }
-    
-    internal void Initialize()
+
+    private void Initialize()
     {
         var serverInit = new SteamServerInit("assettocorsa", "Assetto Corsa")
         {
-            GamePort = _server.Configuration.Server.UdpPort,
+            GamePort = _configuration.Server.UdpPort,
             Secure = true,
         }.WithQueryShareGamePort();
 
@@ -35,9 +42,6 @@ internal class Steam
 
         try
         {
-            SteamServer.ServerName = _server.Configuration.Server.Name.Substring(0,Math.Min(_server.Configuration.Server.Name.Length, 63));
-            SteamServer.MapName = _server.Configuration.Server.Track.Substring(0,Math.Min(_server.Configuration.Server.Track.Length, 31));
-            SteamServer.MaxPlayers = _server.EntryCars.Length;
             SteamServer.LogOnAnonymous();
             SteamServer.OnSteamServersDisconnected += SteamServer_OnSteamServersDisconnected;
             SteamServer.OnSteamServersConnected += SteamServer_OnSteamServersConnected;
@@ -91,16 +95,16 @@ internal class Steam
                 }
             };
 
-            if (playerSteamId != ownerSteamId && _server.IsGuidBlacklisted(ownerSteamId.ToString()))
+            if (playerSteamId != ownerSteamId && _blacklistService.IsBlacklistedAsync(ownerSteamId).Result)
             {
                 client.Logger.Information("{ClientName} ({SteamId}) is using Steam family sharing and game owner {OwnerSteamId} is blacklisted", client.Name, playerSteamId, ownerSteamId);
                 taskCompletionSource.SetResult(false);
                 return;
             }
 
-            if (_server.Configuration.Extra.ValidateDlcOwnership != null)
+            if (_configuration.Extra.ValidateDlcOwnership != null)
             {
-                foreach (int appid in _server.Configuration.Extra.ValidateDlcOwnership)
+                foreach (int appid in _configuration.Extra.ValidateDlcOwnership)
                 {
                     if (SteamServer.UserHasLicenseForApp(playerSteamId, appid) != UserHasLicenseForAppResult.HasLicense)
                     {
@@ -146,9 +150,9 @@ internal class Steam
         Log.Information("Connected to Steam Servers");
     }
 
-    private void SteamServer_OnSteamServersDisconnected(Result obj)
+    private void SteamServer_OnSteamServersDisconnected(Result result)
     {
-        Log.Error("Disconnected from Steam Servers");
+        Log.Error("Disconnected from Steam Servers ({Reason})", result);
         SteamServer.OnSteamServersConnected -= SteamServer_OnSteamServersConnected;
         SteamServer.OnSteamServersDisconnected -= SteamServer_OnSteamServersDisconnected;
         SteamServer.OnSteamServerConnectFailure -= SteamServer_OnSteamServerConnectFailure;
@@ -176,6 +180,19 @@ internal class Steam
 
     private void SteamServer_OnSteamServerConnectFailure(Result result, bool stillTrying)
     {
-        Log.Error("Failed to connect to Steam servers. Result {Result}, still trying = {StillTrying}", result, stillTrying);
+        Log.Error("Failed to connect to Steam servers ({Reason}), still trying = {StillTrying}", result, stillTrying);
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        if (_configuration.Extra.UseSteamAuth)
+        {
+            _cspFeatureManager.Add(new CSPFeature
+            {
+                Name = "STEAM_TICKET",
+                Mandatory = true
+            });
+            await Task.Run(Initialize, stoppingToken);
+        }
     }
 }

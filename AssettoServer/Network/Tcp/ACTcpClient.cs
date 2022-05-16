@@ -13,7 +13,9 @@ using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Network.Packets.Shared;
+using AssettoServer.Network.Udp;
 using AssettoServer.Server;
+using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using NanoSockets;
@@ -25,7 +27,8 @@ namespace AssettoServer.Network.Tcp
 {
     public class ACTcpClient
     {
-        public ACServer Server { get; }
+        private ACServer Server { get; }
+        private ACUdpServer UdpServer { get; }
         public ILogger Logger { get; }
         public byte SessionId { get; set; }
         public string? Name { get; private set; }
@@ -38,10 +41,11 @@ namespace AssettoServer.Network.Tcp
         public bool HasSentFirstUpdate { get; private set; }
         public bool IsConnected { get; set; }
         public TcpClient TcpClient { get; }
-        
-        internal NetworkStream TcpStream { get; }
-        [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode), nameof(Guid))] internal bool HasStartedHandshake { get; private set; }
-        internal bool HasPassedChecksum { get; private set; }
+
+        private NetworkStream TcpStream { get; }
+        [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode), nameof(Guid))] 
+        public bool HasStartedHandshake { get; private set; }
+        public bool HasPassedChecksum { get; private set; }
 
         internal Address? UdpEndpoint { get; private set; }
         internal bool HasAssociatedUdp { get; private set; }
@@ -55,11 +59,17 @@ namespace AssettoServer.Network.Tcp
         private long LastChatTime { get; set; }
         private int _disconnectRequested = 0;
 
-        /// <summary>
-        /// Fires when a client has started a handshake. At this point it is still possible to reject the connection by setting ClientHandshakeEventArgs.Cancel = true.
-        /// </summary>
-        public event EventHandler<ACTcpClient, ClientHandshakeEventArgs>? HandshakeStarted;
-        
+        private readonly Steam _steam;
+        private readonly WeatherManager _weatherManager;
+        private readonly SessionManager _sessionManager;
+        private readonly EntryCarManager _entryCarManager;
+        private readonly ACServerConfiguration _configuration;
+        private readonly IBlacklistService _blacklist;
+        private readonly ChecksumManager _checksumManager;
+        private readonly CSPFeatureManager _cspFeatureManager;
+        private readonly CSPServerExtraOptions _cspServerExtraOptions;
+        private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
+
         /// <summary>
         /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
         /// </summary>
@@ -110,9 +120,11 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        internal ACTcpClient(ACServer server, TcpClient tcpClient)
+        public ACTcpClient(ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions, CSPClientMessageTypeManager cspClientMessageTypeManager)
         {
             Server = server;
+            UdpServer = udpServer;
+            _steam = steam;
             Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.With(new ACTcpClientLogEventEnricher(this))
@@ -122,13 +134,22 @@ namespace AssettoServer.Network.Tcp
             UdpSendBuffer = new ThreadLocal<byte[]>(() => new byte[1500]);
 
             TcpClient = tcpClient;
+            _sessionManager = sessionManager;
+            _weatherManager = weatherManager;
+            _configuration = configuration;
+            _entryCarManager = entryCarManager;
+            _blacklist = blacklist;
+            _checksumManager = checksumManager;
+            _cspFeatureManager = cspFeatureManager;
+            _cspServerExtraOptions = cspServerExtraOptions;
+            _cspClientMessageTypeManager = cspClientMessageTypeManager;
             tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
             tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
             tcpClient.LingerState = new LingerOption(true, 2);
 
             TcpStream = tcpClient.GetStream();
 
-            TcpSendBuffer = new byte[8192 + (server.CSPServerExtraOptions.EncodedWelcomeMessage.Length * 4) + 2];
+            TcpSendBuffer = new byte[8192 + (_cspServerExtraOptions.EncodedWelcomeMessage.Length * 4) + 2];
             OutgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(256);
             DisconnectTokenSource = new CancellationTokenSource();
         }
@@ -148,7 +169,7 @@ namespace AssettoServer.Network.Tcp
                 if (!OutgoingPacketChannel.Writer.TryWrite(packet) && !(packet is SunAngleUpdate) && !IsDisconnectRequested)
                 {
                     Logger.Warning("Cannot write packet to TCP packet queue for {ClientName}, disconnecting", Name);
-                    _ = DisconnectAsync();
+                    _ = Task.Run(DisconnectAsync);
                 }
             }
             catch (Exception ex)
@@ -170,7 +191,7 @@ namespace AssettoServer.Network.Tcp
                 PacketWriter writer = new PacketWriter(buffer);
                 int bytesWritten = writer.WritePacket(in packet);
 
-                Server.UdpServer.Send(UdpEndpoint.Value, buffer, 0, bytesWritten);
+                UdpServer.Send(UdpEndpoint.Value, buffer, 0, bytesWritten);
             }
             catch (Exception ex)
             {
@@ -255,57 +276,42 @@ namespace AssettoServer.Network.Tcp
 
                         if (id != 0x3D || handshakeRequest.ClientVersion != 202)
                             SendPacket(new UnsupportedProtocolResponse());
-                        else if (Server.IsGuidBlacklisted(handshakeRequest.Guid))
+                        else if (await _blacklist.IsBlacklistedAsync(ulong.Parse(handshakeRequest.Guid)))
                             SendPacket(new BlacklistedResponse());
-                        else if (Server.Configuration.Server.Password?.Length > 0 && handshakeRequest.Password != Server.Configuration.Server.Password && handshakeRequest.Password != Server.Configuration.Server.AdminPassword)
+                        else if (_configuration.Server.Password?.Length > 0 && handshakeRequest.Password != _configuration.Server.Password && handshakeRequest.Password != _configuration.Server.AdminPassword)
                             SendPacket(new WrongPasswordResponse());
-                        else if (!Server.CurrentSession.Configuration.IsOpen)
+                        else if (!_sessionManager.CurrentSession.Configuration.IsOpen)
                             SendPacket(new SessionClosedResponse());
-                        else if ((Server.Configuration.Extra.EnableWeatherFx && !cspFeatures.Contains("WEATHERFX_V1"))
-                                 || (Server.Configuration.Extra.UseSteamAuth && !cspFeatures.Contains("STEAM_TICKET")))
-                            SendPacket(new AuthFailedResponse("Content Manager version not supported. Please update Content Manager to v0.8.2329.38887 or above."));
-                        else if (Server.Configuration.Extra.UseSteamAuth && !await Server.Steam.ValidateSessionTicketAsync(handshakeRequest.SessionTicket, handshakeRequest.Guid, this))
+                        else if (!_cspFeatureManager.ValidateHandshake(cspFeatures))
+                            SendPacket(new AuthFailedResponse("Missing CSP features. Please update CSP and/or Content Manager."));
+                        else if (_configuration.Extra.UseSteamAuth && !await _steam.ValidateSessionTicketAsync(handshakeRequest.SessionTicket, handshakeRequest.Guid, this))
                             SendPacket(new AuthFailedResponse("Steam authentication failed."));
                         else if (string.IsNullOrEmpty(handshakeRequest.Guid) || !(handshakeRequest.Guid.Length >= 6))
                             SendPacket(new AuthFailedResponse("Invalid Guid."));
-                        else if (!await Server.TrySecureSlotAsync(this, handshakeRequest))
+                        else if (!_entryCarManager.ValidateHandshake(this, handshakeRequest, out var response))
+                            SendPacket(response);
+                        else if (!await _entryCarManager.TrySecureSlotAsync(this, handshakeRequest))
                             SendPacket(new NoSlotsAvailableResponse());
                         else
                         {
                             if (EntryCar == null)
                                 throw new InvalidOperationException("No EntryCar set even though handshake started");
-                            
-                            var args = new ClientHandshakeEventArgs
-                            {
-                                HandshakeRequest = handshakeRequest
-                            };
-                            HandshakeStarted?.Invoke(this, args);
-
-                            if (args.Cancel)
-                            {
-                                if (args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.Blacklisted)
-                                    SendPacket(new BlacklistedResponse());
-                                else if (args.CancelType == ClientHandshakeEventArgs.CancelTypeEnum.AuthFailed)
-                                    SendPacket(new AuthFailedResponse(args.AuthFailedReason ?? "No reason specified"));
-
-                                return;
-                            }
 
                             EntryCar.SetActive();
                             Team = handshakeRequest.Team;
                             NationCode = handshakeRequest.Nation;
                             Guid = handshakeRequest.Guid;
-                            SupportsCSPCustomUpdate = Server.Configuration.Extra.EnableCustomUpdate && cspFeatures.Contains("CUSTOM_UPDATE");
+                            SupportsCSPCustomUpdate = _configuration.Extra.EnableCustomUpdate && cspFeatures.Contains("CUSTOM_UPDATE");
 
                             // Gracefully despawn AI cars
                             EntryCar.SetAiOverbooking(0);
 
-                            if (handshakeRequest.Password == Server.Configuration.Server.AdminPassword)
+                            if (!string.IsNullOrWhiteSpace(_configuration.Server.AdminPassword) && handshakeRequest.Password == _configuration.Server.AdminPassword)
                                 IsAdministrator = true;
 
                             Logger.Information("{ClientName} ({ClientSteamId}, {SessionId} ({Car})) has connected", Name, Guid, SessionId, EntryCar.Model + "-" + EntryCar.Skin);
 
-                            var cfg = Server.Configuration.Server;
+                            var cfg = _configuration.Server;
                             HandshakeResponse handshakeResponse = new HandshakeResponse
                             {
                                 ABSAllowed = cfg.ABSAllowed,
@@ -330,19 +336,19 @@ namespace AssettoServer.Network.Tcp
                                 ResultScreenTime = cfg.ResultScreenTime,
                                 ServerName = cfg.Name,
                                 SessionId = SessionId,
-                                SunAngle = (float)WeatherUtils.SunAngleFromTicks(Server.CurrentDateTime.TimeOfDay.TickOfDay),
+                                SunAngle = (float)WeatherUtils.SunAngleFromTicks(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay),
                                 TrackConfig = cfg.TrackConfig,
                                 TrackName = cfg.Track,
                                 TyreConsumptionRate = cfg.TyreConsumptionRate,
                                 UdpPort = cfg.UdpPort,
-                                CurrentSession = Server.CurrentSession,
-                                ChecksumCount = (byte)Server.TrackChecksums.Count,
-                                ChecksumPaths = Server.TrackChecksums.Keys,
-                                CurrentTime = (int)Server.ServerTimeMilliseconds,
+                                CurrentSession = _sessionManager.CurrentSession,
+                                ChecksumCount = (byte)_checksumManager.TrackChecksums.Count,
+                                ChecksumPaths = _checksumManager.TrackChecksums.Keys,
+                                CurrentTime = _sessionManager.ServerTimeMilliseconds,
                                 LegalTyres = cfg.LegalTyres,
                                 RandomSeed = 123,
-                                SessionCount = (byte)Server.Configuration.Sessions.Count,
-                                Sessions = Server.Configuration.Sessions,
+                                SessionCount = (byte)_configuration.Sessions.Count,
+                                Sessions = _configuration.Sessions,
                                 SpawnPosition = SessionId,
                                 TrackGrip = Math.Clamp(cfg.DynamicTrack != null ? cfg.DynamicTrack.BaseGrip + (cfg.DynamicTrack.GripPerLap * cfg.DynamicTrack.TotalLapCount) : 1, 0, 1),
                                 MaxContactsPerKm = cfg.MaxContactsPerKm
@@ -417,7 +423,7 @@ namespace AssettoServer.Network.Tcp
                 
                 if (evt.Type == ClientEvent.ClientEventType.PlayerCollision)
                 {
-                    targetCar = Server.EntryCars[evt.TargetSessionId];
+                    targetCar = _entryCarManager.EntryCars[evt.TargetSessionId];
                     Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and {TargetCarName} ({TargetCarSessionId}), rel. speed {Speed:F0}km/h", 
                         Name, EntryCar.SessionId, targetCar.Client?.Name ?? targetCar.AiName, targetCar.SessionId, evt.Speed);
                 }
@@ -434,7 +440,7 @@ namespace AssettoServer.Network.Tcp
         private void OnSpectateCar(PacketReader reader)
         {
             SpectateCar spectatePacket = reader.ReadPacket<SpectateCar>();
-            EntryCar.TargetCar = spectatePacket.SessionId != SessionId ? Server.EntryCars[spectatePacket.SessionId] : null;
+            EntryCar.TargetCar = spectatePacket.SessionId != SessionId ? _entryCarManager.EntryCars[spectatePacket.SessionId] : null;
         }
 
         private void OnCSPClientMessage(PacketReader reader)
@@ -444,7 +450,7 @@ namespace AssettoServer.Network.Tcp
             {
                 uint luaPacketType = reader.Read<uint>();
 
-                if (Server.CSPClientMessageTypes.TryGetValue(luaPacketType, out var handler))
+                if (_cspClientMessageTypeManager.MessageTypes.TryGetValue(luaPacketType, out var handler))
                 {
                     handler(this, reader);
                 }
@@ -456,7 +462,7 @@ namespace AssettoServer.Network.Tcp
                     clientMessage.SessionId = SessionId;
 
                     Logger.Debug("Unknown CSP lua client message with type 0x{LuaType:X} received, data {Data}", clientMessage.LuaType, Convert.ToHexString(clientMessage.Data));
-                    Server.BroadcastPacket(clientMessage);
+                    _entryCarManager.BroadcastPacket(clientMessage);
                 }
             }
             else
@@ -465,20 +471,20 @@ namespace AssettoServer.Network.Tcp
                 clientMessage.Type = packetType;
                 clientMessage.SessionId = SessionId;
                 
-                Server.BroadcastPacket(clientMessage);
+                _entryCarManager.BroadcastPacket(clientMessage);
             }
         }
 
         private async ValueTask OnChecksumAsync(PacketReader reader)
         {
             bool passedChecksum = false;
-            byte[] fullChecksum = new byte[16 * (Server.TrackChecksums.Count + 1)];
+            byte[] fullChecksum = new byte[16 * (_checksumManager.TrackChecksums.Count + 1)];
             if (reader.Buffer.Length == fullChecksum.Length + 1)
             {
                 reader.ReadBytes(fullChecksum);
-                passedChecksum = !Server.CarChecksums.TryGetValue(EntryCar.Model, out byte[]? modelChecksum) || fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(modelChecksum);
+                passedChecksum = !_checksumManager.CarChecksums.TryGetValue(EntryCar.Model, out byte[]? modelChecksum) || fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(modelChecksum);
 
-                KeyValuePair<string, byte[]>[] allChecksums = Server.TrackChecksums.ToArray();
+                KeyValuePair<string, byte[]>[] allChecksums = _checksumManager.TrackChecksums.ToArray();
                 for (int i = 0; i < allChecksums.Length; i++)
                     if (!allChecksums[i].Value.AsSpan().SequenceEqual(fullChecksum.AsSpan().Slice(i * 16, 16)))
                     {
@@ -492,13 +498,13 @@ namespace AssettoServer.Network.Tcp
             if (!passedChecksum)
             {
                 ChecksumFailed?.Invoke(this, EventArgs.Empty);
-                await Server.KickAsync(this, KickReason.ChecksumFailed, $"{Name} failed the checksum check and has been kicked.", false);
+                await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} failed the checksum check and has been kicked.");
             }
             else
             {
                 ChecksumPassed?.Invoke(this, EventArgs.Empty);
 
-                Server.BroadcastPacket(new CarConnected
+                _entryCarManager.BroadcastPacket(new CarConnected
                 {
                     SessionId = SessionId,
                     Name = Name,
@@ -509,12 +515,12 @@ namespace AssettoServer.Network.Tcp
 
         private void OnChat(PacketReader reader)
         {
-            long currentTime = Server.ServerTimeMilliseconds;
+            long currentTime = _sessionManager.ServerTimeMilliseconds;
             if (currentTime - LastChatTime < 1000)
                 return;
             LastChatTime = currentTime;
 
-            if (Server.Configuration.Extra.AfkKickBehavior == AfkKickBehavior.PlayerInput)
+            if (_configuration.Extra.AfkKickBehavior == AfkKickBehavior.PlayerInput)
             {
                 EntryCar.SetActive();
             }
@@ -536,7 +542,7 @@ namespace AssettoServer.Network.Tcp
             TyreCompoundChangeRequest compoundChangeRequest = reader.ReadPacket<TyreCompoundChangeRequest>();
             EntryCar.Status.CurrentTyreCompound = compoundChangeRequest.CompoundName;
 
-            Server.BroadcastPacket(new TyreCompoundUpdate
+            _entryCarManager.BroadcastPacket(new TyreCompoundUpdate
             {
                 CompoundName = compoundChangeRequest.CompoundName,
                 SessionId = SessionId
@@ -548,26 +554,30 @@ namespace AssettoServer.Network.Tcp
             // ReSharper disable once InconsistentNaming
             P2PUpdateRequest p2pUpdateRequest = reader.ReadPacket<P2PUpdateRequest>();
             if (p2pUpdateRequest.P2PCount == -1)
+            {
                 SendPacket(new P2PUpdate
                 {
                     Active = false,
                     P2PCount = EntryCar.Status.P2PCount,
                     SessionId = SessionId
                 });
+            }
             else
-                Server.BroadcastPacket(new P2PUpdate
+            {
+                _entryCarManager.BroadcastPacket(new P2PUpdate
                 {
                     Active = EntryCar.Status.P2PActive,
                     P2PCount = EntryCar.Status.P2PCount,
                     SessionId = SessionId
                 });
+            }
         }
 
         private void OnCarListRequest(PacketReader reader)
         {
             CarListRequest carListRequest = reader.ReadPacket<CarListRequest>();
 
-            List<EntryCar> carsInPage = Server.EntryCars.Skip(carListRequest.PageIndex).Take(10).ToList();
+            List<EntryCar> carsInPage = _entryCarManager.EntryCars.Skip(carListRequest.PageIndex).Take(10).ToList();
             CarListResponse carListResponse = new CarListResponse()
             {
                 PageIndex = carListRequest.PageIndex,
@@ -582,7 +592,7 @@ namespace AssettoServer.Network.Tcp
         {
             LapCompletedIncoming lapPacket = reader.ReadPacket<LapCompletedIncoming>();
 
-            //Server.Configuration.DynamicTrack.TotalLapCount++; // TODO reset at some point
+            //_configuration.DynamicTrack.TotalLapCount++; // TODO reset at some point
             if (OnLapCompleted(lapPacket))
             {
                 Server.SendLapCompletedMessage(SessionId, lapPacket.LapTime, lapPacket.Cuts);
@@ -591,9 +601,9 @@ namespace AssettoServer.Network.Tcp
 
         private bool OnLapCompleted(LapCompletedIncoming lap)
         {
-            int timestamp = (int)Server.ServerTimeMilliseconds;
+            int timestamp = (int)_sessionManager.ServerTimeMilliseconds;
 
-            var entryCarResult = Server.CurrentSession.Results?[SessionId] ?? throw new InvalidOperationException("Current session does not have results set");
+            var entryCarResult = _sessionManager.CurrentSession.Results?[SessionId] ?? throw new InvalidOperationException("Current session does not have results set");
 
             if (entryCarResult.HasCompletedLastLap)
             {
@@ -601,7 +611,7 @@ namespace AssettoServer.Network.Tcp
                 return false;
             }
 
-            if (Server.CurrentSession.Configuration.Type == SessionType.Race && entryCarResult.NumLaps >= Server.CurrentSession.Configuration.Laps && !Server.CurrentSession.Configuration.IsTimedRace)
+            if (_sessionManager.CurrentSession.Configuration.Type == SessionType.Race && entryCarResult.NumLaps >= _sessionManager.CurrentSession.Configuration.Laps && !_sessionManager.CurrentSession.Configuration.IsTimedRace)
             {
                 Logger.Debug("Lap rejected by {ClientName}, race over", Name);
                 return false;
@@ -611,7 +621,7 @@ namespace AssettoServer.Network.Tcp
 
             // TODO unfuck all of this
 
-            if (Server.CurrentSession.Configuration.Type == SessionType.Race || lap.Cuts == 0)
+            if (_sessionManager.CurrentSession.Configuration.Type == SessionType.Race || lap.Cuts == 0)
             {
                 entryCarResult.LastLap = lap.LapTime;
                 if (lap.LapTime < entryCarResult.BestLap)
@@ -620,43 +630,43 @@ namespace AssettoServer.Network.Tcp
                 }
 
                 entryCarResult.NumLaps++;
-                if (entryCarResult.NumLaps > Server.CurrentSession.LeaderLapCount)
+                if (entryCarResult.NumLaps > _sessionManager.CurrentSession.LeaderLapCount)
                 {
-                    Server.CurrentSession.LeaderLapCount = entryCarResult.NumLaps;
+                    _sessionManager.CurrentSession.LeaderLapCount = entryCarResult.NumLaps;
                 }
 
-                entryCarResult.TotalTime = Server.CurrentSession.SessionTimeMilliseconds - (EntryCar.Ping / 2);
+                entryCarResult.TotalTime = _sessionManager.CurrentSession.SessionTimeMilliseconds - (EntryCar.Ping / 2);
 
-                if (Server.CurrentSession.SessionOverFlag)
+                if (_sessionManager.CurrentSession.SessionOverFlag)
                 {
-                    if (Server.CurrentSession.Configuration.Type == SessionType.Race && Server.CurrentSession.Configuration.IsTimedRace)
+                    if (_sessionManager.CurrentSession.Configuration.Type == SessionType.Race && _sessionManager.CurrentSession.Configuration.IsTimedRace)
                     {
-                        if (Server.Configuration.Server.HasExtraLap)
+                        if (_configuration.Server.HasExtraLap)
                         {
-                            if (entryCarResult.NumLaps <= Server.CurrentSession.LeaderLapCount)
+                            if (entryCarResult.NumLaps <= _sessionManager.CurrentSession.LeaderLapCount)
                             {
-                                entryCarResult.HasCompletedLastLap = Server.CurrentSession.LeaderHasCompletedLastLap;
+                                entryCarResult.HasCompletedLastLap = _sessionManager.CurrentSession.LeaderHasCompletedLastLap;
                             }
-                            else if (Server.CurrentSession.TargetLap > 0)
+                            else if (_sessionManager.CurrentSession.TargetLap > 0)
                             {
-                                if (entryCarResult.NumLaps >= Server.CurrentSession.TargetLap)
+                                if (entryCarResult.NumLaps >= _sessionManager.CurrentSession.TargetLap)
                                 {
-                                    Server.CurrentSession.LeaderHasCompletedLastLap = true;
+                                    _sessionManager.CurrentSession.LeaderHasCompletedLastLap = true;
                                     entryCarResult.HasCompletedLastLap = true;
                                 }
                             }
                             else
                             {
-                                Server.CurrentSession.TargetLap = entryCarResult.NumLaps + 1;
+                                _sessionManager.CurrentSession.TargetLap = entryCarResult.NumLaps + 1;
                             }
                         }
-                        else if (entryCarResult.NumLaps <= Server.CurrentSession.LeaderLapCount)
+                        else if (entryCarResult.NumLaps <= _sessionManager.CurrentSession.LeaderLapCount)
                         {
-                            entryCarResult.HasCompletedLastLap = Server.CurrentSession.LeaderHasCompletedLastLap;
+                            entryCarResult.HasCompletedLastLap = _sessionManager.CurrentSession.LeaderHasCompletedLastLap;
                         }
                         else
                         {
-                            Server.CurrentSession.LeaderHasCompletedLastLap = true;
+                            _sessionManager.CurrentSession.LeaderHasCompletedLastLap = true;
                             entryCarResult.HasCompletedLastLap = true;
                         }
                     }
@@ -666,23 +676,23 @@ namespace AssettoServer.Network.Tcp
                     }
                 }
 
-                if (Server.CurrentSession.Configuration.Type != SessionType.Race)
+                if (_sessionManager.CurrentSession.Configuration.Type != SessionType.Race)
                 {
-                    if (Server.CurrentSession.EndTime != 0)
+                    if (_sessionManager.CurrentSession.EndTime != 0)
                     {
                         entryCarResult.HasCompletedLastLap = true;
                     }
                 }
-                else if (Server.CurrentSession.Configuration.IsTimedRace)
+                else if (_sessionManager.CurrentSession.Configuration.IsTimedRace)
                 {
-                    if (Server.CurrentSession.LeaderHasCompletedLastLap && Server.CurrentSession.EndTime == 0)
+                    if (_sessionManager.CurrentSession.LeaderHasCompletedLastLap && _sessionManager.CurrentSession.EndTime == 0)
                     {
-                        Server.CurrentSession.EndTime = timestamp;
+                        _sessionManager.CurrentSession.EndTime = timestamp;
                     }
                 }
-                else if (entryCarResult.NumLaps != Server.CurrentSession.Configuration.Laps)
+                else if (entryCarResult.NumLaps != _sessionManager.CurrentSession.Configuration.Laps)
                 {
-                    if (Server.CurrentSession.EndTime != 0)
+                    if (_sessionManager.CurrentSession.EndTime != 0)
                     {
                         entryCarResult.HasCompletedLastLap = true;
                     }
@@ -690,12 +700,12 @@ namespace AssettoServer.Network.Tcp
                 else if (!entryCarResult.HasCompletedLastLap)
                 {
                     entryCarResult.HasCompletedLastLap = true;
-                    if (Server.CurrentSession.EndTime == 0)
+                    if (_sessionManager.CurrentSession.EndTime == 0)
                     {
-                        Server.CurrentSession.EndTime = timestamp;
+                        _sessionManager.CurrentSession.EndTime = timestamp;
                     }
                 }
-                else if (Server.CurrentSession.EndTime != 0)
+                else if (_sessionManager.CurrentSession.EndTime != 0)
                 {
                     entryCarResult.HasCompletedLastLap = true;
                 }
@@ -703,7 +713,7 @@ namespace AssettoServer.Network.Tcp
                 return true;
             }
 
-            if (Server.CurrentSession.EndTime == 0)
+            if (_sessionManager.CurrentSession.EndTime == 0)
                 return true;
 
             entryCarResult.HasCompletedLastLap = true;
@@ -716,16 +726,16 @@ namespace AssettoServer.Network.Tcp
                 return;
 
             TcpClient.ReceiveTimeout = 0;
-            EntryCar.LastPongTime = (int)Server.ServerTimeMilliseconds;
+            EntryCar.LastPongTime = _sessionManager.ServerTimeMilliseconds;
             HasSentFirstUpdate = true;
 
-            List<EntryCar> connectedCars = Server.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
+            List<EntryCar> connectedCars = _entryCarManager.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
-            if (!string.IsNullOrEmpty(Server.CSPServerExtraOptions.EncodedWelcomeMessage))
-                SendPacket(new WelcomeMessage { Message = Server.CSPServerExtraOptions.EncodedWelcomeMessage });
+            if (!string.IsNullOrEmpty(_cspServerExtraOptions.EncodedWelcomeMessage))
+                SendPacket(new WelcomeMessage { Message = _cspServerExtraOptions.EncodedWelcomeMessage });
 
             SendPacket(new DriverInfoUpdate { ConnectedCars = connectedCars });
-            Server.WeatherImplementation.SendWeather(this);
+            _weatherManager.SendWeather(this);
 
             foreach (EntryCar car in connectedCars)
             {
@@ -733,7 +743,7 @@ namespace AssettoServer.Network.Tcp
                 if (car != EntryCar)
                     SendPacket(new TyreCompoundUpdate { SessionId = car.SessionId, CompoundName = car.Status.CurrentTyreCompound });
 
-                if (Server.Configuration.Extra.AiParams.HideAiCars)
+                if (_configuration.Extra.AiParams.HideAiCars)
                 {
                     SendPacket(new CSPCarVisibilityUpdate
                     {
@@ -749,7 +759,7 @@ namespace AssettoServer.Network.Tcp
             {
                 if (!HasPassedChecksum && IsConnected)
                 {
-                    await Server.KickAsync(this, KickReason.ChecksumFailed, $"{Name} did not send the requested checksums.", false);
+                    await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} did not send the requested checksums.");
                 }
             });
             
@@ -789,9 +799,9 @@ namespace AssettoServer.Network.Tcp
                     DisconnectTokenSource.Dispose();
                 }
                 catch (ObjectDisposedException) { }
-
+                
                 if (IsConnected)
-                    await Server.DisconnectClientAsync(this);
+                    await _entryCarManager.DisconnectClientAsync(this);
 
                 TcpClient.Dispose();
             }

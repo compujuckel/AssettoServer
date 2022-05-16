@@ -8,7 +8,6 @@ namespace RaceChallengePlugin;
 
 public class Race
 {
-    public ACServer Server { get; }
     public EntryCar Challenger { get; }
     public EntryCar Challenged { get; }
     public EntryCar? Leader { get; private set; }
@@ -22,11 +21,19 @@ public class Race
     private string ChallengerName { get; }
     private string ChallengedName { get; }
 
-    public Race(ACServer server, EntryCar challenger, EntryCar challenged, bool lineUpRequired = true)
+    private readonly SessionManager _sessionManager;
+    private readonly EntryCarManager _entryCarManager;
+    private readonly RaceChallengePlugin _plugin;
+
+    public delegate Race Factory(EntryCar challenger, EntryCar challenged, bool lineUpRequired = true);
+    
+    public Race(EntryCar challenger, EntryCar challenged, SessionManager sessionManager, EntryCarManager entryCarManager, RaceChallengePlugin plugin, bool lineUpRequired = true)
     {
-        Server = server;
         Challenger = challenger;
         Challenged = challenged;
+        _sessionManager = sessionManager;
+        _entryCarManager = entryCarManager;
+        _plugin = plugin;
         LineUpRequired = lineUpRequired;
 
         ChallengerName = Challenger.Client?.Name!;
@@ -127,7 +134,7 @@ public class Race
                     return;
                 }
 
-                if(Server.ServerTimeMilliseconds - LastOvertakeTime > 60000)
+                if(_sessionManager.ServerTimeMilliseconds - LastOvertakeTime > 60000)
                     return;
 
                 await Task.Delay(250);
@@ -149,7 +156,7 @@ public class Race
         bool isFirstUpdate = false;
         if (Leader == null)
         {
-            LastOvertakeTime = Server.ServerTimeMilliseconds;
+            LastOvertakeTime = _sessionManager.ServerTimeMilliseconds;
             Leader = Challenger;
             Follower = Challenged;
             LastLeaderPosition = Leader.Status.Position;
@@ -195,22 +202,22 @@ public class Race
             if (!isFirstUpdate)
                 SendMessage($"{Leader.Client?.Name} has overtaken {oldLeader.Client?.Name}");
 
-            LastOvertakeTime = Server.ServerTimeMilliseconds;
+            LastOvertakeTime = _sessionManager.ServerTimeMilliseconds;
             LastLeaderPosition = Leader.Status.Position;
         }
     }
 
     private void FinishRace()
     {
-        Challenger.GetRace().CurrentRace = null;
-        Challenged.GetRace().CurrentRace = null;
+        _plugin.GetRace(Challenger).CurrentRace = null;
+        _plugin.GetRace(Challenged).CurrentRace = null;
 
         if (Leader != null)
         {
             string winnerName = Challenger == Leader ? ChallengerName : ChallengedName;
             string loserName = Challenger == Leader ? ChallengedName : ChallengerName;
 
-            Server.BroadcastPacket(new ChatMessage { SessionId = 255, Message = $"{winnerName} just beat {loserName} in a race." });
+            _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = $"{winnerName} just beat {loserName} in a race." });
             Log.Information("{WinnerName} just beat {LoserName} in a race", winnerName, loserName);
         }
     }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Threading;
 using AssettoServer.Network.Packets.Outgoing;
@@ -19,7 +18,7 @@ public enum AiMode
 public partial class EntryCar
 {
     public bool AiControlled { get; set; }
-    public AiMode AiMode { get; init; }
+    public AiMode AiMode { get; set; }
     public int TargetAiStateCount { get; private set; } = 1;
     public byte[] LastSeenAiSpawn { get; }
     public byte[] AiPakSequenceIds { get; }
@@ -37,27 +36,29 @@ public partial class EntryCar
     public float TyreDiameter { get; set; }
     private readonly List<AiState> _aiStates = new List<AiState>();
     private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+    
+    private readonly Func<EntryCar, AiState> _aiStateFactory;
 
     private void AiInit()
     {
-        AiName = $"{Server.Configuration.Extra.AiParams.NamePrefix} {SessionId}";
+        AiName = $"{_configuration.Extra.AiParams.NamePrefix} {SessionId}";
         SetAiOverbooking(0);
 
-        Server.Configuration.Reload += OnConfigReload;
-        OnConfigReload(Server.Configuration, EventArgs.Empty);
+        _configuration.Reload += OnConfigReload;
+        OnConfigReload(_configuration, EventArgs.Empty);
     }
 
     private void OnConfigReload(ACServerConfiguration sender, EventArgs _)
     {
         AiSplineHeightOffsetMeters = Server.Configuration.Extra.AiParams.SplineHeightOffsetMeters;
-        AiAcceleration = Server.Configuration.Extra.AiParams.DefaultAcceleration;
-        AiDeceleration = Server.Configuration.Extra.AiParams.DefaultDeceleration;
-        AiCorneringSpeedFactor = Server.Configuration.Extra.AiParams.CorneringSpeedFactor;
-        AiCorneringBrakeDistanceFactor = Server.Configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
-        AiCorneringBrakeForceFactor = Server.Configuration.Extra.AiParams.CorneringBrakeForceFactor;
-        TyreDiameter = Server.Configuration.Extra.AiParams.TyreDiameter;
+        AiAcceleration = _configuration.Extra.AiParams.DefaultAcceleration;
+        AiDeceleration = _configuration.Extra.AiParams.DefaultDeceleration;
+        AiCorneringSpeedFactor = _configuration.Extra.AiParams.CorneringSpeedFactor;
+        AiCorneringBrakeDistanceFactor = _configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
+        AiCorneringBrakeForceFactor = _configuration.Extra.AiParams.CorneringBrakeForceFactor;
+        TyreDiameter = _configuration.Extra.AiParams.TyreDiameter;
 
-        foreach (var carOverrides in Server.Configuration.Extra.AiParams.CarSpecificOverrides)
+        foreach (var carOverrides in _configuration.Extra.AiParams.CarSpecificOverrides)
         {
             if (carOverrides.Model == Model)
             {
@@ -109,7 +110,7 @@ public partial class EntryCar
                     var targetAiState = _aiStates[j];
                     if (aiState != targetAiState
                         && targetAiState.Initialized
-                        && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < Server.Configuration.Extra.AiParams.MinStateDistanceSquared
+                        && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < _configuration.Extra.AiParams.MinStateDistanceSquared
                         && Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0) // TODO bad idea for two way traffic?
                     {
                         aiState.Initialized = false;
@@ -174,8 +175,8 @@ public partial class EntryCar
                 bool isBestSameDirection = bestState != null && Vector3.Dot(bestState.Status.Velocity, playerStatus.Velocity) > 0;
                 bool isCandidateSameDirection = Vector3.Dot(aiState.Status.Velocity, playerStatus.Velocity) > 0;
                 bool isPlayerFastEnough = playerStatus.Velocity.LengthSquared() > 1;
-                bool isTieBreaker = minDistance < Server.Configuration.Extra.AiParams.StateTieBreakerDistanceSquared &&
-                                    distance < Server.Configuration.Extra.AiParams.StateTieBreakerDistanceSquared &&
+                bool isTieBreaker = minDistance < _configuration.Extra.AiParams.StateTieBreakerDistanceSquared &&
+                                    distance < _configuration.Extra.AiParams.StateTieBreakerDistanceSquared &&
                                     isPlayerFastEnough;
 
                 // Tie breaker: Multiple close states, so take the one with min distance and same direction
@@ -291,7 +292,7 @@ public partial class EntryCar
                 if (_aiStates.Count == 0)
                 {
                     Logger.Verbose("Traffic {SessionId} has no states left, disconnecting", SessionId);
-                    Server.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
+                    _entryCarManager.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
                 }
 
                 return false;
@@ -301,7 +302,7 @@ public partial class EntryCar
             {
                 if (state == aiState || !state.Initialized) continue;
 
-                if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < Server.Configuration.Extra.AiParams.StateSpawnDistanceSquared)
+                if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < _configuration.Extra.AiParams.StateSpawnDistanceSquared)
                 {
                     return false;
                 }
@@ -326,14 +327,14 @@ public partial class EntryCar
                 Logger.Debug("Slot {SessionId} is now controlled by AI", SessionId);
 
                 AiReset();
-                Server.BroadcastPacket(new CarConnected
+                _entryCarManager.BroadcastPacket(new CarConnected
                 {
                     SessionId = SessionId,
                     Name = AiName
                 });
-                if (Server.Configuration.Extra.AiParams.HideAiCars)
+                if (_configuration.Extra.AiParams.HideAiCars)
                 {
-                    Server.BroadcastPacket(new CSPCarVisibilityUpdate
+                    _entryCarManager.BroadcastPacket(new CSPCarVisibilityUpdate
                     {
                         SessionId = SessionId,
                         Visible = CSPCarVisibility.Invisible
@@ -345,12 +346,12 @@ public partial class EntryCar
                 Logger.Debug("Slot {SessionId} is no longer controlled by AI", SessionId);
                 if (_aiStates.Count > 0)
                 {
-                    Server.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
+                    _entryCarManager.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
                 }
 
-                if (Server.Configuration.Extra.AiParams.HideAiCars)
+                if (_configuration.Extra.AiParams.HideAiCars)
                 {
-                    Server.BroadcastPacket(new CSPCarVisibilityUpdate
+                    _entryCarManager.BroadcastPacket(new CSPCarVisibilityUpdate
                     {
                         SessionId = SessionId,
                         Visible = CSPCarVisibility.Visible
@@ -375,7 +376,7 @@ public partial class EntryCar
                     int newAis = count - _aiStates.Count;
                     for (int i = 0; i < newAis; i++)
                     {
-                        _aiStates.Add(new AiState(this));
+                        _aiStates.Add(_aiStateFactory(this));
                     }
                 }
                 finally
@@ -398,7 +399,7 @@ public partial class EntryCar
         try
         {
             _aiStates.Clear();
-            _aiStates.Add(new AiState(this));
+            _aiStates.Add(_aiStateFactory(this));
         }
         finally
         {

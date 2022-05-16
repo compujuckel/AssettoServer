@@ -1,5 +1,8 @@
-﻿namespace WordFilterPlugin;
+﻿using JetBrains.Annotations;
 
+namespace WordFilterPlugin;
+
+[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class WordFilterConfiguration
 {
     public List<string> ProhibitedUsernamePatterns { get; init; } = new();

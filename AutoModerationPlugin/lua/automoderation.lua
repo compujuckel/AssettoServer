@@ -30,9 +30,13 @@ end)
 
 local color = rgbm(255, 255, 255, 0.8)
 local flagSize = vec2(128, 128)
-local centerPos = vec2(ac.getUI().windowSize.x / 2, 100)
+local centerPos = nil
 function script.drawUI()
     if #flagsToDraw > 0 then
+        if centerPos == nil then
+            centerPos = vec2(ac.getUI().windowSize.x / 2, 100)
+        end
+
         local p1 = vec2(centerPos.x - (flagSize.x + 10) / 2 * #flagsToDraw, centerPos.y)
 
         for i, path in ipairs(flagsToDraw) do

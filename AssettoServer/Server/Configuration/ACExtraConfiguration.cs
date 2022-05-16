@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using AssettoServer.Server.Plugin;
+using Autofac;
 using JetBrains.Annotations;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
@@ -62,6 +63,8 @@ public class ACExtraConfiguration
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
 
+    public string Path { get; private set; } = null!;
+
     public void ToFile(string path)
     {
         using var stream = File.CreateText(path);
@@ -69,7 +72,7 @@ public class ACExtraConfiguration
         serializer.Serialize(stream, this);
     }
         
-    public static ACExtraConfiguration FromFile(string path, ACPluginLoader loader)
+    public static ACExtraConfiguration FromFile(string path)
     {
         using var stream = File.OpenText(path);
 
@@ -81,11 +84,19 @@ public class ACExtraConfiguration
 
         var extraCfg = deserializer.Deserialize<ACExtraConfiguration>(yamlParser);
 
-        foreach (string pluginName in extraCfg.EnablePlugins ?? new List<string>())
-        {
-            loader.LoadPlugin(pluginName);
-        }
-                
+        extraCfg.Path = path;
+        return extraCfg;
+    }
+
+    internal void LoadPluginConfig(ACPluginLoader loader, ContainerBuilder builder)
+    {
+        using var stream = File.OpenText(Path);
+
+        var yamlParser = new Parser(stream);
+        yamlParser.Consume<StreamStart>();
+        yamlParser.Accept<DocumentStart>(out _);
+        yamlParser.Accept<DocumentStart>(out _);
+        
         var deserializerBuilder = new DeserializerBuilder().WithoutNodeTypeResolver(typeof(PreventUnknownTagsNodeTypeResolver));
         foreach (var plugin in loader.LoadedPlugins)
         {
@@ -94,15 +105,14 @@ public class ACExtraConfiguration
                 deserializerBuilder.WithTagMapping("!" + plugin.ConfigurationType.Name, plugin.ConfigurationType);
             }
         }
-        deserializer = deserializerBuilder.Build();
+
+        var deserializer = deserializerBuilder.Build();
 
         while (yamlParser.Accept<DocumentStart>(out _))
         {
-            var pluginConfig = deserializer.Deserialize(yamlParser);
-            loader.LoadConfiguration(pluginConfig);
+            var pluginConfig = deserializer.Deserialize(yamlParser)!;
+            builder.RegisterInstance(pluginConfig).AsSelf();
         }
-
-        return extraCfg;
     }
 }
 

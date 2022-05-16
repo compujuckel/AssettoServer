@@ -32,7 +32,7 @@ public class InfoResponse
     public int TimeLeft { get; set; }
     [JsonProperty("timeofday")]
     public int TimeOfDay { get; set; }
-    public int Timestamp { get; set; }
+    public long Timestamp { get; set; }
     [JsonProperty("tport")]
     public int TPort { get; set; }
     public string? Track { get; set; }

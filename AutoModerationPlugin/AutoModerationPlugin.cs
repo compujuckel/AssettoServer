@@ -3,73 +3,83 @@ using System.Reflection;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
+using AssettoServer.Server.Ai;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Server.Weather;
 using AutoModerationPlugin.Packets;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AutoModerationPlugin;
 
 [UsedImplicitly]
-public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfiguration>
+public class AutoModerationPlugin : BackgroundService, IAssettoServerAutostart
 {
     private const double NauticalTwilight = -12.0 * Math.PI / 180.0;
     
     private readonly List<EntryCarAutoModeration> _instances = new();
 
-    private AutoModerationConfiguration _configuration = new();
-    private ACServer _server = null!;
+    private readonly ACServerConfiguration _serverConfiguration;
+    private readonly AutoModerationConfiguration _configuration;
+    private readonly EntryCarManager _entryCarManager;
+    private readonly WeatherManager _weatherManager;
+    private readonly Func<EntryCar, EntryCarAutoModeration> _entryCarAutoModerationFactory;
 
-    private float _laneRadiusSquared;
+    private readonly float _laneRadiusSquared;
 
-    public void SetConfiguration(AutoModerationConfiguration configuration)
+    public AutoModerationPlugin(AutoModerationConfiguration configuration, 
+        EntryCarManager entryCarManager,
+        WeatherManager weatherManager,
+        ACServerConfiguration serverConfiguration,
+        CSPServerScriptProvider scriptProvider,
+        Func<EntryCar, EntryCarAutoModeration> entryCarAutoModerationFactory,
+        TrafficMap? trafficMap = null)
     {
         _configuration = configuration;
-    }
+        _entryCarManager = entryCarManager;
+        _weatherManager = weatherManager;
+        _serverConfiguration = serverConfiguration;
+        _entryCarAutoModerationFactory = entryCarAutoModerationFactory;
 
-    public void Initialize(ACServer server)
-    {
-        _server = server;
-
-        if (_server.TrafficMap != null)
+        if (trafficMap == null)
         {
-            _laneRadiusSquared = MathF.Pow(_server.Configuration.Extra.AiParams.LaneWidthMeters / 2.0f * 1.25f, 2);
+            if (_configuration.WrongWayKick.Enabled)
+            {
+                throw new ConfigurationException("AutoModerationPlugin: Wrong way kick does not work with AI traffic disabled");
+            }
+
+            if (_configuration.BlockingRoadKick.Enabled)
+            {
+                throw new ConfigurationException("AutoModerationPlugin: Blocking road kick does not work with AI traffic disabled");
+            }
         }
-
-        if (_server.Configuration.Extra.EnableClientMessages)
+        else 
         {
-            using var streamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("AutoModerationPlugin.lua.automoderation.lua")!);
-            _server.CSPLuaClientScriptProvider.AddLuaClientScript(streamReader.ReadToEnd(), "automoderation.lua");
+            _laneRadiusSquared = MathF.Pow(_serverConfiguration.Extra.AiParams.LaneWidthMeters / 2.0f * 1.25f, 2);
         }
         
-        foreach (var entryCar in server.EntryCars)
+        if (_serverConfiguration.Extra.EnableClientMessages)
         {
-            _instances.Add(new EntryCarAutoModeration(entryCar));
+            using var streamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("AutoModerationPlugin.lua.automoderation.lua")!);
+            scriptProvider.AddScript(streamReader.ReadToEnd(), "automoderation.lua");
         }
-
-        _ = UpdateLoopAsync();
     }
-    
-    private async Task UpdateLoopAsync()
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (_configuration.NoLightsKick.Enabled && !_server.CurrentSunPosition.HasValue)
+        foreach (var entryCar in _entryCarManager.EntryCars)
+        {
+            _instances.Add(_entryCarAutoModerationFactory(entryCar));
+        }
+        
+        if (_configuration.NoLightsKick.Enabled && !_weatherManager.CurrentSunPosition.HasValue)
         {
             throw new ConfigurationException("AutoModerationPlugin: No lights kick does not work with missing track params");
         }
 
-        if (_configuration.WrongWayKick.Enabled && _server.TrafficMap == null)
-        {
-            throw new ConfigurationException("AutoModerationPlugin: Wrong way kick does not work with AI traffic disabled");
-        }
-        
-        if (_configuration.BlockingRoadKick.Enabled && _server.TrafficMap == null)
-        {
-            throw new ConfigurationException("AutoModerationPlugin: Blocking road kick does not work with AI traffic disabled");
-        }
-
-        while (true)
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
@@ -84,7 +94,7 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
 
                     if (_configuration.NoLightsKick.Enabled)
                     {
-                        if (_server.CurrentSunPosition!.Value.Altitude < NauticalTwilight
+                        if (_weatherManager.CurrentSunPosition!.Value.Altitude < NauticalTwilight
                             && (instance.EntryCar.Status.StatusFlag & CarStatusFlags.LightsOn) == 0
                             && instance.EntryCar.Status.Velocity.LengthSquared() > _configuration.NoLightsKick.MinimumSpeedMs * _configuration.NoLightsKick.MinimumSpeedMs)
                         {
@@ -93,7 +103,7 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                             instance.NoLightSeconds++;
                             if (instance.NoLightSeconds > _configuration.NoLightsKick.DurationSeconds)
                             {
-                                _ = _server.KickAsync(client, KickReason.Kicked, $"{client.Name} has been kicked for driving without lights.");
+                                _ = _entryCarManager.KickAsync(client, "driving without lights");
                             }
                             else if (!instance.HasSentNoLightWarning && instance.NoLightSeconds > _configuration.NoLightsKick.DurationSeconds / 2)
                             {
@@ -120,7 +130,7 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                             instance.WrongWaySeconds++;
                             if (instance.WrongWaySeconds > _configuration.WrongWayKick.DurationSeconds)
                             {
-                                _ = _server.KickAsync(client, KickReason.Kicked, $"{client.Name} has been kicked for driving the wrong way.");
+                                _ = _entryCarManager.KickAsync(client, "driving the wrong way");
                             }
                             else if (!instance.HasSentWrongWayWarning && instance.WrongWaySeconds > _configuration.WrongWayKick.DurationSeconds / 2)
                             {
@@ -146,7 +156,7 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                             instance.BlockingRoadSeconds++;
                             if (instance.BlockingRoadSeconds > _configuration.BlockingRoadKick.DurationSeconds)
                             {
-                                _ = _server.KickAsync(client, KickReason.Kicked, $"{client.Name} has been kicked for blocking the road.");
+                                _ = _entryCarManager.KickAsync(client, KickReason.Kicked, "blocking the road");
                             }
                             else if (!instance.HasSentBlockingRoadWarning && instance.BlockingRoadSeconds > _configuration.BlockingRoadKick.DurationSeconds / 2)
                             {
@@ -162,7 +172,7 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
                         }
                     }
 
-                    if (_server.Configuration.Extra.EnableClientMessages && oldFlags != instance.CurrentFlags)
+                    if (_serverConfiguration.Extra.EnableClientMessages && oldFlags != instance.CurrentFlags)
                     {
                         client.SendPacket(new AutoModerationFlags
                         {
@@ -177,7 +187,7 @@ public class AutoModerationPlugin : IAssettoServerPlugin<AutoModerationConfigura
             }
             finally
             {
-                await Task.Delay(1000);
+                await Task.Delay(1000, stoppingToken);
             }
         }
     }

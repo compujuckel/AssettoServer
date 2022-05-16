@@ -6,14 +6,21 @@ namespace RaceChallengePlugin;
 
 public class RaceCommandModule : ACModuleBase
 {
+    private readonly RaceChallengePlugin _plugin;
+
+    public RaceCommandModule(RaceChallengePlugin plugin)
+    {
+        _plugin = plugin;
+    }
+
     [Command("race")]
     public void Race(ACTcpClient player)
-        => Context.Client.EntryCar.GetRace().ChallengeCar(player.EntryCar);
+        => _plugin.GetRace(Context.Client.EntryCar).ChallengeCar(player.EntryCar);
 
     [Command("accept")]
     public async ValueTask AcceptRaceAsync()
     {
-        var currentRace = Context.Client.EntryCar.GetRace().CurrentRace;
+        var currentRace = _plugin.GetRace(Context.Client.EntryCar).CurrentRace;
         if (currentRace == null)
             Reply("You do not have a pending race request.");
         else if (currentRace.HasStarted)

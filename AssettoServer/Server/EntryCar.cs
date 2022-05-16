@@ -2,6 +2,7 @@
 using AssettoServer.Network.Tcp;
 using System;
 using System.Numerics;
+using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
@@ -13,23 +14,7 @@ using Serilog.Events;
 namespace AssettoServer.Server
 { 
     public partial class EntryCar
-    {
-        public EntryCar(string model, string? skin, ACServer server, byte sessionId)
-        {
-            Model = model;
-            Skin = skin ?? "";
-            Server = server;
-            SessionId = sessionId;
-            OtherCarsLastSentUpdateTime = new long[Server.EntryCars.Length];
-
-            AiPakSequenceIds = new byte[Server.EntryCars.Length];
-            LastSeenAiState = new AiState[Server.EntryCars.Length];
-            LastSeenAiSpawn = new byte[Server.EntryCars.Length];
-            
-            AiInit();
-        }
-
-        public ACServer Server { get; }
+    { 
         public ACTcpClient? Client { get; internal set; }
         public CarStatus Status { get; private set; } = new CarStatus();
 
@@ -42,8 +27,8 @@ namespace AssettoServer.Server
         public int TimeOffset { get; internal set; }
         public byte SessionId { get; }
         public uint LastRemoteTimestamp { get; internal set; }
-        public int LastPingTime { get; internal set; }
-        public int LastPongTime { get; internal set; }
+        public long LastPingTime { get; internal set; }
+        public long LastPongTime { get; internal set; }
         public ushort Ping { get; internal set; }
         public DriverOptionsFlags DriverOptionsFlags { get; internal set; }
 
@@ -71,6 +56,12 @@ namespace AssettoServer.Server
         /// </summary>
         public event EventHandler<EntryCar, EventArgs>? ResetInvoked;
 
+        public delegate EntryCar Factory(string model, string? skin, byte sessionId);
+
+        private readonly ACServerConfiguration _configuration;
+        private readonly EntryCarManager _entryCarManager;
+        private readonly SessionManager _sessionManager;
+
         public ILogger Logger { get; private set; } = Log.Logger;
 
         public class EntryCarLogEventEnricher : ILogEventEnricher
@@ -89,16 +80,31 @@ namespace AssettoServer.Server
                 logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("CarSkin", _entryCar.Skin));
             }
         }
-
-        public void ResetLogger()
+        
+        public EntryCar(string model, string? skin, byte sessionId, Func<EntryCar, AiState> aiStateFactory, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager)
         {
+            Model = model;
+            Skin = skin ?? "";
+            SessionId = sessionId;
+            _sessionManager = sessionManager;
+            _configuration = configuration;
+            _entryCarManager = entryCarManager;
+            _aiStateFactory = aiStateFactory;
+            OtherCarsLastSentUpdateTime = new long[entryCarManager.EntryCars.Length];
+
+            AiPakSequenceIds = new byte[entryCarManager.EntryCars.Length];
+            LastSeenAiState = new AiState[entryCarManager.EntryCars.Length];
+            LastSeenAiSpawn = new byte[entryCarManager.EntryCars.Length];
+            
             Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.With(new EntryCarLogEventEnricher(this))
                 .WriteTo.Logger(Log.Logger)
                 .CreateLogger();
+            
+            AiInit();
         }
-        
+
         internal void Reset()
         {
             ResetInvoked?.Invoke(this, EventArgs.Empty);
@@ -119,13 +125,13 @@ namespace AssettoServer.Server
 
         internal void CheckAfk()
         {
-            if (!Server.Configuration.Extra.EnableAntiAfk || Client?.IsAdministrator == true)
+            if (!_configuration.Extra.EnableAntiAfk || Client?.IsAdministrator == true)
                 return;
 
-            long timeAfk = Server.ServerTimeMilliseconds - LastActiveTime;
-            if (timeAfk > Server.Configuration.Extra.MaxAfkTimeMilliseconds)
-                _ = Server.KickAsync(Client, KickReason.Kicked, $"{Client?.Name} has been kicked for being AFK.");
-            else if (!HasSentAfkWarning && Server.Configuration.Extra.MaxAfkTimeMilliseconds - timeAfk < 60000)
+            long timeAfk = _sessionManager.ServerTimeMilliseconds - LastActiveTime;
+            if (timeAfk > _configuration.Extra.MaxAfkTimeMilliseconds)
+                _ = Task.Run(() => _entryCarManager.KickAsync(Client,  "being AFK"));
+            else if (!HasSentAfkWarning && _configuration.Extra.MaxAfkTimeMilliseconds - timeAfk < 60000)
             {
                 HasSentAfkWarning = true;
                 Client?.SendPacket(new ChatMessage { SessionId = 255, Message = "You will be kicked in 1 minute for being AFK." });
@@ -134,12 +140,25 @@ namespace AssettoServer.Server
 
         internal void SetActive()
         {
-            LastActiveTime = Server.ServerTimeMilliseconds;
+            LastActiveTime = _sessionManager.ServerTimeMilliseconds;
             HasSentAfkWarning = false;
         }
 
         internal void UpdatePosition(in PositionUpdateIn positionUpdate)
         {
+            if (!positionUpdate.IsValid())
+            {
+                _ = Task.Run(async () =>
+                {
+                    var client = Client;
+                    if (client == null) return;
+                    client.Logger.Debug("Invalid position update received from {Name} ({SessionId}), disconnecting", client.Name, client.SessionId);
+                    await client.DisconnectAsync();
+                });
+                
+                return;
+            }
+
             PositionUpdateReceived?.Invoke(this, in positionUpdate);
             
             HasUpdateToSend = true;
@@ -147,16 +166,16 @@ namespace AssettoServer.Server
 
             const float afkMinSpeed = 20 / 3.6f;
             if ((positionUpdate.StatusFlag != Status.StatusFlag || positionUpdate.Gas != Status.Gas || positionUpdate.SteerAngle != Status.SteerAngle)
-                && (Server.Configuration.Extra.AfkKickBehavior != AfkKickBehavior.MinimumSpeed || positionUpdate.Velocity.LengthSquared() > afkMinSpeed * afkMinSpeed))
+                && (_configuration.Extra.AfkKickBehavior != AfkKickBehavior.MinimumSpeed || positionUpdate.Velocity.LengthSquared() > afkMinSpeed * afkMinSpeed))
             {
                 SetActive();
             }
             
-            if (Status.Velocity.Y < -75 && Server.ServerTimeMilliseconds - LastFallCheckTime > 1000)
+            if (Status.Velocity.Y < -75 && _sessionManager.ServerTimeMilliseconds - LastFallCheckTime > 1000)
             {
-                LastFallCheckTime = Server.ServerTimeMilliseconds;
+                LastFallCheckTime = _sessionManager.ServerTimeMilliseconds;
                 if(Client != null)
-                    Server.SendCurrentSession(Client);
+                    _sessionManager.SendCurrentSession(Client);
             }
 
             /*if (!AiControlled && Status.StatusFlag != positionUpdate.StatusFlag)
@@ -240,13 +259,13 @@ namespace AssettoServer.Server
             float distanceSquared = Vector3.DistanceSquared(status.Position, targetCarStatus.Position);
             if (TargetCar != null || distanceSquared > NetworkDistanceSquared)
             {
-                if ((Server.ServerTimeMilliseconds - OtherCarsLastSentUpdateTime[toCar.SessionId]) < OutsideNetworkBubbleUpdateRateMs)
+                if ((_sessionManager.ServerTimeMilliseconds - OtherCarsLastSentUpdateTime[toCar.SessionId]) < OutsideNetworkBubbleUpdateRateMs)
                 {
                     positionUpdateOut = default;
                     return false;
                 }
 
-                OtherCarsLastSentUpdateTime[toCar.SessionId] = Server.ServerTimeMilliseconds;
+                OtherCarsLastSentUpdateTime[toCar.SessionId] = _sessionManager.ServerTimeMilliseconds;
             }
 
             positionUpdateOut = new PositionUpdateOut(SessionId,
@@ -264,7 +283,7 @@ namespace AssettoServer.Server
                 status.WheelAngle,
                 status.EngineRpm,
                 status.Gear,
-                (Server.Configuration.Extra.ForceLights || ForceLights)
+                (_configuration.Extra.ForceLights || ForceLights)
                     ? status.StatusFlag | CarStatusFlags.LightsOn
                     : status.StatusFlag,
                 status.PerformanceDelta,

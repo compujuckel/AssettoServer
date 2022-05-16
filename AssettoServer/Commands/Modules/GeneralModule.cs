@@ -3,6 +3,8 @@ using Qmmands;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Weather;
 using JetBrains.Annotations;
 
 namespace AssettoServer.Commands.Modules;
@@ -10,13 +12,22 @@ namespace AssettoServer.Commands.Modules;
 [UsedImplicitly(ImplicitUseKindFlags.Access, ImplicitUseTargetFlags.WithMembers)]
 public class GeneralModule : ACModuleBase
 {
+    private readonly WeatherManager _weatherManager;
+    private readonly ACServerConfiguration _configuration;
+
+    public GeneralModule(WeatherManager weatherManager, ACServerConfiguration configuration)
+    {
+        _weatherManager = weatherManager;
+        _configuration = configuration;
+    }
+
     [Command("ping")]
     public void Ping()
         => Reply($"Pong! {Context.Client.EntryCar.Ping}ms.");
 
     [Command("time")]
     public void Time()
-        => Reply($"It is currently {Context.Server.CurrentDateTime:H:mm}.");
+        => Reply($"It is currently {_weatherManager.CurrentDateTime:H:mm}.");
 
 #if DEBUG
     [Command("test")]
@@ -30,7 +41,7 @@ public class GeneralModule : ACModuleBase
     [Command("admin")]
     public void AdminAsync(string password)
     {
-        if (password == Context.Server.Configuration.Server.AdminPassword)
+        if (password == _configuration.Server.AdminPassword)
         {
             Context.Client.IsAdministrator = true;
             Reply("You are now Admin for this server");

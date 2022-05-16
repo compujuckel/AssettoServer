@@ -41,38 +41,21 @@ public class ACPluginLoader
 
         foreach (var type in assembly.GetTypes())
         {
-            if (typeof(IAssettoServerPlugin).IsAssignableFrom(type) && !type.IsAbstract)
+            if (typeof(AssettoServerModule).IsAssignableFrom(type) && !type.IsAbstract)
             {
-                IAssettoServerPlugin instance = Activator.CreateInstance(type) as IAssettoServerPlugin ?? throw new InvalidOperationException("Could not create plugin instance");
+                AssettoServerModule instance = Activator.CreateInstance(type) as AssettoServerModule ?? throw new InvalidOperationException("Could not create plugin instance");
 
                 Type? configType = null;
-                foreach (var inface in type.GetInterfaces())
+                var baseType = type.BaseType!;
+                if (baseType.IsGenericType && baseType.GetGenericTypeDefinition() == typeof(AssettoServerModule<>))
                 {
-                    if (inface.IsGenericType && inface.GetGenericTypeDefinition() == typeof(IAssettoServerPlugin<>))
-                    {
-                        configType = inface.GetGenericArguments()[0];
-                    }
+                    configType = baseType.GetGenericArguments()[0];
                 }
-                
+
                 LoadedPlugins.Add(new Plugin(name, assembly, instance, configType));
             }
         }
         
         Log.Information("Loaded plugin {PluginName}", name);
-    }
-
-    public void LoadConfiguration(object? configuration)
-    {
-        foreach (var plugin in LoadedPlugins)
-        {
-            if (plugin.ConfigurationType != null && plugin.ConfigurationType.IsInstanceOfType(configuration))
-            {
-                var genericType = typeof(IAssettoServerPlugin<>).MakeGenericType(new[] { plugin.ConfigurationType });
-                var method = genericType.GetMethod("SetConfiguration") ?? throw new InvalidOperationException($"Plugin {plugin.Name} does not have a SetConfiguration method");
-
-                method.Invoke(plugin.Instance, new []{ configuration });
-                break;
-            }
-        }
     }
 }

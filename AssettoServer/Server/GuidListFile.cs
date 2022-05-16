@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Polly;
 using Serilog;
@@ -13,16 +14,15 @@ public class GuidListFile
     public readonly IReadOnlyDictionary<string, bool> List;
 
     private readonly string _filename;
-    private readonly ACServer _server;
+    private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly ConcurrentDictionary<string, bool> _guidList = new();
     private readonly FileSystemWatcher _watcher;
 
     public event EventHandler<GuidListFile, EventArgs>? Reloaded;
     
-    public GuidListFile(ACServer server, string filename)
+    public GuidListFile(string filename)
     {
         List = _guidList;
-        _server = server;
         _filename = filename;
         _watcher = new FileSystemWatcher(".");
         _watcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -43,8 +43,8 @@ public class GuidListFile
     public async Task LoadAsync()
     {
         var policy = Policy.Handle<IOException>().WaitAndRetryAsync(3, attempt => TimeSpan.FromMilliseconds(attempt * 100));
-        
-        await _server.ConnectSemaphore.WaitAsync();
+
+        await _lock.WaitAsync();
         try
         {
             if (File.Exists(_filename))
@@ -70,19 +70,35 @@ public class GuidListFile
         }
         finally
         {
-            _server.ConnectSemaphore.Release();
+            _lock.Release();
             Reloaded?.Invoke(this, EventArgs.Empty);
         }
     }
 
     public bool Contains(string guid)
     {
-        return _guidList.ContainsKey(guid);
+        _lock.Wait();
+        try
+        {
+            return _guidList.ContainsKey(guid);
+        }
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     public async Task AddAsync(string guid)
     {
-        if(_guidList.TryAdd(guid, true))
-            await File.AppendAllLinesAsync(_filename, new[] { guid });
+        await _lock.WaitAsync();
+        try
+        {
+            if (_guidList.TryAdd(guid, true))
+                await File.AppendAllLinesAsync(_filename, new[] { guid });
+        }
+        finally
+        {
+            _lock.Release();
+        }
     }
 }

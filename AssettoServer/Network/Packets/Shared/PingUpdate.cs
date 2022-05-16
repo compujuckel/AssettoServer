@@ -4,10 +4,10 @@ namespace AssettoServer.Network.Packets.Shared
 {
     public readonly struct PingUpdate : IOutgoingNetworkPacket
     {
-        public readonly int Time;
+        public readonly uint Time;
         public readonly ushort CurrentPing;
 
-        public PingUpdate(int time, ushort currentPing)
+        public PingUpdate(uint time, ushort currentPing)
         {
             Time = time;
             CurrentPing = currentPing;

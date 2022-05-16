@@ -8,15 +8,19 @@ namespace AssettoServer.Server.Weather
 {
     public class DefaultWeatherProvider
     {
-        private readonly ACServer _server;
+        private readonly ACServerConfiguration _configuration;
+        private readonly WeatherManager _weatherManager;
+        private readonly IWeatherTypeProvider _weatherTypeProvider;
 
         private WeatherConfiguration _weatherConfiguration;
 
-        public DefaultWeatherProvider(ACServer server)
+        public DefaultWeatherProvider(WeatherManager weatherManager, IWeatherTypeProvider weatherTypeProvider, ACServerConfiguration configuration)
         {
-            _server = server;
+            _weatherManager = weatherManager;
+            _weatherTypeProvider = weatherTypeProvider;
+            _configuration = configuration;
 
-            int config = Random.Shared.Next(_server.Configuration.Server.Weathers.Count);
+            int config = Random.Shared.Next(_configuration.Server.Weathers.Count);
             if (!SetWeatherConfiguration(config))
                 throw new InvalidOperationException("Could not set initial weather configuration");
         }
@@ -24,10 +28,10 @@ namespace AssettoServer.Server.Weather
         [MemberNotNullWhen(true, nameof(_weatherConfiguration))]
         public bool SetWeatherConfiguration(int id)
         {
-            if (id < 0 || id >= _server.Configuration.Server.Weathers.Count)
+            if (id < 0 || id >= _configuration.Server.Weathers.Count)
                 return false;
             
-            _weatherConfiguration = _server.Configuration.Server.Weathers[id];
+            _weatherConfiguration = _configuration.Server.Weathers[id];
 
             if (_weatherConfiguration.WeatherFxParams.StartTime != null
                 || _weatherConfiguration.WeatherFxParams.TimeMultiplier != null)
@@ -38,14 +42,13 @@ namespace AssettoServer.Server.Weather
             var startDate = _weatherConfiguration.WeatherFxParams.StartDate.HasValue
                 ? Instant.FromUnixTimeSeconds(_weatherConfiguration.WeatherFxParams.StartDate.Value)
                 : SystemClock.Instance.GetCurrentInstant();
-            _server.CurrentDateTime = _server.CurrentDateTime.TimeOfDay.On(startDate.InUtc().Date).InZoneLeniently(_server.CurrentDateTime.Zone);
-            _server.UpdateSunPosition();
+            _weatherManager.CurrentDateTime = _weatherManager.CurrentDateTime.TimeOfDay.On(startDate.InUtc().Date).InZoneLeniently(_weatherManager.CurrentDateTime.Zone);
 
-            var weatherType = _server.WeatherTypeProvider.GetWeatherType(_weatherConfiguration.WeatherFxParams.Type);
+            var weatherType = _weatherTypeProvider.GetWeatherType(_weatherConfiguration.WeatherFxParams.Type);
 
             float ambient = GetFloatWithVariation(_weatherConfiguration.BaseTemperatureAmbient, _weatherConfiguration.VariationAmbient);
             
-            _server.SetWeather(new WeatherData(weatherType, weatherType)
+            _weatherManager.SetWeather(new WeatherData(weatherType, weatherType)
             {
                 TemperatureAmbient = ambient,
                 TemperatureRoad = GetFloatWithVariation(ambient + _weatherConfiguration.BaseTemperatureRoad, _weatherConfiguration.VariationRoad),
@@ -54,7 +57,7 @@ namespace AssettoServer.Server.Weather
                 RainIntensity = weatherType.RainIntensity,
                 RainWater = weatherType.RainWater,
                 RainWetness = weatherType.RainWetness,
-                TrackGrip = _server.Configuration.Server.DynamicTrack?.BaseGrip ?? 1
+                TrackGrip = _configuration.Server.DynamicTrack?.BaseGrip ?? 1
             });
 
             return true;

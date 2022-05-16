@@ -6,25 +6,25 @@ namespace AssettoServer.Server.Weather.Implementation;
 
 public class VanillaWeatherImplementation : IWeatherImplementation
 {
-    private readonly ACServer _server;
+    private readonly EntryCarManager _entryCarManager;
+    private readonly IWeatherTypeProvider _weatherTypeProvider;
     private WeatherUpdate? _lastWeather;
 
-    public VanillaWeatherImplementation(ACServer server)
+    public VanillaWeatherImplementation(IWeatherTypeProvider weatherTypeProvider, EntryCarManager entryCarManager)
     {
-        _server = server;
+        _weatherTypeProvider = weatherTypeProvider;
+        _entryCarManager = entryCarManager;
     }
     
-    public void SendWeather(ACTcpClient? client = null)
+    public void SendWeather(WeatherData weather, ZonedDateTime dateTime, ACTcpClient? client = null)
     {
-        var weather = _server.CurrentWeather;
-
         var wfxParams = new WeatherFxParams
         {
             Type = weather.Type.WeatherFxType,
-            StartDate = _server.CurrentDateTime.Date.AtStartOfDayInZone(DateTimeZone.Utc).ToInstant().ToUnixTimeSeconds()
+            StartDate = dateTime.Date.AtStartOfDayInZone(DateTimeZone.Utc).ToInstant().ToUnixTimeSeconds()
         };
 
-        var weatherType = _server.WeatherTypeProvider.GetWeatherType(wfxParams.Type) with
+        var weatherType = _weatherTypeProvider.GetWeatherType(wfxParams.Type) with
         {
             Graphics = wfxParams.ToString(),
         };
@@ -47,25 +47,25 @@ public class VanillaWeatherImplementation : IWeatherImplementation
                 || weatherUpdate.WindDirection != _lastWeather.WindDirection
                 || weatherUpdate.WindSpeed != _lastWeather.WindSpeed)
             {
-                _server.BroadcastPacket(weatherUpdate);
+                _entryCarManager.BroadcastPacket(weatherUpdate);
             }
 
-            _server.BroadcastPacket(PrepareSunAngleUpdate());
+            _entryCarManager.BroadcastPacket(PrepareSunAngleUpdate(dateTime));
         }
         else
         {
             client.SendPacket(weatherUpdate);
-            client.SendPacket(PrepareSunAngleUpdate());
+            client.SendPacket(PrepareSunAngleUpdate(dateTime));
         }
 
         _lastWeather = weatherUpdate;
     }
 
-    private SunAngleUpdate PrepareSunAngleUpdate()
+    private SunAngleUpdate PrepareSunAngleUpdate(ZonedDateTime dateTime)
     {
         return new SunAngleUpdate
         {
-            SunAngle = (float)WeatherUtils.SunAngleFromTicks(_server.CurrentDateTime.TimeOfDay.TickOfDay)
+            SunAngle = (float)WeatherUtils.SunAngleFromTicks(dateTime.TimeOfDay.TickOfDay)
         };
     }
 }

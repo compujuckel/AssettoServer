@@ -1,4 +1,4 @@
-﻿namespace AssettoServer.Server;
+﻿namespace AssettoServer.Utils;
 
 public class CountedArray<T>
 {

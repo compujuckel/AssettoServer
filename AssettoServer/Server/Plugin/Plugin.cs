@@ -7,10 +7,10 @@ public class Plugin
 {
     public string Name { get; }
     public Assembly Assembly { get; }
-    public IAssettoServerPlugin Instance { get; }
+    public AssettoServerModule Instance { get; }
     public Type? ConfigurationType { get; }
 
-    public Plugin(string name, Assembly assembly, IAssettoServerPlugin instance, Type? configurationType)
+    public Plugin(string name, Assembly assembly, AssettoServerModule instance, Type? configurationType)
     {
         Name = name;
         Assembly = assembly;

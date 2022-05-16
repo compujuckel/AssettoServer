@@ -1,30 +1,40 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Packets;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using Microsoft.Extensions.Hosting;
 using NanoSockets;
 using Serilog;
 
 namespace AssettoServer.Network.Udp;
 
-public class ACUdpServerNano
+public class ACUdpServer : BackgroundService
 {
-    private readonly ACServer _server;
+    private readonly ACServerConfiguration _configuration;
+    private readonly SessionManager _sessionManager;
+    private readonly EntryCarManager _entryCarManager;
     private readonly ushort _port;
     private Socket _socket;
 
-    public ACUdpServerNano(ACServer server, ushort port)
+    private readonly ConcurrentDictionary<Address, EntryCar> _endpointCars = new();
+
+    public ACUdpServer(SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager)
     {
-        _server = server;
-        _port = port;
+        _sessionManager = sessionManager;
+        _configuration = configuration;
+        _entryCarManager = entryCarManager;
+        _port = _configuration.Server.UdpPort;
     }
     
-    public void Start()
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Log.Information("Starting UDP server on port {Port}", _port);
         
@@ -46,15 +56,15 @@ public class ACUdpServerNano
             throw new InvalidOperationException($"Could not bind UDP socket. Maybe the port is already in use?");
         }
         
-        _ = Task.Factory.StartNew(ReceiveLoop, TaskCreationOptions.LongRunning);
+        await Task.Factory.StartNew(() => ReceiveLoop(stoppingToken), TaskCreationOptions.LongRunning);
     }
 
-    private void ReceiveLoop()
+    private void ReceiveLoop(CancellationToken stoppingToken)
     {
         byte[] buffer = new byte[1500];
         var address = new Address();
         
-        while (true)
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
@@ -93,11 +103,12 @@ public class ACUdpServerNano
             if (packetId == 0x4E)
             {
                 int sessionId = packetReader.Read<byte>();
-                if (_server.ConnectedCars.TryGetValue(sessionId, out EntryCar? car) && car.Client != null)
+                if (_entryCarManager.ConnectedCars.TryGetValue(sessionId, out EntryCar? car) && car.Client != null)
                 {
                     if (car.Client.TryAssociateUdp(address))
                     {
-                        _server.EndpointCars[address] = car;
+                        _endpointCars[address] = car;
+                        car.Client.Disconnecting += OnClientDisconnecting;
 
                         byte[] response = new byte[1] { 0x4E };
                         Send(address, response, 0, 1);
@@ -106,7 +117,7 @@ public class ACUdpServerNano
             }
             else if (packetId == 0xC8)
             {
-                ushort httpPort = (ushort)_server.Configuration.Server.HttpPort;
+                ushort httpPort = (ushort)_configuration.Server.HttpPort;
                 MemoryMarshal.Write(buffer.AsSpan().Slice(1), ref httpPort);
                 Send(address, buffer, 0, 3);
             }
@@ -123,12 +134,12 @@ public class ACUdpServerNano
                     Server.Steam.HandleIncomingPacket(data, remoteEp);
                 }
             }*/
-            else if (_server.EndpointCars.TryGetValue(address, out EntryCar? car) && car.Client != null)
+            else if (_endpointCars.TryGetValue(address, out EntryCar? car) && car.Client != null)
             {
                 if (packetId == 0x4F)
                 {
-                    if (_server.CurrentSession.Configuration.Type != packetReader.Read<SessionType>())
-                        _server.SendCurrentSession(car.Client);
+                    if (_sessionManager.CurrentSession.Configuration.Type != packetReader.Read<SessionType>())
+                        _sessionManager.SendCurrentSession(car.Client);
                 }
                 else if (packetId == 0x46)
                 {
@@ -139,16 +150,16 @@ public class ACUdpServerNano
                 }
                 else if (packetId == 0xF8)
                 {
-                    int currentTime = (int)_server.ServerTimeMilliseconds;
+                    long currentTime = _sessionManager.ServerTimeMilliseconds;
                     car.Ping = (ushort)(currentTime - packetReader.Read<int>());
-                    car.TimeOffset = currentTime - ((car.Ping / 2) + packetReader.Read<int>());
+                    car.TimeOffset = (int)currentTime - ((car.Ping / 2) + packetReader.Read<int>());
                     car.LastPongTime = currentTime;
 
-                    if (car.Ping > _server.Configuration.Extra.MaxPing)
+                    if (car.Ping > _configuration.Extra.MaxPing)
                     {
                         car.HighPingSeconds++;
-                        if (car.HighPingSeconds > _server.Configuration.Extra.MaxPingSeconds)
-                            _ = _server.KickAsync(car.Client, KickReason.Kicked, $"{car.Client?.Name} has been kicked for high ping ({car.Ping}ms).");
+                        if (car.HighPingSeconds > _configuration.Extra.MaxPingSeconds)
+                            _ = Task.Run(() => _entryCarManager.KickAsync(car.Client, $"high ping ({car.Ping}ms)"));
                     }
                     else car.HighPingSeconds = 0;
                 }
@@ -157,6 +168,14 @@ public class ACUdpServerNano
         catch (Exception ex)
         {
             Log.Error(ex, "Error while receiving a UDP packet");
+        }
+    }
+
+    private void OnClientDisconnecting(ACTcpClient sender, EventArgs args)
+    {
+        if (sender.UdpEndpoint.HasValue)
+        {
+            _endpointCars.TryRemove(sender.UdpEndpoint.Value, out _);
         }
     }
 }

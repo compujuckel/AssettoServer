@@ -1,21 +1,22 @@
 ﻿using System.Collections.Generic;
+using AssettoServer.Server.Configuration;
 using IniParser.Model;
 using Serilog;
 
 namespace AssettoServer.Server;
 
-public class CSPLuaClientScriptProvider
+public class CSPServerScriptProvider
 {
     internal List<string> Scripts { get; } = new();
-    
-    private readonly ACServer _server;
 
-    public CSPLuaClientScriptProvider(ACServer server)
+    private readonly CSPServerExtraOptions _cspServerExtraOptions;
+
+    public CSPServerScriptProvider(CSPServerExtraOptions cspServerExtraOptions)
     {
-        _server = server;
+        _cspServerExtraOptions = cspServerExtraOptions;
     }
     
-    public void AddLuaClientScript(string script, string? debugFilename = null, Dictionary<string, object>? configuration = null)
+    public void AddScript(string script, string? debugFilename = null, Dictionary<string, object>? configuration = null)
     {
         bool debug = false;
         #if DEBUG
@@ -33,7 +34,7 @@ public class CSPLuaClientScriptProvider
         else
         {
             Scripts.Add(script);
-            scriptSection["SCRIPT"] = $"'http://{_server.GeoParams.Ip}:{_server.Configuration.Server.HttpPort}/api/scripts/{Scripts.Count - 1}'";
+            scriptSection["SCRIPT"] = $"'http://{{ServerIP}}:{{ServerHTTPPort}}/api/scripts/{Scripts.Count - 1}'";
         }
 
         if (configuration != null)
@@ -44,6 +45,6 @@ public class CSPLuaClientScriptProvider
             }
         }
 
-        _server.CSPServerExtraOptions.ExtraOptions += $"\r\n{data}\r\n";
+        _cspServerExtraOptions.ExtraOptions += $"\r\n{data}\r\n";
     }
 }

@@ -1,45 +1,47 @@
 ﻿using System;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Tcp;
+using NodaTime;
 
 namespace AssettoServer.Server.Weather.Implementation;
 
 public class WeatherFxV1Implementation : IWeatherImplementation
 {
-    private readonly ACServer _server;
+    private readonly EntryCarManager _entryCarManager;
 
-    public WeatherFxV1Implementation(ACServer server)
+    public WeatherFxV1Implementation(EntryCarManager entryCarManager, CSPFeatureManager cspFeatureManager)
     {
-        _server = server;
+        _entryCarManager = entryCarManager;
+        cspFeatureManager.Add(new CSPFeature { Name = "WEATHERFX_V1", Mandatory = true });
     }
 
-    public void SendWeather(ACTcpClient? client = null)
+    public void SendWeather(WeatherData weather, ZonedDateTime dateTime, ACTcpClient? client = null)
     {
-        var weather = new CSPWeatherUpdate
+        var newWeather = new CSPWeatherUpdate
         {
-            UnixTimestamp = (ulong) _server.CurrentDateTime.ToInstant().ToUnixTimeSeconds(),
-            WeatherType = (byte) _server.CurrentWeather.Type.WeatherFxType,
-            UpcomingWeatherType = (byte) _server.CurrentWeather.UpcomingType.WeatherFxType,
-            TransitionValue = _server.CurrentWeather.TransitionValue,
-            TemperatureAmbient = (Half) _server.CurrentWeather.TemperatureAmbient,
-            TemperatureRoad = (Half) _server.CurrentWeather.TemperatureRoad,
-            TrackGrip = (Half) _server.CurrentWeather.TrackGrip,
-            WindDirectionDeg = (Half) _server.CurrentWeather.WindDirection,
-            WindSpeed = (Half) _server.CurrentWeather.WindSpeed,
-            Humidity = (Half) _server.CurrentWeather.Humidity,
-            Pressure = (Half) _server.CurrentWeather.Pressure,
-            RainIntensity = (Half) _server.CurrentWeather.RainIntensity,
-            RainWetness = (Half) _server.CurrentWeather.RainWetness,
-            RainWater = (Half) _server.CurrentWeather.RainWater
+            UnixTimestamp = (ulong) dateTime.ToInstant().ToUnixTimeSeconds(),
+            WeatherType = (byte) weather.Type.WeatherFxType,
+            UpcomingWeatherType = (byte) weather.UpcomingType.WeatherFxType,
+            TransitionValue = weather.TransitionValue,
+            TemperatureAmbient = (Half) weather.TemperatureAmbient,
+            TemperatureRoad = (Half) weather.TemperatureRoad,
+            TrackGrip = (Half) weather.TrackGrip,
+            WindDirectionDeg = (Half) weather.WindDirection,
+            WindSpeed = (Half) weather.WindSpeed,
+            Humidity = (Half) weather.Humidity,
+            Pressure = (Half) weather.Pressure,
+            RainIntensity = (Half) weather.RainIntensity,
+            RainWetness = (Half) weather.RainWetness,
+            RainWater = (Half) weather.RainWater
         };
 
         if (client == null)
         {
-            _server.BroadcastPacketUdp(weather);
+            _entryCarManager.BroadcastPacketUdp(newWeather);
         }
         else
         {
-            client.SendPacketUdp(weather);
+            client.SendPacketUdp(newWeather);
         }
     }
 }

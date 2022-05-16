@@ -1,7 +1,9 @@
 ﻿using System.Drawing;
+using AssettoServer.Commands;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
+using AssettoServer.Server.Configuration;
 using CSharpDiscordWebhook.NET.Discord;
 using Serilog;
 
@@ -11,64 +13,85 @@ public class Discord
 {
     private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":", "@" };
     private readonly string _serverNameTruncated;
-    
+
+    private readonly DiscordConfiguration _configuration;
+
     private DiscordWebhook? AuditHook { get; }
     private DiscordWebhook? ChatHook { get; }
-    private DiscordConfiguration Configuration { get; }
 
-    public Discord(ACServer server, DiscordConfiguration configuration)
+    public Discord(DiscordConfiguration configuration, EntryCarManager entryCarManager, ACServerConfiguration serverConfiguration, ChatService chatService)
     {
-        _serverNameTruncated = server.Configuration.Server.Name.Substring(0, Math.Min(server.Configuration.Server.Name.Length, 80));
-        Configuration = configuration;
-        
-        if (!string.IsNullOrEmpty(Configuration.AuditUrl))
+        _serverNameTruncated = serverConfiguration.Server.Name.Substring(0, Math.Min(serverConfiguration.Server.Name.Length, 80));
+        _configuration = configuration;
+
+        if (!string.IsNullOrEmpty(_configuration.AuditUrl))
         {
             AuditHook = new DiscordWebhook
             {
-                Uri = new Uri(Configuration.AuditUrl)
+                Uri = new Uri(_configuration.AuditUrl)
             };
 
-            server.ClientKicked += OnClientKicked;
-            server.ClientBanned += OnClientBanned;
+            entryCarManager.ClientKicked += OnClientKicked;
+            entryCarManager.ClientBanned += OnClientBanned;
         }
         
-        if (!string.IsNullOrEmpty(Configuration.ChatUrl))
+        if (!string.IsNullOrEmpty(_configuration.ChatUrl))
         {
             ChatHook = new DiscordWebhook
             {
-                Uri = new Uri(Configuration.ChatUrl)
+                Uri = new Uri(_configuration.ChatUrl)
             };
 
-            server.ChatMessageReceived += OnChatMessageReceived;
+            chatService.MessageReceived += OnChatMessageReceived;
         }
     }
 
     private void OnClientBanned(ACTcpClient sender, ClientAuditEventArgs args)
     {
-        AuditHook!.SendAsync(PrepareAuditMessage(
-            ":hammer: Ban alert",
-            _serverNameTruncated,
-            sender.Guid,
-            sender.Name,
-            args.ReasonStr,
-            Color.Red,
-            args.Admin?.Name
-        )).ContinueWith(t => Log.Error(t.Exception, "Error in Discord webhook"), TaskContinuationOptions.OnlyOnFaulted);
+        Task.Run(async () =>
+        {
+            try
+            {
+                await AuditHook!.SendAsync(PrepareAuditMessage(
+                    ":hammer: Ban alert",
+                    _serverNameTruncated,
+                    sender.Guid, 
+                    sender.Name,
+                    args.ReasonStr,
+                    Color.Red,
+                    args.Admin?.Name
+                ));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error in Discord webhook");
+            }
+        });
     }
 
     private void OnClientKicked(ACTcpClient sender, ClientAuditEventArgs args)
     {
         if (args.Reason != KickReason.ChecksumFailed)
         {
-            AuditHook!.SendAsync(PrepareAuditMessage(
-                ":boot: Kick alert",
-                _serverNameTruncated,
-                sender.Guid,
-                sender.Name,
-                args.ReasonStr,
-                Color.Yellow,
-                args.Admin?.Name
-            )).ContinueWith(t => Log.Error(t.Exception, "Error in Discord webhook"), TaskContinuationOptions.OnlyOnFaulted);
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await AuditHook!.SendAsync(PrepareAuditMessage(
+                        ":boot: Kick alert",
+                        _serverNameTruncated,
+                        sender.Guid, 
+                        sender.Name,
+                        args.ReasonStr,
+                        Color.Yellow,
+                        args.Admin?.Name
+                    ));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error in Discord webhook");
+                }
+            });
         }
     }
 
@@ -79,7 +102,7 @@ public class Discord
             string username;
             string content;
 
-            if (Configuration.ChatMessageIncludeServerName)
+            if (_configuration.ChatMessageIncludeServerName)
             {
                 username = _serverNameTruncated;
                 content = $"**{sender.Name}:** {Sanitize(args.Message)}";
@@ -92,7 +115,7 @@ public class Discord
 
             DiscordMessage msg = new DiscordMessage
             {
-                AvatarUrl = Configuration.PictureUrl,
+                AvatarUrl = _configuration.PictureUrl,
                 Username = username,
                 Content = content,
                 AllowedMentions = new AllowedMentions()
@@ -117,7 +140,7 @@ public class Discord
         DiscordMessage message = new DiscordMessage
         {
             Username = serverName.Substring(0, Math.Min(serverName.Length, 80)),
-            AvatarUrl = Configuration.PictureUrl,
+            AvatarUrl = _configuration.PictureUrl,
             Embeds = new List<DiscordEmbed>
             {
                 new()

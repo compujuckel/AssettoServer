@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using AssettoServer.Network.Packets.Outgoing;
 
@@ -24,4 +25,13 @@ public readonly struct PositionUpdateIn
     public readonly short PerformanceDelta;
     public readonly byte Gas;
     public readonly float NormalizedPosition;
+
+    [SuppressMessage("ReSharper", "EqualExpressionComparison")]
+    public bool IsValid()
+    {
+        // Check if any vector component contains NaN. Equality check NaN == NaN returns false
+        #pragma warning disable CS1718
+        return Position == Position && Rotation == Rotation && Velocity == Velocity;
+        #pragma warning restore CS1718
+    }
 }

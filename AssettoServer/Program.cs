@@ -3,9 +3,18 @@ using AssettoServer.Server.Configuration;
 using System;
 using System.Globalization;
 using System.Threading.Tasks;
+using App.Metrics;
+using App.Metrics.AspNetCore;
+using App.Metrics.Formatters.Prometheus;
+using AssettoServer.Network.Http;
 using AssettoServer.Server.Plugin;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
 using CommandLine;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.Grafana.Loki;
@@ -38,26 +47,8 @@ internal static class Program
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
 
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .WriteTo.Async(a => a.Console())
-            .WriteTo.File($"logs/{logPrefix}-.txt",
-                rollingInterval: RollingInterval.Day)
-            .CreateLogger();
-
-        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
-
-        Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
-        if (!string.IsNullOrEmpty(options.Preset))
-        {
-            Log.Information("Using preset {Preset}", options.Preset);
-        }
-
-        ACPluginLoader loader = new ACPluginLoader();
-
-        var config = new ACServerConfiguration(options.Preset, options.ServerCfgPath, options.EntryListPath, loader);
-
+        var config = new ACServerConfiguration(options.Preset, options.ServerCfgPath, options.EntryListPath);
+        
         if (config.Extra.LokiSettings != null
             && !string.IsNullOrEmpty(config.Extra.LokiSettings.Url)
             && !string.IsNullOrEmpty(config.Extra.LokiSettings.Login)
@@ -66,11 +57,12 @@ internal static class Program
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
                 .Enrich.WithProperty("Preset", options.Preset)
                 .WriteTo.GrafanaLoki(config.Extra.LokiSettings.Url,
-                    credentials: new LokiCredentials()
+                    credentials: new LokiCredentials
                     {
                         Login = config.Extra.LokiSettings.Login,
                         Password = config.Extra.LokiSettings.Password
@@ -86,11 +78,38 @@ internal static class Program
                     rollingInterval: RollingInterval.Day)
                 .CreateLogger();
         }
+        else
+        {
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
+                .WriteTo.Async(a => a.Console())
+                .WriteTo.File($"logs/{logPrefix}-.txt",
+                    rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+        }
 
-        ACServer server = new ACServer(config, loader);
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
 
-        await server.StartAsync();
-        await Task.Delay(-1);
+        Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
+        if (!string.IsNullOrEmpty(options.Preset))
+        {
+            Log.Information("Using preset {Preset}", options.Preset);
+        }
+        
+        var host = Host.CreateDefaultBuilder()
+            .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+            .ConfigureWebHostDefaults(webHostBuilder =>
+            {
+                webHostBuilder.ConfigureKestrel(serverOptions => serverOptions.AllowSynchronousIO = true)
+                    .UseSerilog()
+                    .UseStartup(_ => new Startup(config))
+                    .UseUrls($"http://0.0.0.0:{config.Server.HttpPort}");
+            })
+            .Build();
+        
+        await host.RunAsync();
     }
 
     private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)

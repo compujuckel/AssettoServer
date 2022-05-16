@@ -34,7 +34,7 @@ public partial class EntryCar
     public float AiCorneringBrakeDistanceFactor { get; set; }
     public float AiCorneringBrakeForceFactor { get; set; }
     public float AiSplineHeightOffsetMeters { get; set; } = 0;
-    
+    public float TyreDiameter { get; set; }
     private readonly List<AiState> _aiStates = new List<AiState>();
     private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
@@ -55,7 +55,8 @@ public partial class EntryCar
         AiCorneringSpeedFactor = Server.Configuration.Extra.AiParams.CorneringSpeedFactor;
         AiCorneringBrakeDistanceFactor = Server.Configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
         AiCorneringBrakeForceFactor = Server.Configuration.Extra.AiParams.CorneringBrakeForceFactor;
-        
+        TyreDiameter = Server.Configuration.Extra.AiParams.TyreDiameter;
+
         foreach (var carOverrides in Server.Configuration.Extra.AiParams.CarSpecificOverrides)
         {
             if (carOverrides.Model == Model)
@@ -78,6 +79,8 @@ public partial class EntryCar
                     AiCorneringBrakeDistanceFactor = carOverrides.CorneringBrakeDistanceFactor.Value;
                 if (carOverrides.CorneringBrakeForceFactor.HasValue)
                     AiCorneringBrakeForceFactor = carOverrides.CorneringBrakeForceFactor.Value;
+                if (carOverrides.TyreDiameter.HasValue)
+                    TyreDiameter = carOverrides.TyreDiameter.Value;
                 
                 foreach (var skinOverrides in carOverrides.SkinSpecificOverrides)
                 {

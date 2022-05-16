@@ -50,7 +50,7 @@ public partial class EntryCar
 
     private void OnConfigReload(ACServerConfiguration sender, EventArgs _)
     {
-        AiSplineHeightOffsetMeters = Server.Configuration.Extra.AiParams.SplineHeightOffsetMeters;
+        AiSplineHeightOffsetMeters = _configuration.Extra.AiParams.SplineHeightOffsetMeters;
         AiAcceleration = _configuration.Extra.AiParams.DefaultAcceleration;
         AiDeceleration = _configuration.Extra.AiParams.DefaultDeceleration;
         AiCorneringSpeedFactor = _configuration.Extra.AiParams.CorneringSpeedFactor;

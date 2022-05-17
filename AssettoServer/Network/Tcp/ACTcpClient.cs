@@ -18,6 +18,7 @@ using AssettoServer.Server;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
+using AssettoServer.Server.Whitelist;
 using NanoSockets;
 using Serilog;
 using Serilog.Core;
@@ -65,6 +66,7 @@ namespace AssettoServer.Network.Tcp
         private readonly EntryCarManager _entryCarManager;
         private readonly ACServerConfiguration _configuration;
         private readonly IBlacklistService _blacklist;
+        private readonly IWhitelistService _whitelist;
         private readonly ChecksumManager _checksumManager;
         private readonly CSPFeatureManager _cspFeatureManager;
         private readonly CSPServerExtraOptions _cspServerExtraOptions;
@@ -120,7 +122,7 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        public ACTcpClient(ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions, CSPClientMessageTypeManager cspClientMessageTypeManager)
+        public ACTcpClient(ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions, CSPClientMessageTypeManager cspClientMessageTypeManager, IWhitelistService whitelist)
         {
             Server = server;
             UdpServer = udpServer;
@@ -143,6 +145,7 @@ namespace AssettoServer.Network.Tcp
             _cspFeatureManager = cspFeatureManager;
             _cspServerExtraOptions = cspServerExtraOptions;
             _cspClientMessageTypeManager = cspClientMessageTypeManager;
+            _whitelist = whitelist;
             tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
             tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
             tcpClient.LingerState = new LingerOption(true, 2);
@@ -278,6 +281,8 @@ namespace AssettoServer.Network.Tcp
                             SendPacket(new UnsupportedProtocolResponse());
                         else if (await _blacklist.IsBlacklistedAsync(ulong.Parse(handshakeRequest.Guid)))
                             SendPacket(new BlacklistedResponse());
+                        else if (!await _whitelist.IsWhitelistedAsync(ulong.Parse(handshakeRequest.Guid)))
+                            SendPacket(new AuthFailedResponse("You are not whitelisted on this server"));
                         else if (_configuration.Server.Password?.Length > 0 && handshakeRequest.Password != _configuration.Server.Password && handshakeRequest.Password != _configuration.Server.AdminPassword)
                             SendPacket(new WrongPasswordResponse());
                         else if (!_sessionManager.CurrentSession.Configuration.IsOpen)
@@ -357,11 +362,11 @@ namespace AssettoServer.Network.Tcp
                             HasStartedHandshake = true;
                             SendPacket(handshakeResponse);
 
-                            _ = Task.Delay(TimeSpan.FromMinutes(10)).ContinueWith(async _ =>
+                            _ = Task.Delay(TimeSpan.FromMinutes(_configuration.Extra.PlayerLoadingTimeoutMinutes)).ContinueWith(async _ =>
                             {
                                 if (EntryCar.Client == this && IsConnected && !HasSentFirstUpdate)
                                 {
-                                    Logger.Information("{ClientName} has taken over 10 minutes to spawn in and will be disconnected", Name);
+                                    Logger.Information("{ClientName} has taken too long to spawn in and will be disconnected", Name);
                                     await DisconnectAsync();
                                 }
                             });

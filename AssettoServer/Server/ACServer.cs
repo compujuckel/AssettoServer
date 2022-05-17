@@ -15,6 +15,7 @@ using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
+using AssettoServer.Server.Whitelist;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -44,6 +45,7 @@ namespace AssettoServer.Server
         public ACServer(
             ACServerConfiguration configuration,
             IBlacklistService blacklistService,
+            IWhitelistService whitelistService,
             SessionManager sessionManager,
             EntryCarManager entryCarManager,
             WeatherManager weatherManager,

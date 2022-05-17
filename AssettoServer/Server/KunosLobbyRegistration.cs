@@ -48,6 +48,7 @@ public class KunosLobbyRegistration : BackgroundService
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
                 await PingLobbyAsync();
             }
+            catch (TaskCanceledException) { }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error during Kunos lobby update");

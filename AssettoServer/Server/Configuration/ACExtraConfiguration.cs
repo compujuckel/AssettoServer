@@ -57,6 +57,8 @@ public class ACExtraConfiguration
     public string? BatchedPositionUpdateBehavior { get; set; }
     [YamlMember(Description = "Enable CSP custom position updates. This is an improved version of batched position updates, reducing network traffic even further. CSP 0.1.77+ required")]
     public bool EnableCustomUpdate { get; set; } = false;
+    [YamlMember(Description = "Maximum time a player can spend on the loading screen before being disconnected")]
+    public int PlayerLoadingTimeoutMinutes { get; set; } = 10;
     [YamlMember(Description = "Send logs to a Loki instance, e.g. Grafana Cloud", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public LokiSettings? LokiSettings { get; init; }
     public AiParams AiParams { get; init; } = new AiParams();

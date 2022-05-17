@@ -14,13 +14,13 @@ using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather;
+using AssettoServer.Server.Whitelist;
 using Autofac;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Serilog;
 
 namespace AssettoServer.Network.Http
 {
@@ -52,6 +52,7 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<KunosLobbyRegistration>().AsSelf().SingleInstance();
             builder.RegisterType<DefaultAdminService>().As<IAdminService>().As<IHostedService>().SingleInstance(); // TODO IHostedService is probably bad here if we want to replace the service later
             builder.RegisterType<DefaultBlacklistService>().As<IBlacklistService>().SingleInstance();
+            builder.RegisterType<DefaultWhitelistService>().As<IWhitelistService>().SingleInstance();
             builder.RegisterType<IniTrackParamsProvider>().As<ITrackParamsProvider>().SingleInstance();
             builder.RegisterType<CSPServerScriptProvider>().AsSelf().SingleInstance();
             builder.RegisterType<CSPClientMessageTypeManager>().AsSelf().SingleInstance();

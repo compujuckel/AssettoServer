@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather.Implementation;
+using AssettoServer.Server.Whitelist;
 using JetBrains.Annotations;
 
 namespace AssettoServer.Commands.Modules;
@@ -25,8 +26,9 @@ public class AdminModule : ACModuleBase
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
+    private readonly IWhitelistService _whitelist;
 
-    public AdminModule(IWeatherImplementation weatherImplementation, WeatherManager weatherManager, DefaultWeatherProvider weatherProvider, ACServerConfiguration configuration, SessionManager sessionManager, EntryCarManager entryCarManager)
+    public AdminModule(IWeatherImplementation weatherImplementation, WeatherManager weatherManager, DefaultWeatherProvider weatherProvider, ACServerConfiguration configuration, SessionManager sessionManager, EntryCarManager entryCarManager, IWhitelistService whitelist)
     {
         _weatherImplementation = weatherImplementation;
         _weatherManager = weatherManager;
@@ -34,6 +36,7 @@ public class AdminModule : ACModuleBase
         _configuration = configuration;
         _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
+        _whitelist = whitelist;
     }
 
     [Command("kick", "kick_id")]
@@ -175,5 +178,12 @@ public class AdminModule : ACModuleBase
         {
             Reply(ex.Message);
         }
+    }
+
+    [Command("whitelist")]
+    public async Task Whitelist(ulong guid)
+    {
+        await _whitelist.AddAsync(guid);
+        Reply($"SteamID {guid} was added to the whitelist");
     }
 }

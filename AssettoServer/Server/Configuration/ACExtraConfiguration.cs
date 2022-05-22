@@ -53,8 +53,6 @@ public class ACExtraConfiguration
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
     public bool EnableClientMessages { get; init; } = false;
-    [YamlMember(Description = "Deprecated. Will be removed in a future release", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
-    public string? BatchedPositionUpdateBehavior { get; set; }
     [YamlMember(Description = "Enable CSP custom position updates. This is an improved version of batched position updates, reducing network traffic even further. CSP 0.1.77+ required")]
     public bool EnableCustomUpdate { get; set; } = false;
     [YamlMember(Description = "Maximum time a player can spend on the loading screen before being disconnected")]
@@ -158,8 +156,6 @@ public class AiParams
     public float StateSpawnDistanceMeters { get; set; } = 1000;
     [YamlMember(Description = "Minimum distance between AI states of the same car slot. If states get closer than this one of them will be forced to despawn")]
     public float MinStateDistanceMeters { get; set; } = 200;
-    [YamlMember(Description = "")]
-    public float StateTieBreakerDistanceMeters { get; set; } = 250;
     [YamlMember(Description = "Minimum spawn distance to players")]
     public float SpawnSafetyDistanceToPlayerMeters { get; set; } = 150;
     [YamlMember(Description = "Minimum time in which a newly spawned AI car cannot despawn")]
@@ -218,7 +214,6 @@ public class AiParams
     [YamlIgnore] public int MaxAiSafetyDistanceSquared => MaxAiSafetyDistanceMeters * MaxAiSafetyDistanceMeters;
     [YamlIgnore] public float StateSpawnDistanceSquared => StateSpawnDistanceMeters * StateSpawnDistanceMeters;
     [YamlIgnore] public float MinStateDistanceSquared => MinStateDistanceMeters * MinStateDistanceMeters;
-    [YamlIgnore] public float StateTieBreakerDistanceSquared => StateTieBreakerDistanceMeters * StateTieBreakerDistanceMeters;
     [YamlIgnore] public float SpawnSafetyDistanceToPlayerSquared => SpawnSafetyDistanceToPlayerMeters * SpawnSafetyDistanceToPlayerMeters;
     [YamlIgnore] public int MinSpawnProtectionTimeMilliseconds => MinSpawnProtectionTimeSeconds * 1000;
     [YamlIgnore] public int MaxSpawnProtectionTimeMilliseconds => MaxSpawnProtectionTimeSeconds * 1000;

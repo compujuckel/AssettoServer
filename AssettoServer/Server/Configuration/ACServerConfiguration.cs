@@ -147,11 +147,6 @@ public class ACServerConfiguration
         {
             throw new ConfigurationException("HourlyTrafficDensity must have exactly 24 entries");
         }
-        
-        if (Extra.BatchedPositionUpdateBehavior != null)
-        {
-            Log.Warning("The option BatchedPositionUpdateBehavior is deprecated and will be removed in a future release");
-        }
 
         if (Extra.EnableServerDetails)
         {

@@ -165,22 +165,12 @@ public partial class EntryCar
 
             for (var i = 0; i < _aiStates.Count; i++)
             {
-                var aiState = _aiStates[i];
-                if (!aiState.Initialized) continue;
+                if (!_aiStates[i].Initialized) continue;
 
-                float distance = Vector3.DistanceSquared(aiState.Status.Position, playerStatus.Position);
-                bool isBestSameDirection = bestState != null && Vector3.Dot(bestState.Status.Velocity, playerStatus.Velocity) > 0;
-                bool isCandidateSameDirection = Vector3.Dot(aiState.Status.Velocity, playerStatus.Velocity) > 0;
-                bool isPlayerFastEnough = playerStatus.Velocity.LengthSquared() > 1;
-                bool isTieBreaker = minDistance < _configuration.Extra.AiParams.StateTieBreakerDistanceSquared &&
-                                    distance < _configuration.Extra.AiParams.StateTieBreakerDistanceSquared &&
-                                    isPlayerFastEnough;
-
-                // Tie breaker: Multiple close states, so take the one with min distance and same direction
-                if ((isTieBreaker && isCandidateSameDirection && (distance < minDistance || !isBestSameDirection))
-                    || (!isTieBreaker && distance < minDistance))
+                float distance = Vector3.DistanceSquared(_aiStates[i].Status.Position, playerStatus.Position);
+                if (distance < minDistance)
                 {
-                    bestState = aiState;
+                    bestState = _aiStates[i];
                     minDistance = distance;
                 }
             }

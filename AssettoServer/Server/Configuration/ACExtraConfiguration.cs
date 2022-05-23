@@ -204,6 +204,8 @@ public class AiParams
     public float TrafficDensity { get; set; } = 1.0f;
     [YamlMember(Description = "Dynamic (hourly) traffic density. List must have exactly 24 entries.")]
     public List<float>? HourlyTrafficDensity { get; set; }
+    [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless some cars are creating lots of smoke.")]
+    public float TyreDiameterMeters { get; set; } = 0.65f;
     [YamlMember(Description = "Override some settings for specific car models/skins")]
     public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new();
 
@@ -247,7 +249,9 @@ public class CarSpecificOverrides
     public float? CorneringBrakeDistanceFactor { get; init; }
     [YamlMember(Description = "AI cornering brake force factor. This is multiplied with Deceleration. Lower = AI cars will brake less hard for corners.")]
     public float? CorneringBrakeForceFactor { get; init; }
-        
+    [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldnt  have to be changed, unless cars are creating lots of smoke.")]
+    public float? TyreDiameterMeters { get; set; }
+
     [YamlMember(Description = "Override some settings for specific skins of this car model")]
     public List<SkinSpecificOverrides> SkinSpecificOverrides { get; init; } = new();
 }

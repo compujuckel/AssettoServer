@@ -126,7 +126,7 @@ public class AdminModule : ACModuleBase
     {
         if (Enum.TryParse(upcomingWeatherName, true, out WeatherFxType upcoming))
         {
-	        _weatherManager.SetCspWeather(upcoming, duration);
+            _weatherManager.SetCspWeather(upcoming, duration);
             Reply("Weather has been set.");
         }
         else

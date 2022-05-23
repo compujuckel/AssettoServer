@@ -113,26 +113,18 @@ public class AdminModule : ACModuleBase
     [Command("cspweather")]
     public void CspWeather()
     {
-        List<WeatherFxType> weathers = Enum.GetValues<WeatherFxType>().ToList();
         Context.Client.SendPacket(new ChatMessage { SessionId = 255, Message = "Available weathers:" });
-        foreach (WeatherFxType weather in weathers)
+        foreach (WeatherFxType weather in Enum.GetValues<WeatherFxType>())
         {
             Context.Client.SendPacket(new ChatMessage { SessionId = 255, Message = $" - {weather}" });
         }
     }
 
     [Command("setcspweather")]
-    public void SetCspWeather(string upcomingWeatherName, int duration)
+    public void SetCspWeather(WeatherFxType upcoming, int duration)
     {
-        if (Enum.TryParse(upcomingWeatherName, true, out WeatherFxType upcoming))
-        {
-            _weatherManager.SetCspWeather(upcoming, duration);
-            Reply("Weather has been set.");
-        }
-        else
-        {
-            Reply($"No weather with name '{upcomingWeatherName}', use /cspweather for a list of available weathers.");
-        }
+        _weatherManager.SetCspWeather(upcoming, duration);
+        Reply($"Weather has been set to '{upcoming}'.");
     }
 
     [Command("setrain")]

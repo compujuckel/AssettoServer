@@ -506,7 +506,7 @@ namespace AssettoServer.Server.Ai
                 Z = CurrentSplinePoint.GetCamber(_currentVecProgress / _currentVecLength)
             };
 
-            float tyreAngularSpeed = GetTyreAngularSpeed(CurrentSpeed, EntryCar.TyreDiameter);
+            float tyreAngularSpeed = GetTyreAngularSpeed(CurrentSpeed, EntryCar.TyreDiameterMeters);
             byte encodedTyreAngularSpeed =  (byte) (Math.Clamp(MathF.Round(MathF.Log10(tyreAngularSpeed + 1.0f) * 20.0f) * Math.Sign(tyreAngularSpeed), -100.0f, 154.0f) + 100.0f);
 
             Status.Timestamp = _sessionManager.ServerTimeMilliseconds;

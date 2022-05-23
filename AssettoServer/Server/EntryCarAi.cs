@@ -108,7 +108,7 @@ public partial class EntryCar
                     if (aiState != targetAiState
                         && targetAiState.Initialized
                         && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < _configuration.Extra.AiParams.MinStateDistanceSquared
-                        && Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0) // TODO bad idea for two way traffic?
+                        && (_configuration.Extra.AiParams.TwoWayTraffic || Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0))
                     {
                         aiState.Initialized = false;
                         Logger.Verbose("Removed close state from AI {SessionId}", SessionId);

@@ -10,8 +10,10 @@
     <DebugType>embedded</DebugType>
     <Nullable>enable</Nullable>
     <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-x64'">..\out-linux-x64\</PublishDir>
-    <PublishDir Condition="'$(RuntimeIdentifier)' != 'linux-x64'">..\out-win-x64\</PublishDir>
+    <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">..\out-linux-arm64\</PublishDir>
+    <PublishDir Condition="'$(RuntimeIdentifier)' == 'win-x64'">..\out-win-x64\</PublishDir>
     <NoWarn>ERP022,EPC12</NoWarn>
+    <Platforms>AnyCPU;ARM64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -75,7 +77,23 @@
       <TargetPath>libnanosockets.so</TargetPath>
     </ContentWithTargetPath>
   </ItemGroup>
-  <ItemGroup Condition="'$(RuntimeIdentifier)' != 'linux-x64'">
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">
+	<!--
+    <ContentWithTargetPath Include="Redist/libsteam_api.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libsteam_api.so</TargetPath>
+    </ContentWithTargetPath>
+	-->
+    <ContentWithTargetPath Include="Redist/steam_appid.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>steam_appid.txt</TargetPath>
+    </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Redist/libnanosockets_arm64.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libnanosockets.so</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
     <ContentWithTargetPath Include="Redist/steam_api64.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>steam_api64.dll</TargetPath>
@@ -90,7 +108,7 @@
     <Reference Include="Facepunch.Steamworks.Posix" Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
       <HintPath>..\Redist\Facepunch.Steamworks.Posix.dll</HintPath>
     </Reference>
-    <Reference Include="Facepunch.Steamworks.Win64" Condition="'$(RuntimeIdentifier)' != 'linux-x64'">
+    <Reference Include="Facepunch.Steamworks.Win64" Condition="'$(RuntimeIdentifier)' == 'win-x64'">
       <HintPath>..\Redist\Facepunch.Steamworks.Win64.dll</HintPath>
     </Reference>
     <!--<Reference Include="Supercluster.KDTree, Version=1.0.3.0, Culture=neutral, PublicKeyToken=null">

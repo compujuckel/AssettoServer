@@ -1,4 +1,28 @@
-﻿using System;
+﻿#if DISABLE_STEAM
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using AssettoServer.Network.Tcp;
+using Microsoft.Extensions.Hosting;
+
+namespace AssettoServer.Server;
+
+public class Steam : BackgroundService {
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        throw new PlatformNotSupportedException("Steam is not supported on this platform");
+    }
+
+    internal ValueTask<bool> ValidateSessionTicketAsync(byte[]? sessionTicket, string guid, ACTcpClient client)
+    {
+        throw new PlatformNotSupportedException("Steam is not supported on this platform");
+    }
+}
+
+#else
+
+using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -196,3 +220,4 @@ public class Steam : BackgroundService
         }
     }
 }
+#endif

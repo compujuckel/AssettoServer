@@ -11,7 +11,7 @@
         <DebugType>embedded</DebugType>
         <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-x64'">..\out-linux-x64\utils</PublishDir>
         <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">..\out-linux-arm64\utils</PublishDir>
-        <PublishDir Condition="'$(RuntimeIdentifier)' != 'win-x64'">..\out-win-x64\utils</PublishDir>
+        <PublishDir Condition="'$(RuntimeIdentifier)' == 'win-x64'">..\out-win-x64\utils</PublishDir>
     </PropertyGroup>
 
     <ItemGroup>

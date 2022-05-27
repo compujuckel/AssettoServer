@@ -14,7 +14,7 @@ namespace AssettoServer.Network.Packets.Outgoing
 
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write((byte)ACServerProtocol.BallastUpdate);
+            writer.Write((byte)ACServerProtocol.BoPUpdate);
             writer.Write<byte>(1);
             writer.Write(SessionId);
             writer.Write(BallastKg);

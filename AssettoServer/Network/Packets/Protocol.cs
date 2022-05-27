@@ -7,8 +7,10 @@
         Handshake              = 0x3B,
         WrongPassword          = 0x3C,
         RequestConnectionUdp   = 0x3D,  // Not supported in new clients anymore
+        NewCarConnection       = 0x3E,  // Not exactly sure what this does
         CarListRequest         = 0x3F,
         CarList                = 0x40,
+        ServerRunning          = 0x41,
         UnsupportedProtocol    = 0x42,
         CleanExitDrive         = 0x43,  // Driver does clean disconnect
         Checksum               = 0x44,
@@ -18,6 +20,7 @@
         MegaPacket             = 0x48,
         LapCompleted           = 0x49,
         CurrentSessionUpdate   = 0x4A,
+        RaceOver               = 0x4B,
         Pulse                  = 0x4C,  // Not exactly sure what this does
         CarDisconnect          = 0x4E,
         SessionRequest         = 0x4F,
@@ -30,14 +33,16 @@
         DriverInfoUpdate       = 0x5B,
         SunAngleUpdate         = 0x54,
         DamageUpdate           = 0x56,
+        RaceStart              = 0x57,
         SectorSplit            = 0x58,
         VoteNextSession        = 0x64,
         VoteRestartSession     = 0x65,
         VoteKickUser           = 0x66,
+        VoteQuorumNotReached   = 0x67,
         KickCar                = 0x68,
         SessionClosed          = 0x6E,
         AuthFailed             = 0x6F,
-        BallastUpdate          = 0x70,
+        BoPUpdate              = 0x70,  // Ballast and restrictor
         WeatherUpdate          = 0x78,
         ClientEvent            = 0x82,
         Extended               = 0xAB,

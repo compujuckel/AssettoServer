@@ -28,5 +28,4 @@ jobs:
         run: |
           docker buildx build . -f .\docker\Dockerfile --push \
             --tag compujuckel/assettoserver:latest \
-            --platform linux/amd64 .
-          #  --platform linux/amd64,linux/arm64 .
+            --platform linux/amd64,linux/arm64 .

@@ -253,7 +253,7 @@ namespace AssettoServer.Network.Tcp
                     byte byteId = reader.Read<byte>();
                     if (!Enum.IsDefined(typeof(ACServerProtocol), byteId))
                     {
-                        Logger.Error("Unknown TCP packet with ID {PacketId:X}", byteId);
+                        Logger.Information("Unknown TCP packet with ID {PacketId:X}", byteId);
                         continue;
                     }
                     ACServerProtocol id = (ACServerProtocol)byteId;

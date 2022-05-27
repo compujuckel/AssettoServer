@@ -12,7 +12,6 @@ using AssettoServer.Server.Configuration;
 using Microsoft.Extensions.Hosting;
 using NanoSockets;
 using Serilog;
-using Serilog.Core;
 
 namespace AssettoServer.Network.Udp;
 
@@ -103,7 +102,7 @@ public class ACUdpServer : BackgroundService
             byte packetIdByte = packetReader.Read<byte>();
             if (!Enum.IsDefined(typeof(ACServerProtocol), packetIdByte))
             {
-                Logger.Error("Unknown UDP packet with ID {PacketId:X}", packetIdByte);
+                Log.Information("Unknown UDP packet with ID {PacketId:X}", packetIdByte);
                 return;
             }
             ACServerProtocol packetId = (ACServerProtocol)packetIdByte;

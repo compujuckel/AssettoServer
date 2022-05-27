@@ -182,7 +182,7 @@ public class AiParams
     public int AiPerPlayerTargetCount { get; set; } = 10;
     [YamlMember(Description = "Soft player limit, the server will stop accepting new players when this many players are reached. Use this to ensure a minimum amount of AI cars. 0 to disable.")]
     public int MaxPlayerCount { get; set; } = 0;
-    [YamlMember(Description = "Hide AI car nametags and make them invisible on the minimap. CSP 0.1.76+ required, still buggy")]
+    [YamlMember(Description = "Hide AI car nametags and make them invisible on the minimap. Broken on CSP versions < 0.1.78")]
     public bool HideAiCars { get; set; } = false;
     [YamlMember(Description = "AI spline height offset. Use this if the AI spline is too close to the ground")]
     public float SplineHeightOffsetMeters { get; set; } = 0;
@@ -249,7 +249,7 @@ public class CarSpecificOverrides
     public float? CorneringBrakeDistanceFactor { get; init; }
     [YamlMember(Description = "AI cornering brake force factor. This is multiplied with Deceleration. Lower = AI cars will brake less hard for corners.")]
     public float? CorneringBrakeForceFactor { get; init; }
-    [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldnt  have to be changed, unless cars are creating lots of smoke.")]
+    [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless cars are creating lots of smoke.")]
     public float? TyreDiameterMeters { get; set; }
 
     [YamlMember(Description = "Override some settings for specific skins of this car model")]

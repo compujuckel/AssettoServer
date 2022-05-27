@@ -23,7 +23,7 @@ public class LapCompletedOutgoing : IOutgoingNetworkPacket
         if (Laps == null)
             throw new ArgumentNullException(nameof(Laps));
 
-        writer.Write<byte>(0x49);
+        writer.Write((byte)ACServerProtocol.LapCompleted);
         writer.Write(SessionId);
         writer.Write(LapTime);
         writer.Write(Cuts);

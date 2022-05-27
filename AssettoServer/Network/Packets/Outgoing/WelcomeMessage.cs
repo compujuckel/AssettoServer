@@ -12,7 +12,7 @@ namespace AssettoServer.Network.Packets.Outgoing
 
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0x51);
+            writer.Write((byte)ACServerProtocol.WelcomeMessage);
             writer.Write<byte>(0);
             writer.WriteUTF32String(Message, true);
         }

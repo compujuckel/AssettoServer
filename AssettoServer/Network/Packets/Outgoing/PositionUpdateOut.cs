@@ -83,7 +83,7 @@ public readonly struct PositionUpdateOut : IOutgoingNetworkPacket
     public void ToWriter(ref PacketWriter writer, bool batched)
     {
         if(!batched)
-            writer.Write<byte>(0x46);
+            writer.Write((byte)ACServerProtocol.PositionUpdate);
         writer.Write(SessionId);
         writer.Write(PakSequenceId);
         writer.Write(Timestamp);

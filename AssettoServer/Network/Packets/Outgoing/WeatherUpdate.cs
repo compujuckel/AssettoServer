@@ -16,7 +16,7 @@ namespace AssettoServer.Network.Packets.Outgoing
 
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0x78);
+            writer.Write((byte)ACServerProtocol.WeatherUpdate);
             writer.Write(Ambient);
             writer.Write(Road);
             writer.WriteUTF32String(Graphics);

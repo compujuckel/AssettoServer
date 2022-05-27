@@ -48,7 +48,7 @@ namespace AssettoServer.Network.Packets.Outgoing.Handshake
 
         public readonly void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0x3E);
+            writer.Write((byte)ACServerProtocol.Handshake);
             writer.WriteUTF32String(ServerName);
             writer.Write<ushort>(UdpPort);
             writer.Write(RefreshRateHz);

@@ -15,7 +15,7 @@ namespace AssettoServer.Network.Packets.Shared
 
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0xF9);
+            writer.Write((byte)ACServerProtocol.PingUpdate);
             writer.Write(Time);
             writer.Write(CurrentPing);
         }

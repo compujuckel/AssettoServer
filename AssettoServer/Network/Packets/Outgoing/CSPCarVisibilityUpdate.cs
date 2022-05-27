@@ -1,4 +1,6 @@
-﻿namespace AssettoServer.Network.Packets.Outgoing
+﻿using AssettoServer.Network.Packets.Shared;
+
+namespace AssettoServer.Network.Packets.Outgoing
 {
 
     public enum CSPCarVisibility
@@ -14,8 +16,8 @@
         
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0xAB);
-            writer.Write<byte>(0x2);
+            writer.Write((byte)ACServerProtocol.Extended);
+            writer.Write((byte)CspMessageType.CarVisibilityUpdate);
             writer.Write<byte>(SessionId);
             writer.Write((byte)Visible);
         }

@@ -19,7 +19,7 @@ namespace AssettoServer.Network.Packets.Outgoing
             if (Grid == null)
                 throw new ArgumentNullException(nameof(Grid));
 
-            writer.Write<byte>(0x4A);
+            writer.Write((byte)ACServerProtocol.CurrentSessionUpdate);
             writer.WriteASCIIString(CurrentSession.Name);
             writer.Write((byte)CurrentSession.Id);
             writer.Write((byte)CurrentSession.Type);

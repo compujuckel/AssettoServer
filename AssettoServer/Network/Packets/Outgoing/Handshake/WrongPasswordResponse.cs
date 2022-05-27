@@ -10,7 +10,7 @@ namespace AssettoServer.Network.Packets.Outgoing.Handshake
     {
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0x3C);
+            writer.Write((byte)ACServerProtocol.WrongPassword);
         }
     }
 }

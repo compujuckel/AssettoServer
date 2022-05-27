@@ -33,14 +33,14 @@ public abstract class CSPClientMessageOutgoing : IOutgoingNetworkPacket
         {
             _encoded ??= "\t\t\t\t$CSP0:" + Convert.ToBase64String(Data).TrimEnd('=');
                 
-            writer.Write<byte>(0x47);
+            writer.Write((byte)ACServerProtocol.Chat);
             writer.Write(SessionId);
             writer.WriteUTF32String(_encoded);
         }
         else
         {
-            writer.Write<byte>(0xAB);
-            writer.Write<byte>(0x03);
+            writer.Write((byte)ACServerProtocol.Extended);
+            writer.Write((byte)CspMessageType.ClientMessage);
             writer.Write(SessionId);
             writer.WriteBytes(Data);
         }

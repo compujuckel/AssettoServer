@@ -6,7 +6,7 @@
         MandatoryPitUpdate   = 0x0E,
         Handshake            = 0x3B,
         WrongPassword        = 0x3C,
-        NewConnection        = 0x3D,
+        RequestNewConnection = 0x3D,
         NewCarConnection     = 0x3E,  // Not exactly sure what this does
         CarListRequest       = 0x3F,
         CarList              = 0x40,

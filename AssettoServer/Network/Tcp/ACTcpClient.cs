@@ -255,7 +255,7 @@ namespace AssettoServer.Network.Tcp
                     if (id != ACServerProtocol.ClientEvent)
                         Logger.Verbose("Received TCP packet with ID {PacketId:X}", id);
 
-                    if (!HasStartedHandshake && id != ACServerProtocol.NewConnection)
+                    if (!HasStartedHandshake && id != ACServerProtocol.RequestNewConnection)
                         return;
 
                     if (!HasStartedHandshake)
@@ -279,7 +279,7 @@ namespace AssettoServer.Network.Tcp
                             cspFeatures = new List<string>();
                         }
 
-                        if (id != ACServerProtocol.NewConnection || handshakeRequest.ClientVersion != 202)
+                        if (id != ACServerProtocol.RequestNewConnection || handshakeRequest.ClientVersion != 202)
                             SendPacket(new UnsupportedProtocolResponse());
                         else if (await _blacklist.IsBlacklistedAsync(ulong.Parse(handshakeRequest.Guid)))
                             SendPacket(new BlacklistedResponse());

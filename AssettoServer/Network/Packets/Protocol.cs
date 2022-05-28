@@ -92,6 +92,6 @@
 
     public enum CSPMessageTypeUdp : byte
     {
-        CustomUpdate          = 0x03,
+        CustomUpdate        = 0x03,
     }
 }

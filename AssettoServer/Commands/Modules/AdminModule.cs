@@ -121,10 +121,17 @@ public class AdminModule : ACModuleBase
     }
 
     [Command("setcspweather")]
-    public void SetCspWeather(WeatherFxType upcoming, int duration)
+    public void SetCspWeather(string upcomingStr, int duration)
     {
-        _weatherManager.SetCspWeather(upcoming, duration);
-        Reply($"Weather has been set to '{upcoming}'.");
+        if (Enum.TryParse(upcomingStr, true, out WeatherFxType upcoming))
+        {
+            _weatherManager.SetCspWeather(upcoming, duration);
+            Reply("Weather has been set.");
+        }
+        else
+        {
+            Reply($"No weather with name '{upcomingStr}', use /cspweather for a list of available weathers.");
+        }
     }
 
     [Command("setrain")]

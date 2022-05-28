@@ -5,7 +5,9 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Weather;
 using Qmmands;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using AssettoServer.Server;
@@ -108,11 +110,21 @@ public class AdminModule : ACModuleBase
         }
     }
 
-    [Command("setcspweather")]
-    public void SetCspWeather(int upcoming, int duration)
+    [Command("cspweather")]
+    public void CspWeather()
     {
-        _weatherManager.SetCspWeather((WeatherFxType)upcoming, duration);
-        Reply("Weather has been set.");
+        Context.Client.SendPacket(new ChatMessage { SessionId = 255, Message = "Available weathers:" });
+        foreach (WeatherFxType weather in Enum.GetValues<WeatherFxType>())
+        {
+            Context.Client.SendPacket(new ChatMessage { SessionId = 255, Message = $" - {weather}" });
+        }
+    }
+
+    [Command("setcspweather")]
+    public void SetCspWeather(WeatherFxType upcoming, int duration)
+    {
+        _weatherManager.SetCspWeather(upcoming, duration);
+        Reply($"Weather has been set to '{upcoming}'.");
     }
 
     [Command("setrain")]

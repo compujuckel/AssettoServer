@@ -250,18 +250,12 @@ namespace AssettoServer.Network.Tcp
                     if (reader.Buffer.Length == 0)
                         return;
 
-                    byte byteId = reader.Read<byte>();
-                    if (!Enum.IsDefined(typeof(ACServerProtocol), byteId))
-                    {
-                        Logger.Information("Unknown TCP packet with ID {PacketId:X}", byteId);
-                        continue;
-                    }
-                    ACServerProtocol id = (ACServerProtocol)byteId;
+                    ACServerProtocol id = (ACServerProtocol)reader.Read<byte>();
 
                     if (id != ACServerProtocol.ClientEvent)
                         Logger.Verbose("Received TCP packet with ID {PacketId:X}", id);
 
-                    if (!HasStartedHandshake && id != ACServerProtocol.RequestConnectionUdp)
+                    if (!HasStartedHandshake && id != ACServerProtocol.NewConnection)
                         return;
 
                     if (!HasStartedHandshake)
@@ -285,7 +279,7 @@ namespace AssettoServer.Network.Tcp
                             cspFeatures = new List<string>();
                         }
 
-                        if (id != ACServerProtocol.RequestConnectionUdp || handshakeRequest.ClientVersion != 202)
+                        if (id != ACServerProtocol.NewConnection || handshakeRequest.ClientVersion != 202)
                             SendPacket(new UnsupportedProtocolResponse());
                         else if (await _blacklist.IsBlacklistedAsync(ulong.Parse(handshakeRequest.Guid)))
                             SendPacket(new BlacklistedResponse());
@@ -412,9 +406,9 @@ namespace AssettoServer.Network.Tcp
                                 byte extendedId = reader.Read<byte>();
                                 Logger.Verbose("Received extended TCP packet with ID {PacketId:X}", id);
 
-                                if (extendedId == (byte)CspMessageType.SpectateCar)
+                                if (extendedId == (byte)CSPMessageTypeTcp.SpectateCar)
                                     OnSpectateCar(reader);
-                                else if (extendedId == (byte)CspMessageType.ClientMessage)
+                                else if (extendedId == (byte)CSPMessageTypeTcp.ClientMessage)
                                     OnCSPClientMessage(reader);
                                 break;
                             default:
@@ -511,8 +505,7 @@ namespace AssettoServer.Network.Tcp
                 {
                     if (!allChecksums[i].Value.AsSpan().SequenceEqual(fullChecksum.AsSpan().Slice(i * 16, 16)))
                     {
-                        Logger.Information("{ClientName} failed checksum for file {ChecksumFile}", Name,
-                            allChecksums[i].Key);
+                        Logger.Information("{ClientName} failed checksum for file {ChecksumFile}", Name, allChecksums[i].Key);
                         passedChecksum = false;
                         break;
                     }

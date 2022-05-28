@@ -17,7 +17,7 @@ namespace AssettoServer.Network.Packets.Outgoing
         public void ToWriter(ref PacketWriter writer)
         {
             writer.Write((byte)ACServerProtocol.Extended);
-            writer.Write((byte)CspMessageType.CarVisibilityUpdate);
+            writer.Write((byte)CSPMessageTypeTcp.CarVisibilityUpdate);
             writer.Write<byte>(SessionId);
             writer.Write((byte)Visible);
         }

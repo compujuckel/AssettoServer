@@ -10,7 +10,7 @@ public class AutoModerationFlags : IOutgoingNetworkPacket
     public void ToWriter(ref PacketWriter writer)
     {
         writer.Write((byte)ACServerProtocol.Extended);
-        writer.Write((byte)CspMessageType.ClientMessage);
+        writer.Write((byte)CSPMessageTypeTcp.ClientMessage);
         writer.Write<byte>(255);
         writer.Write<ushort>(60000);
         writer.Write(0x79096D99);

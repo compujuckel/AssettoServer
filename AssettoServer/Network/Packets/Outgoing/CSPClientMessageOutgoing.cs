@@ -40,7 +40,7 @@ public abstract class CSPClientMessageOutgoing : IOutgoingNetworkPacket
         else
         {
             writer.Write((byte)ACServerProtocol.Extended);
-            writer.Write((byte)CspMessageType.ClientMessage);
+            writer.Write((byte)CSPMessageTypeTcp.ClientMessage);
             writer.Write(SessionId);
             writer.WriteBytes(Data);
         }

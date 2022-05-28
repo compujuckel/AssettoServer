@@ -99,13 +99,7 @@ public class ACUdpServer : BackgroundService
         {
             PacketReader packetReader = new PacketReader(null, buffer);
 
-            byte packetIdByte = packetReader.Read<byte>();
-            if (!Enum.IsDefined(typeof(ACServerProtocol), packetIdByte))
-            {
-                Log.Information("Unknown UDP packet with ID {PacketId:X}", packetIdByte);
-                return;
-            }
-            ACServerProtocol packetId = (ACServerProtocol)packetIdByte;
+            ACServerProtocol packetId = (ACServerProtocol)packetReader.Read<byte>();
 
             if (packetId == ACServerProtocol.CarDisconnect)
             {

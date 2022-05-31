@@ -7,7 +7,7 @@
         Handshake            = 0x3B,
         WrongPassword        = 0x3C,
         RequestNewConnection = 0x3D,
-        NewCarConnection     = 0x3E,  // Not exactly sure what this does
+        NewCarConnection     = 0x3E,  // Sent as a response to a handshake
         CarListRequest       = 0x3F,
         CarList              = 0x40,
         ServerRunning        = 0x41,

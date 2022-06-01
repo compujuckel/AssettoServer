@@ -80,16 +80,16 @@
 
     public enum CSPMessageTypeTcp : byte
     {
-        SpectateCar         = 0x00,
-        WeatherUpdate       = 0x01,
-        CarVisibilityUpdate = 0x02,
-        ClientMessage       = 0x03,
-        SystemMessage       = 0x04,
-        KickBanMessage      = 0x05,
+        SpectateCar          = 0x00,
+        WeatherUpdate        = 0x01,
+        CarVisibilityUpdate  = 0x02,
+        ClientMessage        = 0x03,
+        SystemMessage        = 0x04,
+        KickBanMessage       = 0x05,
     }
 
     public enum CSPMessageTypeUdp : byte
     {
-        CustomUpdate        = 0x03,
+        CustomUpdate         = 0x03,
     }
 }

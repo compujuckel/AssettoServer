@@ -156,7 +156,7 @@ public class AutoModerationPlugin : BackgroundService, IAssettoServerAutostart
                             instance.BlockingRoadSeconds++;
                             if (instance.BlockingRoadSeconds > _configuration.BlockingRoadKick.DurationSeconds)
                             {
-                                _ = _entryCarManager.KickAsync(client, KickReason.Kicked, "blocking the road");
+                                _ = _entryCarManager.KickAsync(client, "blocking the road");
                             }
                             else if (!instance.HasSentBlockingRoadWarning && instance.BlockingRoadSeconds > _configuration.BlockingRoadKick.DurationSeconds / 2)
                             {

@@ -53,8 +53,6 @@ public class ACExtraConfiguration
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
     public bool EnableClientMessages { get; init; } = false;
-    [YamlMember(Description = "Deprecated. Will be removed in a future release", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
-    public string? BatchedPositionUpdateBehavior { get; set; }
     [YamlMember(Description = "Enable CSP custom position updates. This is an improved version of batched position updates, reducing network traffic even further. CSP 0.1.77+ required")]
     public bool EnableCustomUpdate { get; set; } = false;
     [YamlMember(Description = "Maximum time a player can spend on the loading screen before being disconnected")]
@@ -158,8 +156,6 @@ public class AiParams
     public float StateSpawnDistanceMeters { get; set; } = 1000;
     [YamlMember(Description = "Minimum distance between AI states of the same car slot. If states get closer than this one of them will be forced to despawn")]
     public float MinStateDistanceMeters { get; set; } = 200;
-    [YamlMember(Description = "")]
-    public float StateTieBreakerDistanceMeters { get; set; } = 250;
     [YamlMember(Description = "Minimum spawn distance to players")]
     public float SpawnSafetyDistanceToPlayerMeters { get; set; } = 150;
     [YamlMember(Description = "Minimum time in which a newly spawned AI car cannot despawn")]
@@ -186,7 +182,7 @@ public class AiParams
     public int AiPerPlayerTargetCount { get; set; } = 10;
     [YamlMember(Description = "Soft player limit, the server will stop accepting new players when this many players are reached. Use this to ensure a minimum amount of AI cars. 0 to disable.")]
     public int MaxPlayerCount { get; set; } = 0;
-    [YamlMember(Description = "Hide AI car nametags and make them invisible on the minimap. CSP 0.1.76+ required, still buggy")]
+    [YamlMember(Description = "Hide AI car nametags and make them invisible on the minimap. Broken on CSP versions < 0.1.78")]
     public bool HideAiCars { get; set; } = false;
     [YamlMember(Description = "AI spline height offset. Use this if the AI spline is too close to the ground")]
     public float SplineHeightOffsetMeters { get; set; } = 0;
@@ -208,6 +204,8 @@ public class AiParams
     public float TrafficDensity { get; set; } = 1.0f;
     [YamlMember(Description = "Dynamic (hourly) traffic density. List must have exactly 24 entries.")]
     public List<float>? HourlyTrafficDensity { get; set; }
+    [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless some cars are creating lots of smoke.")]
+    public float TyreDiameterMeters { get; set; } = 0.65f;
     [YamlMember(Description = "Override some settings for specific car models/skins")]
     public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new();
 
@@ -218,7 +216,6 @@ public class AiParams
     [YamlIgnore] public int MaxAiSafetyDistanceSquared => MaxAiSafetyDistanceMeters * MaxAiSafetyDistanceMeters;
     [YamlIgnore] public float StateSpawnDistanceSquared => StateSpawnDistanceMeters * StateSpawnDistanceMeters;
     [YamlIgnore] public float MinStateDistanceSquared => MinStateDistanceMeters * MinStateDistanceMeters;
-    [YamlIgnore] public float StateTieBreakerDistanceSquared => StateTieBreakerDistanceMeters * StateTieBreakerDistanceMeters;
     [YamlIgnore] public float SpawnSafetyDistanceToPlayerSquared => SpawnSafetyDistanceToPlayerMeters * SpawnSafetyDistanceToPlayerMeters;
     [YamlIgnore] public int MinSpawnProtectionTimeMilliseconds => MinSpawnProtectionTimeSeconds * 1000;
     [YamlIgnore] public int MaxSpawnProtectionTimeMilliseconds => MaxSpawnProtectionTimeSeconds * 1000;
@@ -252,7 +249,9 @@ public class CarSpecificOverrides
     public float? CorneringBrakeDistanceFactor { get; init; }
     [YamlMember(Description = "AI cornering brake force factor. This is multiplied with Deceleration. Lower = AI cars will brake less hard for corners.")]
     public float? CorneringBrakeForceFactor { get; init; }
-        
+    [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless cars are creating lots of smoke.")]
+    public float? TyreDiameterMeters { get; set; }
+
     [YamlMember(Description = "Override some settings for specific skins of this car model")]
     public List<SkinSpecificOverrides> SkinSpecificOverrides { get; init; } = new();
 }

@@ -33,7 +33,7 @@ public partial class EntryCar
     public float AiCorneringBrakeDistanceFactor { get; set; }
     public float AiCorneringBrakeForceFactor { get; set; }
     public float AiSplineHeightOffsetMeters { get; set; } = 0;
-    
+    public float TyreDiameterMeters { get; set; }
     private readonly List<AiState> _aiStates = new List<AiState>();
     private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
     
@@ -56,7 +56,8 @@ public partial class EntryCar
         AiCorneringSpeedFactor = _configuration.Extra.AiParams.CorneringSpeedFactor;
         AiCorneringBrakeDistanceFactor = _configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
         AiCorneringBrakeForceFactor = _configuration.Extra.AiParams.CorneringBrakeForceFactor;
-        
+        TyreDiameterMeters = _configuration.Extra.AiParams.TyreDiameterMeters;
+
         foreach (var carOverrides in _configuration.Extra.AiParams.CarSpecificOverrides)
         {
             if (carOverrides.Model == Model)
@@ -79,6 +80,8 @@ public partial class EntryCar
                     AiCorneringBrakeDistanceFactor = carOverrides.CorneringBrakeDistanceFactor.Value;
                 if (carOverrides.CorneringBrakeForceFactor.HasValue)
                     AiCorneringBrakeForceFactor = carOverrides.CorneringBrakeForceFactor.Value;
+                if (carOverrides.TyreDiameterMeters.HasValue)
+                    TyreDiameterMeters = carOverrides.TyreDiameterMeters.Value;
                 
                 foreach (var skinOverrides in carOverrides.SkinSpecificOverrides)
                 {
@@ -108,7 +111,7 @@ public partial class EntryCar
                     if (aiState != targetAiState
                         && targetAiState.Initialized
                         && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < _configuration.Extra.AiParams.MinStateDistanceSquared
-                        && Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0) // TODO bad idea for two way traffic?
+                        && (_configuration.Extra.AiParams.TwoWayTraffic || Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0))
                     {
                         aiState.Initialized = false;
                         Logger.Verbose("Removed close state from AI {SessionId}", SessionId);
@@ -165,22 +168,12 @@ public partial class EntryCar
 
             for (var i = 0; i < _aiStates.Count; i++)
             {
-                var aiState = _aiStates[i];
-                if (!aiState.Initialized) continue;
+                if (!_aiStates[i].Initialized) continue;
 
-                float distance = Vector3.DistanceSquared(aiState.Status.Position, playerStatus.Position);
-                bool isBestSameDirection = bestState != null && Vector3.Dot(bestState.Status.Velocity, playerStatus.Velocity) > 0;
-                bool isCandidateSameDirection = Vector3.Dot(aiState.Status.Velocity, playerStatus.Velocity) > 0;
-                bool isPlayerFastEnough = playerStatus.Velocity.LengthSquared() > 1;
-                bool isTieBreaker = minDistance < _configuration.Extra.AiParams.StateTieBreakerDistanceSquared &&
-                                    distance < _configuration.Extra.AiParams.StateTieBreakerDistanceSquared &&
-                                    isPlayerFastEnough;
-
-                // Tie breaker: Multiple close states, so take the one with min distance and same direction
-                if ((isTieBreaker && isCandidateSameDirection && (distance < minDistance || !isBestSameDirection))
-                    || (!isTieBreaker && distance < minDistance))
+                float distance = Vector3.DistanceSquared(_aiStates[i].Status.Position, playerStatus.Position);
+                if (distance < minDistance)
                 {
-                    bestState = aiState;
+                    bestState = _aiStates[i];
                     minDistance = distance;
                 }
             }

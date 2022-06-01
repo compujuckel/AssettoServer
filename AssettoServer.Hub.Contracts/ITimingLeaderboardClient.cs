@@ -36,7 +36,7 @@ public class RegisterTimingLapTimeRequest
     [DataMember(Order = 6)]
     public string Car { get; set; } = "";
     [DataMember(Order = 7)]
-    public bool Valid { get; set; } = true;
+    public bool Valid { get; set; }
 }
 
 [DataContract]

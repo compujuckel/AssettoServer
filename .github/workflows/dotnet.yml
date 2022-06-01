@@ -17,13 +17,17 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 6.0.x
-    - name: Publish (Linux)
+    - name: Publish (Linux x64)
       run: dotnet publish --runtime linux-x64 --no-self-contained -c Release
-    - name: Publish (Windows)
+    - name: Publish (Linux arm64)
+      run: dotnet publish --runtime linux-arm64 --no-self-contained -c Release
+    - name: Publish (Windows x64)
       run: dotnet publish --runtime win-x64 --no-self-contained -c Release
-    - name: Package (Linux)
+    - name: Package (Linux x64)
       run: cd out-linux-x64 && tar -czf assetto-server-linux-x64.tar.gz * && cd ..
-    - name: Package (Windows)
+    - name: Package (Linux arm64)
+      run: cd out-linux-arm64 && tar -czf assetto-server-linux-arm64.tar.gz * && cd ..
+    - name: Package (Windows x64)
       run: cd out-win-x64 && zip -r assetto-server-win-x64.zip * && cd ..
     - name: Release
       uses: softprops/action-gh-release@v1
@@ -31,4 +35,5 @@ jobs:
         prerelease: true
         files: |
           out-linux-x64/assetto-server-linux-x64.tar.gz
+          out-linux-arm64/assetto-server-linux-arm64.tar.gz
           out-win-x64/assetto-server-win-x64.zip

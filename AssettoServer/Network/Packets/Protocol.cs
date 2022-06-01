@@ -53,8 +53,6 @@
 
     public enum UdpPluginProtocol : byte
     {
-        CollisionWithCar     = 0x0A,
-        CollisionWithEnv     = 0x0B,
         NewSession           = 0x32,
         NewConnection        = 0x33,
         ClosedConnection     = 0x34,

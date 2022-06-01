@@ -2,8 +2,8 @@
 
 public struct LapCompletedIncoming : IIncomingNetworkPacket
 {
-    public int Timestamp;
-    public int LapTime;
+    public uint Timestamp;
+    public uint LapTime;
     public byte SplitCount;
     public int[] Splits;
     public byte Cuts;
@@ -11,8 +11,8 @@ public struct LapCompletedIncoming : IIncomingNetworkPacket
 
     public void FromReader(PacketReader reader)
     {
-        Timestamp = reader.Read<int>();
-        LapTime = reader.Read<int>();
+        Timestamp = reader.Read<uint>();
+        LapTime = reader.Read<uint>();
         SplitCount = reader.Read<byte>();
         Splits = new int[SplitCount];
         for (int i = 0; i < SplitCount; i++)

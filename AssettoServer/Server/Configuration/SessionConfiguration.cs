@@ -1,4 +1,5 @@
-﻿using AssettoServer.Utils;
+﻿using AssettoServer.Network.Packets.UdpPlugin;
+using AssettoServer.Utils;
 using JetBrains.Annotations;
 
 namespace AssettoServer.Server.Configuration;
@@ -7,12 +8,12 @@ namespace AssettoServer.Server.Configuration;
 public class SessionConfiguration
 {
     public int Id { get; internal set; }
-    public SessionType Type => (SessionType)Id + 1;
-    [IniField("NAME")] public string Name { get; init; } = "";
-    [IniField("TIME")] public int Time { get; init; }
-    [IniField("LAPS")] public int Laps { get; init; }
-    [IniField("WAIT_TIME")] public int WaitTime { get; init; }
-    [IniField("IS_OPEN")] public bool IsOpen { get; init; }
+    public SessionType Type { get; set; }
+    [IniField("NAME")] public string Name { get; set; } = "";
+    [IniField("TIME")] public uint Time { get; set; }
+    [IniField("LAPS")] public uint Laps { get; set; }
+    [IniField("WAIT_TIME")] public uint WaitTime { get; set; }
+    [IniField("IS_OPEN")] public bool IsOpen { get; set; }
     public bool IsTimedRace => Time > 0 && Laps == 0;
 }
 

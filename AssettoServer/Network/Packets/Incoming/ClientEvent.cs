@@ -17,12 +17,6 @@ public struct ClientEvent : IIncomingNetworkPacket
         public Vector3 RelPosition;
     }
 
-    public enum ClientEventType
-    {
-        PlayerCollision = 0x0A,
-        EnvironmentCollision = 0x0B
-    }
-
     public void FromReader(PacketReader reader)
     {
         Count = reader.Read<short>();
@@ -30,13 +24,14 @@ public struct ClientEvent : IIncomingNetworkPacket
 
         for (int i = 0; i < Count; i++)
         {
-            var evt = new SingleClientEvent();
-                
-            evt.Type = (ClientEventType)reader.Read<byte>();
-
-            if (evt.Type == ClientEventType.PlayerCollision)
+            var evt = new SingleClientEvent
             {
-                evt.TargetSessionId = evt.Type == ClientEventType.PlayerCollision ? reader.Read<byte>() : (byte)0;
+                Type = (ClientEventType)reader.Read<byte>()
+            };
+
+            if (evt.Type == ClientEventType.CollisionWithCar)
+            {
+                evt.TargetSessionId = evt.Type == ClientEventType.CollisionWithCar ? reader.Read<byte>() : (byte)0;
             }
 
             evt.Speed = reader.Read<float>();

@@ -63,8 +63,9 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<GeoParamsManager>().AsSelf().SingleInstance();
             builder.RegisterType<ChecksumManager>().AsSelf().SingleInstance();
             builder.RegisterType<CSPServerExtraOptions>().AsSelf().SingleInstance();
-            builder.RegisterType<ACUdpServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACTcpServer>().AsSelf().SingleInstance();
+            builder.RegisterType<ACUdpServer>().AsSelf().SingleInstance();
+            builder.RegisterType<UdpPluginServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
 
             foreach (var plugin in _loader.LoadedPlugins)

@@ -51,7 +51,7 @@ namespace AssettoServer.Network.Packets
             => WriteString(str, Encoding.ASCII, bigLength ? 2 : 1);
 
         public void WriteUTF32String(string? str, bool bigLength = false)
-            => WriteString(str, Encoding.UTF32, bigLength ? 2: 1);
+            => WriteString(str, Encoding.UTF32, bigLength ? 2 : 1);
 
         public void WriteString(string? str, Encoding encoding, int length = 1)
         {

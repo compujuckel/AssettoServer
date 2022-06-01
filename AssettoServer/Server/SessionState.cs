@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using AssettoServer.Server.Configuration;
 
 namespace AssettoServer.Server;
@@ -28,9 +29,10 @@ public class SessionState
 
 public class EntryCarResult
 {
-    public int BestLap { get; set; } = 999999999;
+    // for some reason the vanilla server uses 999999999 instead of uint.MaxValue
+    public uint BestLap { get; set; } = 999999999;
     public int NumLaps { get; set; } = 0;
-    public int TotalTime { get; set; } = 0;
-    public int LastLap { get; set; } = 999999999;
+    public uint TotalTime { get; set; } = 999999999;
+    public uint LastLap { get; set; } = 999999999;
     public bool HasCompletedLastLap { get; set; } = false;
 }

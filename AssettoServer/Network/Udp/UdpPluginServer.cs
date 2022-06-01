@@ -60,6 +60,8 @@ namespace AssettoServer.Network.Udp
             if (configuration.Server.UdpPluginAddress == null || _configuration.Server.UdpPluginLocalPort == 0)
             {
                 Log.Information("UDP plugin server disabled.");
+                _ip = "";
+                SendBuffer = new ThreadLocal<byte[]>();
                 _enabled = false;
                 return;
             }

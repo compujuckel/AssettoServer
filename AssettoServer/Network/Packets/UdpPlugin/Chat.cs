@@ -10,7 +10,7 @@ namespace AssettoServer.Network.Packets.UdpPlugin
     public class Chat : IOutgoingNetworkPacket
     {
         public byte SessionId;
-        public string Message;
+        public string? Message;
 
         public void ToWriter(ref PacketWriter writer)
         {

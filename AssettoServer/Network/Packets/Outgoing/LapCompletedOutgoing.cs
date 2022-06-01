@@ -5,7 +5,7 @@ namespace AssettoServer.Network.Packets.Outgoing;
 public class LapCompletedOutgoing : IOutgoingNetworkPacket
 {
     public byte SessionId;
-    public int LapTime;
+    public uint LapTime;
     public byte Cuts;
     public CompletedLap[]? Laps;
     public float TrackGrip;
@@ -13,8 +13,8 @@ public class LapCompletedOutgoing : IOutgoingNetworkPacket
     public class CompletedLap
     {
         public byte SessionId;
-        public int LapTime;
-        public short NumLaps;
+        public uint LapTime;
+        public ushort NumLaps;
         public byte HasCompletedLastLap;
     }
     

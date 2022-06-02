@@ -146,7 +146,7 @@ namespace AssettoServer.Server
             }
         }
 
-        public void SendLapCompletedMessage(byte sessionId, int lapTime, int cuts, ACTcpClient? target = null)
+        public void SendLapCompletedMessage(byte sessionId, uint lapTime, int cuts, ACTcpClient? target = null)
         {
             if (_sessionManager.CurrentSession.Results == null)
                 throw new ArgumentNullException(nameof(_sessionManager.CurrentSession.Results));
@@ -156,7 +156,7 @@ namespace AssettoServer.Server
                 {
                     SessionId = result.Key,
                     LapTime = _sessionManager.CurrentSession.Configuration.Type == SessionType.Race ? result.Value.TotalTime : result.Value.BestLap,
-                    NumLaps = (short)result.Value.NumLaps,
+                    NumLaps = (ushort)result.Value.NumLaps,
                     HasCompletedLastLap = (byte)(result.Value.HasCompletedLastLap ? 1 : 0)
                 })
                 .OrderBy(lap => lap.LapTime); // TODO wrong for race sessions?

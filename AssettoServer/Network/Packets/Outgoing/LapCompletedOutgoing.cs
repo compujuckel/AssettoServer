@@ -5,7 +5,7 @@ namespace AssettoServer.Network.Packets.Outgoing;
 public class LapCompletedOutgoing : IOutgoingNetworkPacket
 {
     public byte SessionId;
-    public int LapTime;
+    public uint LapTime;
     public byte Cuts;
     public CompletedLap[]? Laps;
     public float TrackGrip;
@@ -13,8 +13,8 @@ public class LapCompletedOutgoing : IOutgoingNetworkPacket
     public class CompletedLap
     {
         public byte SessionId;
-        public int LapTime;
-        public short NumLaps;
+        public uint LapTime;
+        public ushort NumLaps;
         public byte HasCompletedLastLap;
     }
     
@@ -23,7 +23,7 @@ public class LapCompletedOutgoing : IOutgoingNetworkPacket
         if (Laps == null)
             throw new ArgumentNullException(nameof(Laps));
 
-        writer.Write<byte>(0x49);
+        writer.Write((byte)ACServerProtocol.LapCompleted);
         writer.Write(SessionId);
         writer.Write(LapTime);
         writer.Write(Cuts);

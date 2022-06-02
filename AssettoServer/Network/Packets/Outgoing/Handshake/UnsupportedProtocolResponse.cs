@@ -11,7 +11,8 @@ namespace AssettoServer.Network.Packets.Outgoing.Handshake
     {
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0x42);
+            writer.Write((byte)ACServerProtocol.UnsupportedProtocol);
+            writer.Write((ushort)202);
         }
     }
 }

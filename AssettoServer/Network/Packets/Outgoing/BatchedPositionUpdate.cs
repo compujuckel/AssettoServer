@@ -17,7 +17,7 @@ public readonly struct BatchedPositionUpdate : IOutgoingNetworkPacket
 
     public void ToWriter(ref PacketWriter writer)
     {
-        writer.Write<byte>(0x48);
+        writer.Write((byte)ACServerProtocol.MegaPacket);
         writer.Write(Timestamp);
         writer.Write(Ping);
         writer.Write((byte)Updates.Count);

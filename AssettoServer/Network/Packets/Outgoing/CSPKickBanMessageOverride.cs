@@ -7,8 +7,8 @@ public class CSPKickBanMessageOverride : IOutgoingNetworkPacket
     public string? Message;
     public void ToWriter(ref PacketWriter writer)
     {
-        writer.Write<byte>(0xAB);
-        writer.Write<byte>(0x05);
+        writer.Write((byte)ACServerProtocol.Extended);
+        writer.Write((byte)CSPMessageTypeTcp.KickBanMessage);
         writer.WriteString(Message, Encoding.UTF8, 4);
     }
 }

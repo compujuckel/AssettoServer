@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Packets;
 using AssettoServer.Network.Packets.Incoming;
-using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
@@ -99,8 +98,10 @@ public class ACUdpServer : BackgroundService
         try
         {
             PacketReader packetReader = new PacketReader(null, buffer);
-            int packetId = packetReader.Read<byte>();
-            if (packetId == 0x4E)
+
+            ACServerProtocol packetId = (ACServerProtocol)packetReader.Read<byte>();
+
+            if (packetId == ACServerProtocol.CarDisconnect)
             {
                 int sessionId = packetReader.Read<byte>();
                 if (_entryCarManager.ConnectedCars.TryGetValue(sessionId, out EntryCar? car) && car.Client != null)
@@ -115,7 +116,7 @@ public class ACUdpServer : BackgroundService
                     }
                 }
             }
-            else if (packetId == 0xC8)
+            else if (packetId == ACServerProtocol.LobbyCheck)
             {
                 ushort httpPort = (ushort)_configuration.Server.HttpPort;
                 MemoryMarshal.Write(buffer.AsSpan().Slice(1), ref httpPort);
@@ -136,19 +137,19 @@ public class ACUdpServer : BackgroundService
             }*/
             else if (_endpointCars.TryGetValue(address, out EntryCar? car) && car.Client != null)
             {
-                if (packetId == 0x4F)
+                if (packetId == ACServerProtocol.SessionRequest)
                 {
                     if (_sessionManager.CurrentSession.Configuration.Type != packetReader.Read<SessionType>())
                         _sessionManager.SendCurrentSession(car.Client);
                 }
-                else if (packetId == 0x46)
+                else if (packetId == ACServerProtocol.PositionUpdate)
                 {
                     if (!car.Client.HasSentFirstUpdate)
                         car.Client.SendFirstUpdate();
 
                     car.UpdatePosition(packetReader.Read<PositionUpdateIn>());
                 }
-                else if (packetId == 0xF8)
+                else if (packetId == ACServerProtocol.PingPong)
                 {
                     long currentTime = _sessionManager.ServerTimeMilliseconds;
                     car.Ping = (ushort)(currentTime - packetReader.Read<int>());

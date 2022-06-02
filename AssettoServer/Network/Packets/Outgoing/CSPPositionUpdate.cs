@@ -34,8 +34,8 @@ public readonly struct CSPPositionUpdate : IOutgoingNetworkPacket
 
     public void ToWriter(ref PacketWriter writer)
     {
-        writer.Write<byte>(0xAB);
-        writer.Write<byte>(0x03);
+        writer.Write((byte)ACServerProtocol.Extended);
+        writer.Write((byte)CSPMessageTypeUdp.CustomUpdate);
         writer.Write((byte)Updates.Count);
         for (int i = 0; i < Updates.Count; i++)
         {

@@ -17,7 +17,7 @@ namespace AssettoServer.Network.Packets.Outgoing
             if (ConnectedCars == null)
                 throw new ArgumentNullException(nameof(ConnectedCars));
             
-            writer.Write<byte>(0x5B);
+            writer.Write((byte)ACServerProtocol.DriverInfoUpdate);
             writer.Write((byte)ConnectedCars.Count());
 
             foreach(EntryCar car in ConnectedCars)

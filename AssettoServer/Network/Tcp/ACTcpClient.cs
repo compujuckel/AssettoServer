@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -249,11 +250,12 @@ namespace AssettoServer.Network.Tcp
                     if (reader.Buffer.Length == 0)
                         return;
 
-                    byte id = reader.Read<byte>();
-                    if (id != 0x82)
+                    ACServerProtocol id = (ACServerProtocol)reader.Read<byte>();
+
+                    if (id != ACServerProtocol.ClientEvent)
                         Logger.Verbose("Received TCP packet with ID {PacketId:X}", id);
 
-                    if (!HasStartedHandshake && id != 0x3D)
+                    if (!HasStartedHandshake && id != ACServerProtocol.RequestNewConnection)
                         return;
 
                     if (!HasStartedHandshake)
@@ -277,7 +279,7 @@ namespace AssettoServer.Network.Tcp
                             cspFeatures = new List<string>();
                         }
 
-                        if (id != 0x3D || handshakeRequest.ClientVersion != 202)
+                        if (id != ACServerProtocol.RequestNewConnection || handshakeRequest.ClientVersion != 202)
                             SendPacket(new UnsupportedProtocolResponse());
                         else if (await _blacklist.IsBlacklistedAsync(ulong.Parse(handshakeRequest.Guid)))
                             SendPacket(new BlacklistedResponse());
@@ -377,32 +379,41 @@ namespace AssettoServer.Network.Tcp
                     }
                     else if (HasStartedHandshake)
                     {
-                        if (id == 0x3F)
-                            OnCarListRequest(reader);
-                        else if (id == 0xD)
-                            OnP2PUpdate(reader);
-                        else if (id == 0x50)
-                            OnTyreCompoundChange(reader);
-                        else if (id == 0x43)
-                            return;
-                        else if (id == 0x47)
-                            OnChat(reader);
-                        else if (id == 0x44)
-                            await OnChecksumAsync(reader);
-                        else if (id == 0x49)
-                            OnLapCompletedMessageReceived(reader);
-                        else if (id == 0xAB)
+                        switch (id)
                         {
-                            id = reader.Read<byte>();
-                            Logger.Verbose("Received extended TCP packet with ID {PacketId:X}", id);
+                            case ACServerProtocol.P2PUpdate:
+                                OnP2PUpdate(reader);
+                                break;
+                            case ACServerProtocol.CarListRequest:
+                                OnCarListRequest(reader);
+                                break;
+                            case ACServerProtocol.Checksum:
+                                await OnChecksumAsync(reader);
+                                break;
+                            case ACServerProtocol.Chat:
+                                OnChat(reader);
+                                break;
+                            case ACServerProtocol.LapCompleted:
+                                OnLapCompletedMessageReceived(reader);
+                                break;
+                            case ACServerProtocol.TyreCompoundChange:
+                                OnTyreCompoundChange(reader);
+                                break;
+                            case ACServerProtocol.ClientEvent:
+                                OnClientEvent(reader);
+                                break;
+                            case ACServerProtocol.Extended:
+                                byte extendedId = reader.Read<byte>();
+                                Logger.Verbose("Received extended TCP packet with ID {PacketId:X}", id);
 
-                            if (id == 0x00)
-                                OnSpectateCar(reader);
-                            else if (id == 0x03)
-                                OnCSPClientMessage(reader);
+                                if (extendedId == (byte)CSPMessageTypeTcp.SpectateCar)
+                                    OnSpectateCar(reader);
+                                else if (extendedId == (byte)CSPMessageTypeTcp.ClientMessage)
+                                    OnCSPClientMessage(reader);
+                                break;
+                            default:
+                                break;
                         }
-                        else if (id == 0x82)
-                            OnClientEvent(reader);
                     }
                 }
             }
@@ -491,12 +502,14 @@ namespace AssettoServer.Network.Tcp
 
                 KeyValuePair<string, byte[]>[] allChecksums = _checksumManager.TrackChecksums.ToArray();
                 for (int i = 0; i < allChecksums.Length; i++)
+                {
                     if (!allChecksums[i].Value.AsSpan().SequenceEqual(fullChecksum.AsSpan().Slice(i * 16, 16)))
                     {
                         Logger.Information("{ClientName} failed checksum for file {ChecksumFile}", Name, allChecksums[i].Key);
                         passedChecksum = false;
                         break;
                     }
+                }
             }
 
             HasPassedChecksum = passedChecksum;
@@ -640,7 +653,7 @@ namespace AssettoServer.Network.Tcp
                     _sessionManager.CurrentSession.LeaderLapCount = entryCarResult.NumLaps;
                 }
 
-                entryCarResult.TotalTime = _sessionManager.CurrentSession.SessionTimeMilliseconds - (EntryCar.Ping / 2);
+                entryCarResult.TotalTime = (uint)(_sessionManager.CurrentSession.SessionTimeMilliseconds - EntryCar.Ping / 2);
 
                 if (_sessionManager.CurrentSession.SessionOverFlag)
                 {

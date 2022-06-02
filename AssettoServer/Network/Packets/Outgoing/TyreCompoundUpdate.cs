@@ -13,7 +13,7 @@ namespace AssettoServer.Network.Packets.Outgoing
 
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0x50);
+            writer.Write((byte)ACServerProtocol.TyreCompoundChange);
             writer.Write(SessionId);
             writer.WriteASCIIString(CompoundName);
         }

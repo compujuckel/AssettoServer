@@ -17,7 +17,7 @@ namespace AssettoServer.Network.Packets.Outgoing.Handshake
 
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0x6F);
+            writer.Write((byte)ACServerProtocol.AuthFailed);
             writer.WriteUTF32String(Reason);
         }
     }

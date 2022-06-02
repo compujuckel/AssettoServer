@@ -14,7 +14,7 @@ namespace AssettoServer.Network.Packets.Outgoing
 
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0xD);
+            writer.Write((byte)ACServerProtocol.P2PUpdate);
             writer.Write(SessionId);
             writer.Write(P2PCount);
             writer.Write(Active);

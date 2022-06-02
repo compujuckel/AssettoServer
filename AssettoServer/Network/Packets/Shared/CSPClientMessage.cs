@@ -12,8 +12,8 @@ public struct CSPClientMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
     
     public void ToWriter(ref PacketWriter writer)
     {
-        writer.Write<byte>(0xAB);
-        writer.Write<byte>(0x03);
+        writer.Write((byte)ACServerProtocol.Extended);
+        writer.Write((byte)CSPMessageTypeTcp.ClientMessage);
         writer.Write(SessionId);
         writer.Write((ushort)Type);
         if(LuaType.HasValue)

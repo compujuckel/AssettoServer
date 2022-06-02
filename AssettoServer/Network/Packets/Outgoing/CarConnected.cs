@@ -14,7 +14,7 @@ namespace AssettoServer.Network.Packets.Outgoing
 
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0x5A);
+            writer.Write((byte)ACServerProtocol.CarConnected);
             writer.Write(SessionId);
             writer.WriteASCIIString(Name);
             writer.WriteASCIIString(Nation);

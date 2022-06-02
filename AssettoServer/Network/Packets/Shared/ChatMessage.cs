@@ -21,7 +21,7 @@ namespace AssettoServer.Network.Packets.Shared
 
         public void ToWriter(ref PacketWriter writer)
         {
-            writer.Write<byte>(0x47);
+            writer.Write((byte)ACServerProtocol.Chat);
             writer.Write(SessionId);
             writer.WriteUTF32String(Message);
         }

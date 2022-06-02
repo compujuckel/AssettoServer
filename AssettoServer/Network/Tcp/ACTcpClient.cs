@@ -666,7 +666,7 @@ namespace AssettoServer.Network.Tcp
                     _sessionManager.CurrentSession.LeaderLapCount = entryCarResult.NumLaps;
                 }
 
-                entryCarResult.TotalTime = (uint)(_sessionManager.CurrentSession.SessionTimeMilliseconds - (EntryCar.Ping / 2));
+                entryCarResult.TotalTime = (uint)(_sessionManager.CurrentSession.SessionTimeMilliseconds - EntryCar.Ping / 2);
 
                 if (_sessionManager.CurrentSession.SessionOverFlag)
                 {

@@ -8,14 +8,14 @@ using AssettoServer.Network.Packets.Outgoing;
 
 namespace AssettoServer.Network.Packets.UdpPlugin
 {
-    public class ClientEvent : IOutgoingNetworkPacket
+    public readonly record struct ClientEvent : IOutgoingNetworkPacket
     {
-        public byte EventType;
-        public byte SessionId;
-        public byte? TargetSessionId;
-        public float Speed;
-        public Vector3 WorldPosition;
-        public Vector3 RelPosition;
+        public byte EventType { get; init; }
+        public byte SessionId { get; init; }
+        public byte? TargetSessionId { get; init; }
+        public float Speed { get; init; }
+        public Vector3 WorldPosition { get; init; }
+        public Vector3 RelPosition { get; init; }
 
         public void ToWriter(ref PacketWriter writer)
         {

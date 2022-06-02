@@ -9,25 +9,25 @@ using Serilog;
 
 namespace AssettoServer.Network.Packets.UdpPlugin
 {
-    public class SessionInfo : IOutgoingNetworkPacket
+    public readonly record struct SessionInfo : IOutgoingNetworkPacket
     {
-        public bool IsNew;
-        public byte ProtocolVersion;
-        public byte SessionIndex;
-        public byte CurrentSessionIndex;
-        public byte SessionCount;
-        public string? ServerName;  // std::wstring
-        public string? Track;
-        public string? TrackConfig;
-        public string? Name;
-        public SessionType SessionType;
-        public ushort SessionTime;
-        public ushort SessionLaps;
-        public ushort SessionWaitTime;
-        public byte AmbientTemperature;
-        public byte RoadTemperature;
-        public string? WeatherGraphics;
-        public int ElapsedMs;  // ms to race start (might be negative if server has wait time)
+        public bool IsNew { get; init; }
+        public byte ProtocolVersion { get; init; }
+        public byte SessionIndex { get; init; }
+        public byte CurrentSessionIndex { get; init; }
+        public byte SessionCount { get; init; }
+        public string? ServerName { get; init; }
+        public string? Track { get; init; }
+        public string? TrackConfig { get; init; }
+        public string? Name { get; init; }
+        public SessionType SessionType { get; init; }
+        public ushort SessionTime { get; init; }
+        public ushort SessionLaps { get; init; }
+        public ushort SessionWaitTime { get; init; }
+        public byte AmbientTemperature { get; init; }
+        public byte RoadTemperature { get; init; }
+        public string? WeatherGraphics { get; init; }
+        public int ElapsedMs { get; init; }  // ms to race start (might be negative if server has wait time)
 
         public void ToWriter(ref PacketWriter writer)
         {

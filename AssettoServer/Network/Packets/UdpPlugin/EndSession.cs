@@ -7,9 +7,10 @@ using AssettoServer.Network.Packets.Outgoing;
 
 namespace AssettoServer.Network.Packets.UdpPlugin
 {
-    public class EndSession : IOutgoingNetworkPacket
+    // TODO: this is currently unused
+    public readonly record struct EndSession : IOutgoingNetworkPacket
     {
-        public string? ReportJsonFilename;
+        public string? ReportJsonFilename { get; init; }
 
         public void ToWriter(ref PacketWriter writer)
         {

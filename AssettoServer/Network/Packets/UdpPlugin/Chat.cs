@@ -7,10 +7,10 @@ using AssettoServer.Network.Packets.Outgoing;
 
 namespace AssettoServer.Network.Packets.UdpPlugin
 {
-    public class Chat : IOutgoingNetworkPacket
+    public readonly record struct Chat : IOutgoingNetworkPacket
     {
-        public byte SessionId;
-        public string? Message;
+        public byte SessionId { get; init; }
+        public string? Message { get; init; }
 
         public void ToWriter(ref PacketWriter writer)
         {

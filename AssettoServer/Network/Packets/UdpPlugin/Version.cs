@@ -7,9 +7,9 @@ using AssettoServer.Network.Packets.Outgoing;
 
 namespace AssettoServer.Network.Packets.UdpPlugin
 {
-    public class Version : IOutgoingNetworkPacket
+    public readonly record struct Version : IOutgoingNetworkPacket
     {
-        public byte ProtocolVersion;
+        public byte ProtocolVersion { get; init; }
 
         public void ToWriter(ref PacketWriter writer)
         {

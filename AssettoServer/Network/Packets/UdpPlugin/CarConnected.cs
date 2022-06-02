@@ -7,13 +7,13 @@ using AssettoServer.Network.Packets.Outgoing;
 
 namespace AssettoServer.Network.Packets.UdpPlugin
 {
-    public class CarConnected : IOutgoingNetworkPacket
+    public readonly record struct CarConnected : IOutgoingNetworkPacket
     {
-        public string? DriverName;
-        public string? DriverGuid;
-        public byte SessionId;
-        public string? CarModel;
-        public string? CarSkin;
+        public string? DriverName { get; init; }
+        public string? DriverGuid { get; init; }
+        public byte SessionId { get; init; }
+        public string? CarModel { get; init; }
+        public string? CarSkin { get; init; }
 
         public void ToWriter(ref PacketWriter writer)
         {

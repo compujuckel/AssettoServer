@@ -8,14 +8,14 @@ using AssettoServer.Network.Packets.Outgoing;
 
 namespace AssettoServer.Network.Packets.UdpPlugin
 {
-    public class CarUpdate : IOutgoingNetworkPacket
+    public readonly record struct CarUpdate : IOutgoingNetworkPacket
     {
-        public byte SessionId;
-        public Vector3 Position;
-        public Vector3 Velocity;
-        public byte Gear;
-        public ushort EngineRpm;
-        public float NormalizedSplinePosition;
+        public byte SessionId { get; init; }
+        public Vector3 Position { get; init; }
+        public Vector3 Velocity { get; init; }
+        public byte Gear { get; init; }
+        public ushort EngineRpm { get; init; }
+        public float NormalizedSplinePosition { get; init; }
 
         public void ToWriter(ref PacketWriter writer)
         {

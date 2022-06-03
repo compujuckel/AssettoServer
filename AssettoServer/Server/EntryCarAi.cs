@@ -168,13 +168,35 @@ public partial class EntryCar
 
             for (var i = 0; i < _aiStates.Count; i++)
             {
-                if (!_aiStates[i].Initialized) continue;
+                var aiState = _aiStates[i];
+                if (!aiState.Initialized) continue;
 
-                float distance = Vector3.DistanceSquared(_aiStates[i].Status.Position, playerStatus.Position);
-                if (distance < minDistance)
+                float distance = Vector3.DistanceSquared(aiState.Status.Position, playerStatus.Position);
+
+                if (_configuration.Extra.AiParams.TwoWayTraffic)
                 {
-                    bestState = _aiStates[i];
-                    minDistance = distance;
+                    if (distance < minDistance)
+                    {
+                        bestState = aiState;
+                        minDistance = distance;
+                    }
+                }
+                else
+                {
+                    bool isBestSameDirection = bestState != null && Vector3.Dot(bestState.Status.Velocity, playerStatus.Velocity) > 0;
+                    bool isCandidateSameDirection = Vector3.Dot(aiState.Status.Velocity, playerStatus.Velocity) > 0;
+                    bool isPlayerFastEnough = playerStatus.Velocity.LengthSquared() > 1;
+                    bool isTieBreaker = minDistance < _configuration.Extra.AiParams.MinStateDistanceSquared &&
+                                        distance < _configuration.Extra.AiParams.MinStateDistanceSquared &&
+                                        isPlayerFastEnough;
+
+                    // Tie breaker: Multiple close states, so take the one with min distance and same direction
+                    if ((isTieBreaker && isCandidateSameDirection && (distance < minDistance || !isBestSameDirection))
+                        || (!isTieBreaker && distance < minDistance))
+                    {
+                        bestState = aiState;
+                        minDistance = distance;
+                    }
                 }
             }
 

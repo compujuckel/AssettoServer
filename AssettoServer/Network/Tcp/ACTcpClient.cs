@@ -381,6 +381,8 @@ namespace AssettoServer.Network.Tcp
                     {
                         switch (id)
                         {
+                            case ACServerProtocol.CleanExitDrive:
+                                return;
                             case ACServerProtocol.P2PUpdate:
                                 OnP2PUpdate(reader);
                                 break;

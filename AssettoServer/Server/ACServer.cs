@@ -74,7 +74,7 @@ namespace AssettoServer.Server
             _kunosLobbyRegistration = kunosLobbyRegistration;
             _applicationLifetime = applicationLifetime;
 
-            blacklistService.Blacklisted += OnBlacklisted;
+            blacklistService.Changed += OnChanged;
 
             cspFeatureManager.Add(new CSPFeature { Name = "SPECTATING_AWARE" });
             cspFeatureManager.Add(new CSPFeature { Name = "LOWER_CLIENTS_SENDING_RATE" });
@@ -130,20 +130,20 @@ namespace AssettoServer.Server
             _ = Task.Factory.StartNew(() => UpdateAsync(stoppingToken), TaskCreationOptions.LongRunning);
         }
 
-        private void OnBlacklisted(IBlacklistService sender, BlacklistedEventArgs args)
+        private void OnChanged(IBlacklistService sender, EventArgs args)
         {
-            string guidStr = args.Guid.ToString();
-            
-            foreach (var client in _entryCarManager.ConnectedCars.Values.Select(c => c.Client))
+            _ = Task.Run(async () =>
             {
-                if (client != null && client.Guid != null && client.Guid == guidStr)
+                foreach (var client in _entryCarManager.ConnectedCars.Values.Select(c => c.Client))
                 {
-                    client.Logger.Information("{ClientName} was banned after reloading blacklist", client.Name);
-                    client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = KickReason.VoteBlacklisted});
-                    
-                    _ = client.DisconnectAsync();
+                    if (ulong.TryParse(client?.Guid, out ulong lGuid) && await sender.IsBlacklistedAsync(lGuid))
+                    {
+                        client.Logger.Information("{ClientName} was banned after reloading blacklist", client.Name);
+                        client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = KickReason.VoteBlacklisted });
+                        _ = client.DisconnectAsync();
+                    }
                 }
-            }
+            });
         }
 
         public void SendLapCompletedMessage(byte sessionId, uint lapTime, int cuts, ACTcpClient? target = null)

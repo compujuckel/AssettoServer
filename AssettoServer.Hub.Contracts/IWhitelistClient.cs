@@ -8,7 +8,7 @@ namespace AssettoServer.Hub.Contracts;
 public class WhitelistSubscriptionResponse
 {
     [DataMember(Order = 1)]
-    public List<ulong> Entries { get; set; } = new();
+    public IReadOnlyList<ulong> Entries { get; set; } = new List<ulong>();
 }
 
 [DataContract]

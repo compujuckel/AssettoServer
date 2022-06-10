@@ -189,18 +189,18 @@ namespace AssettoServer.Server.Ai
         {
             var targetPlayerSplinePos = _trafficMap.WorldToSpline(playerCar.Status.Position);
 
-            if (targetPlayerSplinePos.point.Next == null) return null;
+            if (targetPlayerSplinePos.Point?.Next == null) return null;
             
-            int direction = Vector3.Dot(targetPlayerSplinePos.point.GetForwardVector(), playerCar.Status.Velocity) > 0 ? 1 : -1;
+            int direction = Vector3.Dot(targetPlayerSplinePos.Point.GetForwardVector(), playerCar.Status.Velocity) > 0 ? 1 : -1;
             
             // Do not not spawn if a player is too far away from the AI spline, e.g. in pits or in a part of the map without traffic
-            if (targetPlayerSplinePos.distanceSquared > _configuration.Extra.AiParams.MaxPlayerDistanceToAiSplineSquared)
+            if (targetPlayerSplinePos.DistanceSquared > _configuration.Extra.AiParams.MaxPlayerDistanceToAiSplineSquared)
             {
                 return null;
             }
             
             int spawnDistance = Random.Shared.Next(_configuration.Extra.AiParams.MinSpawnDistancePoints, _configuration.Extra.AiParams.MaxSpawnDistancePoints);
-            var spawnPoint = _mapView.Traverse(targetPlayerSplinePos.point, spawnDistance * direction)?.RandomLane(_configuration.Extra.AiParams.TwoWayTraffic);
+            var spawnPoint = _mapView.Traverse(targetPlayerSplinePos.Point, spawnDistance * direction)?.RandomLane(_configuration.Extra.AiParams.TwoWayTraffic);
             
             if (spawnPoint != null && spawnPoint.Next != null)
             {

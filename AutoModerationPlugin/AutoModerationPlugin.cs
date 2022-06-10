@@ -121,9 +121,10 @@ public class AutoModerationPlugin : BackgroundService, IAssettoServerAutostart
 
                     if (_configuration.WrongWayKick.Enabled)
                     {
-                        if (instance.CurrentSplinePointDistanceSquared < _laneRadiusSquared
+                        if (instance.CurrentSplinePoint != null
+                            && instance.CurrentSplinePointDistanceSquared < _laneRadiusSquared
                             && instance.EntryCar.Status.Velocity.LengthSquared() > _configuration.WrongWayKick.MinimumSpeedMs * _configuration.WrongWayKick.MinimumSpeedMs
-                            && Vector3.Dot(instance.CurrentSplinePoint!.GetForwardVector(), instance.EntryCar.Status.Velocity) < 0)
+                            && Vector3.Dot(instance.CurrentSplinePoint.GetForwardVector(), instance.EntryCar.Status.Velocity) < 0)
                         {
                             instance.CurrentFlags |= Flags.WrongWay;
                             

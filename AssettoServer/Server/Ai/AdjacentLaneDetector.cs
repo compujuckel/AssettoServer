@@ -43,32 +43,32 @@ namespace AssettoServer.Server.Ai
                         var targetVec = OffsetVec(point.Position, -direction + 90, laneWidth);
 
                         var found = map.WorldToSpline(targetVec);
-                        if (found.distanceSquared < LaneDetectionRadius * LaneDetectionRadius)
+                        if (found.Point != null && found.DistanceSquared < LaneDetectionRadius * LaneDetectionRadius)
                         {
-                            point.Left = found.point;
-                            if (point.IsSameDirection(found.point))
+                            point.Left = found.Point;
+                            if (point.IsSameDirection(found.Point))
                             {
-                                found.point.Right = point;
+                                found.Point.Right = point;
                             }
                             else
                             {
-                                found.point.Left = point;
+                                found.Point.Left = point;
                             }
                         }
                         
                         targetVec = OffsetVec(point.Position, -direction - 90, laneWidth);
 
                         found = map.WorldToSpline(targetVec);
-                        if (found.distanceSquared < LaneDetectionRadius * LaneDetectionRadius)
+                        if (found.Point != null && found.DistanceSquared < LaneDetectionRadius * LaneDetectionRadius)
                         {
-                            point.Right = found.point;
-                            if (point.IsSameDirection(found.point))
+                            point.Right = found.Point;
+                            if (point.IsSameDirection(found.Point))
                             {
-                                found.point.Left = point;
+                                found.Point.Left = point;
                             }
                             else
                             {
-                                found.point.Right = point;
+                                found.Point.Right = point;
                             }
                         }
                     }

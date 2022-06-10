@@ -65,16 +65,15 @@ namespace AssettoServer.Server.Ai
             return Splines[splineName].Points[id];
         }
 
-        public (TrafficSplinePoint point, float distanceSquared) WorldToSpline(Vector3 position)
+        public (TrafficSplinePoint? Point, float DistanceSquared) WorldToSpline(Vector3 position)
         {
             var nearest = KdTree.NearestNeighbors(position, 1);
             if (nearest.Length == 0)
             {
-                throw new ArgumentException($"No nearest point found for input vector {position}");
+                return (null, float.PositiveInfinity);
             }
             
             float dist = Vector3.DistanceSquared(position, nearest[0].Item2.Position);
-
             return (nearest[0].Item2, dist);
         }
 

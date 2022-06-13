@@ -62,8 +62,7 @@ public class ACExtraConfiguration
     public AiParams AiParams { get; init; } = new AiParams();
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
-
-    public string Path { get; private set; } = null!;
+    [YamlIgnore] public string Path { get; private set; } = null!;
 
     public void ToFile(string path)
     {

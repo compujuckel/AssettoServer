@@ -10,7 +10,7 @@ public class InfoResponse
     public IEnumerable<string>? Country { get; set; }
     [JsonProperty("cport")]
     public int CPort { get; set; }
-    public IEnumerable<int>? Durations { get; set; }
+    public IEnumerable<uint>? Durations { get; set; }
     public bool Extra { get; set; }
     public int Inverted { get; set; }
     public string Ip { get; set; } = "";

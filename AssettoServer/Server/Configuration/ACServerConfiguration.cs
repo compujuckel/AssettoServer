@@ -15,7 +15,7 @@ public class ACServerConfiguration
 {
     public ServerConfiguration Server { get; }
     public EntryList EntryList { get; }
-    public IReadOnlyList<SessionConfiguration> Sessions { get; }
+    public List<SessionConfiguration> Sessions { get; }
     public string FullTrackName { get; }
     public string WelcomeMessage { get; } = "";
     public ACExtraConfiguration Extra { get; private set; } = new();
@@ -86,21 +86,24 @@ public class ACServerConfiguration
         if (Server.Practice != null)
         {
             Server.Practice.Id = 0;
+            Server.Practice.Type = SessionType.Practice;
             sessions.Add(Server.Practice);
         }
-            
+
         if (Server.Qualify != null)
         {
             Server.Qualify.Id = 1;
+            Server.Qualify.Type = SessionType.Qualifying;
             sessions.Add(Server.Qualify);
         }
-            
+
         if (Server.Race != null)
         {
             Server.Race.Id = 2;
+            Server.Race.Type = SessionType.Race;
             sessions.Add(Server.Race);
         }
-            
+
         Sessions = sessions;
 
         LoadExtraConfig();

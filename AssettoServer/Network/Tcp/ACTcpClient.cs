@@ -31,6 +31,7 @@ namespace AssettoServer.Network.Tcp
     {
         private ACServer Server { get; }
         private ACUdpServer UdpServer { get; }
+        private readonly UdpPluginServer _udpPluginServer;
         public ILogger Logger { get; }
         public byte SessionId { get; set; }
         public string? Name { get; private set; }
@@ -45,7 +46,7 @@ namespace AssettoServer.Network.Tcp
         public TcpClient TcpClient { get; }
 
         private NetworkStream TcpStream { get; }
-        [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode), nameof(Guid))] 
+        [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode), nameof(Guid))]
         public bool HasStartedHandshake { get; private set; }
         public bool HasPassedChecksum { get; private set; }
 
@@ -123,10 +124,19 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        public ACTcpClient(ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions, CSPClientMessageTypeManager cspClientMessageTypeManager, IWhitelistService whitelist)
+        public ACTcpClient(
+            ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient,
+            SessionManager sessionManager, WeatherManager weatherManager,
+            ACServerConfiguration configuration, EntryCarManager entryCarManager,
+            IBlacklistService blacklist, ChecksumManager checksumManager,
+            CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions,
+            CSPClientMessageTypeManager cspClientMessageTypeManager, IWhitelistService whitelist,
+            UdpPluginServer udpPluginServer
+            )
         {
             Server = server;
             UdpServer = udpServer;
+            _udpPluginServer = udpPluginServer;
             _steam = steam;
             Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -213,7 +223,7 @@ namespace AssettoServer.Network.Tcp
                     {
                         if (packet is AuthFailedResponse authResponse)
                             Logger.Debug("Sending {PacketName} ({AuthResponseReason})", packet.GetType().Name, authResponse.Reason);
-                        else if (packet is ChatMessage chatMessage && chatMessage.SessionId == 255)
+                        else if (packet is ChatMessage { SessionId: 255 } chatMessage)
                             Logger.Verbose("Sending {PacketName} ({ChatMessage}) to {ClientName}", packet.GetType().Name, chatMessage.Message, Name);
                         else
                             Logger.Verbose("Sending {PacketName} to {ClientName}", packet.GetType().Name, Name);
@@ -439,7 +449,7 @@ namespace AssettoServer.Network.Tcp
             {
                 EntryCar? targetCar = null;
                 
-                if (evt.Type == ClientEvent.ClientEventType.PlayerCollision)
+                if (evt.Type == ClientEventType.CollisionWithCar)
                 {
                     targetCar = _entryCarManager.EntryCars[evt.TargetSessionId];
                     Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and {TargetCarName} ({TargetCarSessionId}), rel. speed {Speed:F0}km/h", 
@@ -450,7 +460,8 @@ namespace AssettoServer.Network.Tcp
                     Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and environment, rel. speed {Speed:F0}km/h", 
                         Name, EntryCar.SessionId, evt.Speed);
                 }
-                
+
+                _udpPluginServer.OnClientEvent(EntryCar.SessionId, evt);
                 Collision?.Invoke(this, new CollisionEventArgs(targetCar, evt.Speed, evt.Position, evt.RelPosition));
             }
         }
@@ -615,7 +626,9 @@ namespace AssettoServer.Network.Tcp
             //_configuration.DynamicTrack.TotalLapCount++; // TODO reset at some point
             if (OnLapCompleted(lapPacket))
             {
-                Server.SendLapCompletedMessage(SessionId, lapPacket.LapTime, lapPacket.Cuts);
+                LapCompletedOutgoing packet = Server.CreateLapCompletedPacket(SessionId, lapPacket.LapTime, lapPacket.Cuts);
+                Server.SendLapCompletedMessage(packet);
+                _udpPluginServer.OnLapCompleted(packet);
             }
         }
 
@@ -751,6 +764,8 @@ namespace AssettoServer.Network.Tcp
 
             List<EntryCar> connectedCars = _entryCarManager.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
+            _udpPluginServer.OnClientFirstUpdate(EntryCar.SessionId);
+
             if (!string.IsNullOrEmpty(_cspServerExtraOptions.EncodedWelcomeMessage))
                 SendPacket(new WelcomeMessage { Message = _cspServerExtraOptions.EncodedWelcomeMessage });
 
@@ -773,7 +788,9 @@ namespace AssettoServer.Network.Tcp
                 }
             }
 
-            Server.SendLapCompletedMessage(255, 0, 0, this);
+            // TODO: sent DRS zones
+
+            Server.SendLapCompletedMessage(Server.CreateLapCompletedPacket(0xFF, 0, 0));
 
             _ = Task.Delay(40000).ContinueWith(async _ =>
             {

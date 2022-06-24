@@ -173,7 +173,7 @@ namespace AssettoServer.Network.Tcp
                 if (!OutgoingPacketChannel.Writer.TryWrite(packet) && !(packet is SunAngleUpdate) && !IsDisconnectRequested)
                 {
                     Logger.Warning("Cannot write packet to TCP packet queue for {ClientName}, disconnecting", Name);
-                    _ = Task.Run(DisconnectAsync);
+                    _ = DisconnectAsync();
                 }
             }
             catch (Exception ex)
@@ -382,6 +382,7 @@ namespace AssettoServer.Network.Tcp
                         switch (id)
                         {
                             case ACServerProtocol.CleanExitDrive:
+                                Logger.Debug("Received clean exit from {ClientName} ({SessionId})", Name, SessionId);
                                 return;
                             case ACServerProtocol.P2PUpdate:
                                 OnP2PUpdate(reader);

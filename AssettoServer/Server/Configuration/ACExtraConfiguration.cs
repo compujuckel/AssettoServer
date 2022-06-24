@@ -201,7 +201,7 @@ public class AiParams
     public int IgnoreObstaclesAfterSeconds { get; set; } = 10;
     [YamlMember(Description = "Apply scale to some traffic density related settings. Increasing this DOES NOT magically increase your traffic density, it is dependent on your other settings. Values higher than 1 not recommended.")]
     public float TrafficDensity { get; set; } = 1.0f;
-    [YamlMember(Description = "Dynamic (hourly) traffic density. List must have exactly 24 entries.")]
+    [YamlMember(Description = "Dynamic (hourly) traffic density. List must have exactly 24 entries in the format [0.2, 0.5, 1, 0.7, ...]")]
     public List<float>? HourlyTrafficDensity { get; set; }
     [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless some cars are creating lots of smoke.")]
     public float TyreDiameterMeters { get; set; } = 0.65f;

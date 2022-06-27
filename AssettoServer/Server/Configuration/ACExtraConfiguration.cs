@@ -59,6 +59,8 @@ public class ACExtraConfiguration
     public int PlayerLoadingTimeoutMinutes { get; set; } = 10;
     [YamlMember(Description = "Send logs to a Loki instance, e.g. Grafana Cloud", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public LokiSettings? LokiSettings { get; init; }
+    [YamlMember(Description = "Port to control the server using Source RCON protocol. 0 to disable.")]
+    public ushort RconPort { get; init; } = 0;
     public AiParams AiParams { get; init; } = new AiParams();
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;

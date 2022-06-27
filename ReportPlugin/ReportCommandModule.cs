@@ -1,4 +1,5 @@
 ﻿using AssettoServer.Commands;
+using AssettoServer.Commands.Modules;
 using Qmmands;
 
 namespace ReportPlugin;
@@ -12,10 +13,10 @@ public class ReportCommandModule : ACModuleBase
         _plugin = plugin;
     }
 
-    [Command("report")]
+    [Command("report"), RequireConnectedPlayer]
     public async Task Report([Remainder] string reason)
     {
-        var report = _plugin.GetLastReplay(Context.Client);
+        var report = _plugin.GetLastReplay(Context.Client!);
 
         if (report == null)
         {
@@ -27,7 +28,7 @@ public class ReportCommandModule : ACModuleBase
         }
         else
         {
-            Context.Client.Logger.Information("Report received from {ClientName} ({SessionId}), ID: {Id}, Reason: {Reason}",
+            Context.Client!.Logger.Information("Report received from {ClientName} ({SessionId}), ID: {Id}, Reason: {Reason}",
                 Context.Client.Name, Context.Client.SessionId, report.Guid, reason);
             await _plugin.SubmitReport(Context.Client, report, reason);
             Reply("Your report has been submitted.");

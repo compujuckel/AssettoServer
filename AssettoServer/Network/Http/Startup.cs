@@ -3,6 +3,7 @@ using System.Net.Http;
 using App.Metrics;
 using AssettoServer.Commands;
 using AssettoServer.Commands.TypeParsers;
+using AssettoServer.Network.Rcon;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
@@ -66,6 +67,12 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<ACUdpServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACTcpServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
+
+            if (_configuration.Extra.RconPort != 0)
+            {
+                builder.RegisterType<RconClient>().AsSelf();
+                builder.RegisterType<RconServer>().AsSelf().As<IHostedService>().SingleInstance();
+            }
 
             foreach (var plugin in _loader.LoadedPlugins)
             {

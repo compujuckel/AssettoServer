@@ -1,4 +1,5 @@
 ﻿using AssettoServer.Commands;
+using AssettoServer.Commands.Modules;
 using Qmmands;
 
 namespace VotingWeatherPlugin;
@@ -12,9 +13,9 @@ public class VotingCommandModule : ACModuleBase
         _votingWeather = votingWeather;
     }
 
-    [Command("w")]
+    [Command("w"), RequireConnectedPlayer]
     public void VoteWeather(int choice)
     {
-        _votingWeather.CountVote(Context.Client, choice);
+        _votingWeather.CountVote(Context.Client!, choice);
     }
 }

@@ -21,9 +21,9 @@ public class GeneralModule : ACModuleBase
         _configuration = configuration;
     }
 
-    [Command("ping")]
+    [Command("ping"), RequireConnectedPlayer]
     public void Ping()
-        => Reply($"Pong! {Context.Client.EntryCar.Ping}ms.");
+        => Reply($"Pong! {Context.Client!.EntryCar.Ping}ms.");
 
     [Command("time")]
     public void Time()
@@ -38,12 +38,12 @@ public class GeneralModule : ACModuleBase
 #endif
 
     // Do not change the reply, it is used by CSP admin detection
-    [Command("admin")]
+    [Command("admin"), RequireConnectedPlayer]
     public void AdminAsync(string password)
     {
-        if (password == _configuration.Server.AdminPassword)
+        if (!string.IsNullOrWhiteSpace(_configuration.Server.AdminPassword) && password == _configuration.Server.AdminPassword)
         {
-            Context.Client.IsAdministrator = true;
+            Context.Client!.IsAdministrator = true;
             Reply("You are now Admin for this server");
         }
         else

@@ -88,6 +88,11 @@ namespace AssettoServer.Server.Ai
                     configuration = deserializer.Deserialize<TrafficConfiguration>(file);
                     CheckConfig(configuration);
                 }
+
+                if (!Directory.Exists(folder))
+                {
+                    throw new ConfigurationException($"No ai folder found. Please put at least one AI spline fast_lane.ai(p) into {Path.GetFullPath(folder)}");
+                }
                 
                 foreach (string file in Directory.EnumerateFiles(folder, "fast_lane*.ai").OrderBy(f => f))
                 {
@@ -103,8 +108,10 @@ namespace AssettoServer.Server.Ai
                 }
             }
 
-            if (splines.Count == 0) 
-                throw new InvalidOperationException($"No AI splines found. Please put at least one AI spline (fast_lane.ai) into {Path.GetFullPath(folder)}");
+            if (splines.Count == 0)
+            {
+                throw new InvalidOperationException($"No AI splines found. Please put at least one AI spline fast_lane.ai(p) into {Path.GetFullPath(folder)}");
+            }
 
             return new TrafficMap(splines, _configuration.Extra.AiParams.LaneWidthMeters, configuration, _logger);
         }

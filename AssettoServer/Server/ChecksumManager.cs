@@ -109,6 +109,9 @@ public class ChecksumManager
     
     private static void ChecksumDirectory(Dictionary<string, byte[]> dict, string directory)
     {
+        if (!Directory.Exists(directory))
+            return;
+        
         string[] allFiles = Directory.GetFiles(directory);
         foreach (string file in allFiles)
         {

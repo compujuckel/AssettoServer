@@ -105,18 +105,15 @@ public class ACServerConfiguration
         LoadExtraConfig();
     }
 
-    public void LoadExtraConfig() {
-
+    private void LoadExtraConfig() {
         string extraCfgPath = Path.Join(BaseFolder, "extra_cfg.yml");
-        if (File.Exists(extraCfgPath))
+        if (!File.Exists(extraCfgPath))
         {
-            Extra = ACExtraConfiguration.FromFile(extraCfgPath);
+            var cfg = new ACExtraConfiguration();
+            cfg.ToFile(extraCfgPath);
         }
-        else
-        {
-            Extra = new ACExtraConfiguration();
-            Extra.ToFile(extraCfgPath);
-        }
+        
+        Extra = ACExtraConfiguration.FromFile(extraCfgPath);
 
         if (Regex.IsMatch(Server.Name, @"x:\w+$"))
         {

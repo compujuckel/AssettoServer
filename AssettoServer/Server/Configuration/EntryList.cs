@@ -21,7 +21,7 @@ public class EntryList
         [IniField("RESTRICTOR")] public int Restrictor { get; init; }
         [IniField("DRIVERNAME")] public string? DriverName { get; init; }
         [IniField("TEAM")] public string? Team { get; init; }
-        [IniField("GUID")] public string? Guid { get; init; }
+        [IniField("GUID")] public string Guid { get; init; } = "";
         [IniField("AI")] public AiMode AiMode { get; init; } = AiMode.None;
     }
     

@@ -9,7 +9,6 @@ using Serilog;
 
 namespace AssettoServer.Network.Rcon;
 
-
 public class RconServer : BackgroundService
 {
     private readonly ACServerConfiguration _configuration;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Incoming;
@@ -202,17 +203,20 @@ public class EntryCarManager
             if (ConnectedCars.Count >= _configuration.Server.MaxClients)
                 return false;
 
+            ulong guid = ulong.Parse(handshakeRequest.Guid);
             for (int i = 0; i < EntryCars.Length; i++)
             {
                 EntryCar entryCar = EntryCars[i];
                 if (entryCar.Client != null && entryCar.Client.Guid == client.Guid)
                     return false;
 
-                var isAdmin = !string.IsNullOrEmpty(handshakeRequest.Guid) && await _adminService.IsAdminAsync(ulong.Parse(handshakeRequest.Guid));
+                var isAdmin = !string.IsNullOrEmpty(handshakeRequest.Guid) && await _adminService.IsAdminAsync(guid);
                     
-                if (entryCar.AiMode != AiMode.Fixed 
-                    && (isAdmin || _configuration.Extra.AiParams.MaxPlayerCount == 0 || ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount) 
-                    && entryCar.Client == null && handshakeRequest.RequestedCar == entryCar.Model)
+                if ( (isAdmin || entryCar.AiMode != AiMode.Fixed) // Allow admins to join on fixed AI slots
+                    && (isAdmin || _configuration.Extra.AiParams.MaxPlayerCount == 0 || ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount) // Allow admins to override soft player limit 
+                    && entryCar.Client == null 
+                    && handshakeRequest.RequestedCar == entryCar.Model
+                    && (entryCar.AllowedGuids.Count == 0 || entryCar.AllowedGuids.Contains(guid)))
                 {
                     entryCar.Reset();
                     entryCar.Client = client;
@@ -260,6 +264,10 @@ public class EntryCarManager
             EntryCars[i].AiControlled = aiMode != AiMode.None;
             EntryCars[i].NetworkDistanceSquared = MathF.Pow(_configuration.Extra.NetworkBubbleDistance, 2);
             EntryCars[i].OutsideNetworkBubbleUpdateRateMs = 1000 / _configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
+            if (!string.IsNullOrWhiteSpace(entry.Guid))
+            {
+                EntryCars[i].AllowedGuids = entry.Guid.Split(';').Select(ulong.Parse).ToList();
+            }
         }
     }
 }

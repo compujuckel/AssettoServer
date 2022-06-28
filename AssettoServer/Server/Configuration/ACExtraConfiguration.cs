@@ -61,6 +61,10 @@ public class ACExtraConfiguration
     public LokiSettings? LokiSettings { get; init; }
     [YamlMember(Description = "Port to control the server using Source RCON protocol. 0 to disable.")]
     public ushort RconPort { get; init; } = 0;
+    [YamlMember(Description = "Dump contents of welcome message and CSP extra options to a file. For debug purposes only.")]
+    public bool DebugWelcomeMessage { get; init; } = false;
+    [YamlMember(Description = "Force clients to use track params (coordinates, time zone) specified on the server. CSP 0.1.79+ required")]
+    public bool ForceServerTrackParams = false;
     public AiParams AiParams { get; init; } = new AiParams();
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;

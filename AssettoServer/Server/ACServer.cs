@@ -127,7 +127,12 @@ namespace AssettoServer.Server
             await _kunosLobbyRegistration.StartAsync(stoppingToken);
 
             _ = _applicationLifetime.ApplicationStopping.Register(OnApplicationStopping);
-            _ = Task.Factory.StartNew(() => UpdateAsync(stoppingToken), TaskCreationOptions.LongRunning);
+            var mainThread = new Thread(() => MainLoop(stoppingToken))
+            {
+                Name = "MainLoop",
+                Priority = ThreadPriority.AboveNormal
+            };
+            mainThread.Start();
         }
 
         private void OnChanged(IBlacklistService sender, EventArgs args)
@@ -180,7 +185,7 @@ namespace AssettoServer.Server
             }
         }
         
-        private async Task UpdateAsync(CancellationToken stoppingToken)
+        private void MainLoop(CancellationToken stoppingToken)
         {
             int failedUpdateLoops = 0;
             int sleepMs = 1000 / _configuration.Server.RefreshRateHz;
@@ -229,7 +234,7 @@ namespace AssettoServer.Server
                                 if (_sessionManager.ServerTimeMilliseconds - fromCar.LastPongTime > 15000)
                                 {
                                     fromClient.Logger.Information("{ClientName} has not sent a ping response for over 15 seconds", fromClient.Name);
-                                    _ = Task.Run(fromClient.DisconnectAsync, stoppingToken);
+                                    _ = fromClient.DisconnectAsync();
                                 }
                             }
 
@@ -298,7 +303,7 @@ namespace AssettoServer.Server
                             tickDelta = nextTick - currentTick;
 
                             if (tickDelta > 0)
-                                await Task.Delay((int)tickDelta, stoppingToken);
+                                Thread.Sleep((int)tickDelta);
                             else if (tickDelta < -sleepMs)
                             {
                                 if (tickDelta < -1000)
@@ -318,7 +323,7 @@ namespace AssettoServer.Server
                     else
                     {
                         nextTick = _sessionManager.ServerTimeMilliseconds;
-                        await Task.Delay(500, stoppingToken);
+                        Thread.Sleep(500);
                     }
 
                     failedUpdateLoops = 0;

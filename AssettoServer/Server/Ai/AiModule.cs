@@ -21,7 +21,7 @@ public class AiModule : Module
 
         if (_configuration.Extra.EnableAi)
         {
-            builder.RegisterType<AiBehavior>().AsSelf().As<IHostedService>().As<IAssettoServerAutostart>().SingleInstance();
+            builder.RegisterType<AiBehavior>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
             builder.RegisterType<AiUpdater>().AsSelf().SingleInstance().AutoActivate();
             
             if (_configuration.Extra.AiParams.HourlyTrafficDensity != null)

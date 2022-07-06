@@ -11,8 +11,13 @@ public static class PhysicsUtils
         return MathF.Pow(speed, 2) / (2 * deceleration);
     }
         
+    public static float CalculateMaxCorneringSpeedSquared(float radius, float friction = 1)
+    {
+        return Gravity * friction * radius;
+    }
+    
     public static float CalculateMaxCorneringSpeed(float radius, float friction = 1)
     {
-        return MathF.Sqrt(Gravity * friction * radius);
+        return MathF.Sqrt(CalculateMaxCorneringSpeedSquared(radius, friction));
     }
 }

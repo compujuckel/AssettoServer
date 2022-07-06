@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Plugin;
 using Autofac;
 using Microsoft.Extensions.Hosting;
 
@@ -20,7 +21,8 @@ public class AiModule : Module
 
         if (_configuration.Extra.EnableAi)
         {
-            builder.RegisterType<AiBehavior>().AsSelf().SingleInstance().AutoActivate();
+            builder.RegisterType<AiBehavior>().AsSelf().As<IHostedService>().As<IAssettoServerAutostart>().SingleInstance();
+            builder.RegisterType<AiUpdater>().AsSelf().SingleInstance().AutoActivate();
             
             if (_configuration.Extra.AiParams.HourlyTrafficDensity != null)
             {

@@ -55,7 +55,7 @@ namespace AssettoServer.Server.Ai
         private readonly EntryCarManager _entryCarManager;
         private readonly WeatherManager _weatherManager;
 
-        private static readonly ImmutableList<Color> CarColors = new List<Color>()
+        private static readonly List<Color> CarColors = new()
         {
             Color.FromArgb(13, 17, 22),
             Color.FromArgb(19, 24, 31),
@@ -64,7 +64,7 @@ namespace AssettoServer.Server.Ai
             Color.FromArgb(11, 20, 33),
             Color.FromArgb(151, 154, 151),
             Color.FromArgb(153, 157, 160),
-            Color.FromArgb(194, 196, 198 ),
+            Color.FromArgb(194, 196, 198),
             Color.FromArgb(234, 234, 234),
             Color.FromArgb(255, 255, 255),
             Color.FromArgb(182, 17, 27),
@@ -75,7 +75,7 @@ namespace AssettoServer.Server.Ai
             Color.FromArgb(37, 58, 167),
             Color.FromArgb(21, 92, 45),
             Color.FromArgb(18, 46, 43),
-        }.ToImmutableList();
+        };
 
         public AiState(EntryCar entryCar, AiBehavior aiBehavior, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, TrafficMap trafficMap, EntryCarManager entryCarManager)
         {
@@ -166,7 +166,7 @@ namespace AssettoServer.Server.Ai
             }
         }
 
-        public bool Move(float progress)
+        private bool Move(float progress)
         {
             bool recalculateTangents = false;
             while (progress > _currentVecLength)
@@ -231,6 +231,7 @@ namespace AssettoServer.Server.Ai
             float distanceTravelled = 0;
             var point = CurrentSplinePoint ?? throw new InvalidOperationException("CurrentSplinePoint is null");
             float maxSpeed = float.MaxValue;
+            float currentSpeedSquared = CurrentSpeed * CurrentSpeed;
             while (distanceTravelled < maxBrakingDistance)
             {
                 distanceTravelled += point.Length;
@@ -255,9 +256,10 @@ namespace AssettoServer.Server.Ai
                     closestAiStateDistance = Vector3.Distance(Status.Position, closestAiState.Status.Position);
                 }
 
-                float maxCorneringSpeed = PhysicsUtils.CalculateMaxCorneringSpeed(point.Radius, EntryCar.AiCorneringSpeedFactor);
-                if (maxCorneringSpeed < CurrentSpeed)
+                float maxCorneringSpeedSquared = PhysicsUtils.CalculateMaxCorneringSpeedSquared(point.Radius, EntryCar.AiCorneringSpeedFactor);
+                if (maxCorneringSpeedSquared < currentSpeedSquared)
                 {
+                    float maxCorneringSpeed = MathF.Sqrt(maxCorneringSpeedSquared);
                     float brakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - maxCorneringSpeed,
                                                 EntryCar.AiDeceleration * EntryCar.AiCorneringBrakeForceFactor)
                                             * EntryCar.AiCorneringBrakeDistanceFactor;

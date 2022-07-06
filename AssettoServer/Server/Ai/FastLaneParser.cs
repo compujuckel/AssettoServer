@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Numerics;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Utils;
 using Serilog;
 using YamlDotNet.Serialization;
 
@@ -113,7 +114,7 @@ namespace AssettoServer.Server.Ai
                 throw new InvalidOperationException($"No AI splines found. Please put at least one AI spline fast_lane.ai(p) into {Path.GetFullPath(folder)}");
             }
 
-            return new TrafficMap(splines, _configuration.Extra.AiParams.LaneWidthMeters, configuration, _logger);
+            return new TrafficMap(splines, _configuration.Extra.AiParams.LaneWidthMeters, _configuration.Extra.AiParams.TwoWayTraffic, configuration, _logger);
         }
 
         private TrafficSplinePoint[] FromFileV7(BinaryReader reader, int idOffset)
@@ -199,6 +200,12 @@ namespace AssettoServer.Server.Ai
                 _ => throw new InvalidOperationException($"Unknown spline version {version}")
             };
 
+            MovingAverage? avg = null;
+            if (_configuration.Extra.AiParams.SmoothCamber)
+            {
+                avg = new MovingAverage(5);
+            }
+
             for (var i = 0; i < points.Length; i++)
             {
                 // For point-to-point splines the last point might be completely off
@@ -214,6 +221,11 @@ namespace AssettoServer.Server.Ai
                 points[i].Next = points[i == points.Length - 1 ? 0 : i + 1];
 
                 points[i].Length = Vector3.Distance(points[i].Position, points[i].Next!.Position);
+
+                if (avg != null)
+                {
+                    points[i].Camber = avg.Next(points[i].Camber);
+                }
             }
 
             bool closedLoop = Vector3.Distance(points[0].Position, points[^1].Position) < 50;

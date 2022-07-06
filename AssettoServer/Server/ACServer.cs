@@ -193,13 +193,13 @@ namespace AssettoServer.Server
 
             Log.Information("Starting update loop with an update rate of {RefreshRateHz}hz", _configuration.Server.RefreshRateHz);
 
-            var updateLoopTimer = new TimerOptions
+            var updateLoopTimer = _metrics.Provider.Timer.Instance(new TimerOptions
             {
                 Name = "ACServer.UpdateAsync",
                 MeasurementUnit = Unit.Calls,
                 DurationUnit = TimeUnit.Milliseconds,
                 RateUnit = TimeUnit.Milliseconds
-            };
+            });
 
             var updateLoopLateCounter = new CounterOptions
             {
@@ -207,12 +207,12 @@ namespace AssettoServer.Server
                 MeasurementUnit = Unit.None
             };
             _metrics.Measure.Counter.Increment(updateLoopLateCounter, 0);
-            
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    using (_metrics.Measure.Timer.Time(updateLoopTimer))
+                    using (updateLoopTimer.NewContext())
                     {
                         Update?.Invoke(this, EventArgs.Empty);
 

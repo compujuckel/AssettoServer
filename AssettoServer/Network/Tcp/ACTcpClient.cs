@@ -805,6 +805,8 @@ namespace AssettoServer.Network.Tcp
                 if (Interlocked.CompareExchange(ref _disconnectRequested, 1, 0) == 1)
                     return;
 
+                await Task.Yield();
+
                 if (!string.IsNullOrEmpty(Name))
                 {
                     Logger.Debug("Disconnecting {ClientName} ({$ClientIpEndpoint})", Name, TcpClient.Client.RemoteEndPoint);

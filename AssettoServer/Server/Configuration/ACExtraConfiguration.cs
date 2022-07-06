@@ -211,6 +211,8 @@ public class AiParams
     public List<float>? HourlyTrafficDensity { get; set; }
     [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless some cars are creating lots of smoke.")]
     public float TyreDiameterMeters { get; set; } = 0.65f;
+    [YamlMember(Description = "Apply some smoothing to AI spline camber")]
+    public bool SmoothCamber { get; init; } = false;
     [YamlMember(Description = "Override some settings for specific car models/skins")]
     public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new();
 

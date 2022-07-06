@@ -41,16 +41,21 @@ public class EntryCarRace
     private void OnPositionUpdateReceived(EntryCar sender, in PositionUpdateIn positionUpdate)
     {
         long currentTick = _sessionManager.ServerTimeMilliseconds;
-        if(((_entryCar.Status.StatusFlag & CarStatusFlags.LightsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.LightsOn) != 0) || ((_entryCar.Status.StatusFlag & CarStatusFlags.HighBeamsOff) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HighBeamsOff) != 0))
+        if(((_entryCar.Status.StatusFlag & CarStatusFlags.LightsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.LightsOn) != 0) 
+           || ((_entryCar.Status.StatusFlag & CarStatusFlags.HighBeamsOff) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HighBeamsOff) != 0))
         {
             LastLightFlashTime = currentTick;
             LightFlashCount++;
         }
 
-        if ((_entryCar.Status.StatusFlag & CarStatusFlags.HazardsOn) == 0 && (positionUpdate.StatusFlag & CarStatusFlags.HazardsOn) != 0)
+        if ((_entryCar.Status.StatusFlag & CarStatusFlags.HazardsOn) == 0 
+            && (positionUpdate.StatusFlag & CarStatusFlags.HazardsOn) != 0
+            && CurrentRace != null 
+            && CurrentRace.Challenged == sender 
+            && !CurrentRace.HasStarted 
+            && !CurrentRace.LineUpRequired)
         {
-            if (CurrentRace != null && !CurrentRace.HasStarted && !CurrentRace.LineUpRequired)
-                _ = CurrentRace.StartAsync();
+            _ = CurrentRace.StartAsync();
         }
 
         if (currentTick - LastLightFlashTime > 3000 && LightFlashCount > 0)

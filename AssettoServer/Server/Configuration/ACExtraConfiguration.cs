@@ -81,7 +81,9 @@ public class ACExtraConfiguration
     {
         using var stream = File.OpenText(path);
 
-        var deserializer = new DeserializerBuilder().Build();
+        var deserializer = new DeserializerBuilder()
+            .IgnoreUnmatchedProperties()
+            .Build();
 
         var yamlParser = new Parser(stream);
         yamlParser.Consume<StreamStart>();

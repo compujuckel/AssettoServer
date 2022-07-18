@@ -9,6 +9,15 @@ public class BlacklistSubscriptionResponse
 {
     [DataMember(Order = 1)]
     public IReadOnlyList<ulong> Entries { get; set; } = new List<ulong>();
+    [DataMember(Order = 2)]
+    public int Version { get; set; }
+}
+
+[DataContract]
+public class BlacklistSubscriptionRequest
+{
+    [DataMember(Order = 1)]
+    public int Version { get; set; }
 }
 
 [DataContract]
@@ -22,7 +31,7 @@ public class BlacklistAddRequest
 public interface IBlacklistClient
 {
     [OperationContract]
-    IAsyncEnumerable<BlacklistSubscriptionResponse> SubscribeAsync(CallContext context = default);
+    IAsyncEnumerable<BlacklistSubscriptionResponse> SubscribeAsync(BlacklistSubscriptionRequest request, CallContext context = default);
 
     [OperationContract]
     Task AddAsync(BlacklistAddRequest request, CallContext context = default);

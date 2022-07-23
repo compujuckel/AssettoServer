@@ -178,8 +178,6 @@ public class EntryCarManager
             for (int i = 0; i < EntryCars.Length; i++)
             {
                 EntryCar entryCar = EntryCars[i];
-                if (entryCar.Client != null && entryCar.Client.Guid == client.Guid)
-                    return false;
 
                 bool isAdmin = await _adminService.IsAdminAsync(handshakeRequest.Guid);
 

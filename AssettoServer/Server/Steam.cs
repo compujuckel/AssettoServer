@@ -28,7 +28,7 @@ public class Steam : BackgroundService
         return Task.CompletedTask;
     }
 
-    internal ValueTask<bool> ValidateSessionTicketAsync(byte[]? sessionTicket, string guid, ACTcpClient client)
+    internal ValueTask<bool> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, ACTcpClient client)
     {
         throw new PlatformNotSupportedException("Steam is not supported on this platform");
     }

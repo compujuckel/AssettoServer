@@ -65,6 +65,8 @@ public class ACExtraConfiguration
     public bool DebugWelcomeMessage { get; init; } = false;
     [YamlMember(Description = "Force clients to use track params (coordinates, time zone) specified on the server. CSP 0.1.79+ required")]
     public bool ForceServerTrackParams = false;
+    [YamlMember(Description = "Allow cars to have multiple data checksums. Instead of a single checksummed data.acd, you can have multiple data*.acd files in the car folder and players can join with any of these files")]
+    public bool EnableAlternativeCarChecksums = false;
     public AiParams AiParams { get; init; } = new AiParams();
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;

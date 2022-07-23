@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using AssettoServer.Server.Configuration;
-using JetBrains.Annotations;
 using Serilog;
 
 namespace AssettoServer.Server;
@@ -12,7 +11,7 @@ namespace AssettoServer.Server;
 public class ChecksumManager
 {
     internal IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; } = null!;
-    internal IReadOnlyDictionary<string, byte[]> CarChecksums { get; private set; } = null!;
+    internal IReadOnlyDictionary<string, List<byte[]>> CarChecksums { get; private set; } = null!;
 
     private readonly ACServerConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
@@ -29,8 +28,8 @@ public class ChecksumManager
         Log.Information("Initialized {Count} track checksums", TrackChecksums.Count);
 
         var carModels = _entryCarManager.EntryCars.Select(car => car.Model).Distinct().ToList();
-        CarChecksums = CalculateCarChecksums(carModels);
-        Log.Information("Initialized {Count} car checksums", CarChecksums.Count);
+        CarChecksums = CalculateCarChecksums(carModels, _configuration.Extra.EnableAlternativeCarChecksums);
+        Log.Information("Initialized {Count} car checksums", CarChecksums.Select(car => car.Value.Count).Sum());
 
         var modelsWithoutChecksums = carModels.Except(CarChecksums.Keys).ToList();
         if (modelsWithoutChecksums.Count > 0)
@@ -72,13 +71,35 @@ public class ChecksumManager
         return dict;
     }
 
-    private static Dictionary<string, byte[]> CalculateCarChecksums(IEnumerable<string> cars)
+    private static Dictionary<string, List<byte[]>> CalculateCarChecksums(IEnumerable<string> cars, bool allowAlternatives)
     {
-        var dict = new Dictionary<string, byte[]>();
-        
+        var dict = new Dictionary<string, List<byte[]>>();
+
         foreach (string car in cars)
         {
-            AddChecksum(dict, $"content/cars/{car}/data.acd", car);
+            string carFolder = $"content/cars/{car}";
+            var checksums = new List<byte[]>();
+            if (allowAlternatives && Directory.Exists(carFolder))
+            {
+                foreach (string file in Directory.EnumerateFiles(carFolder, "data*.acd"))
+                {
+                    if (TryCreateChecksum(file, out byte[]? checksum))
+                    {
+                        checksums.Add(checksum);
+                        Log.Debug("Added checksum for {Path}", file);
+                    }
+                }
+            }
+            else
+            {
+                if (TryCreateChecksum(Path.Join(carFolder, "data.acd"), out byte[]? checksum))
+                {
+                    checksums.Add(checksum);
+                    Log.Debug("Added checksum for {Path}", car);
+                }
+            }
+
+            dict.Add(car, checksums);
         }
 
         return dict;
@@ -97,7 +118,7 @@ public class ChecksumManager
         checksum = null;
         return false;
     }
-    
+
     private static void AddChecksum(Dictionary<string, byte[]> dict, string filePath, string? name = null)
     {
         if (TryCreateChecksum(filePath, out byte[]? checksum))

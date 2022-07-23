@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Plugin;
 using Autofac;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +24,7 @@ public class AiModule : Module
         {
             builder.RegisterType<AiBehavior>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
             builder.RegisterType<AiUpdater>().AsSelf().SingleInstance().AutoActivate();
+            builder.RegisterType<AiSlotFilter>().As<IOpenSlotFilter>();
             
             if (_configuration.Extra.AiParams.HourlyTrafficDensity != null)
             {

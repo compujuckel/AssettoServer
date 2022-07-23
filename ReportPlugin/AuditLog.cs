@@ -35,7 +35,7 @@ public abstract class AuditEvent
 public readonly struct AuditClient
 {
     public readonly string Name;
-    public readonly string SteamId;
+    public readonly ulong SteamId;
     public readonly byte SessionId;
     public readonly string CarModel;
     public readonly string Skin;
@@ -43,7 +43,7 @@ public readonly struct AuditClient
     public AuditClient(ACTcpClient client)
     {
         Name = client.Name ?? "";
-        SteamId = client.Guid ?? "";
+        SteamId = client.Guid;
         SessionId = client.SessionId;
         CarModel = client.EntryCar.Model;
         Skin = client.EntryCar.Skin;
@@ -52,7 +52,7 @@ public readonly struct AuditClient
     public AuditClient(EntryCar car)
     {
         Name = car.Client?.Name ?? "";
-        SteamId = car.Client?.Guid ?? "";
+        SteamId = car.Client?.Guid ?? 0;
         SessionId = car.SessionId;
         CarModel = car.Model;
         Skin = car.Skin;

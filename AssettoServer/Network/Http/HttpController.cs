@@ -8,6 +8,7 @@ using AssettoServer.Server;
 using AssettoServer.Server.Admin;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
+using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,8 +25,9 @@ public class HttpController : ControllerBase
     private readonly GeoParamsManager _geoParamsManager;
     private readonly CSPFeatureManager _cspFeatureManager;
     private readonly IAdminService _adminService;
+    private readonly OpenSlotFilterChain _openSlotFilter;
 
-    public HttpController(CSPServerScriptProvider serverScriptProvider, WeatherManager weatherManager, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager, CSPFeatureManager cspFeatureManager, IAdminService adminService)
+    public HttpController(CSPServerScriptProvider serverScriptProvider, WeatherManager weatherManager, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager, CSPFeatureManager cspFeatureManager, IAdminService adminService, OpenSlotFilterChain openSlotFilter)
     {
         _serverScriptProvider = serverScriptProvider;
         _weatherManager = weatherManager;
@@ -35,6 +37,7 @@ public class HttpController : ControllerBase
         _geoParamsManager = geoParamsManager;
         _cspFeatureManager = cspFeatureManager;
         _adminService = adminService;
+        _openSlotFilter = openSlotFilter;
     }
 
     private string? IdFromGuid(string? guid)
@@ -98,9 +101,7 @@ public class HttpController : ControllerBase
             {
                 Model = ec.Model,
                 Skin = ec.Skin,
-                IsEntryList = (isAdmin || ec.AiMode != AiMode.Fixed) 
-                              && (isAdmin || _configuration.Extra.AiParams.MaxPlayerCount == 0 || _entryCarManager.ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount) 
-                              && (ec.AllowedGuids.Count == 0 || (guidValid && ec.AllowedGuids.Contains(ulongGuid))),
+                IsEntryList = isAdmin || _openSlotFilter.IsSlotOpen(ec, ulongGuid),
                 DriverName = ec.Client?.Name,
                 DriverTeam = ec.Client?.Team,
                 IsConnected = ec.Client != null
@@ -116,8 +117,8 @@ public class HttpController : ControllerBase
     {
         bool guidValid = ulong.TryParse(guid, out ulong ulongGuid);
         bool isAdmin = guidValid && await _adminService.IsAdminAsync(ulongGuid);
-
-        DetailResponse responseObj = new DetailResponse()
+        
+        DetailResponse responseObj = new DetailResponse
         {
             Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct(),
             Clients = _entryCarManager.ConnectedCars.Count,
@@ -147,14 +148,12 @@ public class HttpController : ControllerBase
                 {
                     Model = ec.Model,
                     Skin = ec.Skin,
-                    IsEntryList = (isAdmin || ec.AiMode != AiMode.Fixed) 
-                                  && (isAdmin || _configuration.Extra.AiParams.MaxPlayerCount == 0 || _entryCarManager.ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount) 
-                                  && (ec.AllowedGuids.Count == 0 || (guidValid && ec.AllowedGuids.Contains(ulongGuid))),
+                    IsEntryList = isAdmin || _openSlotFilter.IsSlotOpen(ec, ulongGuid),
                     DriverName = ec.Client?.Name,
                     DriverTeam = ec.Client?.Team,
                     DriverNation = ec.Client?.NationCode,
                     IsConnected = ec.Client != null,
-                    ID = IdFromGuid(ec.Client?.Guid)
+                    ID = IdFromGuid(ec.Client?.Guid.ToString())
                 })
             },
             Until = DateTimeOffset.Now.ToUnixTimeSeconds() + _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,

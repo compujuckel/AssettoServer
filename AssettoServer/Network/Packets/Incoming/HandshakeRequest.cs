@@ -3,7 +3,7 @@
     public struct HandshakeRequest : IIncomingNetworkPacket
     {
         public ushort ClientVersion;
-        public string Guid;
+        public ulong Guid;
         public string Name;
         public string Team;
         public string Nation;
@@ -15,7 +15,7 @@
         public void FromReader(PacketReader reader)
         {
             ClientVersion = reader.Read<ushort>();
-            Guid = reader.ReadASCIIString();
+            Guid = ulong.Parse(reader.ReadASCIIString());
             Name = reader.ReadUTF32String();
             Team = reader.ReadASCIIString();
             Nation = reader.ReadASCIIString();

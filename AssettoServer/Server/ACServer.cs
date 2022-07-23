@@ -141,7 +141,7 @@ namespace AssettoServer.Server
             {
                 foreach (var client in _entryCarManager.ConnectedCars.Values.Select(c => c.Client))
                 {
-                    if (ulong.TryParse(client?.Guid, out ulong lGuid) && await sender.IsBlacklistedAsync(lGuid))
+                    if (client != null && await sender.IsBlacklistedAsync(client.Guid))
                     {
                         client.Logger.Information("{ClientName} was banned after reloading blacklist", client.Name);
                         client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = KickReason.VoteBlacklisted });

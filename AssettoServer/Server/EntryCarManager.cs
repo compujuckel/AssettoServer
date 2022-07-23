@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
-using AssettoServer.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Admin;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.OpenSlotFilters;
 using Serilog;
 
 namespace AssettoServer.Server;
@@ -26,12 +25,8 @@ public class EntryCarManager
     private readonly EntryCar.Factory _entryCarFactory;
     private readonly IAdminService _adminService;
     private readonly SemaphoreSlim _connectSemaphore = new(1, 1);
-    
-    /// <summary>
-    /// Fires when a client has started a handshake. At this point it is still possible to reject the connection by setting ClientHandshakeEventArgs.Cancel = true.
-    /// </summary>
-    public event EventHandler<ACTcpClient, ClientConnectingEventArgs>? ClientConnecting;
-    
+    private readonly Lazy<OpenSlotFilterChain> _openSlotFilterChain;
+
     /// <summary>
     /// Fires when a client has secured a slot and established a TCP connection.
     /// </summary>
@@ -52,12 +47,13 @@ public class EntryCarManager
     /// </summary>
     public event EventHandler<ACTcpClient, EventArgs>? ClientDisconnected;
 
-    public EntryCarManager(ACServerConfiguration configuration, EntryCar.Factory entryCarFactory, IBlacklistService blacklist, IAdminService adminService)
+    public EntryCarManager(ACServerConfiguration configuration, EntryCar.Factory entryCarFactory, IBlacklistService blacklist, IAdminService adminService, Lazy<OpenSlotFilterChain> openSlotFilterChain)
     {
         _configuration = configuration;
         _entryCarFactory = entryCarFactory;
         _blacklist = blacklist;
         _adminService = adminService;
+        _openSlotFilterChain = openSlotFilterChain;
     }
 
     public async Task KickAsync(ACTcpClient? client, string? reason = null, ACTcpClient? admin = null)
@@ -72,18 +68,18 @@ public class EntryCarManager
     
     public async Task BanAsync(ACTcpClient? client, string? reason = null, ACTcpClient? admin = null)
     {
-        if (client == null || client.Guid == null) return;
+        if (client == null) return;
         
-        string? clientReason = reason != null ? $"You have been banned for {reason}" : "You have been banned from the server";
+        string clientReason = reason != null ? $"You have been banned for {reason}" : "You have been banned from the server";
         string broadcastReason = reason != null ? $"{client.Name} has been banned for {reason}." : $"{client.Name} has been banned.";
 
         await KickAsync(client, KickReason.VoteBlacklisted, reason, clientReason, broadcastReason, admin);
-        await _blacklist.AddAsync(ulong.Parse(client.Guid));
+        await _blacklist.AddAsync(client.Guid);
     }
 
     public async Task KickAsync(ACTcpClient? client, KickReason reason, string? auditReason = null, string? clientReason = null, string? broadcastReason = null, ACTcpClient? admin = null)
     {
-        if (client != null && client.Guid != null && !client.IsDisconnectRequested)
+        if (client != null && !client.IsDisconnectRequested)
         {
             if (broadcastReason != null)
             {
@@ -170,30 +166,6 @@ public class EntryCarManager
         }
     }
 
-    internal bool ValidateHandshake(ACTcpClient client, HandshakeRequest handshakeRequest, [NotNullWhen(false)] out IOutgoingNetworkPacket? handshakeResponse)
-    {
-        var args = new ClientConnectingEventArgs
-        {
-            HandshakeRequest = handshakeRequest
-        };
-        ClientConnecting?.Invoke(client, args);
-
-        if (args.Cancel)
-        {
-            if (args.CancelType == ClientConnectingEventArgs.CancelTypeEnum.Blacklisted)
-                handshakeResponse = new BlacklistedResponse();
-            else if (args.CancelType == ClientConnectingEventArgs.CancelTypeEnum.AuthFailed)
-                handshakeResponse = new AuthFailedResponse(args.AuthFailedReason ?? "No reason specified");
-            else
-                throw new InvalidOperationException("Invalid cancel type specified");
-
-            return false;
-        }
-
-        handshakeResponse = null;
-        return true;
-    }
-    
     internal async Task<bool> TrySecureSlotAsync(ACTcpClient client, HandshakeRequest handshakeRequest)
     {
         try
@@ -202,21 +174,18 @@ public class EntryCarManager
 
             if (ConnectedCars.Count >= _configuration.Server.MaxClients)
                 return false;
-
-            ulong guid = ulong.Parse(handshakeRequest.Guid);
+            
             for (int i = 0; i < EntryCars.Length; i++)
             {
                 EntryCar entryCar = EntryCars[i];
                 if (entryCar.Client != null && entryCar.Client.Guid == client.Guid)
                     return false;
 
-                var isAdmin = !string.IsNullOrEmpty(handshakeRequest.Guid) && await _adminService.IsAdminAsync(guid);
-                    
-                if ( (isAdmin || entryCar.AiMode != AiMode.Fixed) // Allow admins to join on fixed AI slots
-                    && (isAdmin || _configuration.Extra.AiParams.MaxPlayerCount == 0 || ConnectedCars.Count < _configuration.Extra.AiParams.MaxPlayerCount) // Allow admins to override soft player limit 
-                    && entryCar.Client == null 
+                bool isAdmin = await _adminService.IsAdminAsync(handshakeRequest.Guid);
+
+                if (entryCar.Client == null
                     && handshakeRequest.RequestedCar == entryCar.Model
-                    && (entryCar.AllowedGuids.Count == 0 || entryCar.AllowedGuids.Contains(guid)))
+                    && (isAdmin || _openSlotFilterChain.Value.IsSlotOpen(entryCar, handshakeRequest.Guid)))
                 {
                     entryCar.Reset();
                     entryCar.Client = client;

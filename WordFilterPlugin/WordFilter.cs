@@ -1,12 +1,14 @@
 ﻿using System.Text.RegularExpressions;
 using AssettoServer.Commands;
-using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Network.Packets.Incoming;
+using AssettoServer.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
+using AssettoServer.Server.OpenSlotFilters;
 
 namespace WordFilterPlugin;
 
-public class WordFilter
+public class WordFilter : OpenSlotFilterBase
 {
     private readonly EntryCarManager _entryCarManager;
     private readonly WordFilterConfiguration _configuration;
@@ -15,19 +17,8 @@ public class WordFilter
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;
-
-        _entryCarManager.ClientConnecting += OnClientConnecting;
+        
         chatService.MessageReceived += OnChatMessageReceived;
-    }
-
-    private void OnClientConnecting(ACTcpClient sender, ClientConnectingEventArgs args)
-    {
-        if (_configuration.ProhibitedUsernamePatterns.Any(regex => Regex.Match(args.HandshakeRequest.Name, regex, RegexOptions.IgnoreCase).Success))
-        {
-            args.Cancel = true;
-            args.CancelType = ClientConnectingEventArgs.CancelTypeEnum.AuthFailed;
-            args.AuthFailedReason = "Prohibited username. Change your Online Name in Settings > Content Manager > Drive > Online Name.";
-        }
     }
 
     private void OnChatMessageReceived(ACTcpClient sender, ChatEventArgs args)
@@ -43,5 +34,15 @@ public class WordFilter
             args.Cancel = true;
             sender.Logger.Information("Chat message from {ClientName} ({SessionId}) filtered: {ChatMessage}", sender.Name, sender.SessionId, args.Message);
         }
+    }
+    
+    public override Task<AuthFailedResponse?> ShouldAcceptConnectionAsync(ACTcpClient client, HandshakeRequest request)
+    {
+        if (_configuration.ProhibitedUsernamePatterns.Any(regex => Regex.Match(request.Name, regex, RegexOptions.IgnoreCase).Success))
+        {
+            return Task.FromResult<AuthFailedResponse?>(new AuthFailedResponse("Prohibited username. Change your Online Name in Settings > Content Manager > Drive > Online Name."));
+        }
+        
+        return base.ShouldAcceptConnectionAsync(client, request);
     }
 }

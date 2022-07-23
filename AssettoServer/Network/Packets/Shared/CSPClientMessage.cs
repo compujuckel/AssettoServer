@@ -37,6 +37,7 @@ public enum CSPClientMessageType
     ChatSharedSetup = 2000,
     TrackSharedTrigger = 10000,
     TrackSharedTriggerAllow = 10001,
+    DriverNameChange = 14000,
     CarColorChange = 15000,
     CarTyreState = 15001,
     CarPartsState = 15002,

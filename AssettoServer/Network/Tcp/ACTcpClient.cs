@@ -388,6 +388,9 @@ namespace AssettoServer.Network.Tcp
                             case ACServerProtocol.Chat:
                                 OnChat(reader);
                                 break;
+                            case ACServerProtocol.DamageUpdate:
+                                OnDamageUpdate(reader);
+                                break;
                             case ACServerProtocol.LapCompleted:
                                 OnLapCompletedMessageReceived(reader);
                                 break;
@@ -550,6 +553,18 @@ namespace AssettoServer.Network.Tcp
                 ChatMessage = chatMessage
             };
             ChatMessageReceived?.Invoke(this, args);
+        }
+
+        private void OnDamageUpdate(PacketReader reader)
+        {
+            DamageUpdateIncoming damageUpdate = reader.ReadPacket<DamageUpdateIncoming>();
+            EntryCar.Status.DamageZoneLevel = damageUpdate.DamageZoneLevel;
+
+            _entryCarManager.BroadcastPacket(new DamageUpdate
+            {
+                SessionId = SessionId,
+                DamageZoneLevel = damageUpdate.DamageZoneLevel,
+            });
         }
 
         private void OnTyreCompoundChange(PacketReader reader)

@@ -3,6 +3,7 @@ using System.Net.Http;
 using App.Metrics;
 using AssettoServer.Commands;
 using AssettoServer.Commands.TypeParsers;
+using AssettoServer.Network.Rcon;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
@@ -11,6 +12,7 @@ using AssettoServer.Server.Ai;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
+using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather;
@@ -67,6 +69,20 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<ACUdpServer>().AsSelf().SingleInstance();
             builder.RegisterType<UdpPluginServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
+            builder.RegisterType<OpenSlotFilterChain>().AsSelf().SingleInstance();
+            builder.RegisterType<WhitelistSlotFilter>().As<IOpenSlotFilter>();
+            builder.RegisterType<GuidSlotFilter>().As<IOpenSlotFilter>();
+
+            if (_configuration.Extra.UseSteamAuth)
+            {
+                builder.RegisterType<SteamSlotFilter>().As<IOpenSlotFilter>();
+            }
+
+            if (_configuration.Extra.RconPort != 0)
+            {
+                builder.RegisterType<RconClient>().AsSelf();
+                builder.RegisterType<RconServer>().AsSelf().As<IHostedService>().SingleInstance();
+            }
 
             foreach (var plugin in _loader.LoadedPlugins)
             {

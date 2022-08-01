@@ -1,5 +1,7 @@
 ﻿using System.IO;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.OpenSlotFilters;
+using AssettoServer.Server.Plugin;
 using Autofac;
 using Microsoft.Extensions.Hosting;
 
@@ -20,15 +22,25 @@ public class AiModule : Module
 
         if (_configuration.Extra.EnableAi)
         {
-            builder.RegisterType<AiBehavior>().AsSelf().SingleInstance().AutoActivate();
+            builder.RegisterType<AiBehavior>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
+            builder.RegisterType<AiUpdater>().AsSelf().SingleInstance().AutoActivate();
+            builder.RegisterType<AiSlotFilter>().As<IOpenSlotFilter>();
             
             if (_configuration.Extra.AiParams.HourlyTrafficDensity != null)
             {
                 builder.RegisterType<DynamicTrafficDensity>().As<IHostedService>().SingleInstance();
             }
-            
-            string mapAiBasePath = "content/tracks/" + _configuration.Server.Track + "/ai/";
-            TrafficMap? trafficMap;
+
+            string contentPath = "content";
+            const string contentPathCMWorkaround = "content~tmp";
+            // CM renames the content folder to content~tmp when enabling the "Disable integrity verification" checkbox. We still need to load an AI spline from there, even when checksums are disabled
+            if (!Directory.Exists(contentPath) && Directory.Exists(contentPathCMWorkaround))
+            {
+                contentPath = contentPathCMWorkaround;
+            }
+
+            string mapAiBasePath = Path.Join(contentPath, "tracks/" + _configuration.Server.Track + "/ai/");
+            TrafficMap trafficMap;
             if (File.Exists(mapAiBasePath + "traffic_map.obj"))
             {
                 trafficMap = WavefrontObjParser.ParseFile(mapAiBasePath + "traffic_map.obj", _configuration.Extra.AiParams.LaneWidthMeters);
@@ -37,11 +49,6 @@ public class AiModule : Module
             {
                 var parser = new FastLaneParser(_configuration);
                 trafficMap = parser.FromFiles(mapAiBasePath);
-            }
-
-            if (trafficMap == null)
-            {
-                throw new ConfigurationException("AI enabled but no traffic map found");
             }
 
             builder.RegisterInstance(trafficMap).AsSelf();

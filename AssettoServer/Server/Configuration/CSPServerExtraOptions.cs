@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using System.Text.RegularExpressions;
 using AssettoServer.Network.Packets.Outgoing;
 using Serilog;
 
@@ -11,7 +12,9 @@ namespace AssettoServer.Server.Configuration;
 // https://github.com/ac-custom-shaders-patch/acc-extension-config/wiki/Misc-%E2%80%93-Server-extra-options
 public class CSPServerExtraOptions
 {
+    private const string CspConfigPattern = @"\t+\$CSP0:([^\s]+)";
     private static readonly string CspConfigSeparator = RepeatString("\t", 32) + "$CSP0:";
+    private readonly ACServerConfiguration _configuration;
 
     private bool _hasShownMessageLengthWarning = false;
 
@@ -39,8 +42,13 @@ public class CSPServerExtraOptions
     private string _welcomeMessage = "";
     private string _extraOptions = "";
 
-    public CSPServerExtraOptions(ACServerConfiguration configuration) : this(configuration.WelcomeMessage)
+    public CSPServerExtraOptions(ACServerConfiguration configuration)
     {
+        _configuration = configuration;
+        
+        Decode(configuration.WelcomeMessage);
+        Encode();
+        
         WelcomeMessage += LegalNotice.WelcomeMessage;
         if (configuration.Extra.EnableCustomUpdate)
         {
@@ -49,20 +57,14 @@ public class CSPServerExtraOptions
         ExtraOptions += "\r\n" + configuration.CSPExtraOptions;
     }
 
-    public CSPServerExtraOptions(string welcomeMessage)
-    {
-        Decode(welcomeMessage);
-        Encode();
-    }
-
     private void Decode(string welcomeMessage)
     {
-        int pos = welcomeMessage.IndexOf(CspConfigSeparator, StringComparison.Ordinal);
-        if (pos > 0)
+        var match = Regex.Match(welcomeMessage, CspConfigPattern);
+        if (match.Success)
         {
-            string extraOptionsEncoded = welcomeMessage.Substring(pos + CspConfigSeparator.Length);
+            string extraOptionsEncoded = match.Groups[1].Value;
             
-            _welcomeMessage = welcomeMessage.Substring(0, pos);
+            _welcomeMessage = welcomeMessage.Substring(0, match.Groups[0].Index);
             _extraOptions = DecompressZlib(Convert.FromBase64String(extraOptionsEncoded.PadRight(4*((extraOptionsEncoded.Length+3)/4), '=')));
         }
         else
@@ -80,6 +82,12 @@ public class CSPServerExtraOptions
         {
             _hasShownMessageLengthWarning = true;
             Log.Warning("Long welcome message detected. This will lead to crashes on CSP versions older than 0.1.77");
+        }
+
+        if (_configuration.Extra.DebugWelcomeMessage)
+        {
+            File.WriteAllText(Path.Join(_configuration.BaseFolder, "debug_welcome.txt"), EncodedWelcomeMessage);
+            File.WriteAllText(Path.Join(_configuration.BaseFolder, "debug_csp_extra_options.ini"), ExtraOptions);
         }
     }
     

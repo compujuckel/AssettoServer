@@ -28,7 +28,7 @@ public class Steam : BackgroundService
         return Task.CompletedTask;
     }
 
-    internal ValueTask<bool> ValidateSessionTicketAsync(byte[]? sessionTicket, string guid, ACTcpClient client)
+    internal ValueTask<bool> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, ACTcpClient client)
     {
         throw new PlatformNotSupportedException("Steam is not supported on this platform");
     }
@@ -103,15 +103,15 @@ public class Steam : BackgroundService
         }
     }
     
-    internal async ValueTask<bool> ValidateSessionTicketAsync(byte[]? sessionTicket, string guid, ACTcpClient client)
+    internal async ValueTask<bool> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, ACTcpClient client)
     {
-        if (sessionTicket == null || !ulong.TryParse(guid, out ulong steamId))
+        if (sessionTicket == null)
             return false;
 
         TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
         void ticketValidateResponse(SteamId playerSteamId, SteamId ownerSteamId, AuthResponse authResponse)
         {
-            if (playerSteamId != steamId)
+            if (playerSteamId != guid)
                 return;
 
             if (authResponse != AuthResponse.OK)
@@ -162,7 +162,7 @@ public class Steam : BackgroundService
         SteamServer.OnValidateAuthTicketResponse += ticketValidateResponse;
         Task timeoutTask = Task.Delay(5000);
 
-        if (!SteamServer.BeginAuthSession(sessionTicket, steamId))
+        if (!SteamServer.BeginAuthSession(sessionTicket, guid))
         {
             client.Logger.Information("Steam auth ticket verification failed for {ClientName}", client.Name);
             taskCompletionSource.SetResult(false);

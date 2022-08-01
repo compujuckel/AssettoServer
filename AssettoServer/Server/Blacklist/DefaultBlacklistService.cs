@@ -17,13 +17,7 @@ public class DefaultBlacklistService : IBlacklistService
 
     private void OnReloaded(GuidListFile sender, EventArgs args)
     {
-        foreach (var entry in _file.List)
-        {
-            if (entry.Value && ulong.TryParse(entry.Key, out ulong guid))
-            {
-                Blacklisted?.Invoke(this, new BlacklistedEventArgs { Guid = guid });
-            }
-        }
+        Changed?.Invoke(this, args);
     }
 
     public Task<bool> IsBlacklistedAsync(ulong guid)
@@ -34,8 +28,7 @@ public class DefaultBlacklistService : IBlacklistService
     public async Task AddAsync(ulong guid, string reason = "", ulong? admin = null)
     {
         await _file.AddAsync(guid.ToString());
-        Blacklisted?.Invoke(this, new BlacklistedEventArgs { Guid = guid });
     }
 
-    public event EventHandler<IBlacklistService, BlacklistedEventArgs>? Blacklisted;
+    public event EventHandler<IBlacklistService, EventArgs>? Changed;
 }

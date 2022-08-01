@@ -1,9 +1,11 @@
 ﻿using AssettoServer.Commands;
+using AssettoServer.Commands.Modules;
 using AssettoServer.Network.Tcp;
 using Qmmands;
 
 namespace RaceChallengePlugin;
 
+[RequireConnectedPlayer]
 public class RaceCommandModule : ACModuleBase
 {
     private readonly RaceChallengePlugin _plugin;
@@ -15,12 +17,12 @@ public class RaceCommandModule : ACModuleBase
 
     [Command("race")]
     public void Race(ACTcpClient player)
-        => _plugin.GetRace(Context.Client.EntryCar).ChallengeCar(player.EntryCar);
+        => _plugin.GetRace(Context.Client!.EntryCar).ChallengeCar(player.EntryCar);
 
     [Command("accept")]
     public async ValueTask AcceptRaceAsync()
     {
-        var currentRace = _plugin.GetRace(Context.Client.EntryCar).CurrentRace;
+        var currentRace = _plugin.GetRace(Context.Client!.EntryCar).CurrentRace;
         if (currentRace == null)
             Reply("You do not have a pending race request.");
         else if (currentRace.HasStarted)

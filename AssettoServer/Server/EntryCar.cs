@@ -1,6 +1,7 @@
 ﻿using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Incoming;
@@ -38,6 +39,7 @@ namespace AssettoServer.Server
         public int SpectatorMode { get; internal set; }
         public int Ballast { get; internal set; }
         public int Restrictor { get; internal set; }
+        public List<ulong> AllowedGuids { get; internal set; } = new();
         
         public float NetworkDistanceSquared { get; internal set; }
         public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }

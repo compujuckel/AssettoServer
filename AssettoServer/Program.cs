@@ -46,6 +46,15 @@ internal static class Program
         if (options == null) return;
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
+        
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
+            .WriteTo.Async(a => a.Console())
+            .WriteTo.File($"logs/{logPrefix}-.txt",
+                rollingInterval: RollingInterval.Day)
+            .CreateLogger();
 
         var config = new ACServerConfiguration(options.Preset, options.ServerCfgPath, options.EntryListPath);
         
@@ -73,17 +82,6 @@ internal static class Program
                     filtrationLabels: new [] { "MachineName", "Preset" },
                     textFormatter: new LokiJsonTextFormatter(),
                     outputTemplate: "[{Level:u3}] {Message:lj}{NewLine}{Exception}")
-                .WriteTo.Async(a => a.Console())
-                .WriteTo.File($"logs/{logPrefix}-.txt",
-                    rollingInterval: RollingInterval.Day)
-                .CreateLogger();
-        }
-        else
-        {
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
                 .WriteTo.Async(a => a.Console())
                 .WriteTo.File($"logs/{logPrefix}-.txt",
                     rollingInterval: RollingInterval.Day)

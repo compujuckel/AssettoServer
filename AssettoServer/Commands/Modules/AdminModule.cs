@@ -44,7 +44,7 @@ public class AdminModule : ACModuleBase
     [Command("kick", "kick_id")]
     public Task KickAsync(ACTcpClient player, [Remainder] string? reason = null)
     {
-        if (player.SessionId == Context.Client.SessionId)
+        if (player.SessionId == Context.Client?.SessionId)
             Reply("You cannot kick yourself.");
         else if (player.IsAdministrator)
             Reply("You cannot kick an administrator");
@@ -60,7 +60,7 @@ public class AdminModule : ACModuleBase
     [Command("ban", "ban_id")]
     public Task BanAsync(ACTcpClient player, [Remainder] string? reason = null)
     {
-        if (player.SessionId == Context.Client.SessionId)
+        if (player.SessionId == Context.Client?.SessionId)
             Reply("You cannot ban yourself.");
         else if (player.IsAdministrator)
             Reply("You cannot ban an administrator.");
@@ -79,7 +79,7 @@ public class AdminModule : ACModuleBase
         _sessionManager.SendCurrentSession(player);
         player.SendPacket(new ChatMessage { SessionId = 255, Message = "You have been teleported to the pits." });
 
-        if (player.SessionId != Context.Client.SessionId)
+        if (player.SessionId != Context.Client?.SessionId)
             Reply($"{player.Name} has been teleported to the pits.");
     }
 
@@ -113,10 +113,10 @@ public class AdminModule : ACModuleBase
     [Command("cspweather")]
     public void CspWeather()
     {
-        Context.Client.SendPacket(new ChatMessage { SessionId = 255, Message = "Available weathers:" });
+        Reply("Available weathers:");
         foreach (WeatherFxType weather in Enum.GetValues<WeatherFxType>())
         {
-            Context.Client.SendPacket(new ChatMessage { SessionId = 255, Message = $" - {weather}" });
+            Reply($" - {weather}");
         }
     }
 
@@ -150,10 +150,10 @@ public class AdminModule : ACModuleBase
         _weatherManager.SendWeather();
     }
 
-    [Command("distance")]
+    [Command("distance"), RequireConnectedPlayer]
     public void GetDistance([Remainder] ACTcpClient player)
     {
-        Reply(Vector3.Distance(Context.Client.EntryCar.Status.Position, player.EntryCar.Status.Position).ToString(CultureInfo.InvariantCulture));
+        Reply(Vector3.Distance(Context.Client!.EntryCar.Status.Position, player.EntryCar.Status.Position).ToString(CultureInfo.InvariantCulture));
     }
 
     [Command("forcelights")]
@@ -204,5 +204,11 @@ public class AdminModule : ACModuleBase
     {
         await _whitelist.AddAsync(guid);
         Reply($"SteamID {guid} was added to the whitelist");
+    }
+    
+    [Command("say")]
+    public void Say([Remainder] string message)
+    {
+        Broadcast("CONSOLE: " + message);
     }
 }

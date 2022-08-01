@@ -30,6 +30,7 @@ public class GeoParamsManager
                 Log.Information("Server invite link: {ServerInviteLink}", $"https://acstuff.ru/s/q:race/online/join?ip={GeoParams.Ip}&httpPort={_configuration.Server.HttpPort}");
             }
         }
+        catch (TaskCanceledException) { }
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to get IP geolocation parameters");

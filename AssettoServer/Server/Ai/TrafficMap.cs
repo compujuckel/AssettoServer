@@ -17,7 +17,7 @@ namespace AssettoServer.Server.Ai
 
         private readonly ILogger _logger;
 
-        public TrafficMap(Dictionary<string, TrafficSpline> splines, float laneWidth, TrafficConfiguration? configuration = null, ILogger? logger = null)
+        public TrafficMap(Dictionary<string, TrafficSpline> splines, float laneWidth, bool twoWayTraffic = false, TrafficConfiguration? configuration = null, ILogger? logger = null)
         {
             _logger = logger ?? Log.Logger;
             Splines = splines;
@@ -39,7 +39,7 @@ namespace AssettoServer.Server.Ai
 
             KdTree = new KDTree<TrafficSplinePoint>(treeData, treeNodes);
             
-            AdjacentLaneDetector.DetectAdjacentLanes(this, laneWidth);
+            AdjacentLaneDetector.DetectAdjacentLanes(this, laneWidth, twoWayTraffic);
             if (configuration != null)
             {
                 ApplyConfiguration(configuration);
@@ -65,16 +65,15 @@ namespace AssettoServer.Server.Ai
             return Splines[splineName].Points[id];
         }
 
-        public (TrafficSplinePoint point, float distanceSquared) WorldToSpline(Vector3 position)
+        public (TrafficSplinePoint? Point, float DistanceSquared) WorldToSpline(Vector3 position)
         {
             var nearest = KdTree.NearestNeighbors(position, 1);
             if (nearest.Length == 0)
             {
-                throw new ArgumentException($"No nearest point found for input vector {position}");
+                return (null, float.PositiveInfinity);
             }
             
             float dist = Vector3.DistanceSquared(position, nearest[0].Item2.Position);
-
             return (nearest[0].Item2, dist);
         }
 

@@ -22,13 +22,15 @@ public class WeatherManager : BackgroundService
     private readonly ITrackParamsProvider _trackParamsProvider;
     private readonly SessionManager _timeSource;
     private readonly RainHelper _rainHelper;
+    private readonly CSPServerExtraOptions _cspServerExtraOptions;
 
     public WeatherManager(IWeatherImplementation weatherImplementation, 
         IWeatherTypeProvider weatherTypeProvider, 
         ITrackParamsProvider trackParamsProvider, 
         ACServerConfiguration configuration, 
         SessionManager timeSource, 
-        RainHelper rainHelper)
+        RainHelper rainHelper,
+        CSPServerExtraOptions cspServerExtraOptions)
     {
         _weatherImplementation = weatherImplementation;
         _weatherTypeProvider = weatherTypeProvider;
@@ -36,6 +38,7 @@ public class WeatherManager : BackgroundService
         _configuration = configuration;
         _timeSource = timeSource;
         _rainHelper = rainHelper;
+        _cspServerExtraOptions = cspServerExtraOptions;
     }
 
     public TrackParams.TrackParams? TrackParams { get; private set; }
@@ -126,6 +129,11 @@ public class WeatherManager : BackgroundService
             {
                 throw new ConfigurationException($"Invalid time zone {TrackParams.Timezone} for track {_configuration.Server.Track}. Please enter a valid time zone for your track in cfg/data_track_params.ini.");
             }
+        }
+
+        if (_configuration.Extra.ForceServerTrackParams && TrackParams != null)
+        {
+            _cspServerExtraOptions.ExtraOptions += $"\r\n[WEATHER_FX]\r\nTIMEZONE_ID = {TrackParams.Timezone}\r\nLATITUDE = {TrackParams.Latitude}\r\nLONGITUDE = {TrackParams.Longitude}\r\n";
         }
         
         CurrentDateTime = SystemClock.Instance.InZone(timeZone).GetCurrentDate().AtStartOfDayInZone(timeZone).PlusSeconds((long)WeatherUtils.SecondsFromSunAngle(_configuration.Server.SunAngle));

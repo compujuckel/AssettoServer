@@ -129,7 +129,7 @@ public class Discord
     private DiscordMessage PrepareAuditMessage(
         string title,
         string serverName,
-        string? clientGuid,
+        ulong clientGuid,
         string? clientName,
         string? reason,
         Color color,

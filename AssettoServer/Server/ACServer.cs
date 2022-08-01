@@ -77,7 +77,7 @@ namespace AssettoServer.Server
             _kunosLobbyRegistration = kunosLobbyRegistration;
             _applicationLifetime = applicationLifetime;
 
-            blacklistService.Blacklisted += OnBlacklisted;
+            blacklistService.Changed += OnChanged;
 
             cspFeatureManager.Add(new CSPFeature { Name = "SPECTATING_AWARE" });
             cspFeatureManager.Add(new CSPFeature { Name = "LOWER_CLIENTS_SENDING_RATE" });
@@ -131,23 +131,28 @@ namespace AssettoServer.Server
             await _kunosLobbyRegistration.StartAsync(stoppingToken);
 
             _ = _applicationLifetime.ApplicationStopping.Register(OnApplicationStopping);
-            _ = Task.Factory.StartNew(() => UpdateAsync(stoppingToken), TaskCreationOptions.LongRunning);
+            var mainThread = new Thread(() => MainLoop(stoppingToken))
+            {
+                Name = "MainLoop",
+                Priority = ThreadPriority.AboveNormal
+            };
+            mainThread.Start();
         }
 
-        private void OnBlacklisted(IBlacklistService sender, BlacklistedEventArgs args)
+        private void OnChanged(IBlacklistService sender, EventArgs args)
         {
-            string guidStr = args.Guid.ToString();
-            
-            foreach (var client in _entryCarManager.ConnectedCars.Values.Select(c => c.Client))
+            _ = Task.Run(async () =>
             {
-                if (client != null && client.Guid != null && client.Guid == guidStr)
+                foreach (var client in _entryCarManager.ConnectedCars.Values.Select(c => c.Client))
                 {
-                    client.Logger.Information("{ClientName} was banned after reloading blacklist", client.Name);
-                    client.SendPacket(new KickCar {SessionId = client.SessionId, Reason = KickReason.VoteBlacklisted});
-                    
-                    _ = client.DisconnectAsync();
+                    if (client != null && await sender.IsBlacklistedAsync(client.Guid))
+                    {
+                        client.Logger.Information("{ClientName} was banned after reloading blacklist", client.Name);
+                        client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = KickReason.VoteBlacklisted });
+                        _ = client.DisconnectAsync();
+                    }
                 }
-            }
+            });
         }
 
         public LapCompletedOutgoing CreateLapCompletedPacket(byte sessionId, uint lapTime, int cuts)
@@ -188,7 +193,7 @@ namespace AssettoServer.Server
             }
         }
         
-        private async Task UpdateAsync(CancellationToken stoppingToken)
+        private void MainLoop(CancellationToken stoppingToken)
         {
             int failedUpdateLoops = 0;
             int sleepMs = 1000 / _configuration.Server.RefreshRateHz;
@@ -201,13 +206,13 @@ namespace AssettoServer.Server
 
             Log.Information("Starting update loop with an update rate of {RefreshRateHz}hz", _configuration.Server.RefreshRateHz);
 
-            var updateLoopTimer = new TimerOptions
+            var updateLoopTimer = _metrics.Provider.Timer.Instance(new TimerOptions
             {
                 Name = "ACServer.UpdateAsync",
                 MeasurementUnit = Unit.Calls,
                 DurationUnit = TimeUnit.Milliseconds,
                 RateUnit = TimeUnit.Milliseconds
-            };
+            });
 
             var updateLoopLateCounter = new CounterOptions
             {
@@ -215,12 +220,12 @@ namespace AssettoServer.Server
                 MeasurementUnit = Unit.None
             };
             _metrics.Measure.Counter.Increment(updateLoopLateCounter, 0);
-            
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    using (_metrics.Measure.Timer.Time(updateLoopTimer))
+                    using (updateLoopTimer.NewContext())
                     {
                         Update?.Invoke(this, EventArgs.Empty);
 
@@ -237,7 +242,7 @@ namespace AssettoServer.Server
                                 if (_sessionManager.ServerTimeMilliseconds - fromCar.LastPongTime > 15000)
                                 {
                                     fromClient.Logger.Information("{ClientName} has not sent a ping response for over 15 seconds", fromClient.Name);
-                                    _ = Task.Run(fromClient.DisconnectAsync, stoppingToken);
+                                    _ = fromClient.DisconnectAsync();
                                 }
                             }
 
@@ -306,7 +311,7 @@ namespace AssettoServer.Server
                             tickDelta = nextTick - currentTick;
 
                             if (tickDelta > 0)
-                                await Task.Delay((int)tickDelta, stoppingToken);
+                                Thread.Sleep((int)tickDelta);
                             else if (tickDelta < -sleepMs)
                             {
                                 if (tickDelta < -1000)
@@ -326,7 +331,7 @@ namespace AssettoServer.Server
                     else
                     {
                         nextTick = _sessionManager.ServerTimeMilliseconds;
-                        await Task.Delay(500, stoppingToken);
+                        Thread.Sleep(500);
                     }
 
                     failedUpdateLoops = 0;

@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -18,8 +17,8 @@ using AssettoServer.Network.Udp;
 using AssettoServer.Server;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
-using AssettoServer.Server.Whitelist;
 using NanoSockets;
 using Serilog;
 using Serilog.Core;
@@ -38,7 +37,7 @@ namespace AssettoServer.Network.Tcp
         public string? Team { get; private set; }
         public string? NationCode { get; private set; }
         public bool IsAdministrator { get; internal set; }
-        public string? Guid { get; internal set; }
+        public ulong Guid { get; internal set; }
         public EntryCar EntryCar { get; internal set; } = null!;
         public bool IsDisconnectRequested => _disconnectRequested == 1;
         public bool HasSentFirstUpdate { get; private set; }
@@ -46,7 +45,7 @@ namespace AssettoServer.Network.Tcp
         public TcpClient TcpClient { get; }
 
         private NetworkStream TcpStream { get; }
-        [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode), nameof(Guid))]
+        [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode))]
         public bool HasStartedHandshake { get; private set; }
         public bool HasPassedChecksum { get; private set; }
 
@@ -61,18 +60,17 @@ namespace AssettoServer.Network.Tcp
         private Task SendLoopTask { get; set; } = null!;
         private long LastChatTime { get; set; }
         private int _disconnectRequested = 0;
-
-        private readonly Steam _steam;
+        
         private readonly WeatherManager _weatherManager;
         private readonly SessionManager _sessionManager;
         private readonly EntryCarManager _entryCarManager;
         private readonly ACServerConfiguration _configuration;
         private readonly IBlacklistService _blacklist;
-        private readonly IWhitelistService _whitelist;
         private readonly ChecksumManager _checksumManager;
         private readonly CSPFeatureManager _cspFeatureManager;
         private readonly CSPServerExtraOptions _cspServerExtraOptions;
         private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
+        private readonly OpenSlotFilterChain _openSlotFilter;
 
         /// <summary>
         /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
@@ -124,20 +122,10 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        public ACTcpClient(
-            ACServer server, ACUdpServer udpServer, Steam steam, TcpClient tcpClient,
-            SessionManager sessionManager, WeatherManager weatherManager,
-            ACServerConfiguration configuration, EntryCarManager entryCarManager,
-            IBlacklistService blacklist, ChecksumManager checksumManager,
-            CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions,
-            CSPClientMessageTypeManager cspClientMessageTypeManager, IWhitelistService whitelist,
-            UdpPluginServer udpPluginServer
-            )
+        public ACTcpClient(ACServer server, ACUdpServer udpServer, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions, CSPClientMessageTypeManager cspClientMessageTypeManager, OpenSlotFilterChain openSlotFilter)
         {
             Server = server;
             UdpServer = udpServer;
-            _udpPluginServer = udpPluginServer;
-            _steam = steam;
             Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.With(new ACTcpClientLogEventEnricher(this))
@@ -156,7 +144,7 @@ namespace AssettoServer.Network.Tcp
             _cspFeatureManager = cspFeatureManager;
             _cspServerExtraOptions = cspServerExtraOptions;
             _cspClientMessageTypeManager = cspClientMessageTypeManager;
-            _whitelist = whitelist;
+            _openSlotFilter = openSlotFilter;
             tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
             tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
             tcpClient.LingerState = new LingerOption(true, 2);
@@ -183,7 +171,7 @@ namespace AssettoServer.Network.Tcp
                 if (!OutgoingPacketChannel.Writer.TryWrite(packet) && !(packet is SunAngleUpdate) && !IsDisconnectRequested)
                 {
                     Logger.Warning("Cannot write packet to TCP packet queue for {ClientName}, disconnecting", Name);
-                    _ = Task.Run(DisconnectAsync);
+                    _ = DisconnectAsync();
                 }
             }
             catch (Exception ex)
@@ -275,6 +263,9 @@ namespace AssettoServer.Network.Tcp
                             handshakeRequest.Name = handshakeRequest.Name.Substring(0, 25);
 
                         Name = handshakeRequest.Name.Trim();
+                        Team = handshakeRequest.Team;
+                        NationCode = handshakeRequest.Nation;
+                        Guid = handshakeRequest.Guid;
 
                         Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, TcpClient.Client.RemoteEndPoint?.ToString(), handshakeRequest.RequestedCar);
 
@@ -289,24 +280,19 @@ namespace AssettoServer.Network.Tcp
                             cspFeatures = new List<string>();
                         }
 
+                        AuthFailedResponse? response;
                         if (id != ACServerProtocol.RequestNewConnection || handshakeRequest.ClientVersion != 202)
                             SendPacket(new UnsupportedProtocolResponse());
-                        else if (await _blacklist.IsBlacklistedAsync(ulong.Parse(handshakeRequest.Guid)))
+                        else if (await _blacklist.IsBlacklistedAsync(handshakeRequest.Guid))
                             SendPacket(new BlacklistedResponse());
-                        else if (!await _whitelist.IsWhitelistedAsync(ulong.Parse(handshakeRequest.Guid)))
-                            SendPacket(new AuthFailedResponse("You are not whitelisted on this server"));
                         else if (_configuration.Server.Password?.Length > 0 && handshakeRequest.Password != _configuration.Server.Password && handshakeRequest.Password != _configuration.Server.AdminPassword)
                             SendPacket(new WrongPasswordResponse());
                         else if (!_sessionManager.CurrentSession.Configuration.IsOpen)
                             SendPacket(new SessionClosedResponse());
                         else if (!_cspFeatureManager.ValidateHandshake(cspFeatures))
                             SendPacket(new AuthFailedResponse("Missing CSP features. Please update CSP and/or Content Manager."));
-                        else if (_configuration.Extra.UseSteamAuth && !await _steam.ValidateSessionTicketAsync(handshakeRequest.SessionTicket, handshakeRequest.Guid, this))
-                            SendPacket(new AuthFailedResponse("Steam authentication failed."));
-                        else if (string.IsNullOrEmpty(handshakeRequest.Guid) || !(handshakeRequest.Guid.Length >= 6))
-                            SendPacket(new AuthFailedResponse("Invalid Guid."));
-                        else if (!_entryCarManager.ValidateHandshake(this, handshakeRequest, out var response))
-                            SendPacket(response);
+                        else if ((response = await _openSlotFilter.ShouldAcceptConnectionAsync(this, handshakeRequest)).HasValue)
+                            SendPacket(response.Value);
                         else if (!await _entryCarManager.TrySecureSlotAsync(this, handshakeRequest))
                             SendPacket(new NoSlotsAvailableResponse());
                         else
@@ -315,9 +301,6 @@ namespace AssettoServer.Network.Tcp
                                 throw new InvalidOperationException("No EntryCar set even though handshake started");
 
                             EntryCar.SetActive();
-                            Team = handshakeRequest.Team;
-                            NationCode = handshakeRequest.Nation;
-                            Guid = handshakeRequest.Guid;
                             SupportsCSPCustomUpdate = _configuration.Extra.EnableCustomUpdate && cspFeatures.Contains("CUSTOM_UPDATE");
 
                             // Gracefully despawn AI cars
@@ -391,6 +374,9 @@ namespace AssettoServer.Network.Tcp
                     {
                         switch (id)
                         {
+                            case ACServerProtocol.CleanExitDrive:
+                                Logger.Debug("Received clean exit from {ClientName} ({SessionId})", Name, SessionId);
+                                return;
                             case ACServerProtocol.P2PUpdate:
                                 OnP2PUpdate(reader);
                                 break;
@@ -498,6 +484,7 @@ namespace AssettoServer.Network.Tcp
                 clientMessage.Type = packetType;
                 clientMessage.SessionId = SessionId;
                 
+                Log.Verbose("Client message received from {Name} ({SessionId}), type {Type}, data {Data}", Name, SessionId, packetType, clientMessage.Data);
                 _entryCarManager.BroadcastPacket(clientMessage);
             }
         }
@@ -509,7 +496,8 @@ namespace AssettoServer.Network.Tcp
             if (reader.Buffer.Length == fullChecksum.Length + 1)
             {
                 reader.ReadBytes(fullChecksum);
-                passedChecksum = !_checksumManager.CarChecksums.TryGetValue(EntryCar.Model, out byte[]? modelChecksum) || fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(modelChecksum);
+                passedChecksum = !_checksumManager.CarChecksums.TryGetValue(EntryCar.Model, out List<byte[]>? modelChecksums) || modelChecksums.Count == 0
+                                 || modelChecksums.Any(c => fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(c));
 
                 KeyValuePair<string, byte[]>[] allChecksums = _checksumManager.TrackChecksums.ToArray();
                 for (int i = 0; i < allChecksums.Length; i++)
@@ -818,6 +806,8 @@ namespace AssettoServer.Network.Tcp
             {
                 if (Interlocked.CompareExchange(ref _disconnectRequested, 1, 0) == 1)
                     return;
+
+                await Task.Yield();
 
                 if (!string.IsNullOrEmpty(Name))
                 {

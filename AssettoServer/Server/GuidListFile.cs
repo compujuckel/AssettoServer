@@ -60,7 +60,9 @@ public class GuidListFile
                 }
             }
             else
-                File.Create(_filename);
+            {
+                await using var _ = File.Create(_filename);
+            }
 
             Log.Debug("Loaded {Path} with {Count} entries", _filename, _guidList.Count);
         }

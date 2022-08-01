@@ -22,10 +22,9 @@ public class ACServerConfiguration
     public CMContentConfiguration? ContentConfiguration { get; private set; }
     public string ServerVersion { get; }
     public string? CSPExtraOptions { get; }
+    public string BaseFolder { get; }
 
     public event EventHandler<ACServerConfiguration, EventArgs>? Reload;
-
-    private readonly string _configBaseFolder;
 
     /*
      * Search paths are like this:
@@ -43,20 +42,20 @@ public class ACServerConfiguration
      */
     public ACServerConfiguration(string preset, string serverCfgPath, string entryListPath)
     {
-        _configBaseFolder = string.IsNullOrEmpty(preset) ? "cfg" : Path.Join("presets", preset);
+        BaseFolder = string.IsNullOrEmpty(preset) ? "cfg" : Path.Join("presets", preset);
 
         if (string.IsNullOrEmpty(entryListPath))
         {
-            entryListPath = Path.Join(_configBaseFolder, "entry_list.ini");
+            entryListPath = Path.Join(BaseFolder, "entry_list.ini");
         }
 
         if (string.IsNullOrEmpty(serverCfgPath))
         {
-            serverCfgPath = Path.Join(_configBaseFolder, "server_cfg.ini");
+            serverCfgPath = Path.Join(BaseFolder, "server_cfg.ini");
         }
         else
         {
-            _configBaseFolder = Path.GetDirectoryName(serverCfgPath)!;
+            BaseFolder = Path.GetDirectoryName(serverCfgPath)!;
         }
 
         Server = ServerConfiguration.FromFile(serverCfgPath);
@@ -65,7 +64,7 @@ public class ACServerConfiguration
 
         FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : Server.Track + "-" + Server.TrackConfig;
 
-        string welcomeMessagePath = string.IsNullOrEmpty(preset) ? Server.WelcomeMessagePath : Path.Join(_configBaseFolder, Server.WelcomeMessagePath);
+        string welcomeMessagePath = string.IsNullOrEmpty(preset) ? Server.WelcomeMessagePath : Path.Join(BaseFolder, Server.WelcomeMessagePath);
         if (File.Exists(welcomeMessagePath))
         {
             WelcomeMessage = File.ReadAllText(welcomeMessagePath);
@@ -75,7 +74,7 @@ public class ACServerConfiguration
             Log.Warning("Welcome message not found at {Path}", Path.GetFullPath(welcomeMessagePath));
         }
 
-        string cspExtraOptionsPath = Path.Join(_configBaseFolder, "csp_extra_options.ini"); 
+        string cspExtraOptionsPath = Path.Join(BaseFolder, "csp_extra_options.ini"); 
         if (File.Exists(cspExtraOptionsPath))
         {
             CSPExtraOptions = File.ReadAllText(cspExtraOptionsPath);
@@ -109,18 +108,15 @@ public class ACServerConfiguration
         LoadExtraConfig();
     }
 
-    public void LoadExtraConfig() {
-
-        string extraCfgPath = Path.Join(_configBaseFolder, "extra_cfg.yml");
-        if (File.Exists(extraCfgPath))
+    private void LoadExtraConfig() {
+        string extraCfgPath = Path.Join(BaseFolder, "extra_cfg.yml");
+        if (!File.Exists(extraCfgPath))
         {
-            Extra = ACExtraConfiguration.FromFile(extraCfgPath);
+            var cfg = new ACExtraConfiguration();
+            cfg.ToFile(extraCfgPath);
         }
-        else
-        {
-            Extra = new ACExtraConfiguration();
-            Extra.ToFile(extraCfgPath);
-        }
+        
+        Extra = ACExtraConfiguration.FromFile(extraCfgPath);
 
         if (Regex.IsMatch(Server.Name, @"x:\w+$"))
         {
@@ -153,7 +149,7 @@ public class ACServerConfiguration
 
         if (Extra.EnableServerDetails)
         {
-            string cmContentPath = Path.Join(_configBaseFolder, "cm_content/content.json");
+            string cmContentPath = Path.Join(BaseFolder, "cm_content/content.json");
             if (File.Exists(cmContentPath))
             {
                 ContentConfiguration = JsonConvert.DeserializeObject<CMContentConfiguration>(File.ReadAllText(cmContentPath));

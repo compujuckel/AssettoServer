@@ -33,6 +33,8 @@ public class TrafficSplinePoint
     [Ignore] public TrafficSplinePoint? Left { get; set; }
     [Ignore] public TrafficSplinePoint? Right { get; set; }
 
+    [Ignore] public TrafficSplinePoint[] Lanes { get; internal set; } = Array.Empty<TrafficSplinePoint>();
+
     public List<TrafficSplinePoint> GetLanes(bool twoWayTraffic = false)
     {
         var ret = new List<TrafficSplinePoint>();
@@ -43,11 +45,15 @@ public class TrafficSplinePoint
         {
             if (IsSameDirection(point))
             {
+                if (ret.Contains(point)) break;
+                
                 ret.Add(point);
                 point = point.Left;
             }
             else if (twoWayTraffic)
             {
+                if (ret.Contains(point)) break;
+                
                 ret.Add(point);
                 point = point.Right;
             }
@@ -65,11 +71,15 @@ public class TrafficSplinePoint
         {
             if (IsSameDirection(point))
             {
+                if (ret.Contains(point)) break;
+                
                 ret.Add(point);
                 point = point.Right;
             }
             else if (twoWayTraffic)
             {
+                if (ret.Contains(point)) break;
+                
                 ret.Add(point);
                 point = point.Left;
             }
@@ -87,10 +97,9 @@ public class TrafficSplinePoint
         return ret;
     }
 
-    public TrafficSplinePoint RandomLane(bool twoWayTraffic = false)
+    public TrafficSplinePoint RandomLane()
     {
-        var lanes = GetLanes(twoWayTraffic);
-        return lanes[Random.Shared.Next(lanes.Count)];
+        return Lanes[Random.Shared.Next(Lanes.Length)];
     }
 
     public float GetCamber(float lerp = 0)

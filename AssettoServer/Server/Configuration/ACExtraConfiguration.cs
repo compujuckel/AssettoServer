@@ -59,11 +59,18 @@ public class ACExtraConfiguration
     public int PlayerLoadingTimeoutMinutes { get; set; } = 10;
     [YamlMember(Description = "Send logs to a Loki instance, e.g. Grafana Cloud", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public LokiSettings? LokiSettings { get; init; }
+    [YamlMember(Description = "Port to control the server using Source RCON protocol. 0 to disable.")]
+    public ushort RconPort { get; init; } = 0;
+    [YamlMember(Description = "Dump contents of welcome message and CSP extra options to a file. For debug purposes only.")]
+    public bool DebugWelcomeMessage { get; init; } = false;
+    [YamlMember(Description = "Force clients to use track params (coordinates, time zone) specified on the server. CSP 0.1.79+ required")]
+    public bool ForceServerTrackParams = false;
+    [YamlMember(Description = "Allow cars to have multiple data checksums. Instead of a single checksummed data.acd, you can have multiple data*.acd files in the car folder and players can join with any of these files")]
+    public bool EnableAlternativeCarChecksums = false;
     public AiParams AiParams { get; init; } = new AiParams();
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
-
-    public string Path { get; private set; } = null!;
+    [YamlIgnore] public string Path { get; private set; } = null!;
 
     public void ToFile(string path)
     {
@@ -76,7 +83,9 @@ public class ACExtraConfiguration
     {
         using var stream = File.OpenText(path);
 
-        var deserializer = new DeserializerBuilder().Build();
+        var deserializer = new DeserializerBuilder()
+            .IgnoreUnmatchedProperties()
+            .Build();
 
         var yamlParser = new Parser(stream);
         yamlParser.Consume<StreamStart>();
@@ -202,10 +211,12 @@ public class AiParams
     public int IgnoreObstaclesAfterSeconds { get; set; } = 10;
     [YamlMember(Description = "Apply scale to some traffic density related settings. Increasing this DOES NOT magically increase your traffic density, it is dependent on your other settings. Values higher than 1 not recommended.")]
     public float TrafficDensity { get; set; } = 1.0f;
-    [YamlMember(Description = "Dynamic (hourly) traffic density. List must have exactly 24 entries.")]
+    [YamlMember(Description = "Dynamic (hourly) traffic density. List must have exactly 24 entries in the format [0.2, 0.5, 1, 0.7, ...]")]
     public List<float>? HourlyTrafficDensity { get; set; }
     [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless some cars are creating lots of smoke.")]
     public float TyreDiameterMeters { get; set; } = 0.65f;
+    [YamlMember(Description = "Apply some smoothing to AI spline camber")]
+    public bool SmoothCamber { get; init; } = false;
     [YamlMember(Description = "Override some settings for specific car models/skins")]
     public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new();
 

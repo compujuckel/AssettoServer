@@ -26,7 +26,7 @@ namespace AssettoServer.Network.Packets.Outgoing
         public readonly void ToWriter(ref PacketWriter writer)
         {
             writer.Write((byte)ACServerProtocol.Extended);
-            writer.Write((byte)CSPMessageTypeTcp.WeatherUpdate);
+            writer.Write((byte)CSPMessageTypeUdp.WeatherUpdate);
             writer.Write(UnixTimestamp);
             writer.Write(WeatherType);
             writer.Write(UpcomingWeatherType);

@@ -10,27 +10,15 @@ EnablePlugins:
 ```
 
 Example configuration (add to bottom of `extra_cfg.yml`)  
-For a list of weather types that can be used with `BlacklistedWeathers` see [WeatherFX Types](https://github.com/compujuckel/AssettoServer/wiki/WeatherFX-Types)
+For a list of weather types that can be used with `WeatherWeights` see [WeatherFX Types](https://github.com/compujuckel/AssettoServer/wiki/WeatherFX-Types)
 ```yaml
 ---
 !RandomWeatherConfiguration
-# List of weathers that won't be chosen
-BlacklistedWeathers:
-- LightThunderstorm
-- Thunderstorm
-- HeavyThunderstorm
-- LightDrizzle
-- Drizzle
-- HeavyDrizzle
-- LightRain
-- Rain
-- HeavyRain
-- LightSleet
-- Sleet
-- HeavySleet
-- Hail
-- Tornado
-- Hurricane
+# Weights for random weather selection, setting a weight to 0 blacklists a weather, default weight is 1."
+WeatherWeights:
+  LightThunderstorm: 2.0
+  Thunderstorm: 0.0
+  Hurricate: 0.5
 # Minimum duration until next weather change
 MinWeatherDurationMinutes: 15
 # Maximum duration until next weather change

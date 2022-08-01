@@ -1,4 +1,7 @@
-﻿using AssettoServer.Server.Plugin;
+﻿using System.Collections.Specialized;
+using System.Reflection.Metadata.Ecma335;
+using System.Security.Cryptography.X509Certificates;
+using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -7,10 +10,16 @@ namespace RandomWeatherPlugin;
 
 public class RandomWeather : BackgroundService, IAssettoServerAutostart
 {
+    private struct WeatherWeight
+    {
+        internal WeatherFxType Weather { get; init; }
+        internal float PrefixSum { get; init; }
+    }
+
     private readonly WeatherManager _weatherManager;
     private readonly IWeatherTypeProvider _weatherTypeProvider;
     private readonly RandomWeatherConfiguration _configuration;
-    private readonly List<WeatherFxType> _availableWeathers;
+    private readonly List<WeatherWeight> _weathers = new();
 
     public RandomWeather(RandomWeatherConfiguration configuration, WeatherManager weatherManager, IWeatherTypeProvider weatherTypeProvider)
     {
@@ -18,12 +27,61 @@ public class RandomWeather : BackgroundService, IAssettoServerAutostart
         _weatherManager = weatherManager;
         _weatherTypeProvider = weatherTypeProvider;
 
-        if (!_configuration.BlacklistedWeathers.Contains(WeatherFxType.None))
+        foreach (WeatherFxType weather in Enum.GetValues<WeatherFxType>())
         {
-            _configuration.BlacklistedWeathers.Add(WeatherFxType.None);
+            if (!_configuration.WeatherWeights.ContainsKey(weather))
+            {
+                _configuration.WeatherWeights.Add(weather, 1.0f);
+            }
         }
 
-        _availableWeathers = Enum.GetValues<WeatherFxType>().Except(_configuration.BlacklistedWeathers).ToList();
+        float weightSum = _configuration.WeatherWeights
+            .Select(w => w.Value)
+            .Sum();
+
+        float prefixSum = 0.0f;
+        foreach (var (weather, weight) in _configuration.WeatherWeights)
+        {
+            prefixSum += weight / weightSum;
+            _weathers.Add(new WeatherWeight
+            {
+                Weather = weather,
+                PrefixSum = prefixSum,
+            });
+        }
+
+        _weathers.Sort((a, b) =>
+        {
+            if (a.PrefixSum < b.PrefixSum)
+                return -1;
+            if (a.PrefixSum > b.PrefixSum)
+                return 1;
+            return 0;
+        });
+    }
+
+    private WeatherFxType PickRandom()
+    {
+        float rng = Random.Shared.NextSingle();
+        WeatherFxType weather = WeatherFxType.None;
+
+        int begin = 0, end = _weathers.Count;
+        while (begin <= end)
+        {
+            int i = (begin + end) / 2;
+
+            if (_weathers[i].PrefixSum <= rng)
+            {
+                begin = i + 1;
+            }
+            else
+            {
+                end = i - 1;
+                weather = _weathers[i].Weather;
+            }
+        }
+
+        return weather;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -37,13 +95,14 @@ public class RandomWeather : BackgroundService, IAssettoServerAutostart
             {
                 weatherDuration = Random.Shared.Next(_configuration.MinWeatherDurationMilliseconds, _configuration.MaxWeatherDurationMilliseconds);
                 transitionDuration = Random.Shared.Next(_configuration.MinTransitionDurationMilliseconds, _configuration.MaxTransitionDurationMilliseconds);
-                var nextWeatherType = _weatherTypeProvider.GetWeatherType(_availableWeathers[Random.Shared.Next(_availableWeathers.Count)]);
+
+                WeatherType nextWeatherType = _weatherTypeProvider.GetWeatherType(PickRandom());
 
                 var last = _weatherManager.CurrentWeather;
 
-                Log.Information("Random weather transitioning to {WeatherType}, transition duration {TransitionDuration} seconds, weather duration {WeatherDuration} minutes", 
-                    nextWeatherType.WeatherFxType, 
-                    Math.Round(transitionDuration / 1000.0f), 
+                Log.Information("Random weather transitioning to {WeatherType}, transition duration {TransitionDuration} seconds, weather duration {WeatherDuration} minutes",
+                    nextWeatherType.WeatherFxType,
+                    Math.Round(transitionDuration / 1000.0f),
                     Math.Round(weatherDuration / 60_000.0f, 1));
                 
                 _weatherManager.SetWeather(new WeatherData(last.Type, nextWeatherType)

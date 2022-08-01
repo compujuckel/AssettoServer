@@ -122,10 +122,11 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        public ACTcpClient(ACServer server, ACUdpServer udpServer, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions, CSPClientMessageTypeManager cspClientMessageTypeManager, OpenSlotFilterChain openSlotFilter)
+        public ACTcpClient(ACServer server, ACUdpServer udpServer, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions, CSPClientMessageTypeManager cspClientMessageTypeManager, OpenSlotFilterChain openSlotFilter, UdpPluginServer udpPluginServer)
         {
             Server = server;
             UdpServer = udpServer;
+            _udpPluginServer = udpPluginServer;
             Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.With(new ACTcpClientLogEventEnricher(this))

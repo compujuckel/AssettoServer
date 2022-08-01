@@ -265,7 +265,7 @@ namespace AssettoServer.Network.Udp
                                 Skin = car.Skin,
                                 DriverName = car.Client?.Name,
                                 DriverTeam = car.Client?.Team,
-                                DriverGuid = car.Client?.Guid,
+                                DriverGuid = car.Client?.Guid.ToString(),
                             });
                         }
                         else
@@ -423,7 +423,7 @@ namespace AssettoServer.Network.Udp
             SendPacket(new CarDisconnected
             {
                 DriverName = client.Name,
-                DriverGuid = client.Guid,
+                DriverGuid = client.Guid.ToString(),
                 SessionId = client.SessionId,
                 CarModel = client.EntryCar.Model,
                 CarSkin = client.EntryCar.Skin,
@@ -436,7 +436,7 @@ namespace AssettoServer.Network.Udp
             SendPacket(new CarConnected()
             {
                 DriverName = client.Name,
-                DriverGuid = client.Guid,
+                DriverGuid = client.Guid.ToString(),
                 SessionId = client.SessionId,
                 CarModel = client.EntryCar.Model,
                 CarSkin = client.EntryCar.Skin,

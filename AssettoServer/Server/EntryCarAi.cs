@@ -113,7 +113,7 @@ public partial class EntryCar
                         && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < _configuration.Extra.AiParams.MinStateDistanceSquared
                         && (_configuration.Extra.AiParams.TwoWayTraffic || Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0))
                     {
-                        aiState.Initialized = false;
+                        aiState.Despawn();
                         Logger.Verbose("Removed close state from AI {SessionId}", SessionId);
                     }
                 }

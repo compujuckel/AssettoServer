@@ -29,8 +29,6 @@ namespace AssettoServer.Server.Ai
         private readonly List<AiDistance> _distances = new();
         private readonly TrafficMapView _mapView = new(false);
 
-        public Dictionary<TrafficSplinePoint, AiState> AiStatesBySplinePoint { get; } = new();
-
         private readonly GaugeOptions _aiStateCountMetric = new GaugeOptions
         {
             Name = "AiStateCount",
@@ -105,30 +103,7 @@ namespace AssettoServer.Server.Ai
                 try
                 {
                     using var context = _obstacleDetectionDurationTimer.NewContext();
-            
-                    AiStatesBySplinePoint.Clear();
-                    var tmp = new List<AiState>();
-                    for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
-                    {
-                        tmp.Clear();
-                        var car = _entryCarManager.EntryCars[i];
-                        if (car.AiControlled)
-                        {
-                            car.GetInitializedStates(tmp);
-                            for (int j = 0; j < tmp.Count; j++)
-                            {
-                                if (!AiStatesBySplinePoint.TryAdd(tmp[j].CurrentSplinePoint, tmp[j]))
-                                {
-                                    var existing = AiStatesBySplinePoint[tmp[j].CurrentSplinePoint];
-                                    if (tmp[j].CurrentSpeed < existing.CurrentSpeed)
-                                    {
-                                        AiStatesBySplinePoint[tmp[j].CurrentSplinePoint] = tmp[j];
-                                    }
-                                }
-                            }
-                        }
-                    }
-
+                    
                     for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
                     {
                         var entryCar = _entryCarManager.EntryCars[i];

@@ -1,7 +1,4 @@
-﻿using System.Collections.Specialized;
-using System.Reflection.Metadata.Ecma335;
-using System.Security.Cryptography.X509Certificates;
-using AssettoServer.Server.Plugin;
+﻿using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
 using Microsoft.Extensions.Hosting;
 using Serilog;

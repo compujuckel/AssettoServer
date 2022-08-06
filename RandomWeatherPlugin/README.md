@@ -14,11 +14,11 @@ For a list of weather types that can be used with `WeatherWeights` see [WeatherF
 ```yaml
 ---
 !RandomWeatherConfiguration
-# Weights for random weather selection, setting a weight to 0 blacklists a weather, default weight is 1."
+# Weights for random weather selection, setting a weight to 0 blacklists a weather, default weight is 1.
 WeatherWeights:
   LightThunderstorm: 2.0
   Thunderstorm: 0.0
-  Hurricate: 0.5
+  Hurricane: 0.5
 # Minimum duration until next weather change
 MinWeatherDurationMinutes: 15
 # Maximum duration until next weather change

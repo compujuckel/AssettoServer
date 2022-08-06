@@ -271,6 +271,7 @@ namespace AssettoServer.Network.Udp
                         ChatMessage message = packetReader.ReadPacket<ChatMessage>();
                         if (message.SessionId < _entryCarManager.EntryCars.Length)
                         {
+                            message.SessionId = 0xFF;
                             _entryCarManager.EntryCars[message.SessionId].Client?.SendPacket(message);
                         }
                         else
@@ -282,7 +283,7 @@ namespace AssettoServer.Network.Udp
                     case UdpPluginProtocol.BroadcastChat:
                     {
                         string message = packetReader.ReadUTF32String();
-                        _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = message });
+                        _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 0xFF, Message = message });
                         break;
                     }
                     case UdpPluginProtocol.GetSessionInfo:

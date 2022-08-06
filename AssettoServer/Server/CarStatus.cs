@@ -6,7 +6,7 @@ namespace AssettoServer.Server
 {
     public class CarStatus
     {
-        public float[] DamageZoneLevel { get; } = new float[5];
+        public float[] DamageZoneLevel { get; internal set; } = new float[5];
         public short P2PCount { get; internal set; }
         public bool P2PActive { get; internal set; }
         public bool MandatoryPit { get; internal set; }

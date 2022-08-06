@@ -559,12 +559,12 @@ namespace AssettoServer.Network.Tcp
         {
             DamageUpdateIncoming damageUpdate = reader.ReadPacket<DamageUpdateIncoming>();
             EntryCar.Status.DamageZoneLevel = damageUpdate.DamageZoneLevel;
-
+            
             _entryCarManager.BroadcastPacket(new DamageUpdate
             {
                 SessionId = SessionId,
                 DamageZoneLevel = damageUpdate.DamageZoneLevel,
-            });
+            }, this);
         }
 
         private void OnTyreCompoundChange(PacketReader reader)

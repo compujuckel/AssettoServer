@@ -17,7 +17,6 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
-using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using NanoSockets;
 using Serilog;
@@ -168,14 +167,7 @@ namespace AssettoServer.Network.Udp
                         int dataLength;
                         while ((dataLength = UDP.Receive(_socket, ref address, buffer, buffer.Length)) > 0)
                         {
-                            var ip = new StringBuilder(UDP.hostNameSize);
-                            if (UDP.GetIP(ref address, ip, ip.Capacity) != Status.OK)
-                            {
-                                Log.Error("UdpPlugin: Failed to determine address ip");
-                                break;
-                            }
-
-                            if (StringUtils.IsEqual(ip, _ip))
+                            if (address.IpEquals(_inAddress))
                                 OnReceived(buffer, dataLength);
                             else
                                 Log.Information($"Ignoring UDP Plugin packet from address {address}");

@@ -66,6 +66,23 @@ namespace NanoSockets {
 			return false;
 		}
 
+		public bool IpEquals(Address other)
+		{
+			return address0 == other.address0 && address1 == other.address1;
+		}
+
+		public bool PortEquals(Address other)
+		{
+			return port == other.port;
+		}
+
+		public string GetIp()
+		{
+			StringBuilder ip = new StringBuilder(64);
+			UDP.GetIP(ref this, ip, 64);
+			return ip.ToString();
+		}
+
 		public override int GetHashCode() {
 			int hash = 17;
 

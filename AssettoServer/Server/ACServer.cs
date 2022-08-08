@@ -33,7 +33,7 @@ namespace AssettoServer.Server
         private readonly ChecksumManager _checksumManager;
         private readonly ACTcpServer _tcpServer;
         private readonly ACUdpServer _udpServer;
-        private readonly UdpPluginServer _udpPluginServerServer;
+        private readonly UdpPluginServer _udpPluginServer;
         private readonly KunosLobbyRegistration _kunosLobbyRegistration;
         private readonly IEnumerable<IAssettoServerAutostart> _autostartServices;
         private readonly IHostApplicationLifetime _applicationLifetime;
@@ -55,7 +55,7 @@ namespace AssettoServer.Server
             ChecksumManager checksumManager,
             ACTcpServer tcpServer,
             ACUdpServer udpServer,
-            UdpPluginServer udpPluginServerServer,
+            UdpPluginServer udpPluginServer,
             CSPFeatureManager cspFeatureManager,
             IEnumerable<IAssettoServerAutostart> autostartServices,
             KunosLobbyRegistration kunosLobbyRegistration,
@@ -72,7 +72,7 @@ namespace AssettoServer.Server
             _checksumManager = checksumManager;
             _tcpServer = tcpServer;
             _udpServer = udpServer;
-            _udpPluginServerServer = udpPluginServerServer;
+            _udpPluginServer = udpPluginServer;
             _autostartServices = autostartServices;
             _kunosLobbyRegistration = kunosLobbyRegistration;
             _applicationLifetime = applicationLifetime;
@@ -121,7 +121,7 @@ namespace AssettoServer.Server
             await _weatherManager.StartAsync(stoppingToken);
             await _tcpServer.StartAsync(stoppingToken);
             await _udpServer.StartAsync(stoppingToken);
-            await _udpPluginServerServer.StartAsync(stoppingToken);
+            await _udpPluginServer.StartAsync(stoppingToken);
 
             foreach (var service in _autostartServices)
             {

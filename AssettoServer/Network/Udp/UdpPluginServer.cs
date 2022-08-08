@@ -41,7 +41,7 @@ namespace AssettoServer.Network.Udp
         private readonly string _ip;
         private Socket _socket;
         private ThreadLocal<byte[]> SendBuffer { get; }
-        private readonly byte RequiredProtocolVersion = 4;
+        private const byte RequiredProtocolVersion = 4;
         private readonly bool _enabled = true;
         private ushort _realtimePosInterval = 1000;
 
@@ -58,7 +58,7 @@ namespace AssettoServer.Network.Udp
             // lets check if we should enable the plugin server
             if (configuration.Server.UdpPluginAddress == null || _configuration.Server.UdpPluginLocalPort == 0)
             {
-                Log.Information("UDP plugin server disabled.");
+                Log.Information("UDP plugin server disabled");
                 _ip = "";
                 SendBuffer = new ThreadLocal<byte[]>();
                 _enabled = false;
@@ -143,11 +143,11 @@ namespace AssettoServer.Network.Udp
 
             SendPacket(new Version{ ProtocolVersion = RequiredProtocolVersion });
             SendSessionInfo(-1, true);
-            _sessionManager.SessionChanged += (SessionManager manager, SessionChangedEventArgs args) =>
+            _sessionManager.SessionChanged += (manager, args) =>
             {
                 SendSessionInfo((short)args.NextSession.Configuration.Id, true);
             };
-            _chatService.MessageReceived += (ACTcpClient client, ChatEventArgs args) =>
+            _chatService.MessageReceived += (client, args) =>
             {
                 SendPacket(new Chat()
                 {
@@ -170,7 +170,7 @@ namespace AssettoServer.Network.Udp
                             if (address.IpEquals(_inAddress))
                                 OnReceived(buffer, dataLength);
                             else
-                                Log.Information($"Ignoring UDP Plugin packet from address {address}");
+                                Log.Information("Ignoring UDP Plugin packet from address {Address}", address);
                         }
                     }
                 }
@@ -229,7 +229,7 @@ namespace AssettoServer.Network.Udp
                     case UdpPluginProtocol.LapCompleted:
                     case UdpPluginProtocol.SessionInfo:
                     {
-                        Log.Warning($"UdpPlugin: Received an outgoing packet with id {packetId}");
+                        Log.Warning("UdpPlugin: Received an outgoing packet with id {PacketId}", packetId);
                         break;
                     }
                     case UdpPluginProtocol.Version:
@@ -241,7 +241,7 @@ namespace AssettoServer.Network.Udp
                     {
                         var packet = packetReader.ReadPacket<SetRealtimePositionInterval>();
                         _realtimePosInterval = packet.Interval;
-                        Log.Information($"UdpPlugin: setting realtime position interval to {_realtimePosInterval} ms");
+                        Log.Information("UdpPlugin: setting realtime position interval to {Interval} ms", _realtimePosInterval);
                         break;
                     }
                     case UdpPluginProtocol.GetCarInfo:
@@ -262,7 +262,7 @@ namespace AssettoServer.Network.Udp
                         }
                         else
                         {
-                            Log.Information($"CarInfo: No car with sessionId {packet.SessionId}");
+                            Log.Information("CarInfo: No car with sessionId {SessionId}", packet.SessionId);
                         }
                         break;
                     }
@@ -271,12 +271,13 @@ namespace AssettoServer.Network.Udp
                         ChatMessage message = packetReader.ReadPacket<ChatMessage>();
                         if (message.SessionId < _entryCarManager.EntryCars.Length)
                         {
+                            byte destSessId = message.SessionId;
                             message.SessionId = 0xFF;
-                            _entryCarManager.EntryCars[message.SessionId].Client?.SendPacket(message);
+                            _entryCarManager.EntryCars[destSessId].Client?.SendPacket(message);
                         }
                         else
                         {
-                            Log.Information($"SendChat: No car with sessionId {message.SessionId}");
+                            Log.Information("SendChat: No car with sessionId {SessionId}", message.SessionId);
                         }
                         break;
                     }
@@ -304,14 +305,12 @@ namespace AssettoServer.Network.Udp
                             session.WaitTime = sessionInfo.WaitTime;
                             _sessionManager.SetSession(sessionInfo.SessionIndex);
                             SendSessionInfo(sessionInfo.SessionIndex, false);
-                            Log.Information(
-                                $"UdpPlugin: session {sessionInfo.SessionIndex} set to " +
-                                $"name '{session.Name}', type {session.Type}, laps {session.Laps}, time {session.Time}, waitTime {session.WaitTime}"
-                            );
+                            Log.Information("UdpPlugin: session {Index} set to name {SessionName}, type {SessionType}, laps {SessionLaps}, time {SessionTime}, waitTime {SessionWaitTime}",
+                                sessionInfo.SessionIndex, session.Name, session.Type, session.Laps, session.Time, session.WaitTime);
                         }
                         else
                         {
-                            Log.Information($"UdpPlugin: received SetSessionInfo with invalid SessionIndex {sessionInfo.SessionIndex}");
+                            Log.Information("UdpPlugin: received SetSessionInfo with invalid SessionIndex {Index}", sessionInfo.SessionIndex);
                         }
                         break;
                     }
@@ -426,7 +425,7 @@ namespace AssettoServer.Network.Udp
         private void OnClientConnected(ACTcpClient client, EventArgs args)
         {
             if (!_enabled) return;
-            SendPacket(new CarConnected()
+            SendPacket(new CarConnected
             {
                 DriverName = client.Name,
                 DriverGuid = client.Guid.ToString(),
@@ -443,7 +442,7 @@ namespace AssettoServer.Network.Udp
             {
                 EventType = (byte)clientEvent.Type,
                 SessionId = sessionId,
-                TargetSessionId = (byte)clientEvent.TargetSessionId,
+                TargetSessionId = clientEvent.TargetSessionId,
                 Speed = clientEvent.Speed,
                 WorldPosition = clientEvent.Position,
                 RelPosition = clientEvent.RelPosition,

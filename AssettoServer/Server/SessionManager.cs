@@ -41,46 +41,15 @@ public class SessionManager
         NextSession();
     }
 
-    public void NextSession()
+    public void SetSession(int sessionId)
     {
         // TODO StallSessionSwitch
         // TODO reset sun angle
 
-        if (_configuration.Sessions.Count - 1 == CurrentSessionIndex)
-        {
-            if (_configuration.Server.Loop)
-            {
-                Log.Information("Looping sessions");
-            }
-            else if (CurrentSession.Configuration.Type != SessionType.Race || _configuration.Server.InvertedGridPositions == 0 || IsLastRaceInverted)
-            {
-                // TODO exit
-            }
-
-            if (CurrentSession.Configuration.Type == SessionType.Race && _configuration.Server.InvertedGridPositions != 0)
-            {
-                if (_configuration.Sessions.Count <= 1)
-                {
-                    MustInvertGrid = true;
-                }
-                else if (!IsLastRaceInverted)
-                {
-                    MustInvertGrid = true;
-                    IsLastRaceInverted = true;
-                    --CurrentSessionIndex;
-                }
-            }
-        }
-
-        if (++CurrentSessionIndex >= _configuration.Sessions.Count)
-        {
-            CurrentSessionIndex = 0;
-        }
-
         var previousSession = CurrentSession;
-        var previousSessionResults = CurrentSession?.Results;
+        Dictionary<byte, EntryCarResult>? previousSessionResults = CurrentSession?.Results;
 
-        CurrentSession = _sessionStateFactory(_configuration.Sessions[CurrentSessionIndex]);
+        CurrentSession = _sessionStateFactory(_configuration.Sessions[sessionId]);
         CurrentSession.Results = new Dictionary<byte, EntryCarResult>();
         CurrentSession.StartTimeMilliseconds = ServerTimeMilliseconds;
 
@@ -117,8 +86,50 @@ public class SessionManager
 
         SessionChanged?.Invoke(this, new SessionChangedEventArgs(previousSession, CurrentSession));
         SendCurrentSession();
+
+        Log.Information("Switching session to id {Id}", sessionId);
     }
-    
+
+    public void RestartSession()
+    {
+        SetSession(CurrentSessionIndex);
+    }
+
+    public void NextSession()
+    {
+        if (_configuration.Sessions.Count - 1 == CurrentSessionIndex)
+        {
+            if (_configuration.Server.Loop)
+            {
+                Log.Information("Looping sessions");
+            }
+            else if (CurrentSession.Configuration.Type != SessionType.Race || _configuration.Server.InvertedGridPositions == 0 || IsLastRaceInverted)
+            {
+                // TODO exit
+            }
+
+            if (CurrentSession.Configuration.Type == SessionType.Race && _configuration.Server.InvertedGridPositions != 0)
+            {
+                if (_configuration.Sessions.Count <= 1)
+                {
+                    MustInvertGrid = true;
+                }
+                else if (!IsLastRaceInverted)
+                {
+                    MustInvertGrid = true;
+                    IsLastRaceInverted = true;
+                    --CurrentSessionIndex;
+                }
+            }
+        }
+
+        if (++CurrentSessionIndex >= _configuration.Sessions.Count)
+        {
+            CurrentSessionIndex = 0;
+        }
+        SetSession(CurrentSessionIndex);
+    }
+
     internal void SendCurrentSession(ACTcpClient? target = null)
     {
         var packet = new CurrentSessionUpdate

@@ -123,7 +123,7 @@ namespace AssettoServer.Server
             {
                 await service.StartAsync(stoppingToken);
             }
-            
+
             await _kunosLobbyRegistration.StartAsync(stoppingToken);
 
             _ = _applicationLifetime.ApplicationStopping.Register(OnApplicationStopping);
@@ -151,40 +151,6 @@ namespace AssettoServer.Server
             });
         }
 
-        public void SendLapCompletedMessage(byte sessionId, uint lapTime, int cuts, ACTcpClient? target = null)
-        {
-            if (_sessionManager.CurrentSession.Results == null)
-                throw new ArgumentNullException(nameof(_sessionManager.CurrentSession.Results));
-            
-            var laps = _sessionManager.CurrentSession.Results
-                .Select((result) => new LapCompletedOutgoing.CompletedLap
-                {
-                    SessionId = result.Key,
-                    LapTime = _sessionManager.CurrentSession.Configuration.Type == SessionType.Race ? result.Value.TotalTime : result.Value.BestLap,
-                    NumLaps = (ushort)result.Value.NumLaps,
-                    HasCompletedLastLap = (byte)(result.Value.HasCompletedLastLap ? 1 : 0)
-                })
-                .OrderBy(lap => lap.LapTime); // TODO wrong for race sessions?
-
-            var packet = new LapCompletedOutgoing
-            {
-                SessionId = sessionId,
-                LapTime = lapTime,
-                Cuts = (byte)cuts,
-                Laps = laps.ToArray(),
-                TrackGrip = _weatherManager.CurrentWeather.TrackGrip
-            };
-
-            if (target == null)
-            {
-                _entryCarManager.BroadcastPacket(packet);
-            }
-            else
-            {
-                target.SendPacket(packet);
-            }
-        }
-        
         private void MainLoop(CancellationToken stoppingToken)
         {
             int failedUpdateLoops = 0;

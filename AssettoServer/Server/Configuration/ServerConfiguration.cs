@@ -46,6 +46,8 @@ public class ServerConfiguration
     [IniField("SERVER", "LEGAL_TYRES")] public string LegalTyres { get; init; } = "";
     [IniField("SERVER", "WELCOME_MESSAGE")] public string WelcomeMessagePath { get; init; } = "";
     [IniField("SERVER", "TIME_OF_DAY_MULT")] public float TimeOfDayMultiplier { get; set; }
+    [IniField("SERVER", "UDP_PLUGIN_ADDRESS")] public string? UdpPluginAddress { get; set; }
+    [IniField("SERVER", "UDP_PLUGIN_LOCAL_PORT")] public ushort UdpPluginLocalPort { get; set; }
 
     [IniSection("WEATHER")] public IReadOnlyList<WeatherConfiguration> Weathers { get; init; } = new List<WeatherConfiguration>();
     [IniSection("DYNAMIC_TRACK")] public DynamicTrackConfiguration? DynamicTrack { get; init; }

@@ -30,7 +30,7 @@ public class EntryCarManager
     /// <summary>
     /// Fires when a client has secured a slot and established a TCP connection.
     /// </summary>
-    public event EventHandler<ACTcpClient, EventArgs>? ClientConnected; 
+    public event EventHandler<ACTcpClient, EventArgs>? ClientConnected;
     
     /// <summary>
     /// Fires when a client has been kicked.
@@ -191,6 +191,7 @@ public class EntryCarManager
                     client.SessionId = entryCar.SessionId;
                     client.IsConnected = true;
                     client.IsAdministrator = isAdmin;
+                    client.Guid = handshakeRequest.Guid;
 
                     ConnectedCars[client.SessionId] = entryCar;
 

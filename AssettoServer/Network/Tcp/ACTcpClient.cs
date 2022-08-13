@@ -28,9 +28,7 @@ namespace AssettoServer.Network.Tcp
 {
     public class ACTcpClient
     {
-        private ACServer Server { get; }
         private ACUdpServer UdpServer { get; }
-        private readonly UdpPluginServer _udpPluginServer;
         public ILogger Logger { get; }
         public byte SessionId { get; set; }
         public string? Name { get; private set; }
@@ -103,6 +101,11 @@ namespace AssettoServer.Network.Tcp
         /// </summary>
         public event EventHandler<ACTcpClient, CollisionEventArgs>? Collision;
 
+        /// <summary>
+        /// Fires when a client has completed a lap
+        /// </summary>
+        public event EventHandler<ACTcpClient, LapCompletedEventArgs>? LapCompleted; 
+
         public class ACTcpClientLogEventEnricher : ILogEventEnricher
         {
             private readonly ACTcpClient _client;
@@ -122,11 +125,21 @@ namespace AssettoServer.Network.Tcp
             }
         }
 
-        public ACTcpClient(ACServer server, ACUdpServer udpServer, TcpClient tcpClient, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IBlacklistService blacklist, ChecksumManager checksumManager, CSPFeatureManager cspFeatureManager, CSPServerExtraOptions cspServerExtraOptions, CSPClientMessageTypeManager cspClientMessageTypeManager, OpenSlotFilterChain openSlotFilter, UdpPluginServer udpPluginServer)
+        public ACTcpClient(
+            ACUdpServer udpServer, 
+            TcpClient tcpClient,
+            SessionManager sessionManager,
+            WeatherManager weatherManager,
+            ACServerConfiguration configuration,
+            EntryCarManager entryCarManager,
+            IBlacklistService blacklist,
+            ChecksumManager checksumManager,
+            CSPFeatureManager cspFeatureManager,
+            CSPServerExtraOptions cspServerExtraOptions,
+            CSPClientMessageTypeManager cspClientMessageTypeManager,
+            OpenSlotFilterChain openSlotFilter)
         {
-            Server = server;
             UdpServer = udpServer;
-            _udpPluginServer = udpPluginServer;
             Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.With(new ACTcpClientLogEventEnricher(this))
@@ -445,8 +458,7 @@ namespace AssettoServer.Network.Tcp
                     Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and environment, rel. speed {Speed:F0}km/h", 
                         Name, EntryCar.SessionId, evt.Speed);
                 }
-
-                _udpPluginServer.OnClientEvent(EntryCar.SessionId, evt);
+                
                 Collision?.Invoke(this, new CollisionEventArgs(targetCar, evt.Speed, evt.Position, evt.RelPosition));
             }
         }
@@ -613,9 +625,9 @@ namespace AssettoServer.Network.Tcp
             //_configuration.DynamicTrack.TotalLapCount++; // TODO reset at some point
             if (OnLapCompleted(lapPacket))
             {
-                LapCompletedOutgoing packet = Server.CreateLapCompletedPacket(SessionId, lapPacket.LapTime, lapPacket.Cuts);
-                Server.SendLapCompletedMessage(packet);
-                _udpPluginServer.OnLapCompleted(packet);
+                LapCompletedOutgoing packet = CreateLapCompletedPacket(SessionId, lapPacket.LapTime, lapPacket.Cuts);
+                _entryCarManager.BroadcastPacket(packet);
+                LapCompleted?.Invoke(this, new LapCompletedEventArgs(packet));
             }
         }
 
@@ -751,8 +763,6 @@ namespace AssettoServer.Network.Tcp
 
             List<EntryCar> connectedCars = _entryCarManager.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
-            _udpPluginServer.OnClientFirstUpdate(EntryCar.SessionId);
-
             if (!string.IsNullOrEmpty(_cspServerExtraOptions.EncodedWelcomeMessage))
                 SendPacket(new WelcomeMessage { Message = _cspServerExtraOptions.EncodedWelcomeMessage });
 
@@ -777,7 +787,7 @@ namespace AssettoServer.Network.Tcp
 
             // TODO: sent DRS zones
 
-            Server.SendLapCompletedMessage(Server.CreateLapCompletedPacket(0xFF, 0, 0));
+            SendPacket(CreateLapCompletedPacket(0xFF, 0, 0));
 
             _ = Task.Delay(40000).ContinueWith(async _ =>
             {
@@ -788,6 +798,32 @@ namespace AssettoServer.Network.Tcp
             });
             
             FirstUpdateSent?.Invoke(this, EventArgs.Empty);
+        }
+        
+        private LapCompletedOutgoing CreateLapCompletedPacket(byte sessionId, uint lapTime, int cuts)
+        {
+            // TODO: double check and rewrite this
+            if (_sessionManager.CurrentSession.Results == null)
+                throw new ArgumentNullException(nameof(_sessionManager.CurrentSession.Results));
+
+            var laps = _sessionManager.CurrentSession.Results
+                .Select(result => new LapCompletedOutgoing.CompletedLap
+                {
+                    SessionId = result.Key,
+                    LapTime = _sessionManager.CurrentSession.Configuration.Type == SessionType.Race ? result.Value.TotalTime : result.Value.BestLap,
+                    NumLaps = (ushort)result.Value.NumLaps,
+                    HasCompletedLastLap = (byte)(result.Value.HasCompletedLastLap ? 1 : 0)
+                })
+                .OrderBy(lap => lap.LapTime); // TODO wrong for race sessions?
+
+            return new LapCompletedOutgoing
+            {
+                SessionId = sessionId,
+                LapTime = lapTime,
+                Cuts = (byte)cuts,
+                Laps = laps.ToArray(),
+                TrackGrip = _weatherManager.CurrentWeather.TrackGrip
+            };
         }
 
         internal bool TryAssociateUdp(Address endpoint)

@@ -33,7 +33,6 @@ namespace AssettoServer.Server
         private readonly ChecksumManager _checksumManager;
         private readonly ACTcpServer _tcpServer;
         private readonly ACUdpServer _udpServer;
-        private readonly UdpPluginServer _udpPluginServer;
         private readonly KunosLobbyRegistration _kunosLobbyRegistration;
         private readonly IEnumerable<IAssettoServerAutostart> _autostartServices;
         private readonly IHostApplicationLifetime _applicationLifetime;
@@ -55,7 +54,6 @@ namespace AssettoServer.Server
             ChecksumManager checksumManager,
             ACTcpServer tcpServer,
             ACUdpServer udpServer,
-            UdpPluginServer udpPluginServer,
             CSPFeatureManager cspFeatureManager,
             IEnumerable<IAssettoServerAutostart> autostartServices,
             KunosLobbyRegistration kunosLobbyRegistration,
@@ -72,7 +70,6 @@ namespace AssettoServer.Server
             _checksumManager = checksumManager;
             _tcpServer = tcpServer;
             _udpServer = udpServer;
-            _udpPluginServer = udpPluginServer;
             _autostartServices = autostartServices;
             _kunosLobbyRegistration = kunosLobbyRegistration;
             _applicationLifetime = applicationLifetime;
@@ -121,7 +118,6 @@ namespace AssettoServer.Server
             await _weatherManager.StartAsync(stoppingToken);
             await _tcpServer.StartAsync(stoppingToken);
             await _udpServer.StartAsync(stoppingToken);
-            await _udpPluginServer.StartAsync(stoppingToken);
 
             foreach (var service in _autostartServices)
             {
@@ -155,44 +151,6 @@ namespace AssettoServer.Server
             });
         }
 
-        public LapCompletedOutgoing CreateLapCompletedPacket(byte sessionId, uint lapTime, int cuts)
-        {
-            // TODO: double check and rewrite this
-            if (_sessionManager.CurrentSession.Results == null)
-                throw new ArgumentNullException(nameof(_sessionManager.CurrentSession.Results));
-
-            var laps = _sessionManager.CurrentSession.Results
-                .Select(result => new LapCompletedOutgoing.CompletedLap
-                {
-                    SessionId = result.Key,
-                    LapTime = _sessionManager.CurrentSession.Configuration.Type == SessionType.Race ? result.Value.TotalTime : result.Value.BestLap,
-                    NumLaps = (ushort)result.Value.NumLaps,
-                    HasCompletedLastLap = (byte)(result.Value.HasCompletedLastLap ? 1 : 0)
-                })
-                .OrderBy(lap => lap.LapTime); // TODO wrong for race sessions?
-
-            return new LapCompletedOutgoing
-            {
-                SessionId = sessionId,
-                LapTime = lapTime,
-                Cuts = (byte)cuts,
-                Laps = laps.ToArray(),
-                TrackGrip = _weatherManager.CurrentWeather.TrackGrip
-            };
-        }
-
-        public void SendLapCompletedMessage(LapCompletedOutgoing packet, ACTcpClient? target = null)
-        {
-            if (target == null)
-            {
-                _entryCarManager.BroadcastPacket(packet);
-            }
-            else
-            {
-                target.SendPacket(packet);
-            }
-        }
-        
         private void MainLoop(CancellationToken stoppingToken)
         {
             int failedUpdateLoops = 0;

@@ -67,6 +67,8 @@ public class ACExtraConfiguration
     public bool ForceServerTrackParams = false;
     [YamlMember(Description = "Allow cars to have multiple data checksums. Instead of a single checksummed data.acd, you can have multiple data*.acd files in the car folder and players can join with any of these files")]
     public bool EnableAlternativeCarChecksums = false;
+    [YamlMember(Description = "Enable the AC UDP plugin interface compatible with Kunos acServer plugins")]
+    public bool EnableLegacyPluginInterface = false;
     public AiParams AiParams { get; init; } = new AiParams();
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;

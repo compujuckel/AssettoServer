@@ -59,3 +59,13 @@ public class CollisionEventArgs : EventArgs
         RelPosition = relPosition;
     }
 }
+
+public class LapCompletedEventArgs : EventArgs
+{
+    public LapCompletedOutgoing Packet { get; }
+    
+    public LapCompletedEventArgs(LapCompletedOutgoing packet)
+    {
+        Packet = packet;
+    }
+}

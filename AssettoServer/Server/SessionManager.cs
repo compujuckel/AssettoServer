@@ -87,7 +87,7 @@ public class SessionManager
         SessionChanged?.Invoke(this, new SessionChangedEventArgs(previousSession, CurrentSession));
         SendCurrentSession();
 
-        Log.Information($"Switching session to id {sessionId}");
+        Log.Information("Switching session to id {Id}", sessionId);
     }
 
     public void RestartSession()

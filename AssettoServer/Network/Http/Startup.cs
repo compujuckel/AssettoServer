@@ -67,12 +67,16 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<CSPServerExtraOptions>().AsSelf().SingleInstance();
             builder.RegisterType<ACTcpServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACUdpServer>().AsSelf().SingleInstance();
-            builder.RegisterType<UdpPluginServer>().AsSelf().SingleInstance();
             builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
             builder.RegisterType<OpenSlotFilterChain>().AsSelf().SingleInstance();
             builder.RegisterType<WhitelistSlotFilter>().As<IOpenSlotFilter>();
             builder.RegisterType<GuidSlotFilter>().As<IOpenSlotFilter>();
 
+            if (_configuration.Extra.EnableLegacyPluginInterface)
+            {
+                builder.RegisterType<UdpPluginServer>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
+            }
+            
             if (_configuration.Extra.UseSteamAuth)
             {
                 builder.RegisterType<SteamSlotFilter>().As<IOpenSlotFilter>();

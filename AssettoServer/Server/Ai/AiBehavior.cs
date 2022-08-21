@@ -10,12 +10,13 @@ using App.Metrics.Timer;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AssettoServer.Server.Ai
 {
-    public class AiBehavior : BackgroundService, IAssettoServerAutostart
+    public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     {
         private readonly ACServerConfiguration _configuration;
         private readonly SessionManager _sessionManager;
@@ -38,7 +39,7 @@ namespace AssettoServer.Server.Ai
         private readonly ITimer _updateDurationTimer;
         private readonly ITimer _obstacleDetectionDurationTimer;
 
-        public AiBehavior(SessionManager sessionManager, ACServerConfiguration configuration, TrafficMap trafficMap, EntryCarManager entryCarManager, IMetricsRoot metrics)
+        public AiBehavior(SessionManager sessionManager, ACServerConfiguration configuration, TrafficMap trafficMap, EntryCarManager entryCarManager, IMetricsRoot metrics, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
         {
             _sessionManager = sessionManager;
             _configuration = configuration;

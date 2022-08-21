@@ -12,6 +12,7 @@ using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using NanoSockets;
 using Serilog;
@@ -23,7 +24,7 @@ using Version = AssettoServer.Network.Packets.UdpPlugin.Version;
 
 namespace AssettoServer.Network.Udp;
 
-public class UdpPluginServer : BackgroundService, IAssettoServerAutostart
+public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostart
 {
     private readonly ACServerConfiguration _configuration;
     private readonly ChatService _chatService;
@@ -43,7 +44,8 @@ public class UdpPluginServer : BackgroundService, IAssettoServerAutostart
         WeatherManager weatherManager,
         ACServerConfiguration configuration,
         EntryCarManager entryCarManager,
-        ChatService chatService)
+        ChatService chatService,
+        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
         _chatService = chatService;

@@ -1,16 +1,17 @@
 ﻿using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 
 namespace RaceChallengePlugin;
 
-public class RaceChallengePlugin : BackgroundService, IAssettoServerAutostart
+public class RaceChallengePlugin : CriticalBackgroundService, IAssettoServerAutostart
 {
     private readonly EntryCarManager _entryCarManager;
     private readonly Func<EntryCar, EntryCarRace> _entryCarRaceFactory;
     private readonly Dictionary<int, EntryCarRace> _instances = new();
     
-    public RaceChallengePlugin(EntryCarManager entryCarManager, Func<EntryCar, EntryCarRace> entryCarRaceFactory)
+    public RaceChallengePlugin(EntryCarManager entryCarManager, Func<EntryCar, EntryCarRace> entryCarRaceFactory, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _entryCarManager = entryCarManager;
         _entryCarRaceFactory = entryCarRaceFactory;

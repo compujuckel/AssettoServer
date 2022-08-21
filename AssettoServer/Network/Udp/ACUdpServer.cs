@@ -9,13 +9,14 @@ using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using NanoSockets;
 using Serilog;
 
 namespace AssettoServer.Network.Udp;
 
-public class ACUdpServer : BackgroundService
+public class ACUdpServer : CriticalBackgroundService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
@@ -25,7 +26,7 @@ public class ACUdpServer : BackgroundService
 
     private readonly ConcurrentDictionary<Address, EntryCar> _endpointCars = new();
 
-    public ACUdpServer(SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager)
+    public ACUdpServer(SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _sessionManager = sessionManager;
         _configuration = configuration;

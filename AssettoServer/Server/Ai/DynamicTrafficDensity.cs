@@ -9,12 +9,12 @@ using Serilog;
 
 namespace AssettoServer.Server.Ai;
 
-public class DynamicTrafficDensity : BackgroundService
+public class DynamicTrafficDensity : CriticalBackgroundService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly WeatherManager _weatherManager;
 
-    public DynamicTrafficDensity(ACServerConfiguration configuration, WeatherManager weatherManager)
+    public DynamicTrafficDensity(ACServerConfiguration configuration, WeatherManager weatherManager, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
         _weatherManager = weatherManager;

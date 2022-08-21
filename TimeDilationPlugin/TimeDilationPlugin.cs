@@ -7,13 +7,13 @@ using Serilog;
 
 namespace TimeDilationPlugin;
 
-public class TimeDilationPlugin : BackgroundService, IAssettoServerAutostart
+public class TimeDilationPlugin : CriticalBackgroundService, IAssettoServerAutostart
 {
     private readonly LookupTable _lookupTable;
     private readonly WeatherManager _weatherManager;
     private readonly ACServerConfiguration _configuration;
 
-    public TimeDilationPlugin(TimeDilationConfiguration configuration, WeatherManager weatherManager, ACServerConfiguration serverConfiguration)
+    public TimeDilationPlugin(TimeDilationConfiguration configuration, WeatherManager weatherManager, ACServerConfiguration serverConfiguration, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         if (configuration.LookupTable == null || configuration.LookupTable.Count == 0)
         {

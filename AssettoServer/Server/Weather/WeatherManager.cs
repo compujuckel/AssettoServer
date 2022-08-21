@@ -5,6 +5,7 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather.Implementation;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
 using NodaTime.Extensions;
@@ -14,7 +15,7 @@ using SunCalcNet.Model;
 
 namespace AssettoServer.Server.Weather;
 
-public class WeatherManager : BackgroundService
+public class WeatherManager : CriticalBackgroundService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly IWeatherImplementation _weatherImplementation;
@@ -30,7 +31,8 @@ public class WeatherManager : BackgroundService
         ACServerConfiguration configuration, 
         SessionManager timeSource, 
         RainHelper rainHelper,
-        CSPServerExtraOptions cspServerExtraOptions)
+        CSPServerExtraOptions cspServerExtraOptions,
+        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _weatherImplementation = weatherImplementation;
         _weatherTypeProvider = weatherTypeProvider;

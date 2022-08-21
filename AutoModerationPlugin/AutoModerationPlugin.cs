@@ -7,6 +7,7 @@ using AssettoServer.Server.Ai;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
+using AssettoServer.Utils;
 using AutoModerationPlugin.Packets;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +16,7 @@ using Serilog;
 namespace AutoModerationPlugin;
 
 [UsedImplicitly]
-public class AutoModerationPlugin : BackgroundService, IAssettoServerAutostart
+public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAutostart
 {
     private const double NauticalTwilight = -12.0 * Math.PI / 180.0;
     
@@ -29,13 +30,14 @@ public class AutoModerationPlugin : BackgroundService, IAssettoServerAutostart
 
     private readonly float _laneRadiusSquared;
 
-    public AutoModerationPlugin(AutoModerationConfiguration configuration, 
+    public AutoModerationPlugin(AutoModerationConfiguration configuration,
         EntryCarManager entryCarManager,
         WeatherManager weatherManager,
         ACServerConfiguration serverConfiguration,
         CSPServerScriptProvider scriptProvider,
         Func<EntryCar, EntryCarAutoModeration> entryCarAutoModerationFactory,
-        TrafficMap? trafficMap = null)
+        IHostApplicationLifetime applicationLifetime,
+        TrafficMap? trafficMap = null) : base(applicationLifetime)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;

@@ -3,17 +3,18 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AssettoServer.Server.Admin;
 
-public class DefaultAdminService : BackgroundService, IAdminService
+public class DefaultAdminService : CriticalBackgroundService, IAdminService
 {
     private readonly GuidListFile _file;
     private readonly ACServerConfiguration _configuration;
 
-    public DefaultAdminService(ACServerConfiguration configuration)
+    public DefaultAdminService(ACServerConfiguration configuration, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
         _file = new GuidListFile("admins.txt");

@@ -6,13 +6,14 @@ using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Utils;
 using CSharpDiscordWebhook.NET.Discord;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace ReportPlugin;
 
-public class ReportPlugin : BackgroundService, IAssettoServerAutostart
+public class ReportPlugin : CriticalBackgroundService, IAssettoServerAutostart
 {
     private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":", "@" };
     
@@ -34,7 +35,8 @@ public class ReportPlugin : BackgroundService, IAssettoServerAutostart
         ChatService chatService,
         CSPServerExtraOptions cspServerExtraOptions,
         ACServerConfiguration serverConfiguration,
-        GeoParamsManager geoParamsManager)
+        GeoParamsManager geoParamsManager,
+        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;

@@ -3,12 +3,13 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace VotingWeatherPlugin;
 
-public class VotingWeather : BackgroundService, IAssettoServerAutostart
+public class VotingWeather : CriticalBackgroundService, IAssettoServerAutostart
 {
     private readonly WeatherManager _weatherManager;
     private readonly IWeatherTypeProvider _weatherTypeProvider;
@@ -26,7 +27,7 @@ public class VotingWeather : BackgroundService, IAssettoServerAutostart
         public int Votes { get; set; }
     }
 
-    public VotingWeather(VotingWeatherConfiguration configuration, WeatherManager weatherManager, IWeatherTypeProvider weatherTypeProvider, EntryCarManager entryCarManager)
+    public VotingWeather(VotingWeatherConfiguration configuration, WeatherManager weatherManager, IWeatherTypeProvider weatherTypeProvider, EntryCarManager entryCarManager, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
         _weatherManager = weatherManager;

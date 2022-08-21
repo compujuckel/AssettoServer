@@ -43,18 +43,19 @@ using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Steamworks;
 
 namespace AssettoServer.Server;
 
-public class Steam : BackgroundService
+public class Steam : CriticalBackgroundService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly IBlacklistService _blacklistService;
     private readonly CSPFeatureManager _cspFeatureManager;
-    public Steam(ACServerConfiguration configuration, IBlacklistService blacklistService, CSPFeatureManager cspFeatureManager)
+    public Steam(ACServerConfiguration configuration, IBlacklistService blacklistService, CSPFeatureManager cspFeatureManager, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
         _blacklistService = blacklistService;

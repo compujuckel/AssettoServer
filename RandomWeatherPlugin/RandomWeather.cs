@@ -1,11 +1,12 @@
 ﻿using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace RandomWeatherPlugin;
 
-public class RandomWeather : BackgroundService, IAssettoServerAutostart
+public class RandomWeather : CriticalBackgroundService, IAssettoServerAutostart
 {
     private struct WeatherWeight
     {
@@ -18,7 +19,7 @@ public class RandomWeather : BackgroundService, IAssettoServerAutostart
     private readonly RandomWeatherConfiguration _configuration;
     private readonly List<WeatherWeight> _weathers = new();
 
-    public RandomWeather(RandomWeatherConfiguration configuration, WeatherManager weatherManager, IWeatherTypeProvider weatherTypeProvider)
+    public RandomWeather(RandomWeatherConfiguration configuration, WeatherManager weatherManager, IWeatherTypeProvider weatherTypeProvider, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
         _weatherManager = weatherManager;

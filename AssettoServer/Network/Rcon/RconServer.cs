@@ -4,17 +4,18 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AssettoServer.Network.Rcon;
 
-public class RconServer : BackgroundService
+public class RconServer : CriticalBackgroundService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly Func<TcpClient, RconClient> _rconClientFactory;
 
-    public RconServer(ACServerConfiguration configuration, Func<TcpClient, RconClient> rconClientFactory)
+    public RconServer(ACServerConfiguration configuration, Func<TcpClient, RconClient> rconClientFactory, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
         _rconClientFactory = rconClientFactory;

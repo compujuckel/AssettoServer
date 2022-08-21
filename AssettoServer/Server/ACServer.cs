@@ -22,7 +22,7 @@ using Serilog;
 
 namespace AssettoServer.Server
 {
-    public class ACServer : BackgroundService
+    public class ACServer : CriticalBackgroundService
     {
         private readonly ACServerConfiguration _configuration;
         private readonly SessionManager _sessionManager;
@@ -57,7 +57,7 @@ namespace AssettoServer.Server
             CSPFeatureManager cspFeatureManager,
             IEnumerable<IAssettoServerAutostart> autostartServices,
             KunosLobbyRegistration kunosLobbyRegistration,
-            IHostApplicationLifetime applicationLifetime)
+            IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
         {
             Log.Information("Starting server");
             

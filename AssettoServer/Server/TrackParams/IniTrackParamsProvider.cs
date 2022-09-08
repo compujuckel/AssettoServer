@@ -45,7 +45,7 @@ public class IniTrackParamsProvider : ITrackParamsProvider
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Coould not get track params from {TrackParamsUrl}", RemoteTrackParamsUrl);
+                Log.Error(ex, "Could not get track params from {TrackParamsUrl}", RemoteTrackParamsUrl);
             }
         }
     }

@@ -33,6 +33,8 @@ public class RandomWeather : CriticalBackgroundService, IAssettoServerAutostart
             }
         }
 
+        _configuration.WeatherWeights[WeatherFxType.None] = 0;
+
         float weightSum = _configuration.WeatherWeights
             .Select(w => w.Value)
             .Sum();

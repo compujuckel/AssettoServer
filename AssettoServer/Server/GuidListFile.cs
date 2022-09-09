@@ -28,7 +28,13 @@ public class GuidListFile
         _watcher.NotifyFilter = NotifyFilters.LastWrite;
         _watcher.Filter = _filename;
         _watcher.Changed += OnFileChanged;
+        _watcher.Error += OnError;
         _watcher.EnableRaisingEvents = true;
+    }
+
+    private void OnError(object sender, ErrorEventArgs e)
+    {
+        Log.Error(e.GetException(), "Error monitoring file {Name} for changes", _filename);
     }
 
     private void OnFileChanged(object sender, FileSystemEventArgs e)

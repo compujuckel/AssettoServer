@@ -20,9 +20,10 @@ public class GuidListFile
 
     public event EventHandler<GuidListFile, EventArgs>? Reloaded;
     
-    public GuidListFile(string filename)
+    public GuidListFile(SignalHandler signalHandler, string filename)
     {
         List = _guidList;
+        signalHandler.Reloaded += OnManualReload;
         _filename = filename;
         _watcher = new FileSystemWatcher(".");
         _watcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -35,6 +36,12 @@ public class GuidListFile
     private void OnError(object sender, ErrorEventArgs e)
     {
         Log.Error(e.GetException(), "Error monitoring file {Name} for changes", _filename);
+    }
+
+    private void OnManualReload(SignalHandler sender, EventArgs args)
+    {
+        Log.Information("Reloading file {Path}", _filename);
+        _ = Task.Run(LoadAsync);
     }
 
     private void OnFileChanged(object sender, FileSystemEventArgs e)

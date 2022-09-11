@@ -71,6 +71,8 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<OpenSlotFilterChain>().AsSelf().SingleInstance();
             builder.RegisterType<WhitelistSlotFilter>().As<IOpenSlotFilter>();
             builder.RegisterType<GuidSlotFilter>().As<IOpenSlotFilter>();
+            builder.RegisterType<SignalHandler>().AsSelf().SingleInstance().AutoActivate();
+            builder.RegisterType<GuidListFile>().AsSelf();
 
             if (_configuration.Extra.EnableLegacyPluginInterface)
             {

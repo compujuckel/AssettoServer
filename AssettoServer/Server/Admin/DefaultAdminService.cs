@@ -14,16 +14,10 @@ public class DefaultAdminService : CriticalBackgroundService, IAdminService
     private readonly GuidListFile _file;
     private readonly ACServerConfiguration _configuration;
 
-    public DefaultAdminService(ACServerConfiguration configuration, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public DefaultAdminService(Func<string, GuidListFile> guidListFileFactory, ACServerConfiguration configuration, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
-        _file = new GuidListFile("admins.txt");
-        _file.Reloaded += OnReloaded;
-    }
-
-    private void OnReloaded(GuidListFile sender, EventArgs args)
-    {
-        // TODO
+        _file = guidListFileFactory("admins.txt");
     }
 
     public Task<bool> IsAdminAsync(ulong guid)

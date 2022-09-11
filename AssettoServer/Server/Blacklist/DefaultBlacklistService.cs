@@ -7,9 +7,9 @@ public class DefaultBlacklistService : IBlacklistService
 {
     private readonly GuidListFile _file;
 
-    public DefaultBlacklistService()
+    public DefaultBlacklistService(Func<string, GuidListFile> guidListFileFactory)
     {
-        _file = new GuidListFile("blacklist.txt");
+        _file = guidListFileFactory("blacklist.txt");
         _file.Reloaded += OnReloaded;
 
         _ = _file.LoadAsync();

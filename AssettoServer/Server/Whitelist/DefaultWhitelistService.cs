@@ -1,14 +1,15 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace AssettoServer.Server.Whitelist;
 
 public class DefaultWhitelistService : IWhitelistService
 {
     private readonly GuidListFile _file;
-
-    public DefaultWhitelistService()
+    
+    public DefaultWhitelistService(Func<string, GuidListFile> guidListFileFactory)
     {
-        _file = new GuidListFile("whitelist.txt");
+        _file = guidListFileFactory("whitelist.txt");
         _ = _file.LoadAsync();
     }
     

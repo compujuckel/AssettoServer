@@ -98,10 +98,10 @@ internal static class Program
         
         var host = Host.CreateDefaultBuilder()
             .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+            .UseSerilog()
             .ConfigureWebHostDefaults(webHostBuilder =>
             {
                 webHostBuilder.ConfigureKestrel(serverOptions => serverOptions.AllowSynchronousIO = true)
-                    .UseSerilog()
                     .UseStartup(_ => new Startup(config))
                     .UseUrls($"http://0.0.0.0:{config.Server.HttpPort}");
             })

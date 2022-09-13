@@ -1,35 +1,35 @@
 ﻿using System;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Utils;
-using Microsoft.Extensions.Hosting;
+using AssettoServer.Server.UserGroup;
 using Serilog;
 
 namespace AssettoServer.Server.Admin;
 
-public class DefaultAdminService : CriticalBackgroundService, IAdminService
+public class AdminService : IAdminService
 {
-    private readonly GuidListFile _file;
+    private readonly IUserGroup _userGroup;
     private readonly ACServerConfiguration _configuration;
+    private bool _firstUpdate = true;
 
-    public DefaultAdminService(Func<string, GuidListFile> guidListFileFactory, ACServerConfiguration configuration, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public AdminService(ACServerConfiguration configuration, UserGroupManager userGroupManager)
     {
         _configuration = configuration;
-        _file = guidListFileFactory("admins.txt");
+        _userGroup = userGroupManager.Resolve(_configuration.Extra.AdminUserGroup);
+        _userGroup.Changed += OnChanged;
     }
 
-    public Task<bool> IsAdminAsync(ulong guid)
+    public async Task<bool> IsAdminAsync(ulong guid)
     {
-        return Task.FromResult(_file.Contains(guid.ToString()));
+        return await _userGroup.ContainsAsync(guid);
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    private void OnChanged(IUserGroup sender, EventArgs args)
     {
-        await _file.LoadAsync();
+        if (!_firstUpdate) return;
         
-        if (!_configuration.Extra.UseSteamAuth && _file.List.Any())
+        _firstUpdate = false;
+        if (!_configuration.Extra.UseSteamAuth && _userGroup is IListableUserGroup listableUserGroup && listableUserGroup.List.Count > 0)
         {
             const string errorMsg =
                 "Admin whitelist is enabled but Steam auth is disabled. This is unsafe because it allows players to gain admin rights by SteamID spoofing. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#unsafe-admin-whitelist";

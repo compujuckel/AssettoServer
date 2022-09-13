@@ -69,6 +69,20 @@ public class ACExtraConfiguration
     public bool EnableAlternativeCarChecksums = false;
     [YamlMember(Description = "Enable the AC UDP plugin interface compatible with Kunos acServer plugins")]
     public bool EnableLegacyPluginInterface = false;
+    [YamlMember(Description = "Name and path of file-based user groups")]
+    public Dictionary<string, string> UserGroups { get; init; } = new()
+    {
+        { "default_blacklist", "blacklist.txt" },
+        { "default_whitelist", "whitelist.txt" },
+        { "default_admins", "admins.txt" }
+    };
+    [YamlMember(Description = "Name of user group to be used for blacklist")]
+    public string BlacklistUserGroup { get; set; } = "default_blacklist";
+    [YamlMember(Description = "Name of user group to be used for whitelist")]
+    public string WhitelistUserGroup { get; set; } = "default_whitelist";
+    [YamlMember(Description = "Name of user group to be used for admins")]
+    public string AdminUserGroup { get; set; } = "default_admins";
+    
     public AiParams AiParams { get; init; } = new AiParams();
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;

@@ -2,32 +2,35 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Polly;
 using Serilog;
 
-namespace AssettoServer.Server;
+namespace AssettoServer.Server.UserGroup;
 
-public class GuidListFile
+public class FileBasedUserGroup : IListableUserGroup
 {
-    public readonly IReadOnlyDictionary<string, bool> List;
+    public IReadOnlyCollection<ulong> List { get; private set; }
 
-    private readonly string _filename;
+    public delegate FileBasedUserGroup Factory(string name, string path);
+    
+    private readonly string _path;
     private readonly SemaphoreSlim _lock = new(1, 1);
-    private readonly ConcurrentDictionary<string, bool> _guidList = new();
+    private readonly ConcurrentDictionary<ulong, bool> _guidList = new();
     private readonly FileSystemWatcher _watcher;
 
-    public event EventHandler<GuidListFile, EventArgs>? Reloaded;
+    public event EventHandler<IUserGroup, EventArgs>? Changed;
     
-    public GuidListFile(SignalHandler signalHandler, string filename)
+    public FileBasedUserGroup(SignalHandler signalHandler, string name, string path)
     {
-        List = _guidList;
+        List = _guidList.Keys.ToList();
         signalHandler.Reloaded += OnManualReload;
-        _filename = filename;
+        _path = path;
         _watcher = new FileSystemWatcher(".");
         _watcher.NotifyFilter = NotifyFilters.LastWrite;
-        _watcher.Filter = _filename;
+        _watcher.Filter = _path;
         _watcher.Changed += OnFileChanged;
         _watcher.Error += OnError;
         _watcher.EnableRaisingEvents = true;
@@ -35,12 +38,12 @@ public class GuidListFile
 
     private void OnError(object sender, ErrorEventArgs e)
     {
-        Log.Error(e.GetException(), "Error monitoring file {Name} for changes", _filename);
+        Log.Error(e.GetException(), "Error monitoring file {Name} for changes", _path);
     }
 
     private void OnManualReload(SignalHandler sender, EventArgs args)
     {
-        Log.Information("Reloading file {Path}", _filename);
+        Log.Information("Reloading file {Path}", _path);
         _ = Task.Run(LoadAsync);
     }
 
@@ -48,7 +51,7 @@ public class GuidListFile
     {
         if (e.ChangeType != WatcherChangeTypes.Deleted)
         {
-            Log.Information("File {Path} changed on disk, reloading", _filename);
+            Log.Information("File {Path} changed on disk, reloading", _path);
             _ = Task.Run(LoadAsync);
         }
     }
@@ -60,39 +63,42 @@ public class GuidListFile
         await _lock.WaitAsync();
         try
         {
-            if (File.Exists(_filename))
+            if (File.Exists(_path))
             {
                 _guidList.Clear();
-                foreach (string guid in await policy.ExecuteAsync(() => File.ReadAllLinesAsync(_filename)))
+                foreach (string guidStr in await policy.ExecuteAsync(() => File.ReadAllLinesAsync(_path)))
                 {
+                    if (!ulong.TryParse(guidStr, out ulong guid)) continue;
+
                     if (_guidList.ContainsKey(guid))
                     {
-                        Log.Warning("Duplicate entry in {Path}: {Guid}", _filename, guid);
+                        Log.Warning("Duplicate entry in {Path}: {Guid}", _path, guid);
                     }
                     _guidList[guid] = true;
                 }
             }
             else
             {
-                await using var _ = File.Create(_filename);
+                await using var _ = File.Create(_path);
             }
 
-            Log.Debug("Loaded {Path} with {Count} entries", _filename, _guidList.Count);
+            List = _guidList.Keys.ToList();
+            Log.Debug("Loaded {Path} with {Count} entries", _path, _guidList.Count);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error loading {Path}", _filename);
+            Log.Error(ex, "Error loading {Path}", _path);
         }
         finally
         {
             _lock.Release();
-            Reloaded?.Invoke(this, EventArgs.Empty);
+            Changed?.Invoke(this, EventArgs.Empty);
         }
     }
 
-    public bool Contains(string guid)
+    public async Task<bool> ContainsAsync(ulong guid)
     {
-        _lock.Wait();
+        await _lock.WaitAsync();
         try
         {
             return _guidList.ContainsKey(guid);
@@ -103,17 +109,19 @@ public class GuidListFile
         }
     }
 
-    public async Task AddAsync(string guid)
+    public async Task<bool> AddAsync(ulong guid)
     {
         await _lock.WaitAsync();
         try
         {
             if (_guidList.TryAdd(guid, true))
-                await File.AppendAllLinesAsync(_filename, new[] { guid });
+                await File.AppendAllLinesAsync(_path, new[] { guid.ToString() });
         }
         finally
         {
             _lock.Release();
         }
+
+        return true;
     }
 }

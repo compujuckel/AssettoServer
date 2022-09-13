@@ -15,6 +15,7 @@ using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.TrackParams;
+using AssettoServer.Server.UserGroup;
 using AssettoServer.Server.Weather;
 using AssettoServer.Server.Whitelist;
 using Autofac;
@@ -52,9 +53,12 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<ChatService>().AsSelf().SingleInstance().AutoActivate();
             builder.RegisterType<CSPFeatureManager>().AsSelf().SingleInstance();
             builder.RegisterType<KunosLobbyRegistration>().AsSelf().SingleInstance();
-            builder.RegisterType<DefaultAdminService>().As<IAdminService>().As<IHostedService>().SingleInstance(); // TODO IHostedService is probably bad here if we want to replace the service later
-            builder.RegisterType<DefaultBlacklistService>().As<IBlacklistService>().SingleInstance();
-            builder.RegisterType<DefaultWhitelistService>().As<IWhitelistService>().SingleInstance();
+            builder.RegisterType<UserGroupManager>().AsSelf().SingleInstance();
+            builder.RegisterType<FileBasedUserGroup>().AsSelf();
+            builder.RegisterType<FileBasedUserGroupProvider>().AsSelf().As<IUserGroupProvider>().As<IHostedService>().SingleInstance();
+            builder.RegisterType<AdminService>().As<IAdminService>().SingleInstance();
+            builder.RegisterType<BlacklistService>().As<IBlacklistService>().SingleInstance();
+            builder.RegisterType<WhitelistService>().As<IWhitelistService>().SingleInstance();
             builder.RegisterType<IniTrackParamsProvider>().As<ITrackParamsProvider>().SingleInstance();
             builder.RegisterType<CSPServerScriptProvider>().AsSelf().SingleInstance();
             builder.RegisterType<CSPClientMessageTypeManager>().AsSelf().SingleInstance();
@@ -72,7 +76,6 @@ namespace AssettoServer.Network.Http
             builder.RegisterType<WhitelistSlotFilter>().As<IOpenSlotFilter>();
             builder.RegisterType<GuidSlotFilter>().As<IOpenSlotFilter>();
             builder.RegisterType<SignalHandler>().AsSelf().SingleInstance().AutoActivate();
-            builder.RegisterType<GuidListFile>().AsSelf();
 
             if (_configuration.Extra.EnableLegacyPluginInterface)
             {

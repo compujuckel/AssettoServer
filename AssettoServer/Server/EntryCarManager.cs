@@ -75,6 +75,10 @@ public class EntryCarManager
 
         await KickAsync(client, KickReason.VoteBlacklisted, reason, clientReason, broadcastReason, admin);
         await _blacklist.AddAsync(client.Guid);
+        if (client.OwnerGuid.HasValue && client.Guid != client.OwnerGuid)
+        {
+            await _blacklist.AddAsync(client.OwnerGuid.Value);
+        }
     }
 
     public async Task KickAsync(ACTcpClient? client, KickReason reason, string? auditReason = null, string? clientReason = null, string? broadcastReason = null, ACTcpClient? admin = null)

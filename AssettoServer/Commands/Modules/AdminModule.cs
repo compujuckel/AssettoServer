@@ -67,6 +67,10 @@ public class AdminModule : ACModuleBase
         else
         {
             Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
+            if (player.OwnerGuid.HasValue && player.Guid != player.OwnerGuid)
+            {
+                Reply($"{player.Name} is using Steam Family Sharing, banning game owner https://steamcommunity.com/profiles/{player.OwnerGuid}");
+            }
             return _entryCarManager.BanAsync(player, reason, Context.Client);
         }
 
@@ -170,6 +174,10 @@ public class AdminModule : ACModuleBase
     {
         Reply($"IP: {(player.TcpClient.Client.RemoteEndPoint as System.Net.IPEndPoint)?.Address}\nProfile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {player.EntryCar.Ping}ms");
         Reply($"Position: {player.EntryCar.Status.Position}\nVelocity: {(int)(player.EntryCar.Status.Velocity.Length() * 3.6)}kmh");
+        if (player.OwnerGuid.HasValue && player.Guid != player.OwnerGuid)
+        {
+            Reply($"Steam Family Sharing Owner: https://steamcommunity.com/profiles/{player.OwnerGuid}");
+        }
     }
 
     [Command("restrict")]

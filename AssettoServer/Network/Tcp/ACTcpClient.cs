@@ -36,6 +36,7 @@ namespace AssettoServer.Network.Tcp
         public string? NationCode { get; private set; }
         public bool IsAdministrator { get; internal set; }
         public ulong Guid { get; internal set; }
+        public ulong? OwnerGuid { get; internal set; }
         public EntryCar EntryCar { get; internal set; } = null!;
         public bool IsDisconnectRequested => _disconnectRequested == 1;
         public bool HasSentFirstUpdate { get; private set; }

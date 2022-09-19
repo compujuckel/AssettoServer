@@ -134,11 +134,19 @@ public class Steam : CriticalBackgroundService
                 }
             };
 
-            if (playerSteamId != ownerSteamId && _blacklistService.IsBlacklistedAsync(ownerSteamId).Result)
+            client.OwnerGuid = ownerSteamId;
+            if (playerSteamId != ownerSteamId)
             {
-                client.Logger.Information("{ClientName} ({SteamId}) is using Steam family sharing and game owner {OwnerSteamId} is blacklisted", client.Name, playerSteamId, ownerSteamId);
-                taskCompletionSource.SetResult(false);
-                return;
+                if (_blacklistService.IsBlacklistedAsync(ownerSteamId).Result)
+                {
+                    client.Logger.Information("{ClientName} ({SteamId}) is using Steam family sharing and game owner {OwnerSteamId} is blacklisted", client.Name, playerSteamId, ownerSteamId);
+                    taskCompletionSource.SetResult(false);
+                    return;
+                }
+                else
+                {
+                    client.Logger.Information("{ClientName} ({SteamId}) is using Steam family sharing, owner {OwnerSteamId}", client.Name, playerSteamId, ownerSteamId);
+                }
             }
 
             if (_configuration.Extra.ValidateDlcOwnership != null)

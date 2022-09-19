@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <SelfContained>false</SelfContained>
         <DebugType>embedded</DebugType>
+        <PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
     </PropertyGroup>
 
     <ItemGroup>

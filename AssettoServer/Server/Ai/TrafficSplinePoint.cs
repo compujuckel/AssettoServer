@@ -35,6 +35,7 @@ public class TrafficSplinePoint
 
     [Ignore] public TrafficSplinePoint[] Lanes { get; internal set; } = Array.Empty<TrafficSplinePoint>();
     [Ignore] public AiState? SlowestAiState { get; internal set; }
+    internal readonly object SlowestAiStateLock = new();
 
     public List<TrafficSplinePoint> GetLanes(bool twoWayTraffic = false)
     {

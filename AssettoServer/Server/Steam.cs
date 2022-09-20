@@ -169,7 +169,7 @@ public class Steam : CriticalBackgroundService
         bool validated = false;
 
         SteamServer.OnValidateAuthTicketResponse += ticketValidateResponse;
-        Task timeoutTask = Task.Delay(5000);
+        Task timeoutTask = Task.Delay(10000);
 
         if (!SteamServer.BeginAuthSession(sessionTicket, guid))
         {

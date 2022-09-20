@@ -19,23 +19,32 @@ public class AiState
 
     public TrafficSplinePoint CurrentSplinePoint
     {
-        get => _currentSplinePoint;
+        get => _currentSplinePoint!;
         private set
         {
-            if (_currentSplinePoint?.SlowestAiState == this)
+            if (_currentSplinePoint != null)
             {
-                _currentSplinePoint.SlowestAiState = null;
+                lock (_currentSplinePoint.SlowestAiStateLock)
+                {
+                    if (_currentSplinePoint?.SlowestAiState == this)
+                    {
+                        _currentSplinePoint.SlowestAiState = null;
+                    }
+                }
             }
 
             _currentSplinePoint = value;
-            if (_currentSplinePoint.SlowestAiState == null || _currentSplinePoint.SlowestAiState.CurrentSpeed > CurrentSpeed)
+            lock (_currentSplinePoint.SlowestAiStateLock)
             {
-                _currentSplinePoint.SlowestAiState = this;
+                if (_currentSplinePoint.SlowestAiState == null || _currentSplinePoint.SlowestAiState.CurrentSpeed > CurrentSpeed)
+                {
+                    _currentSplinePoint.SlowestAiState = this;
+                }
             }
         }
     }
 
-    private TrafficSplinePoint _currentSplinePoint = null!;
+    private TrafficSplinePoint? _currentSplinePoint;
 
     public TrafficMapView MapView { get; private set; }
     public long SpawnProtectionEnds { get; set; }
@@ -109,9 +118,12 @@ public class AiState
     public void Despawn()
     {
         Initialized = false;
-        if (_currentSplinePoint.SlowestAiState == this)
+        lock (_currentSplinePoint!.SlowestAiStateLock)
         {
-            _currentSplinePoint.SlowestAiState = null;
+            if (_currentSplinePoint.SlowestAiState == this)
+            {
+                _currentSplinePoint.SlowestAiState = null;
+            }
         }
     }
 
@@ -272,15 +284,21 @@ public class AiState
 
             if (closestAiState == null && point.SlowestAiState != null)
             {
-                if (point.SlowestAiState.CurrentSplinePoint != point)
+                lock (point.SlowestAiStateLock)
                 {
-                    Log.Debug("Found invalid slowest AI state");
-                    point.SlowestAiState = null;
-                }
-                else
-                {
-                    closestAiState = point.SlowestAiState;
-                    closestAiStateDistance = Vector3.Distance(Status.Position, closestAiState.Status.Position);
+                    if (point.SlowestAiState != null)
+                    {
+                        if (point.SlowestAiState.CurrentSplinePoint != point)
+                        {
+                            Log.Debug("Found invalid slowest AI state");
+                            point.SlowestAiState = null;
+                        }
+                        else
+                        {
+                            closestAiState = point.SlowestAiState;
+                            closestAiStateDistance = Vector3.Distance(Status.Position, closestAiState.Status.Position);
+                        }
+                    }
                 }
             }
 

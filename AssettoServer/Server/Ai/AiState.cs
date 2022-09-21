@@ -121,7 +121,9 @@ public class AiState
     public void Despawn()
     {
         Initialized = false;
-        lock (_currentSplinePoint!.SlowestAiStateLock)
+        if (_currentSplinePoint == null) return;
+        
+        lock (_currentSplinePoint.SlowestAiStateLock)
         {
             if (_currentSplinePoint.SlowestAiState == this)
             {

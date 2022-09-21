@@ -292,6 +292,7 @@ public partial class EntryCar
                 _aiStatesLock.EnterWriteLock();
                 try
                 {
+                    aiState.Despawn();
                     _aiStates.Remove(aiState);
                 }
                 finally
@@ -410,6 +411,10 @@ public partial class EntryCar
         _aiStatesLock.EnterWriteLock();
         try
         {
+            foreach (var state in _aiStates)
+            {
+                state.Despawn();
+            }
             _aiStates.Clear();
             _aiStates.Add(_aiStateFactory(this));
         }

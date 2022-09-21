@@ -109,4 +109,9 @@
       <HintPath>..\..\..\..\RiderProjects\Supercluster.KDTree\KDTree\bin\Debug\net6.0\Supercluster.KDTree.dll</HintPath>
     </Reference>-->
   </ItemGroup>
+  
+  <ItemGroup>
+    <None Remove="Server\Ai\ai_debug.lua" />
+    <EmbeddedResource Include="Server\Ai\ai_debug.lua" />
+  </ItemGroup>
 </Project>

@@ -22,6 +22,14 @@ public class AiState
         get => _currentSplinePoint!;
         private set
         {
+            lock (value.SlowestAiStateLock)
+            {
+                if (value.SlowestAiState == null || value.SlowestAiState.CurrentSpeed > CurrentSpeed)
+                {
+                    value.SlowestAiState = this;
+                }
+            }
+
             if (_currentSplinePoint != null)
             {
                 lock (_currentSplinePoint.SlowestAiStateLock)
@@ -34,13 +42,6 @@ public class AiState
             }
 
             _currentSplinePoint = value;
-            lock (_currentSplinePoint.SlowestAiStateLock)
-            {
-                if (_currentSplinePoint.SlowestAiState == null || _currentSplinePoint.SlowestAiState.CurrentSpeed > CurrentSpeed)
-                {
-                    _currentSplinePoint.SlowestAiState = this;
-                }
-            }
         }
     }
 
@@ -56,8 +57,9 @@ public class AiState
     public float MaxSpeed { get; private set; }
     public Color Color { get; private set; }
     public byte SpawnCounter { get; private set; }
+    public float ClosestAiObstacleDistance { get; private set; }
 
-    private const float WalkingSpeed = 7 / 3.6f;
+    private const float WalkingSpeed = 10 / 3.6f;
 
     private Vector3 _startTangent;
     private Vector3 _endTangent;
@@ -75,6 +77,7 @@ public class AiState
     private TrafficSplineJunction? _nextJunction;
     private bool _junctionPassed;
     private float _endIndicatorDistance;
+    private float _minObstacleDistance;
 
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
@@ -173,6 +176,7 @@ public class AiState
         _junctionPassed = false;
         _endIndicatorDistance = 0;
         _lastTick = _sessionManager.ServerTimeMilliseconds;
+        _minObstacleDistance = Random.Shared.Next(8, 13);
         SpawnCounter++;
         Initialized = true;
         Update();
@@ -397,12 +401,15 @@ public class AiState
         }
             
         float targetSpeed = InitialMaxSpeed;
+        float maxSpeed = InitialMaxSpeed;
         bool hasObstacle = false;
 
         var splineLookahead = SplineLookahead();
         var playerObstacle = FindClosestPlayerObstacle();
 
-        if (playerObstacle.distance < 10 || splineLookahead.ClosestAiStateDistance < 10)
+        ClosestAiObstacleDistance = splineLookahead.ClosestAiState != null ? splineLookahead.ClosestAiStateDistance : -1;
+
+        if (playerObstacle.distance < _minObstacleDistance || splineLookahead.ClosestAiStateDistance < _minObstacleDistance)
         {
             targetSpeed = 0;
             hasObstacle = true;
@@ -425,26 +432,17 @@ public class AiState
         }
         else if (splineLookahead.ClosestAiState != null)
         {
-            // AI in front has obstacle
-            if (splineLookahead.ClosestAiState.TargetSpeed < splineLookahead.ClosestAiState.MaxSpeed)
+            float closestTargetSpeed = Math.Min(splineLookahead.ClosestAiState.CurrentSpeed, splineLookahead.ClosestAiState.TargetSpeed);
+            if ((closestTargetSpeed < CurrentSpeed || splineLookahead.ClosestAiState.CurrentSpeed == 0)
+                && splineLookahead.ClosestAiStateDistance < PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - closestTargetSpeed, EntryCar.AiDeceleration) * 2 + 20)
             {
-                if ((splineLookahead.ClosestAiState.CurrentSpeed < CurrentSpeed || splineLookahead.ClosestAiState.CurrentSpeed == 0)
-                    && splineLookahead.ClosestAiStateDistance < PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - splineLookahead.ClosestAiState.CurrentSpeed, EntryCar.AiDeceleration) * 2 + 20)
-                {
-                    targetSpeed = Math.Max(WalkingSpeed, splineLookahead.ClosestAiState.CurrentSpeed);
-                    hasObstacle = true;
-                }
-            }
-            // AI in front is in clean air, so we just adapt our max speed
-            else if(Math.Pow(splineLookahead.ClosestAiStateDistance, 2) < SafetyDistanceSquared)
-            {
-                MaxSpeed = Math.Max(WalkingSpeed, splineLookahead.ClosestAiState.CurrentSpeed);
-                targetSpeed = MaxSpeed;
+                targetSpeed = Math.Max(WalkingSpeed, closestTargetSpeed);
+                hasObstacle = true;
             }
         }
 
         targetSpeed = Math.Min(splineLookahead.MaxSpeed, targetSpeed);
-            
+
         if (CurrentSpeed == 0 && !_stoppedForObstacle)
         {
             _stoppedForObstacle = true;
@@ -469,7 +467,8 @@ public class AiState
         {
             deceleration *= EntryCar.AiCorneringBrakeForceFactor;
         }
-            
+        
+        MaxSpeed = maxSpeed;
         SetTargetSpeed(targetSpeed, deceleration, EntryCar.AiAcceleration);
     }
 

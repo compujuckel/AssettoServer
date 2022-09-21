@@ -233,6 +233,8 @@ public class AiParams
     public float TyreDiameterMeters { get; set; } = 0.65f;
     [YamlMember(Description = "Apply some smoothing to AI spline camber")]
     public bool SmoothCamber { get; init; } = false;
+    [YamlMember(Description = "Show debug overlay for AI cars")]
+    public bool Debug { get; set; } = false;
     [YamlMember(Description = "Override some settings for specific car models/skins")]
     public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new();
 

@@ -7,6 +7,7 @@ using System.Web;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
+using Polly;
 using Serilog;
 
 namespace AssettoServer.Server;
@@ -33,8 +34,8 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         
         try
         {
-            if (!await RegisterToLobbyAsync())
-                return;
+            await RegisterToLobbyAsync();
+            Log.Information("Lobby registration successful");
         }
         catch (Exception ex)
         {
@@ -47,7 +48,11 @@ public class KunosLobbyRegistration : CriticalBackgroundService
             try
             {
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
-                await PingLobbyAsync();
+                await Policy
+                    .Handle<KunosLobbyException>()
+                    .Or<HttpRequestException>()
+                    .WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(attempt * 10))
+                    .ExecuteAsync(PingLobbyAsync, stoppingToken);
             }
             catch (TaskCanceledException) { }
             catch (Exception ex)
@@ -57,17 +62,29 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         }
     }
 
-    private async Task<bool> RegisterToLobbyAsync()
+    private async Task RegisterToLobbyAsync()
     {
         var cfg = _configuration.Server;
         var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/register");
         var queryParams = HttpUtility.ParseQueryString(builder.Query);
-        queryParams["name"] = cfg.Name + (_configuration.Extra.EnableServerDetails ? " ℹ" + _configuration.Server.HttpPort : "");
+
+        string cars = string.Join(',', _entryCarManager.EntryCars.Select(c => c.Model).Distinct());
+        
+        // Truncate cars list, Lobby will return 404 when the URL is too long
+        const int maxLen = 1200;
+        if (cars.Length > maxLen)
+        {
+            cars = cars[..maxLen];
+            int last = cars.LastIndexOf(',');
+            cars = cars[..last];
+        }
+        
+        queryParams["name"] = cfg.Name + (_configuration.Extra.EnableServerDetails ? $" ℹ{_configuration.Server.HttpPort}" : "");
         queryParams["port"] = cfg.UdpPort.ToString();
         queryParams["tcp_port"] = cfg.TcpPort.ToString();
         queryParams["max_clients"] = cfg.MaxClients.ToString();
         queryParams["track"] = _configuration.FullTrackName;
-        queryParams["cars"] = string.Join(',', _entryCarManager.EntryCars.Select(c => c.Model).Distinct());
+        queryParams["cars"] = cars;
         queryParams["timeofday"] = ((int)cfg.SunAngle).ToString();
         queryParams["sessions"] = string.Join(',', _configuration.Sessions.Select(s => (int)s.Type));
         queryParams["durations"] = string.Join(',', _configuration.Sessions.Select(s => s.IsTimedRace ? s.Time * 60 : s.Laps));
@@ -90,17 +107,13 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         HttpResponseMessage response = await _httpClient.GetAsync(builder.ToString());
         string body = await response.Content.ReadAsStringAsync();
 
-        if (body.StartsWith("OK"))
+        if (!body.StartsWith("OK"))
         {
-            Log.Information("Lobby registration successful");
-            return true;
+            throw new KunosLobbyException(body);
         }
-        
-        Log.Error("Could not register to lobby, server returned: {ErrorMessage}", body);
-        return false;
     }
 
-    private async Task PingLobbyAsync()
+    private async Task PingLobbyAsync(CancellationToken token)
     {
         var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/ping");
         var queryParams = HttpUtility.ParseQueryString(builder.Query);
@@ -113,12 +126,29 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         queryParams["pickup"] = "1";
         builder.Query = queryParams.ToString();
         
-        HttpResponseMessage response = await _httpClient.GetAsync(builder.ToString());
-        string body = await response.Content.ReadAsStringAsync();
+        HttpResponseMessage response = await _httpClient.GetAsync(builder.ToString(), token);
+        string body = await response.Content.ReadAsStringAsync(token);
 
         if (!body.StartsWith("OK"))
         {
-            Log.Error("Could not update lobby, server returned: {ErrorMessage}", body);
+            throw new KunosLobbyException(body);
         }
+    }
+}
+
+public class KunosLobbyException : Exception
+{
+    public KunosLobbyException()
+    {
+    }
+
+    public KunosLobbyException(string message)
+        : base(message)
+    {
+    }
+
+    public KunosLobbyException(string message, Exception inner)
+        : base(message, inner)
+    {
     }
 }

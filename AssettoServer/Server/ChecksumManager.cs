@@ -31,7 +31,7 @@ public class ChecksumManager
         CarChecksums = CalculateCarChecksums(carModels, _configuration.Extra.EnableAlternativeCarChecksums);
         Log.Information("Initialized {Count} car checksums", CarChecksums.Select(car => car.Value.Count).Sum());
 
-        var modelsWithoutChecksums = carModels.Except(CarChecksums.Keys).ToList();
+        var modelsWithoutChecksums = CarChecksums.Where(c => c.Value.Count == 0).Select(c => c.Key).ToList();
         if (modelsWithoutChecksums.Count > 0)
         {
             string models = string.Join(", ", modelsWithoutChecksums);

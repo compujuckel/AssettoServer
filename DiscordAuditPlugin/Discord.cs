@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Text.RegularExpressions;
 using AssettoServer.Commands;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Tcp;
@@ -12,7 +13,10 @@ namespace DiscordAuditPlugin;
 public class Discord
 {
     private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":", "@" };
-    private readonly string _serverNameTruncated;
+    // https://discord.com/developers/docs/resources/webhook#create-webhook
+    private static readonly string[] ForbiddenUsernameSubstrings = { "clyde", "discord", "@", "#", ":", "```" };
+    private static readonly string[] ForbiddenUsernames = { "everyone", "here" };
+    private readonly string _serverNameSanitized;
 
     private readonly DiscordConfiguration _configuration;
 
@@ -21,7 +25,7 @@ public class Discord
 
     public Discord(DiscordConfiguration configuration, EntryCarManager entryCarManager, ACServerConfiguration serverConfiguration, ChatService chatService)
     {
-        _serverNameTruncated = serverConfiguration.Server.Name.Substring(0, Math.Min(serverConfiguration.Server.Name.Length, 80));
+        _serverNameSanitized = SanitizeUsername(serverConfiguration.Server.Name);
         _configuration = configuration;
 
         if (!string.IsNullOrEmpty(_configuration.AuditUrl))
@@ -54,7 +58,7 @@ public class Discord
             {
                 await AuditHook!.SendAsync(PrepareAuditMessage(
                     ":hammer: Ban alert",
-                    _serverNameTruncated,
+                    _serverNameSanitized,
                     sender.Guid, 
                     sender.Name,
                     args.ReasonStr,
@@ -79,7 +83,7 @@ public class Discord
                 {
                     await AuditHook!.SendAsync(PrepareAuditMessage(
                         ":boot: Kick alert",
-                        _serverNameTruncated,
+                        _serverNameSanitized,
                         sender.Guid, 
                         sender.Name,
                         args.ReasonStr,
@@ -104,12 +108,12 @@ public class Discord
 
             if (_configuration.ChatMessageIncludeServerName)
             {
-                username = _serverNameTruncated;
+                username = _serverNameSanitized;
                 content = $"**{sender.Name}:** {Sanitize(args.Message)}";
             }
             else
             {
-                username = sender.Name ?? throw new InvalidOperationException("ACTcpClient has no name set");
+                username = SanitizeUsername(sender.Name) ?? throw new InvalidOperationException("ACTcpClient has no name set");
                 content = Sanitize(args.Message);
             }
 
@@ -139,7 +143,7 @@ public class Discord
         string userSteamUrl = "https://steamcommunity.com/profiles/" + clientGuid;
         DiscordMessage message = new DiscordMessage
         {
-            Username = serverName.Substring(0, Math.Min(serverName.Length, 80)),
+            Username = SanitizeUsername(serverName),
             AvatarUrl = _configuration.PictureUrl,
             Embeds = new List<DiscordEmbed>
             {
@@ -173,5 +177,24 @@ public class Discord
         foreach (string unsafeChar in SensitiveCharacters)
             text = text.Replace(unsafeChar, $"\\{unsafeChar}");
         return text;
+    }
+
+    private static string SanitizeUsername(string? name)
+    {
+        name ??= "";
+
+        foreach (string str in ForbiddenUsernames)
+        {
+            if (name == str) return $"_{str}";
+        }
+
+        foreach (string str in ForbiddenUsernameSubstrings)
+        {
+            name = Regex.Replace(name, str, new string('*', str.Length), RegexOptions.IgnoreCase);
+        }
+
+        name = name.Substring(0, Math.Min(name.Length, 80));
+
+        return name;
     }
 }

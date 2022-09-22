@@ -153,6 +153,8 @@ namespace AssettoServer.Server.Ai
             CountedArray<short> closestAiObstacles = new(_entryCarManager.EntryCars.Length);
             foreach (var player in _entryCarManager.ConnectedCars.Values)
             {
+                if (player.Client?.HasSentFirstUpdate == false) continue;
+
                 sessionIds.Clear();
                 currentSpeeds.Clear();
                 targetSpeeds.Clear();

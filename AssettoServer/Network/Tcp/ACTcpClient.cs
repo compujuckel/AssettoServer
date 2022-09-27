@@ -365,7 +365,7 @@ namespace AssettoServer.Network.Tcp
                                 SessionCount = (byte)_configuration.Sessions.Count,
                                 Sessions = _configuration.Sessions,
                                 SpawnPosition = SessionId,
-                                TrackGrip = Math.Clamp(cfg.DynamicTrack != null ? cfg.DynamicTrack.BaseGrip + (cfg.DynamicTrack.GripPerLap * cfg.DynamicTrack.TotalLapCount) : 1, 0, 1),
+                                TrackGrip = _weatherManager.CurrentWeather.TrackGrip,
                                 MaxContactsPerKm = cfg.MaxContactsPerKm
                             };
 

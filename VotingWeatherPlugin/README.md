@@ -10,7 +10,7 @@ EnablePlugins:
 ```
 
 Example configuration (add to bottom of `extra_cfg.yml`)  
-For a list of weather types that can be used with `BlacklistedWeathers` see [WeatherFX Types](https://github.com/compujuckel/AssettoServer/wiki/WeatherFX-Types)
+For a list of weather types that can be used with `BlacklistedWeathers` see [WeatherFX Types](https://assettoserver.org/docs/misc/wfx-types)
 ```yaml
 ---
 !VotingWeatherConfiguration

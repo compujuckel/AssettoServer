@@ -121,7 +121,7 @@ public class ACServerConfiguration
         if (Regex.IsMatch(Server.Name, @"x:\w+$"))
         {
             const string errorMsg =
-                "Server details are configured via ID in server name. This interferes with native AssettoServer server details. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors#wrong-server-details";
+                "Server details are configured via ID in server name. This interferes with native AssettoServer server details. More info: https://assettoserver.org/docs/common-configuration-errors#wrong-server-details";
             if (Extra.IgnoreConfigurationErrors.WrongServerDetails)
             {
                 Log.Warning(errorMsg);

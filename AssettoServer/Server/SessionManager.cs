@@ -5,6 +5,7 @@ using System.Linq;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Weather;
 using Serilog;
 
 namespace AssettoServer.Server;
@@ -15,6 +16,7 @@ public class SessionManager
     private readonly Func<SessionConfiguration, SessionState> _sessionStateFactory;
     private readonly Stopwatch _timeSource = new();
     private readonly EntryCarManager _entryCarManager;
+    private readonly Lazy<WeatherManager> _weatherManager;
 
     public int CurrentSessionIndex { get; private set; } = -1;
     public bool IsLastRaceInverted { get; private set; } = false;
@@ -28,11 +30,12 @@ public class SessionManager
     /// </summary>
     public event EventHandler<SessionManager, SessionChangedEventArgs>? SessionChanged;
     
-    public SessionManager(ACServerConfiguration configuration, Func<SessionConfiguration, SessionState> sessionStateFactory, EntryCarManager entryCarManager)
+    public SessionManager(ACServerConfiguration configuration, Func<SessionConfiguration, SessionState> sessionStateFactory, EntryCarManager entryCarManager, Lazy<WeatherManager> weatherManager)
     {
         _configuration = configuration;
         _sessionStateFactory = sessionStateFactory;
         _entryCarManager = entryCarManager;
+        _weatherManager = weatherManager;
     }
 
     internal void Initialize()
@@ -136,7 +139,7 @@ public class SessionManager
         {
             CurrentSession = CurrentSession.Configuration,
             Grid = CurrentSession.Grid,
-            TrackGrip = Math.Clamp(_configuration.Server.DynamicTrack != null ? _configuration.Server.DynamicTrack.BaseGrip + (_configuration.Server.DynamicTrack.GripPerLap * _configuration.Server.DynamicTrack.TotalLapCount) : 1, 0, 1),
+            TrackGrip = _weatherManager.Value.CurrentWeather.TrackGrip
         };
 
         if (target == null)

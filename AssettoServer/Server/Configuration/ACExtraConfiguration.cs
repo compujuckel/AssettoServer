@@ -49,7 +49,7 @@ public class ACExtraConfiguration
     public List<string>? GeoParamsCountryOverride { get; init; } = null;
     [YamlMember(Description = "List of plugins to enable")]
     public List<string>? EnablePlugins { get; init; } = new();
-    [YamlMember(Description = "Ignore some common configuration errors. More info: https://github.com/compujuckel/AssettoServer/wiki/Common-configuration-errors")]
+    [YamlMember(Description = "Ignore some common configuration errors. More info: https://assettoserver.org/docs/common-configuration-errors")]
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
     public bool EnableClientMessages { get; init; } = false;

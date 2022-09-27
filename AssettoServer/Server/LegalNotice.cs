@@ -6,7 +6,7 @@
  */
 public static class LegalNotice
 {
-    public const string WelcomeMessage = "\n_____\nPowered by AssettoServer https://github.com/compujuckel/AssettoServer\nType /legal for more details.";
+    public const string WelcomeMessage = "\n_____\nPowered by AssettoServer https://assettoserver.org\nType /legal for more details.";
 
     public const string LegalNoticeText =
 @"| Copyright (C) 2022  Niewiarowski, compujuckel

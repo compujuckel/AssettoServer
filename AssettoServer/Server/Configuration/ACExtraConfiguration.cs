@@ -230,6 +230,14 @@ public class AiParams
     [YamlMember(Description = "Dynamic (hourly) traffic density. List must have exactly 24 entries in the format [0.2, 0.5, 1, 0.7, ...]")]
     public List<float>? HourlyTrafficDensity { get; set; }
     [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless some cars are creating lots of smoke.")]
+    public float? MinRandomTrafficDensity { get; set; }
+    [YamlMember(Description = "Density of the minimum traffic density when using random dynamic traffic")]
+    public float? MaxRandomTrafficDensity { get; set; }
+    [YamlMember(Description = "Density of the maximum traffic density when using random dynamic traffic")]
+    public int? MinRandomTrafficDensityMinutes { get; set; }
+    [YamlMember(Description = "Density of the maximum traffic density when using random dynamic traffic")]
+    public int? MaxRandomTrafficDensityMinutes { get; set; }
+    [YamlMember(Description = "Density of the maximum traffic density when using random dynamic traffic")]
     public float TyreDiameterMeters { get; set; } = 0.65f;
     [YamlMember(Description = "Apply some smoothing to AI spline camber")]
     public bool SmoothCamber { get; init; } = false;

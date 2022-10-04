@@ -34,9 +34,10 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         
         try
         {
-            await RegisterToLobbyAsync();
+            await RegisterToLobbyAsync(stoppingToken);
             Log.Information("Lobby registration successful");
         }
+        catch (TaskCanceledException) { }
         catch (Exception ex)
         {
             Log.Error(ex, "Error during Kunos lobby registration");
@@ -62,7 +63,7 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         }
     }
 
-    private async Task RegisterToLobbyAsync()
+    private async Task RegisterToLobbyAsync(CancellationToken token)
     {
         var cfg = _configuration.Server;
         var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/register");
@@ -104,8 +105,8 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         builder.Query = queryParams.ToString();
 
         Log.Information("Registering server to lobby...");
-        HttpResponseMessage response = await _httpClient.GetAsync(builder.ToString());
-        string body = await response.Content.ReadAsStringAsync();
+        HttpResponseMessage response = await _httpClient.GetAsync(builder.ToString(), token);
+        string body = await response.Content.ReadAsStringAsync(token);
 
         if (!body.StartsWith("OK"))
         {

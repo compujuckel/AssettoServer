@@ -1,11 +1,12 @@
-﻿using AssettoServer.Server.Weather;
+﻿using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Weather;
 using JetBrains.Annotations;
 using YamlDotNet.Serialization;
 
 namespace VotingWeatherPlugin;
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
-public class VotingWeatherConfiguration
+public class VotingWeatherConfiguration : IValidateConfiguration<VotingWeatherConfigurationValidator>
 {
     public List<WeatherFxType> BlacklistedWeathers { get; init; } = new();
     public int NumChoices { get; init; } = 3;

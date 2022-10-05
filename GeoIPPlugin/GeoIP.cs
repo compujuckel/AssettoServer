@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using AssettoServer.Server.Configuration;
 using MaxMind.GeoIP2;
 
 namespace GeoIPPlugin;
@@ -12,7 +11,7 @@ public class GeoIP
 
     public GeoIP(EntryCarManager entryCarManager, GeoIPConfiguration configuration)
     {
-        _database = new DatabaseReader(configuration.DatabasePath ?? throw new ConfigurationException("No GeoIP database path set"));
+        _database = new DatabaseReader(configuration.DatabasePath);
         entryCarManager.ClientConnected += OnClientConnected;
     }
 

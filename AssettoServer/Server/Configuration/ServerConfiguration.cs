@@ -15,7 +15,7 @@ public class ServerConfiguration
     [IniField("SERVER", "MAX_CLIENTS")] public int MaxClients { get; init; }
     [IniField("SERVER", "UDP_PORT")] public ushort UdpPort { get; init; } = 9600;
     [IniField("SERVER", "TCP_PORT")] public ushort TcpPort { get; init; } = 9600;
-    [IniField("SERVER", "HTTP_PORT")] public int HttpPort { get; init; } = 8081;
+    [IniField("SERVER", "HTTP_PORT")] public ushort HttpPort { get; init; } = 8081;
     [IniField("SERVER", "CLIENT_SEND_INTERVAL_HZ")] public byte RefreshRateHz { get; init; } = 20;
     [IniField("SERVER", "TRACK")] public string Track { get; init; } = "";
     [IniField("SERVER", "CONFIG_TRACK")] public string TrackConfig { get; init; } = "";
@@ -50,7 +50,7 @@ public class ServerConfiguration
     [IniField("SERVER", "UDP_PLUGIN_LOCAL_PORT")] public ushort UdpPluginLocalPort { get; set; }
 
     [IniSection("WEATHER")] public IReadOnlyList<WeatherConfiguration> Weathers { get; init; } = new List<WeatherConfiguration>();
-    [IniSection("DYNAMIC_TRACK")] public DynamicTrackConfiguration? DynamicTrack { get; init; }
+    [IniSection("DYNAMIC_TRACK")] public DynamicTrackConfiguration DynamicTrack { get; init; } = new();
     [IniSection("PRACTICE")] public SessionConfiguration? Practice { get; init; }
     [IniSection("QUALIFY")] public SessionConfiguration? Qualify { get; init; }
     [IniSection("RACE")] public SessionConfiguration? Race { get; init; }

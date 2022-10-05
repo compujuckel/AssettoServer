@@ -1,9 +1,10 @@
-﻿using JetBrains.Annotations;
+﻿using AssettoServer.Server.Configuration;
+using JetBrains.Annotations;
 
 namespace WordFilterPlugin;
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
-public class WordFilterConfiguration
+public class WordFilterConfiguration : IValidateConfiguration<WordFilterConfigurationValidator>
 {
     public List<string> ProhibitedUsernamePatterns { get; init; } = new();
 

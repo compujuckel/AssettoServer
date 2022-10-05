@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Utils;
-using Autofac;
+using FluentValidation;
 using Newtonsoft.Json;
 using Serilog;
 
@@ -106,6 +105,9 @@ public class ACServerConfiguration
         Sessions = sessions;
 
         LoadExtraConfig();
+
+        var validator = new ACServerConfigurationValidator();
+        validator.ValidateAndThrow(this);
     }
 
     private void LoadExtraConfig() {
@@ -132,16 +134,7 @@ public class ACServerConfiguration
             }
         }
 
-        if (Extra.RainTrackGripReductionPercent is < 0 or > 0.5)
-        {
-            throw new ConfigurationException("RainTrackGripReductionPercent must be in the range 0..0.5");
-        }
-        
-        if (Extra.AiParams.MaxSpeedVariationPercent is < 0 or > 1)
-        {
-            throw new ConfigurationException("MaxSpeedVariationPercent must be in the range 0..1");
-        }
-        
+        // TODO fluent validation
         if (Extra.AiParams.HourlyTrafficDensity != null && Extra.AiParams.HourlyTrafficDensity.Count != 24)
         {
             throw new ConfigurationException("HourlyTrafficDensity must have exactly 24 entries");

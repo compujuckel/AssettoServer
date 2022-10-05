@@ -1,6 +1,5 @@
 ﻿using AssettoServer.Commands;
 using Qmmands;
-using Serilog;
 
 namespace SamplePlugin;
 

@@ -15,14 +15,8 @@ public class TimeDilationPlugin : CriticalBackgroundService, IAssettoServerAutos
 
     public TimeDilationPlugin(TimeDilationConfiguration configuration, WeatherManager weatherManager, ACServerConfiguration serverConfiguration, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
-        if (configuration.LookupTable == null || configuration.LookupTable.Count == 0)
-        {
-            throw new ConfigurationException("No configuration found for TimeDilationPlugin or lookup table empty");
-        }
-
         _weatherManager = weatherManager;
         _configuration = serverConfiguration;
-
         _lookupTable = new LookupTable(configuration.LookupTable.Select(entry => new KeyValuePair<double, double>(entry.SunAngle, entry.TimeMult)).ToList());
     }
     

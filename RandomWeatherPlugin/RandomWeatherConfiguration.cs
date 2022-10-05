@@ -1,12 +1,12 @@
-﻿using AssettoServer.Server.Weather;
+﻿using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Weather;
 using JetBrains.Annotations;
 using YamlDotNet.Serialization;
 
 namespace RandomWeatherPlugin;
 
-
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
-public class RandomWeatherConfiguration
+public class RandomWeatherConfiguration : IValidateConfiguration<RandomWeatherConfigurationValidator>
 {
     public Dictionary<WeatherFxType, float> WeatherWeights { get; init; } = new();
 

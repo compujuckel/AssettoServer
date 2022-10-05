@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using AssettoServer.Server.Configuration;
 using McMaster.NETCore.Plugins;
 using Serilog;
 
@@ -46,13 +47,22 @@ public class ACPluginLoader
                 AssettoServerModule instance = Activator.CreateInstance(type) as AssettoServerModule ?? throw new InvalidOperationException("Could not create plugin instance");
 
                 Type? configType = null;
+                Type? validatorType = null;
                 var baseType = type.BaseType!;
                 if (baseType.IsGenericType && baseType.GetGenericTypeDefinition() == typeof(AssettoServerModule<>))
                 {
                     configType = baseType.GetGenericArguments()[0];
+
+                    foreach (var iface in configType.GetInterfaces())
+                    {
+                        if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IValidateConfiguration<>))
+                        {
+                            validatorType = iface.GetGenericArguments()[0];
+                        }
+                    }
                 }
 
-                LoadedPlugins.Add(new Plugin(name, assembly, instance, configType));
+                LoadedPlugins.Add(new Plugin(name, assembly, instance, configType, validatorType));
             }
         }
         

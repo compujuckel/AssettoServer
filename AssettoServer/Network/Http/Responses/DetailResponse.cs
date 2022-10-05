@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using AssettoServer.Server.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -40,6 +41,7 @@ public class DetailResponseAssists
     public bool ForceVirtualMirror { get; set; }
 }
 
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 public class DetailResponseCar : EntryListResponseCar
 {
     public string? DriverNation { get; set; }

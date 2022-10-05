@@ -140,7 +140,7 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
         };
         _chatService.MessageReceived += (client, args) =>
         {
-            SendPacket(new Chat()
+            SendPacket(new Chat
             {
                 SessionId = client.SessionId,
                 Message = args.Message,

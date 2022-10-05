@@ -1,25 +1,21 @@
-﻿using AssettoServer.Network.Packets.Shared;
+﻿namespace AssettoServer.Network.Packets.Outgoing;
 
-namespace AssettoServer.Network.Packets.Outgoing
+public enum CSPCarVisibility
 {
-
-    public enum CSPCarVisibility
-    {
-        Visible = 0,
-        Invisible = 1
-    }
+    Visible = 0,
+    Invisible = 1
+}
     
-    public class CSPCarVisibilityUpdate : IOutgoingNetworkPacket
-    {
-        public byte SessionId;
-        public CSPCarVisibility Visible;
+public class CSPCarVisibilityUpdate : IOutgoingNetworkPacket
+{
+    public byte SessionId;
+    public CSPCarVisibility Visible;
         
-        public void ToWriter(ref PacketWriter writer)
-        {
-            writer.Write((byte)ACServerProtocol.Extended);
-            writer.Write((byte)CSPMessageTypeTcp.CarVisibilityUpdate);
-            writer.Write<byte>(SessionId);
-            writer.Write((byte)Visible);
-        }
+    public void ToWriter(ref PacketWriter writer)
+    {
+        writer.Write((byte)ACServerProtocol.Extended);
+        writer.Write((byte)CSPMessageTypeTcp.CarVisibilityUpdate);
+        writer.Write<byte>(SessionId);
+        writer.Write((byte)Visible);
     }
 }

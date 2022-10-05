@@ -123,7 +123,7 @@ public class EntryCarRace
                             CurrentRace = null;
                             _plugin.GetRace(car).CurrentRace = null;
 
-                            ChatMessage timeoutMessage = new ChatMessage { SessionId = 255, Message = $"Race request has timed out." };
+                            ChatMessage timeoutMessage = new ChatMessage { SessionId = 255, Message = "Race request has timed out." };
                             _entryCar.Client?.SendPacket(timeoutMessage);
                             car.Client?.SendPacket(timeoutMessage);
                         }
@@ -136,7 +136,7 @@ public class EntryCarRace
     private void ChallengeNearbyCar()
     {
         EntryCar? bestMatch = null;
-        float distanceSquared = 30 * 30;
+        const float distanceSquared = 30 * 30;
 
         foreach(EntryCar car in _entryCarManager.EntryCars)
         {

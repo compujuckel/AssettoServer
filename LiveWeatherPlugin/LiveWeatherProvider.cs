@@ -20,10 +20,6 @@ public class LiveWeatherProvider : CriticalBackgroundService, IAssettoServerAuto
         _configuration = configuration;
         _weatherManager = weatherManager;
         _weatherTypeProvider = weatherTypeProvider;
-
-        if (string.IsNullOrWhiteSpace(_configuration.OpenWeatherMapApiKey))
-            throw new InvalidOperationException("OpenWeatherMap API key not set. Cannot enable live weather");
-
         _liveWeatherProvider = new OpenWeatherMapWeatherProvider(_configuration.OpenWeatherMapApiKey);
     }
 

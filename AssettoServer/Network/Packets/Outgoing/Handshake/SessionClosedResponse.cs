@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace AssettoServer.Network.Packets.Outgoing.Handshake;
 
-namespace AssettoServer.Network.Packets.Outgoing.Handshake
+public readonly struct SessionClosedResponse : IOutgoingNetworkPacket
 {
-    public readonly struct SessionClosedResponse : IOutgoingNetworkPacket
+    public void ToWriter(ref PacketWriter writer)
     {
-        public void ToWriter(ref PacketWriter writer)
-        {
-            writer.Write((byte)ACServerProtocol.SessionClosed);
-        }
+        writer.Write((byte)ACServerProtocol.SessionClosed);
     }
 }

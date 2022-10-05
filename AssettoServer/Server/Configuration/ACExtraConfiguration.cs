@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using AssettoServer.Server.Plugin;
 using Autofac;
+using FluentValidation;
 using JetBrains.Annotations;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
@@ -16,7 +19,7 @@ public class ACExtraConfiguration
     [YamlMember(Description = "Enable Steam ticket validation. Requires CSP 0.1.75+ and a recent version of Content Manager")]
     public bool UseSteamAuth { get; init; } = false;
     [YamlMember(Description = "List of DLC App IDs that are required to join. Steam auth must be enabled. Possible values: https://steamdb.info/app/244210/dlc/")]
-    public List<int>? ValidateDlcOwnership { get; init; } = new();
+    public List<int> ValidateDlcOwnership { get; init; } = new();
     [YamlMember(Description = "Enable AFK autokick")]
     public bool EnableAntiAfk { get; set; } = true;
     [YamlMember(Description = "Maximum allowed AFK time before kick")]
@@ -48,7 +51,7 @@ public class ACExtraConfiguration
     [YamlMember(Description = "Override the country shown in CM. Please do not use this unless the autodetected country is wrong", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public List<string>? GeoParamsCountryOverride { get; init; } = null;
     [YamlMember(Description = "List of plugins to enable")]
-    public List<string>? EnablePlugins { get; init; } = new();
+    public List<string> EnablePlugins { get; init; } = new();
     [YamlMember(Description = "Ignore some common configuration errors. More info: https://assettoserver.org/docs/common-configuration-errors")]
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
@@ -136,6 +139,27 @@ public class ACExtraConfiguration
         while (yamlParser.Accept<DocumentStart>(out _))
         {
             var pluginConfig = deserializer.Deserialize(yamlParser)!;
+
+            foreach (var plugin in loader.LoadedPlugins)
+            {
+                if (plugin.ConfigurationType == pluginConfig.GetType() && plugin.ValidatorType != null)
+                {
+                    var validator = Activator.CreateInstance(plugin.ValidatorType)!;
+                    var method = typeof(DefaultValidatorExtensions).GetMethod("ValidateAndThrow")!;
+                    var generic = method.MakeGenericMethod(pluginConfig.GetType());
+                    try
+                    {
+                        generic.Invoke(null, new[] { validator, pluginConfig });
+                    }
+                    catch (TargetInvocationException ex)
+                    {
+                        throw ex.InnerException ?? ex;
+                    }
+
+                    break;
+                }
+            }
+            
             builder.RegisterInstance(pluginConfig).AsSelf();
         }
     }

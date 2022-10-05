@@ -3,34 +3,33 @@ using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using System.Collections.Generic;
 
-namespace AssettoServer.Network.Packets.Outgoing
+namespace AssettoServer.Network.Packets.Outgoing;
+
+public class CurrentSessionUpdate : IOutgoingNetworkPacket
 {
-    public class CurrentSessionUpdate : IOutgoingNetworkPacket
+    public SessionConfiguration? CurrentSession;
+    public float TrackGrip;
+    public IEnumerable<EntryCar>? Grid;
+    public long StartTime;
+
+    public void ToWriter(ref PacketWriter writer)
     {
-        public SessionConfiguration? CurrentSession;
-        public float TrackGrip;
-        public IEnumerable<EntryCar>? Grid;
-        public long StartTime;
+        if (CurrentSession == null)
+            throw new ArgumentNullException(nameof(CurrentSession));
+        if (Grid == null)
+            throw new ArgumentNullException(nameof(Grid));
 
-        public void ToWriter(ref PacketWriter writer)
-        {
-            if (CurrentSession == null)
-                throw new ArgumentNullException(nameof(CurrentSession));
-            if (Grid == null)
-                throw new ArgumentNullException(nameof(Grid));
+        writer.Write((byte)ACServerProtocol.CurrentSessionUpdate);
+        writer.WriteASCIIString(CurrentSession.Name);
+        writer.Write((byte)CurrentSession.Id);
+        writer.Write((byte)CurrentSession.Type);
+        writer.Write((ushort)CurrentSession.Time);
+        writer.Write((ushort)CurrentSession.Laps);
+        writer.Write(TrackGrip);
 
-            writer.Write((byte)ACServerProtocol.CurrentSessionUpdate);
-            writer.WriteASCIIString(CurrentSession.Name);
-            writer.Write((byte)CurrentSession.Id);
-            writer.Write((byte)CurrentSession.Type);
-            writer.Write((ushort)CurrentSession.Time);
-            writer.Write((ushort)CurrentSession.Laps);
-            writer.Write(TrackGrip);
+        foreach (EntryCar car in Grid)
+            writer.Write(car.SessionId);
 
-            foreach (EntryCar car in Grid)
-                writer.Write(car.SessionId);
-
-            writer.Write(StartTime);
-        }
+        writer.Write(StartTime);
     }
 }

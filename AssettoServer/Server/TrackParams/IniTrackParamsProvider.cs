@@ -61,7 +61,7 @@ public class IniTrackParamsProvider : ITrackParamsProvider
 
         if (data.Sections.ContainsSection(cleanTrack))
         {
-            return new TrackParams()
+            return new TrackParams
             {
                 Latitude = double.Parse(data[cleanTrack]["LATITUDE"]),
                 Longitude = double.Parse(data[cleanTrack]["LONGITUDE"]),

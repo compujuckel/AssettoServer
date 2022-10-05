@@ -58,11 +58,11 @@ public class HttpController : ControllerBase
     [HttpGet("/INFO")]
     public InfoResponse GetInfo()
     {
-        InfoResponse responseObj = new InfoResponse()
+        InfoResponse responseObj = new InfoResponse
         {
             Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct(),
             Clients = _entryCarManager.ConnectedCars.Count,
-            Country = new string[] { _geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode },
+            Country = new[] { _geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode },
             CPort = _configuration.Server.HttpPort,
             Durations = _configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps),
             Extra = _configuration.Server.HasExtraLap,
@@ -122,7 +122,7 @@ public class HttpController : ControllerBase
         {
             Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct(),
             Clients = _entryCarManager.ConnectedCars.Count,
-            Country = new string[] { _geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode },
+            Country = new[] { _geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode },
             CPort = _configuration.Server.HttpPort,
             Durations = _configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps),
             Extra = _configuration.Server.HasExtraLap,

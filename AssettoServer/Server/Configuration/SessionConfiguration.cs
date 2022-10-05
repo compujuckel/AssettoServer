@@ -1,5 +1,4 @@
-﻿using AssettoServer.Network.Packets.UdpPlugin;
-using AssettoServer.Utils;
+﻿using AssettoServer.Utils;
 using JetBrains.Annotations;
 
 namespace AssettoServer.Server.Configuration;

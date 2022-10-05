@@ -9,12 +9,14 @@ public class Plugin
     public Assembly Assembly { get; }
     public AssettoServerModule Instance { get; }
     public Type? ConfigurationType { get; }
+    public Type? ValidatorType { get; }
 
-    public Plugin(string name, Assembly assembly, AssettoServerModule instance, Type? configurationType)
+    public Plugin(string name, Assembly assembly, AssettoServerModule instance, Type? configurationType, Type? validatorType)
     {
         Name = name;
         Assembly = assembly;
         Instance = instance;
         ConfigurationType = configurationType;
+        ValidatorType = validatorType;
     }
 }

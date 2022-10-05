@@ -1,18 +1,12 @@
-﻿using AssettoServer.Server;
-using AssettoServer.Server.Configuration;
+﻿using AssettoServer.Server.Configuration;
 using System;
 using System.Globalization;
 using System.Threading.Tasks;
-using App.Metrics;
-using App.Metrics.AspNetCore;
-using App.Metrics.Formatters.Prometheus;
 using AssettoServer.Network.Http;
-using AssettoServer.Server.Plugin;
-using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using CommandLine;
+using FluentValidation;
 using JetBrains.Annotations;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -41,6 +35,8 @@ internal static class Program
         // Prevent parsing errors in floats because some cultures use "," instead of "." as decimal separator
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
+        ValidatorOptions.Global.DisplayNameResolver = (_, member, _) => member?.Name; 
             
         var options = Parser.Default.ParseArguments<Options>(args).Value;
         if (options == null) return;

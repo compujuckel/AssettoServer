@@ -110,7 +110,7 @@ public class Steam : CriticalBackgroundService
             return false;
 
         TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
-        void ticketValidateResponse(SteamId playerSteamId, SteamId ownerSteamId, AuthResponse authResponse)
+        void TicketValidateResponse(SteamId playerSteamId, SteamId ownerSteamId, AuthResponse authResponse)
         {
             if (playerSteamId != guid)
                 return;
@@ -149,26 +149,23 @@ public class Steam : CriticalBackgroundService
                 }
             }
 
-            if (_configuration.Extra.ValidateDlcOwnership != null)
+            foreach (int appid in _configuration.Extra.ValidateDlcOwnership)
             {
-                foreach (int appid in _configuration.Extra.ValidateDlcOwnership)
+                if (SteamServer.UserHasLicenseForApp(playerSteamId, appid) != UserHasLicenseForAppResult.HasLicense)
                 {
-                    if (SteamServer.UserHasLicenseForApp(playerSteamId, appid) != UserHasLicenseForAppResult.HasLicense)
-                    {
-                        client.Logger.Information("{ClientName} does not own required DLC {DlcId}", client.Name, appid);
-                        taskCompletionSource.SetResult(false);
-                        return;
-                    }
+                    client.Logger.Information("{ClientName} does not own required DLC {DlcId}", client.Name, appid);
+                    taskCompletionSource.SetResult(false);
+                    return;
                 }
             }
-            
+
             client.Logger.Information("Steam auth ticket verification succeeded for {ClientName}", client.Name);
             taskCompletionSource.SetResult(true);
         }
 
         bool validated = false;
 
-        SteamServer.OnValidateAuthTicketResponse += ticketValidateResponse;
+        SteamServer.OnValidateAuthTicketResponse += TicketValidateResponse;
         Task timeoutTask = Task.Delay(10000);
 
         if (!SteamServer.BeginAuthSession(sessionTicket, guid))
@@ -188,7 +185,7 @@ public class Steam : CriticalBackgroundService
             validated = await taskCompletionSource.Task;
         }
 
-        SteamServer.OnValidateAuthTicketResponse -= ticketValidateResponse;
+        SteamServer.OnValidateAuthTicketResponse -= TicketValidateResponse;
         return validated;
     }
 

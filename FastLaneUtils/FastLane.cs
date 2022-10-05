@@ -53,8 +53,10 @@ public class FastLane
     {
         using var reader = new BinaryReader(file);
 
-        var fastLane = new FastLane();
-        fastLane.Version = reader.ReadInt32();
+        var fastLane = new FastLane
+        {
+            Version = reader.ReadInt32()
+        };
 
         return fastLane.Version switch
         {

@@ -53,7 +53,7 @@ public class ACUdpServer : CriticalBackgroundService
         
         if (UDP.Bind(_socket, ref address) != 0)
         {
-            throw new InvalidOperationException($"Could not bind UDP socket. Maybe the port is already in use?");
+            throw new InvalidOperationException("Could not bind UDP socket. Maybe the port is already in use?");
         }
         
         await Task.Factory.StartNew(() => ReceiveLoop(stoppingToken), TaskCreationOptions.LongRunning);
@@ -112,14 +112,14 @@ public class ACUdpServer : CriticalBackgroundService
                         _endpointCars[address] = car;
                         car.Client.Disconnecting += OnClientDisconnecting;
 
-                        byte[] response = new byte[1] { 0x4E };
+                        byte[] response = { 0x4E };
                         Send(address, response, 0, 1);
                     }
                 }
             }
             else if (packetId == ACServerProtocol.LobbyCheck)
             {
-                ushort httpPort = (ushort)_configuration.Server.HttpPort;
+                ushort httpPort = _configuration.Server.HttpPort;
                 MemoryMarshal.Write(buffer.AsSpan().Slice(1), ref httpPort);
                 Send(address, buffer, 0, 3);
             }

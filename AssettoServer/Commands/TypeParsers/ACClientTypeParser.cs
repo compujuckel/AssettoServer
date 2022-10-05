@@ -4,66 +4,65 @@ using Qmmands;
 using System;
 using System.Threading.Tasks;
 
-namespace AssettoServer.Commands.TypeParsers
+namespace AssettoServer.Commands.TypeParsers;
+
+public class ACClientTypeParser : TypeParser<ACTcpClient>
 {
-    public class ACClientTypeParser : TypeParser<ACTcpClient>
+    private readonly EntryCarManager _entryCarManager;
+
+    public ACClientTypeParser(EntryCarManager entryCarManager)
     {
-        private readonly EntryCarManager _entryCarManager;
+        _entryCarManager = entryCarManager;
+    }
 
-        public ACClientTypeParser(EntryCarManager entryCarManager)
+    public override ValueTask<TypeParserResult<ACTcpClient>> ParseAsync(Parameter parameter, string value, CommandContext context)
+    {
+        if (context is ACCommandContext acContext)
         {
-            _entryCarManager = entryCarManager;
-        }
+            if (int.TryParse(value, out int result) && _entryCarManager.ConnectedCars.TryGetValue(result, out EntryCar? car) && car.Client != null)
+                return TypeParserResult<ACTcpClient>.Successful(car.Client);
 
-        public override ValueTask<TypeParserResult<ACTcpClient>> ParseAsync(Parameter parameter, string value, CommandContext context)
-        {
-            if (context is ACCommandContext acContext)
+            ACTcpClient? exactMatch = null;
+            ACTcpClient? ignoreCaseMatch = null;
+            ACTcpClient? containsMatch = null;
+            ACTcpClient? ignoreCaseContainsMatch = null;
+
+            if (value.StartsWith("@"))
+                value = value.Substring(1);
+
+            foreach (EntryCar entryCar in _entryCarManager.EntryCars)
             {
-                if (int.TryParse(value, out int result) && _entryCarManager.ConnectedCars.TryGetValue(result, out EntryCar? car) && car.Client != null)
-                    return TypeParserResult<ACTcpClient>.Successful(car.Client);
-
-                ACTcpClient? exactMatch = null;
-                ACTcpClient? ignoreCaseMatch = null;
-                ACTcpClient? containsMatch = null;
-                ACTcpClient? ignoreCaseContainsMatch = null;
-
-                if (value.StartsWith("@"))
-                    value = value.Substring(1);
-
-                foreach (EntryCar entryCar in _entryCarManager.EntryCars)
+                ACTcpClient? client = entryCar.Client;
+                if (client != null && client.Name != null)
                 {
-                    ACTcpClient? client = entryCar.Client;
-                    if (client != null && client.Name != null)
+                    if (client.Name == value)
                     {
-                        if (client.Name == value)
-                        {
-                            exactMatch = client;
-                            break;
-                        }
-                        else if (client.Name.Equals(value, StringComparison.OrdinalIgnoreCase))
-                            ignoreCaseMatch = client;
-                        else if (client.Name.Contains(value) && (containsMatch == null || containsMatch.Name?.Length > client.Name.Length))
-                            containsMatch = client;
-                        else if (client.Name.Contains(value, StringComparison.OrdinalIgnoreCase) && (ignoreCaseContainsMatch == null || ignoreCaseContainsMatch.Name?.Length > client.Name.Length))
-                            ignoreCaseContainsMatch = client;
+                        exactMatch = client;
+                        break;
                     }
+                    else if (client.Name.Equals(value, StringComparison.OrdinalIgnoreCase))
+                        ignoreCaseMatch = client;
+                    else if (client.Name.Contains(value) && (containsMatch == null || containsMatch.Name?.Length > client.Name.Length))
+                        containsMatch = client;
+                    else if (client.Name.Contains(value, StringComparison.OrdinalIgnoreCase) && (ignoreCaseContainsMatch == null || ignoreCaseContainsMatch.Name?.Length > client.Name.Length))
+                        ignoreCaseContainsMatch = client;
                 }
-
-                ACTcpClient? bestMatch = null;
-                if (exactMatch != null)
-                    bestMatch = exactMatch;
-                else if (ignoreCaseMatch != null)
-                    bestMatch = ignoreCaseMatch;
-                else if (containsMatch != null)
-                    bestMatch = containsMatch;
-                else if (ignoreCaseContainsMatch != null)
-                    bestMatch = ignoreCaseContainsMatch;
-
-                if (bestMatch != null)
-                    return TypeParserResult<ACTcpClient>.Successful(bestMatch);
             }
 
-            return ValueTask.FromResult(TypeParserResult<ACTcpClient>.Failed("This player is not connected."));
+            ACTcpClient? bestMatch = null;
+            if (exactMatch != null)
+                bestMatch = exactMatch;
+            else if (ignoreCaseMatch != null)
+                bestMatch = ignoreCaseMatch;
+            else if (containsMatch != null)
+                bestMatch = containsMatch;
+            else if (ignoreCaseContainsMatch != null)
+                bestMatch = ignoreCaseContainsMatch;
+
+            if (bestMatch != null)
+                return TypeParserResult<ACTcpClient>.Successful(bestMatch);
         }
+
+        return ValueTask.FromResult(TypeParserResult<ACTcpClient>.Failed("This player is not connected."));
     }
 }

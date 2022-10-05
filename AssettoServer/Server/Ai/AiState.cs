@@ -375,13 +375,13 @@ public class AiState
         Vector3 targetRearLeft = Vector3.Transform(new Vector3(halfObstanceRectLength, 0, halfObstacleRectWidth), targetWorldViewMatrix);
         Vector3 targetRearRight = Vector3.Transform(new Vector3(halfObstanceRectLength, 0, -halfObstacleRectWidth), targetWorldViewMatrix);
 
-        static bool isPointInside(Vector3 point, float width, float length, float offset)
+        static bool IsPointInside(Vector3 point, float width, float length, float offset)
             => MathF.Abs(point.X) >= width || (-point.Z >= offset && -point.Z <= offset + length);
 
-        bool isObstacle = isPointInside(targetFrontLeft, halfAiRectWidth, aiRectLength, aiRectOffset)
-                          || isPointInside(targetFrontRight, halfAiRectWidth, aiRectLength, aiRectOffset)
-                          || isPointInside(targetRearLeft, halfAiRectWidth, aiRectLength, aiRectOffset)
-                          || isPointInside(targetRearRight, halfAiRectWidth, aiRectLength, aiRectOffset);
+        bool isObstacle = IsPointInside(targetFrontLeft, halfAiRectWidth, aiRectLength, aiRectOffset)
+                          || IsPointInside(targetFrontRight, halfAiRectWidth, aiRectLength, aiRectOffset)
+                          || IsPointInside(targetRearLeft, halfAiRectWidth, aiRectLength, aiRectOffset)
+                          || IsPointInside(targetRearRight, halfAiRectWidth, aiRectLength, aiRectOffset);
 
         return isObstacle;
     }
@@ -548,7 +548,7 @@ public class AiState
             _endTangent, 
             _currentVecProgress / _currentVecLength);
             
-        Vector3 rotation = new Vector3()
+        Vector3 rotation = new Vector3
         {
             X = MathF.Atan2(smoothPos.Tangent.Z, smoothPos.Tangent.X) - MathF.PI / 2,
             Y = (MathF.Atan2(new Vector2(smoothPos.Tangent.Z, smoothPos.Tangent.X).Length(), smoothPos.Tangent.Y) - MathF.PI / 2) * -1f,

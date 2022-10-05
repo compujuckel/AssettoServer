@@ -154,7 +154,7 @@ public class WeatherManager : CriticalBackgroundService
                     CurrentDateTime += Duration.FromMilliseconds((_timeSource.ServerTimeMilliseconds - lastTimeUpdate) * _configuration.Server.TimeOfDayMultiplier);
                 }
                 
-                _rainHelper.Update(CurrentWeather, _configuration.Server.DynamicTrack?.BaseGrip ?? 1, _configuration.Extra.RainTrackGripReductionPercent, _timeSource.ServerTimeMilliseconds - lastTimeUpdate);
+                _rainHelper.Update(CurrentWeather, _configuration.Server.DynamicTrack.BaseGrip, _configuration.Extra.RainTrackGripReductionPercent, _timeSource.ServerTimeMilliseconds - lastTimeUpdate);
                 _weatherImplementation.SendWeather(CurrentWeather, CurrentDateTime);
                 lastTimeUpdate = _timeSource.ServerTimeMilliseconds;
             }

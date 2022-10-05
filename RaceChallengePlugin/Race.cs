@@ -142,7 +142,7 @@ public class Race
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while running race.");
+            Log.Error(ex, "Error while running race");
         }
         finally
         {
@@ -279,8 +279,7 @@ public class Race
 
     private void SendMessage(EntryCar car, string message)
     {
-        if (car.Client != null)
-            car.Client.SendPacket(new ChatMessage { SessionId = 255, Message = message });
+        car.Client?.SendPacket(new ChatMessage { SessionId = 255, Message = message });
     }
 
     private async Task SendTimedMessageAsync(string message)

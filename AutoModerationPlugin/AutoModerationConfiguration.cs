@@ -1,10 +1,11 @@
-﻿using JetBrains.Annotations;
+﻿using AssettoServer.Server.Configuration;
+using JetBrains.Annotations;
 using YamlDotNet.Serialization;
 
 namespace AutoModerationPlugin;
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
-public class AutoModerationConfiguration
+public class AutoModerationConfiguration : IValidateConfiguration<AutoModerationConfigurationValidator>
 {
     public WrongWayKickConfiguration WrongWayKick { get; init; } = new();
     public NoLightsKickConfiguration NoLightsKick { get; init; } = new();
@@ -35,7 +36,7 @@ public class NoLightsKickConfiguration
 public class BlockingRoadKickConfiguration
 {
     public bool Enabled { get; set; } = false;
-    public int DurationSeconds = 30;
+    public int DurationSeconds { get; set; } = 30;
     public int MaximumSpeedKph { get; set; } = 5;
     
     [YamlIgnore] public float MaximumSpeedMs => MaximumSpeedKph / 3.6f;

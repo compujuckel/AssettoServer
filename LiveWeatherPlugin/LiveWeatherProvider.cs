@@ -59,7 +59,7 @@ public class LiveWeatherProvider : CriticalBackgroundService, IAssettoServerAuto
             TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0, response.TemperatureAmbient,
                 weatherType.TemperatureCoefficient),
             Pressure = response.Pressure,
-            Humidity = response.Humidity,
+            Humidity = response.Humidity / 100.0f,
             WindSpeed = response.WindSpeed,
             WindDirection = response.WindDirection,
             RainIntensity = last.RainIntensity,

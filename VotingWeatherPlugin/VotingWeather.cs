@@ -128,7 +128,7 @@ public class VotingWeather : CriticalBackgroundService, IAssettoServerAutostart
             TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0, last.TemperatureAmbient,
                 winnerType.TemperatureCoefficient),
             Pressure = last.Pressure,
-            Humidity = (int)(winnerType.Humidity * 100),
+            Humidity = winnerType.Humidity,
             WindSpeed = last.WindSpeed,
             WindDirection = last.WindDirection,
             RainIntensity = last.RainIntensity,

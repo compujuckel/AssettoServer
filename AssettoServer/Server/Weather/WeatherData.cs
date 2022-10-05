@@ -10,7 +10,7 @@ public class WeatherData
     public float TemperatureAmbient { get; set; }
     public float TemperatureRoad { get; set; }
     public int Pressure { get; set; }
-    public int Humidity { get; set; }
+    public float Humidity { get; set; }
     public float WindSpeed { get; set; }
     public int WindDirection { get; set; }
     public float RainIntensity { get; set; }

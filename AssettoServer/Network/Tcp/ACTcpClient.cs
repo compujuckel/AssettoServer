@@ -321,7 +321,7 @@ public class ACTcpClient
                         // Gracefully despawn AI cars
                         EntryCar.SetAiOverbooking(0);
 
-                        if (!string.IsNullOrWhiteSpace(_configuration.Server.AdminPassword) && handshakeRequest.Password == _configuration.Server.AdminPassword)
+                        if (handshakeRequest.Password == _configuration.Server.AdminPassword)
                             IsAdministrator = true;
 
                         Logger.Information("{ClientName} ({ClientSteamId}, {SessionId} ({Car})) has connected", Name, Guid, SessionId, EntryCar.Model + "-" + EntryCar.Skin);

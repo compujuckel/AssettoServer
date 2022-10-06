@@ -3,6 +3,7 @@ using System;
 using System.Globalization;
 using System.Threading.Tasks;
 using AssettoServer.Network.Http;
+using AssettoServer.Utils;
 using Autofac.Extensions.DependencyInjection;
 using CommandLine;
 using FluentValidation;
@@ -36,7 +37,17 @@ internal static class Program
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
-        ValidatorOptions.Global.DisplayNameResolver = (_, member, _) => member?.Name; 
+        ValidatorOptions.Global.DisplayNameResolver = (_, member, _) =>
+        {
+            foreach (var attr in member!.GetCustomAttributes(true))
+            {
+                if (attr is IniFieldAttribute iniAttr)
+                {
+                    return iniAttr.Key;
+                }
+            }
+            return member.Name;
+        }; 
             
         var options = Parser.Default.ParseArguments<Options>(args).Value;
         if (options == null) return;

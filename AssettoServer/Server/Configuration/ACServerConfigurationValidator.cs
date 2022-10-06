@@ -6,31 +6,39 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
 {
     public ACServerConfigurationValidator()
     {
-        RuleFor(cfg => cfg.Extra.ValidateDlcOwnership).NotNull();
-        RuleFor(cfg => cfg.Extra.OutsideNetworkBubbleRefreshRateHz).LessThanOrEqualTo(cfg => cfg.Server.RefreshRateHz);
-        RuleFor(cfg => cfg.Extra.ServerDescription).NotNull();
-        RuleFor(cfg => cfg.Extra.RainTrackGripReductionPercent).InclusiveBetween(0, 0.5);
-        RuleFor(cfg => cfg.Extra.EnablePlugins).NotNull();
-        RuleFor(cfg => cfg.Extra.IgnoreConfigurationErrors).NotNull();
-        RuleFor(cfg => cfg.Extra.UserGroups).NotNull();
-        RuleFor(cfg => cfg.Extra.BlacklistUserGroup).NotEmpty();
-        RuleFor(cfg => cfg.Extra.WhitelistUserGroup).NotEmpty();
-        RuleFor(cfg => cfg.Extra.AdminUserGroup).NotEmpty();
-
-        RuleFor(cfg => cfg.Extra.AiParams.MinSpawnDistancePoints).LessThanOrEqualTo(cfg => cfg.Extra.AiParams.MaxSpawnDistancePoints);
-        RuleFor(cfg => cfg.Extra.AiParams.MinAiSafetyDistanceMeters).LessThanOrEqualTo(cfg => cfg.Extra.AiParams.MaxAiSafetyDistanceMeters);
-        RuleFor(cfg => cfg.Extra.AiParams.MinSpawnProtectionTimeSeconds).LessThanOrEqualTo(cfg => cfg.Extra.AiParams.MaxSpawnProtectionTimeSeconds);
-        RuleFor(cfg => cfg.Extra.AiParams.MinCollisionStopTimeSeconds).LessThanOrEqualTo(cfg => cfg.Extra.AiParams.MaxCollisionStopTimeSeconds);
-        RuleFor(cfg => cfg.Extra.AiParams.MaxSpeedVariationPercent).InclusiveBetween(0, 1);
-        RuleFor(cfg => cfg.Extra.AiParams.DefaultAcceleration).GreaterThan(0);
-        RuleFor(cfg => cfg.Extra.AiParams.DefaultDeceleration).GreaterThan(0);
-        RuleFor(cfg => cfg.Extra.AiParams.NamePrefix).NotNull();
-        RuleFor(cfg => cfg.Extra.AiParams.IgnoreObstaclesAfterSeconds).GreaterThanOrEqualTo(0);
-        // TODO hourly traffic density
-        RuleFor(cfg => cfg.Extra.AiParams.CarSpecificOverrides).NotNull();
-        RuleForEach(cfg => cfg.Extra.AiParams.CarSpecificOverrides).ChildRules(overrides =>
+        RuleFor(cfg => cfg.Extra).ChildRules(extra =>
         {
-            overrides.RuleFor(o => o.SkinSpecificOverrides).NotNull();
+            extra.RuleFor(x => x.ValidateDlcOwnership).NotNull();
+            extra.RuleFor(x => x.ServerDescription).NotNull();
+            extra.RuleFor(x => x.RainTrackGripReductionPercent).InclusiveBetween(0, 0.5);
+            extra.RuleFor(x => x.EnablePlugins).NotNull();
+            extra.RuleFor(x => x.IgnoreConfigurationErrors).NotNull();
+            extra.RuleFor(x => x.UserGroups).NotNull();
+            extra.RuleFor(x => x.BlacklistUserGroup).NotEmpty();
+            extra.RuleFor(x => x.WhitelistUserGroup).NotEmpty();
+            extra.RuleFor(x => x.AdminUserGroup).NotEmpty();
+
+            extra.RuleFor(x => x.AiParams).ChildRules(aiParams =>
+            {
+                aiParams.RuleFor(ai => ai.MinSpawnDistancePoints).LessThanOrEqualTo(ai => ai.MaxSpawnDistancePoints);
+                aiParams.RuleFor(ai => ai.MinAiSafetyDistanceMeters).LessThanOrEqualTo(ai => ai.MaxAiSafetyDistanceMeters);
+                aiParams.RuleFor(ai => ai.MinSpawnProtectionTimeSeconds).LessThanOrEqualTo(ai => ai.MaxSpawnProtectionTimeSeconds);
+                aiParams.RuleFor(ai => ai.MinCollisionStopTimeSeconds).LessThanOrEqualTo(ai => ai.MaxCollisionStopTimeSeconds);
+                aiParams.RuleFor(ai => ai.MaxSpeedVariationPercent).InclusiveBetween(0, 1);
+                aiParams.RuleFor(ai => ai.DefaultAcceleration).GreaterThan(0);
+                aiParams.RuleFor(ai => ai.DefaultDeceleration).GreaterThan(0);
+                aiParams.RuleFor(ai => ai.NamePrefix).NotNull();
+                aiParams.RuleFor(ai => ai.IgnoreObstaclesAfterSeconds).GreaterThanOrEqualTo(0);
+                aiParams.RuleFor(ai => ai.HourlyTrafficDensity)
+                    .Must(htd => htd?.Count == 24)
+                    .When(ai => ai.HourlyTrafficDensity != null)
+                    .WithMessage("HourlyTrafficDensity must have exactly 24 entries");
+                aiParams.RuleFor(ai => ai.CarSpecificOverrides).NotNull();
+                aiParams.RuleForEach(ai => ai.CarSpecificOverrides).ChildRules(overrides =>
+                {
+                    overrides.RuleFor(o => o.SkinSpecificOverrides).NotNull();
+                });
+            });
         });
 
         RuleFor(cfg => cfg.Server).ChildRules(server =>
@@ -56,8 +64,15 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
             {
                 dynTrack.RuleFor(d => d.BaseGrip).InclusiveBetween(0, 1);
             });
-            
-            // TODO session configs
+        });
+
+        RuleFor(cfg => cfg.EntryList).ChildRules(entryList =>
+        {
+            entryList.RuleForEach(el => el.Cars).ChildRules(car =>
+            {
+                car.RuleFor(c => c.Model).NotNull();
+                car.RuleFor(c => c.Guid).NotNull();
+            });
         });
     }
 }

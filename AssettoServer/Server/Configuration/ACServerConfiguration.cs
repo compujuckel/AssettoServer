@@ -134,12 +134,6 @@ public class ACServerConfiguration
             }
         }
 
-        // TODO fluent validation
-        if (Extra.AiParams.HourlyTrafficDensity != null && Extra.AiParams.HourlyTrafficDensity.Count != 24)
-        {
-            throw new ConfigurationException("HourlyTrafficDensity must have exactly 24 entries");
-        }
-
         if (Extra.EnableServerDetails)
         {
             string cmContentPath = Path.Join(BaseFolder, "cm_content/content.json");

@@ -31,10 +31,6 @@ public class AiModule : Module
                 builder.RegisterType<DynamicTrafficDensity>().As<IHostedService>().SingleInstance();
             }
 
-            if (_configuration.Extra.AiParams.MaxRandomTrafficDensity != null && _configuration.Extra.AiParams.MinRandomTrafficDensity != null)
-            {
-                builder.RegisterType<RandomDynamicTrafficDensity>().As<IHostedService>().SingleInstance();
-            }
 
             string contentPath = "content";
             const string contentPathCMWorkaround = "content~tmp";

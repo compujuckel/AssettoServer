@@ -5,7 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <RuntimeIdentifiers>win-x64;linux-x64;linux-arm64</RuntimeIdentifiers>
     <LangVersion>10</LangVersion>
-    <PublishSingleFile>true</PublishSingleFile>
+    <PublishSingleFile Condition="'$(NO_SINGLE_FILE)' != '1'">true</PublishSingleFile>
     <SelfContained>false</SelfContained>
     <DebugType>embedded</DebugType>
     <Nullable>enable</Nullable>

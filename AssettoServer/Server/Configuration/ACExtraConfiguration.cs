@@ -24,7 +24,7 @@ public class ACExtraConfiguration
     public bool EnableAntiAfk { get; set; } = true;
     [YamlMember(Description = "Maximum allowed AFK time before kick")]
     public int MaxAfkTimeMinutes { get; set; } = 10;
-    [YamlMember(Description = "Players might try to get around the AFK kick by doing inputs once in a while without actually driving. Set this to MininumSpeed to autokick players idling")]
+    [YamlMember(Description = "Players might try to get around the AFK kick by doing inputs once in a while without actually driving. Set this to MinimumSpeed to autokick players idling")]
     public AfkKickBehavior AfkKickBehavior { get; set; } = AfkKickBehavior.PlayerInput;
     [YamlMember(Description = "Maximum ping before autokick")]
     public int MaxPing { get; set; } = 500;

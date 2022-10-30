@@ -62,6 +62,8 @@ internal static class Program
             .WriteTo.File($"logs/{logPrefix}-.txt",
                 rollingInterval: RollingInterval.Day)
             .CreateLogger();
+        
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
 
         var config = new ACServerConfiguration(options.Preset, options.ServerCfgPath, options.EntryListPath);
         
@@ -94,8 +96,6 @@ internal static class Program
                     rollingInterval: RollingInterval.Day)
                 .CreateLogger();
         }
-
-        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
 
         Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
         if (!string.IsNullOrEmpty(options.Preset))

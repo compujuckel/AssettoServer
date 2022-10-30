@@ -39,6 +39,7 @@ public class ACTcpClient
     public ulong? OwnerGuid { get; internal set; }
     public EntryCar EntryCar { get; internal set; } = null!;
     public bool IsDisconnectRequested => _disconnectRequested == 1;
+    [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode))]
     public bool HasSentFirstUpdate { get; private set; }
     public bool IsConnected { get; set; }
     public TcpClient TcpClient { get; }

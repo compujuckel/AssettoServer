@@ -31,6 +31,10 @@ public class GetRatingResponse
     public double DistanceDriven { get; init; }
     [DataMember(Order = 3)]
     public double ContactPoints { get; init; }
+    [DataMember(Order = 4)]
+    public string? Rank { get; init; }
+    [DataMember(Order = 5)]
+    public string? Color { get; init; }
 }
 
 [ServiceContract]

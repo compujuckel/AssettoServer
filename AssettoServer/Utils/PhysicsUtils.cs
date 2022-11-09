@@ -4,7 +4,7 @@ namespace AssettoServer.Utils;
 
 public static class PhysicsUtils
 {
-    private const float Gravity = 9.80665f;
+    public const float Gravity = 9.80665f;
         
     public static float CalculateBrakingDistance(float speed, float deceleration = Gravity)
     {

@@ -42,7 +42,7 @@ public class RandomWeather : CriticalBackgroundService, IAssettoServerAutostart
         float prefixSum = 0.0f;
         foreach (var (weather, weight) in _configuration.WeatherWeights)
         {
-            if (weight != 0 && weight != 0.0)
+            if (weight != 0 || weight != 0.0)
             {
                 prefixSum += weight / weightSum;
                 _weathers.Add(new WeatherWeight

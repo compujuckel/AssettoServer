@@ -259,6 +259,10 @@ public class AiParams
     public bool SmoothCamber { get; init; } = false;
     [YamlMember(Description = "Show debug overlay for AI cars")]
     public bool Debug { get; set; } = false;
+    [YamlMember(Description = "")] // TODO
+    public int AiBehaviorUpdateIntervalHz { get; set; } = 2;
+    [YamlMember(Description = "")] // TODO
+    public Dictionary<int, LaneCountSpecificOverrides> LaneCountSpecificOverrides { get; set; } = new();
     [YamlMember(Description = "Override some settings for specific car models/skins")]
     public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new();
 
@@ -277,6 +281,7 @@ public class AiParams
     [YamlIgnore] public float MaxSpeedMs => MaxSpeedKph / 3.6f;
     [YamlIgnore] public float RightLaneOffsetMs => RightLaneOffsetKph / 3.6f;
     [YamlIgnore] public int IgnoreObstaclesAfterMilliseconds => IgnoreObstaclesAfterSeconds * 1000;
+    [YamlIgnore] public int AiBehaviorUpdateIntervalMilliseconds => 1000 / AiBehaviorUpdateIntervalHz;
 }
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
@@ -316,6 +321,17 @@ public class SkinSpecificOverrides
     public string? Skin { get; init; }
     [YamlMember(Description = "Allow random color changes after respawn")]
     public bool? EnableColorChanges { get; init; }
+}
+
+[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
+public class LaneCountSpecificOverrides
+{
+    [YamlMember(Description = "")] // TODO
+    public int MinAiSafetyDistanceMeters { get; set; }
+    [YamlMember(Description = "")] // TODO
+    public int MaxAiSafetyDistanceMeters { get; set; }
+    [YamlIgnore] public int MinAiSafetyDistanceSquared => MinAiSafetyDistanceMeters * MinAiSafetyDistanceMeters;
+    [YamlIgnore] public int MaxAiSafetyDistanceSquared => MaxAiSafetyDistanceMeters * MaxAiSafetyDistanceMeters;
 }
 
 public enum AfkKickBehavior

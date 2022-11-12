@@ -165,10 +165,18 @@ public class AiState
             
         SetRandomSpeed();
         SetRandomColor();
+
+        var minDist = _configuration.Extra.AiParams.MinAiSafetyDistanceSquared;
+        var maxDist = _configuration.Extra.AiParams.MaxAiSafetyDistanceSquared;
+        if (_configuration.Extra.AiParams.LaneCountSpecificOverrides.TryGetValue(point.Lanes.Length, out var overrides))
+        {
+            minDist = overrides.MinAiSafetyDistanceSquared;
+            maxDist = overrides.MaxAiSafetyDistanceSquared;
+        }
             
         SpawnProtectionEnds = _sessionManager.ServerTimeMilliseconds + Random.Shared.Next(_configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, _configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
-        SafetyDistanceSquared = Random.Shared.Next((int)Math.Round(_configuration.Extra.AiParams.MinAiSafetyDistanceSquared * (1.0f / _configuration.Extra.AiParams.TrafficDensity)),
-            (int)Math.Round(_configuration.Extra.AiParams.MaxAiSafetyDistanceSquared * (1.0f / _configuration.Extra.AiParams.TrafficDensity)));
+        SafetyDistanceSquared = Random.Shared.Next((int)Math.Round(minDist * (1.0f / _configuration.Extra.AiParams.TrafficDensity)),
+            (int)Math.Round(maxDist * (1.0f / _configuration.Extra.AiParams.TrafficDensity)));
         _stoppedForCollisionUntil = 0;
         _ignoreObstaclesUntil = 0;
         _obstacleHonkEnd = 0;

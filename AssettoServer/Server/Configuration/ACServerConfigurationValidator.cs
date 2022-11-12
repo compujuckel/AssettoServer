@@ -38,6 +38,13 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
                 {
                     overrides.RuleFor(o => o.SkinSpecificOverrides).NotNull();
                 });
+                aiParams.RuleFor(ai => ai.AiBehaviorUpdateIntervalHz).GreaterThan(0);
+                aiParams.RuleFor(ai => ai.LaneCountSpecificOverrides).NotNull();
+                aiParams.RuleForEach(ai => ai.LaneCountSpecificOverrides).ChildRules(overrides =>
+                {
+                    overrides.RuleFor(o => o.Key).GreaterThan(0);
+                    overrides.RuleFor(o => o.Value.MinAiSafetyDistanceMeters).LessThanOrEqualTo(o => o.Value.MaxAiSafetyDistanceMeters);
+                });
             });
         });
 

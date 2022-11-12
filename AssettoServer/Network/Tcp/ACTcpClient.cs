@@ -168,7 +168,7 @@ public class ACTcpClient
         TcpStream = tcpClient.GetStream();
 
         TcpSendBuffer = new byte[8192 + (_cspServerExtraOptions.EncodedWelcomeMessage.Length * 4) + 2];
-        OutgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(256);
+        OutgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(512);
         DisconnectTokenSource = new CancellationTokenSource();
     }
 

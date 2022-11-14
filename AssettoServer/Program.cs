@@ -29,6 +29,9 @@ internal static class Program
 
         [Option('e', Required = false, SetName = "Content Manager compatibility", HelpText = "Path to entry list")]
         public string EntryListPath { get; set; } = "";
+
+        [Option("plugins-from-workdir", Required = false, HelpText = "Additionally load plugins from working directory")]
+        public bool LoadPluginsFromWorkdir { get; set; } = false;
     }
         
     internal static async Task Main(string[] args)
@@ -65,7 +68,7 @@ internal static class Program
         
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
 
-        var config = new ACServerConfiguration(options.Preset, options.ServerCfgPath, options.EntryListPath);
+        var config = new ACServerConfiguration(options.Preset, options.ServerCfgPath, options.EntryListPath, options.LoadPluginsFromWorkdir);
         
         if (config.Extra.LokiSettings != null
             && !string.IsNullOrEmpty(config.Extra.LokiSettings.Url)

@@ -29,11 +29,12 @@ namespace AssettoServer.Network.Http;
 public class Startup
 {
     private readonly ACServerConfiguration _configuration;
-    private readonly ACPluginLoader _loader = new();
+    private readonly ACPluginLoader _loader;
 
     public Startup(ACServerConfiguration configuration)
     {
         _configuration = configuration;
+        _loader = new ACPluginLoader(configuration.LoadPluginsFromWorkdir);
     }
 
     [UsedImplicitly]

@@ -29,8 +29,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:6.0
 
 WORKDIR /app
 
+COPY --from=steam /home/steam/steamcmd/linux64/* /root/.steam/sdk64/
 COPY --from=build /app/out-linux-* .
-COPY --from=steam /home/steam/steamcmd/linux64/* /root/.steam/sdk64
 
 WORKDIR /data
 

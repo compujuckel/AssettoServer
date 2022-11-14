@@ -35,6 +35,5 @@ jobs:
 
       - name: Build the Image
         run: |
-          docker buildx build . -f ./docker/Dockerfile --push \
-            --platform linux/amd64,linux/arm64
+          docker buildx bake -f docker/bake.hcl -f ${{ steps.meta.outputs.bake-file }} --push
 

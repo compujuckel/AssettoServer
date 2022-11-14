@@ -12,14 +12,31 @@ public class ACPluginLoader
     public Dictionary<string, PluginLoader> AvailablePlugins { get; } = new();
     public List<Plugin> LoadedPlugins { get; } = new();
 
-    public ACPluginLoader()
+    public ACPluginLoader(bool loadFromWorkdir)
     {
+        if (loadFromWorkdir)
+        {
+            if (Directory.Exists("plugins"))
+            {
+                ScanDirectory("plugins");
+            }
+            else
+            {
+                Directory.CreateDirectory("plugins");
+            }
+        }
+        
         string pluginsDir = Path.Combine(AppContext.BaseDirectory, "plugins");
-        foreach (string dir in Directory.GetDirectories(pluginsDir))
+        ScanDirectory(pluginsDir);
+    }
+
+    public void ScanDirectory(string path)
+    {
+        foreach (string dir in Directory.GetDirectories(path))
         {
             string dirName = Path.GetFileName(dir);
             string pluginDll = Path.Combine(dir, dirName + ".dll");
-            if (File.Exists(pluginDll))
+            if (File.Exists(pluginDll) && !AvailablePlugins.ContainsKey(dirName))
             {
                 Log.Verbose("Found plugin {PluginName}, {PluginPath}", dirName, pluginDll);
 

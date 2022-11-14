@@ -22,6 +22,7 @@ public class ACServerConfiguration
     public string ServerVersion { get; }
     public string? CSPExtraOptions { get; }
     public string BaseFolder { get; }
+    public bool LoadPluginsFromWorkdir { get; }
 
     public event EventHandler<ACServerConfiguration, EventArgs>? Reload;
 
@@ -39,9 +40,10 @@ public class ACServerConfiguration
      *
      * When "entryListPath" is set, it takes precedence and entry_list.ini will be loaded from the specified path.
      */
-    public ACServerConfiguration(string preset, string serverCfgPath, string entryListPath)
+    public ACServerConfiguration(string preset, string serverCfgPath, string entryListPath, bool loadPluginsFromWorkdir)
     {
         BaseFolder = string.IsNullOrEmpty(preset) ? "cfg" : Path.Join("presets", preset);
+        LoadPluginsFromWorkdir = loadPluginsFromWorkdir;
 
         if (string.IsNullOrEmpty(entryListPath))
         {

@@ -1,11 +1,21 @@
+# Dummy since Steam doesn't support arm64
+FROM --platform=$BUILDPLATFORM scratch AS steam-arm64
+COPY docker/not-supported /home/steam/steamcmd/linux64/
+
+# Download Steam client
+FROM --platform=$BUILDPLATFORM cm2network/steamcmd:latest AS steam-amd64
+
+FROM --platform=$BUILDPLATFORM steam-${TARGETARCH} AS steam
+ARG TARGETARCH
+
 # Build app
-FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:6.0-alpine AS build
+ARG TARGETARCH
 
 RUN apk add --update --no-cache bash
 
 SHELL ["/bin/bash", "-c"]
 
-ARG TARGETARCH
 RUN echo linux-${TARGETARCH/amd/x} > ~/.RuntimeIdentifier
 
 WORKDIR /app
@@ -14,13 +24,14 @@ COPY . ./
 
 RUN dotnet publish -r $(cat ~/.RuntimeIdentifier) -c Release --no-self-contained
 
-# Build runtime image based on alpine
-FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine
+# Build runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:6.0
 
 WORKDIR /app
 
 COPY --from=build /app/out-linux-* .
+COPY --from=steam /home/steam/steamcmd/linux64/* /root/.steam/sdk64
 
-RUN apk add --update --no-cache libc6-compat
+WORKDIR /data
 
-ENTRYPOINT ["./AssettoServer"]
+ENTRYPOINT ["/app/AssettoServer", "--plugins-from-workdir"]

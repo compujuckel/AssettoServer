@@ -16,13 +16,14 @@ public class ACPluginLoader
     {
         if (loadFromWorkdir)
         {
-            if (Directory.Exists("plugins"))
+            var dir = Path.Join(Directory.GetCurrentDirectory(), "plugins");
+            if (Directory.Exists(dir))
             {
-                ScanDirectory("plugins");
+                ScanDirectory(dir);
             }
             else
             {
-                Directory.CreateDirectory("plugins");
+                Directory.CreateDirectory(dir);
             }
         }
         

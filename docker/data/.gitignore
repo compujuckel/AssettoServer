@@ -1,0 +1,5 @@
+cfg/*.ini
+cfg/*.yml
+cfg/*.yaml
+content/cars
+content/tracks

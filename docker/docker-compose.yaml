@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  assetto-server:
+    image: compujuckel/assettoserver:latest
+    container_name: AssettoServer
+    ports:
+      - "9600:9600"
+      - "8081:8081"
+    volumes:
+      - ./data/cfg:/app/cfg
+      - ./data/content:/app/content
+      - ./data/admins.txt:/app/admins.txt
+      - ./data/blacklist.txt:/app/blacklist.txt
+      - ./data/whitelist.txt:/app/whitelist.txt
+    environment:
+      - TZ=Europe/Berlin
+    restart: always

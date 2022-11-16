@@ -10,7 +10,7 @@ public class OnPlayerConnectedRequest
     [DataMember(Order = 1)]
     public ulong Guid { get; set; }
     [DataMember(Order = 2)]
-    public string Name { get; set; } = null!;
+    public required string Name { get; set; }
 }
 
 [ServiceContract]

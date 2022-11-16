@@ -20,7 +20,7 @@ public readonly record struct ClientEvent : IOutgoingNetworkPacket
         writer.Write(SessionId);
         if (EventType == (byte)ClientEventType.CollisionWithCar)
         {
-            if (TargetSessionId == null)
+            if (!TargetSessionId.HasValue)
                 throw new ArgumentException("ClientEvent PlayerCollision had TargetSessionId null");
             writer.Write(TargetSessionId.Value);
         }

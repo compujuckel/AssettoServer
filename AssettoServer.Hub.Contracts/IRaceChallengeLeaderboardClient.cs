@@ -8,7 +8,7 @@ namespace AssettoServer.Hub.Contracts;
 public class RaceChallengeLeaderboardRequest
 {
     [DataMember(Order = 1)]
-    public string LeaderboardName { get; set; } = null!;
+    public required string LeaderboardName { get; set; }
     [DataMember(Order = 2)] 
     public int Skip { get; set; } = 0;
     [DataMember(Order = 3)] 
@@ -19,7 +19,7 @@ public class RaceChallengeLeaderboardRequest
 public class RaceChallengeLeaderboardEntry
 {
     [DataMember(Order = 1)]
-    public string Name { get; set; } = null!;
+    public required string Name { get; set; }
     [DataMember(Order = 2)]
     public int Rating { get; set; }
 }
@@ -35,7 +35,7 @@ public class RaceChallengeLeaderboardResponse
 public class GetRaceChallengeRatingRequest
 {
     [DataMember(Order = 1)]
-    public string LeaderboardName { get; set; } = null!;
+    public required string LeaderboardName { get; set; }
     [DataMember(Order = 2)]
     public ulong Guid { get; set; }
 }
@@ -53,7 +53,7 @@ public class GetRaceChallengeRatingResponse
 public class SetRaceChallengeRatingRequest
 {
     [DataMember(Order = 1)]
-    public string LeaderboardName { get; set; } = null!;
+    public required string LeaderboardName { get; set; }
     [DataMember(Order = 2)]
     public ulong Guid { get; set; }
     [DataMember(Order = 3)]
@@ -64,7 +64,7 @@ public class SetRaceChallengeRatingRequest
 public class CreateRaceChallengeLeaderboardRequest
 {
     [DataMember(Order = 1)]
-    public string Name { get; set; } = null!;
+    public required string Name { get; set; }
 }
 
 [ServiceContract]

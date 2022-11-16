@@ -56,11 +56,11 @@ public class TimingLeaderboardRequest
 public class TimingLeaderboardEntry
 {
     [DataMember(Order = 1)]
-    public string Name { get; set; } = null!;
+    public required string Name { get; set; }
     [DataMember(Order = 2)]
     public int LapTime { get; set; }
     [DataMember(Order = 3)]
-    public string CarModel { get; set; }= null!;
+    public required string CarModel { get; set; }
 }
 
 [DataContract]
@@ -93,7 +93,7 @@ public class TimingPersonalBestResponse
     [DataMember(Order = 2)]
     public int? Rank { get; set; }
     [DataMember(Order = 3)]
-    public string CarModel { get; set; } = null!;
+    public required string CarModel { get; set; }
 }
 
 [ServiceContract]

@@ -32,7 +32,7 @@ public class CSPFeature
     /// <summary>
     /// Name as it appears in the client handshake and in Content Manager.
     /// </summary>
-    public string Name { get; init; } = null!;
+    public required string Name { get; init; }
     /// <summary>
     /// When true, disconnect clients that don't advertise support for this feature in the handshake.
     /// </summary>

@@ -47,14 +47,14 @@ public class ChatService
         sender.ChatMessageReceived += OnChatMessageReceived;
     }
 
-    private Task OnCommandExecuted(CommandExecutedEventArgs args)
+    private ValueTask OnCommandExecuted(object? sender, CommandExecutedEventArgs args)
     {
         if (args.Context is ACCommandContext context)
         {
             context.SendRconResponse();
         }
 
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     private async Task ProcessCommandAsync(ACTcpClient client, ChatMessage message)
@@ -85,7 +85,7 @@ public class ChatService
         }
     }
 
-    private Task OnCommandExecutionFailed(CommandExecutionFailedEventArgs e)
+    private ValueTask OnCommandExecutionFailed(object? sender, CommandExecutionFailedEventArgs e)
     {
         if (!e.Result.IsSuccessful)
         {
@@ -93,7 +93,7 @@ public class ChatService
             Log.Error(e.Result.Exception, "Command execution failed: {Reason}", e.Result.FailureReason);
         }
 
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
     
     private void OnChatMessageReceived(ACTcpClient sender, ChatMessageEventArgs args)

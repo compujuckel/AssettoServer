@@ -88,12 +88,9 @@ internal static class Program
                         Login = config.Extra.LokiSettings.Login,
                         Password = config.Extra.LokiSettings.Password
                     },
-                    createLevelLabel: true,
                     useInternalTimestamp: true,
-                    filtrationMode: LokiLabelFiltrationMode.Include,
-                    filtrationLabels: new [] { "MachineName", "Preset" },
                     textFormatter: new LokiJsonTextFormatter(),
-                    outputTemplate: "[{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                    propertiesAsLabels: new [] { "MachineName", "Preset" })
                 .WriteTo.Async(a => a.Console())
                 .WriteTo.File($"logs/{logPrefix}-.txt",
                     rollingInterval: RollingInterval.Day)

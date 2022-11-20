@@ -16,7 +16,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 7.0.x
     - name: Publish (Linux x64)
       run: dotnet publish --runtime linux-x64 --no-self-contained -c Release
     - name: Publish (Linux arm64)

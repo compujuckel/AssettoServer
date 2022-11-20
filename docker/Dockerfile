@@ -9,7 +9,7 @@ FROM --platform=$BUILDPLATFORM steam-${TARGETARCH} AS steam
 ARG TARGETARCH
 
 # Build app
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:6.0-alpine AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS build
 ARG TARGETARCH
 
 RUN apk add --update --no-cache bash
@@ -25,7 +25,7 @@ COPY . ./
 RUN dotnet publish -r $(cat ~/.RuntimeIdentifier) -c Release --no-self-contained
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0
+FROM mcr.microsoft.com/dotnet/aspnet:7.0
 
 WORKDIR /app
 

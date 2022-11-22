@@ -27,14 +27,10 @@ public class ACServer : CriticalBackgroundService
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
-    private readonly WeatherManager _weatherManager;
     private readonly GeoParamsManager _geoParamsManager;
     private readonly IMetricsRoot _metrics;
     private readonly ChecksumManager _checksumManager;
-    private readonly ACTcpServer _tcpServer;
-    private readonly ACUdpServer _udpServer;
-    private readonly KunosLobbyRegistration _kunosLobbyRegistration;
-    private readonly IEnumerable<IAssettoServerAutostart> _autostartServices;
+    private readonly List<IHostedService> _autostartServices;
     private readonly IHostApplicationLifetime _applicationLifetime;
 
     /// <summary>
@@ -64,15 +60,14 @@ public class ACServer : CriticalBackgroundService
         _configuration = configuration;
         _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
-        _weatherManager = weatherManager;
         _geoParamsManager = geoParamsManager;
         _metrics = metrics;
         _checksumManager = checksumManager;
-        _tcpServer = tcpServer;
-        _udpServer = udpServer;
-        _autostartServices = autostartServices;
-        _kunosLobbyRegistration = kunosLobbyRegistration;
         _applicationLifetime = applicationLifetime;
+
+        _autostartServices = new List<IHostedService> { weatherManager, tcpServer, udpServer };
+        _autostartServices.AddRange(autostartServices);
+        _autostartServices.Add(kunosLobbyRegistration);
 
         blacklistService.Changed += OnChanged;
 
@@ -105,6 +100,20 @@ public class ACServer : CriticalBackgroundService
     {
         Log.Information("Server shutting down");
         _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = "*** Server shutting down ***" });
+
+        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var tasks = new List<Task>();
+        
+        foreach (var service in _autostartServices)
+        {
+            tasks.Add(service.StopAsync(cts.Token));
+        }
+
+        try
+        {
+            Task.WaitAll(tasks.ToArray(), cts.Token);
+        }
+        catch (OperationCanceledException) { }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -115,16 +124,11 @@ public class ACServer : CriticalBackgroundService
         _checksumManager.Initialize();
         _sessionManager.Initialize();
         await _geoParamsManager.InitializeAsync();
-        await _weatherManager.StartAsync(stoppingToken);
-        await _tcpServer.StartAsync(stoppingToken);
-        await _udpServer.StartAsync(stoppingToken);
 
         foreach (var service in _autostartServices)
         {
             await service.StartAsync(stoppingToken);
         }
-
-        await _kunosLobbyRegistration.StartAsync(stoppingToken);
 
         _ = _applicationLifetime.ApplicationStopping.Register(OnApplicationStopping);
         var mainThread = new Thread(() => MainLoop(stoppingToken))

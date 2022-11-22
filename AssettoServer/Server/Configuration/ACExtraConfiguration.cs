@@ -72,6 +72,8 @@ public class ACExtraConfiguration
     public bool EnableAlternativeCarChecksums = false;
     [YamlMember(Description = "Enable the AC UDP plugin interface compatible with Kunos acServer plugins")]
     public bool EnableLegacyPluginInterface = false;
+    [YamlMember(Description = "Automatically configure port forwards using UPnP or NAT-PMP. Empty = Enable on Windows when lobby registration is enabled. true = Always enable, detailed error log. false = Always disable")]
+    public bool? EnableUPnP;
     [YamlMember(Description = "Name and path of file-based user groups")]
     public Dictionary<string, string> UserGroups { get; init; } = new()
     {
@@ -259,9 +261,9 @@ public class AiParams
     public bool SmoothCamber { get; init; } = false;
     [YamlMember(Description = "Show debug overlay for AI cars")]
     public bool Debug { get; set; } = false;
-    [YamlMember(Description = "")] // TODO
+    [YamlMember(Description = "Update interval for AI spawn point finder")]
     public int AiBehaviorUpdateIntervalHz { get; set; } = 2;
-    [YamlMember(Description = "")] // TODO
+    [YamlMember(Description = "Override some settings for newly spawned cars based on the number of lanes")]
     public Dictionary<int, LaneCountSpecificOverrides> LaneCountSpecificOverrides { get; set; } = new();
     [YamlMember(Description = "Override some settings for specific car models/skins")]
     public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new();
@@ -326,9 +328,9 @@ public class SkinSpecificOverrides
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class LaneCountSpecificOverrides
 {
-    [YamlMember(Description = "")] // TODO
+    [YamlMember(Description = "Minimum distance between AI cars")]
     public int MinAiSafetyDistanceMeters { get; set; }
-    [YamlMember(Description = "")] // TODO
+    [YamlMember(Description = "Maximum distance between AI cars")]
     public int MaxAiSafetyDistanceMeters { get; set; }
     [YamlIgnore] public int MinAiSafetyDistanceSquared => MinAiSafetyDistanceMeters * MinAiSafetyDistanceMeters;
     [YamlIgnore] public int MaxAiSafetyDistanceSquared => MaxAiSafetyDistanceMeters * MaxAiSafetyDistanceMeters;

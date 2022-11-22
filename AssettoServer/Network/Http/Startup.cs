@@ -76,6 +76,7 @@ public class Startup
         builder.RegisterType<WhitelistSlotFilter>().As<IOpenSlotFilter>();
         builder.RegisterType<GuidSlotFilter>().As<IOpenSlotFilter>();
         builder.RegisterType<SignalHandler>().AsSelf().SingleInstance().AutoActivate();
+        builder.RegisterType<UpnpService>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
 
         if (_configuration.Extra.EnableLegacyPluginInterface)
         {

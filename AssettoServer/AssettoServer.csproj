@@ -108,7 +108,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AssettoServer.Hub.Contracts\AssettoServer.Hub.Contracts.csproj" />
+        <ProjectReference Include="..\AssettoServer.Hub.Contracts\AssettoServer.Hub.Contracts.csproj">
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
         <!--<Reference Include="Supercluster.KDTree, Version=1.0.3.0, Culture=neutral, PublicKeyToken=null">
           <HintPath>..\..\..\..\RiderProjects\Supercluster.KDTree\KDTree\bin\Debug\net6.0\Supercluster.KDTree.dll</HintPath>
         </Reference>-->

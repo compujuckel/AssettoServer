@@ -42,7 +42,6 @@ public class DynamicTrafficDensity : CriticalBackgroundService
             {
                 double hours = _weatherManager.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0 / 3600.0;
                 _configuration.Extra.AiParams.TrafficDensity = GetDensity(hours);
-                _configuration.TriggerReload();
             }
             catch (Exception ex)
             {

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Numerics;
 using System.Threading;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
-using AssettoServer.Server.Configuration;
 
 namespace AssettoServer.Server;
 
@@ -44,11 +44,11 @@ public partial class EntryCar
         AiName = $"{_configuration.Extra.AiParams.NamePrefix} {SessionId}";
         SetAiOverbooking(0);
 
-        _configuration.Reload += OnConfigReload;
-        OnConfigReload(_configuration, EventArgs.Empty);
+        _configuration.Extra.AiParams.PropertyChanged += OnConfigReload;
+        OnConfigReload(_configuration, new PropertyChangedEventArgs(string.Empty));
     }
 
-    private void OnConfigReload(ACServerConfiguration sender, EventArgs _)
+    private void OnConfigReload(object? sender, PropertyChangedEventArgs args)
     {
         AiSplineHeightOffsetMeters = _configuration.Extra.AiParams.SplineHeightOffsetMeters;
         AiAcceleration = _configuration.Extra.AiParams.DefaultAcceleration;

@@ -166,7 +166,6 @@ public class Steam : CriticalBackgroundService
         bool validated = false;
 
         SteamServer.OnValidateAuthTicketResponse += TicketValidateResponse;
-        Task timeoutTask = Task.Delay(10000);
 
         if (!SteamServer.BeginAuthSession(sessionTicket, guid))
         {
@@ -174,15 +173,16 @@ public class Steam : CriticalBackgroundService
             taskCompletionSource.SetResult(false);
         }
 
-        Task finishedTask = await Task.WhenAny(timeoutTask, taskCompletionSource.Task);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        cts.Token.Register(() => taskCompletionSource.SetCanceled(cts.Token));
 
-        if (finishedTask == timeoutTask)
-        {
-            client.Logger.Warning("Steam auth ticket verification timed out for {ClientName}", client.Name);
-        }
-        else
+        try
         {
             validated = await taskCompletionSource.Task;
+        }
+        catch (TaskCanceledException)
+        {
+            client.Logger.Warning("Steam auth ticket verification timed out for {ClientName}", client.Name);
         }
 
         SteamServer.OnValidateAuthTicketResponse -= TicketValidateResponse;

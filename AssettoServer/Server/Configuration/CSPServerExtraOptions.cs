@@ -52,8 +52,14 @@ public class CSPServerExtraOptions
         WelcomeMessage += LegalNotice.WelcomeMessage;
         if (configuration.Extra.EnableCustomUpdate)
         {
-            ExtraOptions += "\r\n" + $"[EXTRA_DATA]\r\nCUSTOM_UPDATE_FORMAT = '{CSPPositionUpdate.CustomUpdateFormat}'";
+            ExtraOptions += $"\r\n[EXTRA_DATA]\r\nCUSTOM_UPDATE_FORMAT = '{CSPPositionUpdate.CustomUpdateFormat}'";
         }
+
+        if (!configuration.Extra.UseSteamAuth)
+        {
+            ExtraOptions += "\r\n[EXTRA_TWEAKS]\r\nVERIFY_STEAM_API_INTEGRITY = 1";
+        }
+
         ExtraOptions += "\r\n" + configuration.CSPExtraOptions;
     }
 

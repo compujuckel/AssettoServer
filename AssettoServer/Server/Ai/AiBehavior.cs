@@ -87,7 +87,7 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         };
 
         _entryCarManager.ClientDisconnected += OnClientDisconnected;
-        _configuration.Reload += OnConfigurationReload;
+        _configuration.Extra.AiParams.PropertyChanged += (_, _) => AdjustOverbooking();
     }
 
     private static void OnCollision(ACTcpClient sender, CollisionEventArgs args)
@@ -100,11 +100,6 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
                 targetAiState.AiState.StopForCollision();
             }
         }
-    }
-
-    private void OnConfigurationReload(ACServerConfiguration sender, EventArgs args)
-    {
-        AdjustOverbooking();
     }
 
     private void OnClientChecksumPassed(ACTcpClient sender, EventArgs args)

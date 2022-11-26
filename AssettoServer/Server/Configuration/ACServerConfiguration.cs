@@ -23,9 +23,7 @@ public class ACServerConfiguration
     public string? CSPExtraOptions { get; }
     public string BaseFolder { get; }
     public bool LoadPluginsFromWorkdir { get; }
-
-    public event EventHandler<ACServerConfiguration, EventArgs>? Reload;
-
+    
     /*
      * Search paths are like this:
      *
@@ -180,18 +178,8 @@ public class ACServerConfiguration
         {
             ret = propertyInfo.SetValueFromString(parent, value);
         }
-        catch (TargetInvocationException)
-        {
-            // ignored
-        }
-        
-        if (ret) TriggerReload();
+        catch (TargetInvocationException) { }
 
         return ret;
-    }
-
-    public void TriggerReload()
-    {
-        Reload?.Invoke(this, EventArgs.Empty);
     }
 }

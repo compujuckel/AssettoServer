@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using App.Metrics;
 using App.Metrics.Counter;
 using App.Metrics.Timer;
@@ -51,6 +53,7 @@ public class ACServer : CriticalBackgroundService
         ACTcpServer tcpServer,
         ACUdpServer udpServer,
         CSPFeatureManager cspFeatureManager,
+        CSPServerScriptProvider cspServerScriptProvider,
         IEnumerable<IAssettoServerAutostart> autostartServices,
         KunosLobbyRegistration kunosLobbyRegistration,
         IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
@@ -83,6 +86,11 @@ public class ACServer : CriticalBackgroundService
         if (_configuration.Extra.EnableCustomUpdate)
         {
             cspFeatureManager.Add(new CSPFeature { Name = "CUSTOM_UPDATE" });
+        }
+
+        using (var streamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Lua.assettoserver.lua")!))
+        {
+            cspServerScriptProvider.AddScript(streamReader.ReadToEnd(), "assettoserver.lua");
         }
     }
 

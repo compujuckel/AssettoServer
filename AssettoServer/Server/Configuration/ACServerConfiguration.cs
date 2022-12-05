@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -7,6 +6,7 @@ using AssettoServer.Utils;
 using FluentValidation;
 using Newtonsoft.Json;
 using Serilog;
+using YamlDotNet.Serialization;
 
 namespace AssettoServer.Server.Configuration;
 
@@ -21,7 +21,7 @@ public class ACServerConfiguration
     public CMContentConfiguration? ContentConfiguration { get; private set; }
     public string ServerVersion { get; }
     public string? CSPExtraOptions { get; }
-    public string BaseFolder { get; }
+    [YamlIgnore] public string BaseFolder { get; }
     public bool LoadPluginsFromWorkdir { get; }
     
     /*

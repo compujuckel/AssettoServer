@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -52,6 +53,7 @@ public class ACTcpClient
     internal Address? UdpEndpoint { get; private set; }
     internal bool HasAssociatedUdp { get; private set; }
     internal bool SupportsCSPCustomUpdate { get; private set; }
+    internal string ApiKey { get; }
 
     private ThreadLocal<byte[]> UdpSendBuffer { get; }
     private Memory<byte> TcpSendBuffer { get; }
@@ -170,6 +172,8 @@ public class ACTcpClient
         TcpSendBuffer = new byte[8192 + (_cspServerExtraOptions.EncodedWelcomeMessage.Length * 4) + 2];
         OutgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(512);
         DisconnectTokenSource = new CancellationTokenSource();
+
+        ApiKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
     }
 
     internal Task StartAsync()

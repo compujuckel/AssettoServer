@@ -120,5 +120,7 @@
     <ItemGroup>
         <None Remove="Server\Ai\ai_debug.lua" />
         <EmbeddedResource Include="Server\Ai\ai_debug.lua" />
+        <None Remove="Server\Lua\assettoserver.lua" />
+        <EmbeddedResource Include="Server\Lua\assettoserver.lua" />
     </ItemGroup>
 </Project>

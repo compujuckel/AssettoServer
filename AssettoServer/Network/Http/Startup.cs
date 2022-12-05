@@ -2,6 +2,7 @@
 using App.Metrics;
 using AssettoServer.Commands;
 using AssettoServer.Commands.TypeParsers;
+using AssettoServer.Network.Http.Authentication;
 using AssettoServer.Network.Rcon;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Udp;
@@ -77,6 +78,8 @@ public class Startup
         builder.RegisterType<GuidSlotFilter>().As<IOpenSlotFilter>();
         builder.RegisterType<SignalHandler>().AsSelf().SingleInstance().AutoActivate();
         builder.RegisterType<UpnpService>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
+        builder.RegisterType<ConfigurationSerializer>().AsSelf();
+        builder.RegisterType<ACClientAuthentication>().AsSelf().SingleInstance().AutoActivate();
 
         if (_configuration.Extra.EnableLegacyPluginInterface)
         {
@@ -112,6 +115,11 @@ public class Startup
             .OutputMetrics.AsPrometheusPlainText()
             .Build());
         services.AddAppMetricsCollectors();
+        services.AddAuthentication(
+                options => options.DefaultScheme = ACClientAuthenticationSchemeOptions.Scheme)
+            .AddScheme<ACClientAuthenticationSchemeOptions, ACClientAuthenticationHandler>(
+                ACClientAuthenticationSchemeOptions.Scheme, options => { });
+        services.AddAuthorization();
         services.AddMetricsEndpoints();
         services.AddControllers().AddNewtonsoftJson();
         services.AddControllers(options =>
@@ -142,6 +150,8 @@ public class Startup
         }
 
         app.UseRouting();
+        app.UseAuthentication();
+        app.UseAuthorization();
         app.UseMetricsEndpoint();
 
         app.UseEndpoints(endpoints =>

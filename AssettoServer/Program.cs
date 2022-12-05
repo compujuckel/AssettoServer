@@ -59,6 +59,7 @@ internal static class Program
         
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
+            .MinimumLevel.Override("AssettoServer.Network.Http.Authentication.ACClientAuthenticationHandler", LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
             .WriteTo.Async(a => a.Console())

@@ -291,7 +291,7 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
     private void OnClientDisconnected(ACTcpClient sender, EventArgs args)
     {
-        if (sender.EntryCar.AiMode == AiMode.Auto)
+        if (sender.EntryCar.AiMode != AiMode.None)
         {
             sender.EntryCar.SetAiControl(true);
             AdjustOverbooking();

@@ -173,9 +173,9 @@ local function window_AssettoServer()
     ui.tabBar("main_tabBar", function ()
         ui.tabItem("About", tab_About)
         ui.tabItem("License", tab_License)
-        --if sim.isAdmin then
+        if sim.isAdmin then
             ui.tabItem("Configuration", tab_Configuration)
-        --end
+        end
     end)
 end
 

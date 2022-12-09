@@ -150,14 +150,10 @@ public partial class EntryCar
     {
         if (!positionUpdate.IsValid())
         {
-            _ = Task.Run(async () =>
-            {
-                var client = Client;
-                if (client == null) return;
-                client.Logger.Debug("Invalid position update received from {Name} ({SessionId}), disconnecting", client.Name, client.SessionId);
-                await client.DisconnectAsync();
-            });
-                
+            var client = Client;
+            if (client == null) return;
+            client.Logger.Debug("Invalid position update received from {Name} ({SessionId}), disconnecting", client.Name, client.SessionId);
+            _ = client.DisconnectAsync();
             return;
         }
 

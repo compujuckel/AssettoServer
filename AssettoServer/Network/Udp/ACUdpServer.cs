@@ -23,8 +23,10 @@ public class ACUdpServer : CriticalBackgroundService
     private readonly EntryCarManager _entryCarManager;
     private readonly ushort _port;
     private Socket _socket;
-
+    
     private readonly ConcurrentDictionary<Address, EntryCar> _endpointCars = new();
+    private static readonly byte[] CarConnectResponse = { (byte)ACServerProtocol.CarConnect };
+    private readonly byte[] _lobbyCheckResponse;
 
     public ACUdpServer(SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
@@ -32,6 +34,11 @@ public class ACUdpServer : CriticalBackgroundService
         _configuration = configuration;
         _entryCarManager = entryCarManager;
         _port = _configuration.Server.UdpPort;
+        
+        _lobbyCheckResponse = new byte[3];
+        _lobbyCheckResponse[0] = (byte)ACServerProtocol.LobbyCheck;
+        ushort httpPort = _configuration.Server.HttpPort;
+        MemoryMarshal.Write(_lobbyCheckResponse.AsSpan()[1..], ref httpPort);
     }
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -93,16 +100,22 @@ public class ACUdpServer : CriticalBackgroundService
             Log.Error("Error sending UDP packet to {Address}", ip.ToString());
         }
     }
-    
+
     private void OnReceived(ref Address address, byte[] buffer, int size)
     {
+        // moved to separate method because it always allocated a closure
+        void HighPingKickAsync(EntryCar car)
+        {
+            _ = Task.Run(() => _entryCarManager.KickAsync(car.Client, $"high ping ({car.Ping}ms)"));
+        }
+        
         try
         {
             PacketReader packetReader = new PacketReader(null, buffer);
 
             ACServerProtocol packetId = (ACServerProtocol)packetReader.Read<byte>();
 
-            if (packetId == ACServerProtocol.CarDisconnect)
+            if (packetId == ACServerProtocol.CarConnect)
             {
                 int sessionId = packetReader.Read<byte>();
                 if (_entryCarManager.ConnectedCars.TryGetValue(sessionId, out EntryCar? car) && car.Client != null)
@@ -111,17 +124,14 @@ public class ACUdpServer : CriticalBackgroundService
                     {
                         _endpointCars[address] = car;
                         car.Client.Disconnecting += OnClientDisconnecting;
-
-                        byte[] response = { 0x4E };
-                        Send(address, response, 0, 1);
+                        
+                        Send(address, CarConnectResponse, 0, CarConnectResponse.Length);
                     }
                 }
             }
             else if (packetId == ACServerProtocol.LobbyCheck)
             {
-                ushort httpPort = _configuration.Server.HttpPort;
-                MemoryMarshal.Write(buffer.AsSpan().Slice(1), ref httpPort);
-                Send(address, buffer, 0, 3);
+                Send(address, _lobbyCheckResponse, 0, _lobbyCheckResponse.Length);
             }
             /*else if (packetId == 0xFF)
             {
@@ -161,7 +171,7 @@ public class ACUdpServer : CriticalBackgroundService
                     {
                         car.HighPingSeconds++;
                         if (car.HighPingSeconds > _configuration.Extra.MaxPingSeconds)
-                            _ = Task.Run(() => _entryCarManager.KickAsync(car.Client, $"high ping ({car.Ping}ms)"));
+                            HighPingKickAsync(car);
                     }
                     else car.HighPingSeconds = 0;
                 }
@@ -175,7 +185,7 @@ public class ACUdpServer : CriticalBackgroundService
 
     private void OnClientDisconnecting(ACTcpClient sender, EventArgs args)
     {
-        if (sender.UdpEndpoint.HasValue)
+        if (sender.UdpEndpoint != null)
         {
             _endpointCars.TryRemove(sender.UdpEndpoint.Value, out _);
         }

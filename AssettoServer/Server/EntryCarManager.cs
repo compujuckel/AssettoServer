@@ -163,7 +163,7 @@ public class EntryCarManager
         for (int i = 0; i < EntryCars.Length; i++)
         {
             var car = EntryCars[i];
-            if (car.Client is { HasSentFirstUpdate: true, HasAssociatedUdp: true } && car.Client != sender)
+            if (car.Client is { HasSentFirstUpdate: true, UdpEndpoint: not null } && car.Client != sender)
             {
                 car.Client?.SendPacketUdp(in packet);
             }

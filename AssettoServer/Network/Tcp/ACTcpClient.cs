@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -37,6 +38,7 @@ public class ACTcpClient
     public string? NationCode { get; private set; }
     public bool IsAdministrator { get; internal set; }
     public ulong Guid { get; internal set; }
+    public string HashedGuid { get; private set; } = "";
     public ulong? OwnerGuid { get; internal set; }
     public EntryCar EntryCar { get; internal set; } = null!;
     public bool IsDisconnectRequested => _disconnectRequested == 1;
@@ -51,7 +53,6 @@ public class ACTcpClient
     public bool HasPassedChecksum { get; private set; }
 
     internal Address? UdpEndpoint { get; private set; }
-    internal bool HasAssociatedUdp { get; private set; }
     internal bool SupportsCSPCustomUpdate { get; private set; }
     internal string ApiKey { get; }
 
@@ -202,13 +203,10 @@ public class ACTcpClient
 
     internal void SendPacketUdp<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket
     {
+        if (UdpEndpoint == null) return;
+        
         try
         {
-            if (!UdpEndpoint.HasValue)
-            {
-                throw new InvalidOperationException($"UDP endpoint not associated for {Name}");
-            }
-                
             byte[] buffer = UdpSendBuffer.Value!;
             PacketWriter writer = new PacketWriter(buffer);
             int bytesWritten = writer.WritePacket(in packet);
@@ -218,6 +216,7 @@ public class ACTcpClient
         catch (Exception ex)
         {
             Logger.Error(ex, "Error sending {PacketName} to {ClientName}", typeof(TPacket).Name, Name);
+            _ = DisconnectAsync();
         }
     }
 
@@ -286,6 +285,7 @@ public class ACTcpClient
                     Team = handshakeRequest.Team;
                     NationCode = handshakeRequest.Nation;
                     Guid = handshakeRequest.Guid;
+                    HashedGuid = IdFromGuid(Guid);
 
                     Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, TcpClient.Client.RemoteEndPoint?.ToString(), handshakeRequest.RequestedCar);
 
@@ -450,7 +450,7 @@ public class ACTcpClient
 
     private void OnClientEvent(PacketReader reader)
     {
-        ClientEvent clientEvent = reader.ReadPacket<ClientEvent>();
+        using var clientEvent = reader.ReadPacket<ClientEvent>();
 
         foreach (var evt in clientEvent.ClientEvents)
         {
@@ -849,12 +849,10 @@ public class ACTcpClient
 
     internal bool TryAssociateUdp(Address endpoint)
     {
-        if (HasAssociatedUdp)
+        if (UdpEndpoint != null)
             return false;
 
         UdpEndpoint = endpoint;
-        HasAssociatedUdp = true;
-
         return true;
     }
 
@@ -892,5 +890,18 @@ public class ACTcpClient
         {
             Logger.Error(ex, "Error disconnecting {ClientName}", Name);
         }
+    }
+    
+    private static string IdFromGuid(ulong guid)
+    {
+        using var sha1 = SHA1.Create();
+        var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes($"antarcticfurseal{guid}"));
+        StringBuilder sb = new StringBuilder();
+        foreach (byte b in hash)
+        {
+            sb.Append(b.ToString("x2"));
+        }
+
+        return sb.ToString();
     }
 }

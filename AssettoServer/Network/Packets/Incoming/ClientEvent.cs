@@ -1,44 +1,38 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Buffers;
 using System.Numerics;
 
 namespace AssettoServer.Network.Packets.Incoming;
 
-public struct ClientEvent : IIncomingNetworkPacket
+public struct ClientEvent : IIncomingNetworkPacket, IDisposable
 {
-    public short Count;
-    public List<SingleClientEvent> ClientEvents;
-        
-    public class SingleClientEvent
-    {
-        public ClientEventType Type;
-        public byte TargetSessionId;
-        public float Speed;
-        public Vector3 Position;
-        public Vector3 RelPosition;
-    }
+    public ArraySegment<SingleClientEvent> ClientEvents;
+
+    public readonly record struct SingleClientEvent(ClientEventType Type, byte TargetSessionId, float Speed, Vector3 Position, Vector3 RelPosition);
 
     public void FromReader(PacketReader reader)
     {
-        Count = reader.Read<short>();
-        ClientEvents = new List<SingleClientEvent>();
+        var count = reader.Read<short>();
+        var array = ArrayPool<SingleClientEvent>.Shared.Rent(count);
+        ClientEvents = new ArraySegment<SingleClientEvent>(array, 0, count);
 
-        for (int i = 0; i < Count; i++)
+        for (int i = 0; i < count; i++)
         {
-            var evt = new SingleClientEvent
+            var type = (ClientEventType)reader.Read<byte>();
+
+            array[i] = new SingleClientEvent
             {
-                Type = (ClientEventType)reader.Read<byte>()
+                Type = type,
+                TargetSessionId = type == ClientEventType.CollisionWithCar ? reader.Read<byte>() : (byte)0,
+                Speed = reader.Read<float>(),
+                Position = reader.Read<Vector3>(),
+                RelPosition = reader.Read<Vector3>()
             };
-
-            if (evt.Type == ClientEventType.CollisionWithCar)
-            {
-                evt.TargetSessionId = evt.Type == ClientEventType.CollisionWithCar ? reader.Read<byte>() : (byte)0;
-            }
-
-            evt.Speed = reader.Read<float>();
-            evt.Position = reader.Read<Vector3>();
-            evt.RelPosition = reader.Read<Vector3>();
-                
-            ClientEvents.Add(evt);
         }
+    }
+
+    public void Dispose()
+    {
+        ArrayPool<SingleClientEvent>.Shared.Return(ClientEvents.Array!);
     }
 }

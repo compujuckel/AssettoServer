@@ -80,6 +80,7 @@ public class Startup
         builder.RegisterType<UpnpService>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         builder.RegisterType<ConfigurationSerializer>().AsSelf();
         builder.RegisterType<ACClientAuthentication>().AsSelf().SingleInstance().AutoActivate();
+        builder.RegisterType<HttpInfoCache>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
 
         if (_configuration.Extra.EnableLegacyPluginInterface)
         {

@@ -224,7 +224,8 @@ public class ACServer : CriticalBackgroundService
                             {
                                 var toCar = _entryCarManager.EntryCars[j];
                                 var toClient = toCar.Client;
-                                if (toCar == fromCar || toClient == null || !toClient.HasSentFirstUpdate
+                                if (toCar == fromCar 
+                                    || toClient == null || !toClient.HasSentFirstUpdate || toClient.UdpEndpoint == null
                                     || !fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
 
                                 if (toClient.SupportsCSPCustomUpdate || fromCar.AiControlled)

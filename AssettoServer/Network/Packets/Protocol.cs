@@ -23,7 +23,7 @@ public enum ACServerProtocol : byte
     RaceOver               = 0x4B,
     Pulse                  = 0x4C,  // Not exactly sure what this does
     CarDisconnected        = 0x4D,
-    CarDisconnect          = 0x4E,
+    CarConnect             = 0x4E,
     SessionRequest         = 0x4F,
     TyreCompoundChange     = 0x50,
     WelcomeMessage         = 0x51,

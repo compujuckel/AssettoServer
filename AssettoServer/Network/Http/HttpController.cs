@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using AssettoServer.Network.Http.Responses;
 using AssettoServer.Server;
@@ -26,8 +24,9 @@ public class HttpController : ControllerBase
     private readonly CSPFeatureManager _cspFeatureManager;
     private readonly IAdminService _adminService;
     private readonly OpenSlotFilterChain _openSlotFilter;
+    private readonly HttpInfoCache _cache;
 
-    public HttpController(CSPServerScriptProvider serverScriptProvider, WeatherManager weatherManager, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager, CSPFeatureManager cspFeatureManager, IAdminService adminService, OpenSlotFilterChain openSlotFilter)
+    public HttpController(CSPServerScriptProvider serverScriptProvider, WeatherManager weatherManager, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager, CSPFeatureManager cspFeatureManager, IAdminService adminService, OpenSlotFilterChain openSlotFilter, HttpInfoCache cache)
     {
         _serverScriptProvider = serverScriptProvider;
         _weatherManager = weatherManager;
@@ -38,21 +37,7 @@ public class HttpController : ControllerBase
         _cspFeatureManager = cspFeatureManager;
         _adminService = adminService;
         _openSlotFilter = openSlotFilter;
-    }
-
-    private string? IdFromGuid(string? guid)
-    {
-        if (guid == null) return null;
-            
-        using var sha1 = SHA1.Create();
-        var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes("antarcticfurseal" + guid));
-        StringBuilder sb = new StringBuilder();
-        foreach (byte b in hash)
-        {
-            sb.Append(b.ToString("x2"));
-        }
-
-        return sb.ToString();
+        _cache = cache;
     }
 
     [HttpGet("/INFO")]
@@ -60,29 +45,29 @@ public class HttpController : ControllerBase
     {
         InfoResponse responseObj = new InfoResponse
         {
-            Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct(),
+            Cars = _cache.Cars,
             Clients = _entryCarManager.ConnectedCars.Count,
-            Country = new[] { _geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode },
+            Country = _cache.Country,
             CPort = _configuration.Server.HttpPort,
-            Durations = _configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps),
+            Durations = _cache.Durations,
             Extra = _configuration.Server.HasExtraLap,
             Inverted = _configuration.Server.InvertedGridPositions,
             Ip = _geoParamsManager.GeoParams.Ip,
             MaxClients = _configuration.Server.MaxClients,
-            Name = _configuration.Server.Name + (_configuration.Extra.EnableServerDetails ? " ℹ" + _configuration.Server.HttpPort : ""),
+            Name = _cache.ServerName,
             Pass = !string.IsNullOrEmpty(_configuration.Server.Password),
             Pickup = true,
             Pit = false,
             Session = _sessionManager.CurrentSession.Configuration.Id,
             Port = _configuration.Server.UdpPort,
-            SessionTypes = _configuration.Sessions.Select(s => s.Id + 1),
+            SessionTypes = _cache.SessionTypes,
             Timed = false,
             TimeLeft = _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
             TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay),
             Timestamp = _sessionManager.ServerTimeMilliseconds,
             TPort = _configuration.Server.TcpPort,
-            Track = _configuration.Server.Track + (string.IsNullOrEmpty(_configuration.Server.TrackConfig) ? null : "-" + _configuration.Server.TrackConfig),
-            PoweredBy = "AssettoServer " + _configuration.ServerVersion
+            Track = _cache.Track,
+            PoweredBy = _cache.PoweredBy
         };
 
         return responseObj;
@@ -120,11 +105,11 @@ public class HttpController : ControllerBase
         
         DetailResponse responseObj = new DetailResponse
         {
-            Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct(),
+            Cars = _cache.Cars,
             Clients = _entryCarManager.ConnectedCars.Count,
-            Country = new[] { _geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode },
+            Country = _cache.Country,
             CPort = _configuration.Server.HttpPort,
-            Durations = _configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps),
+            Durations = _cache.Durations,
             Extra = _configuration.Server.HasExtraLap,
             Inverted = _configuration.Server.InvertedGridPositions,
             Ip = _geoParamsManager.GeoParams.Ip,
@@ -135,13 +120,13 @@ public class HttpController : ControllerBase
             Pit = false,
             Session = _sessionManager.CurrentSession.Configuration.Id,
             Port = _configuration.Server.UdpPort,
-            SessionTypes = _configuration.Sessions.Select(s => s.Id + 1),
+            SessionTypes = _cache.SessionTypes,
             Timed = false,
             TimeLeft = _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
             TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay),
             Timestamp = _sessionManager.ServerTimeMilliseconds,
             TPort = _configuration.Server.TcpPort,
-            Track = _configuration.Server.Track + (string.IsNullOrEmpty(_configuration.Server.TrackConfig) ? null : "-" + _configuration.Server.TrackConfig),
+            Track = _cache.Track,
             Players = new DetailResponsePlayerList
             {
                 Cars = _entryCarManager.EntryCars.Select(ec => new DetailResponseCar
@@ -153,7 +138,7 @@ public class HttpController : ControllerBase
                     DriverTeam = ec.Client?.Team,
                     DriverNation = ec.Client?.NationCode,
                     IsConnected = ec.Client != null,
-                    ID = IdFromGuid(ec.Client?.Guid.ToString())
+                    ID = ec.Client?.HashedGuid
                 })
             },
             Until = DateTimeOffset.Now.ToUnixTimeSeconds() + _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
@@ -161,19 +146,7 @@ public class HttpController : ControllerBase
             TrackBase = _configuration.Server.Track,
             City = _geoParamsManager.GeoParams.City,
             Frequency = _configuration.Server.RefreshRateHz,
-            Assists = new DetailResponseAssists
-            {
-                AbsState = _configuration.Server.ABSAllowed,
-                TcState = _configuration.Server.TractionControlAllowed,
-                FuelRate = (int)(_configuration.Server.FuelConsumptionRate * 100),
-                DamageMultiplier = (int)(_configuration.Server.MechanicalDamageRate * 100),
-                TyreWearRate = (int)(_configuration.Server.TyreConsumptionRate * 100),
-                AllowedTyresOut = _configuration.Server.AllowedTyresOutCount,
-                StabilityAllowed = _configuration.Server.StabilityAllowed,
-                AutoclutchAllowed = _configuration.Server.AutoClutchAllowed,
-                TyreBlanketsAllowed = _configuration.Server.AllowTyreBlankets,
-                ForceVirtualMirror = _configuration.Server.IsVirtualMirrorForced
-            },
+            Assists = _cache.Assists,
             WrappedPort = _configuration.Server.HttpPort,
             AmbientTemperature = _weatherManager.CurrentWeather.TemperatureAmbient,
             RoadTemperature = _weatherManager.CurrentWeather.TemperatureRoad,
@@ -183,9 +156,9 @@ public class HttpController : ControllerBase
             Description = _configuration.Extra.ServerDescription,
             Grip = _weatherManager.CurrentWeather.TrackGrip * 100,
             Features = _cspFeatureManager.Features.Keys,
-            PoweredBy = "AssettoServer " + _configuration.ServerVersion
+            PoweredBy = _cache.PoweredBy
         };
-            
+        
         return responseObj;
     }
 

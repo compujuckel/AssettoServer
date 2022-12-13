@@ -1,9 +1,11 @@
 ﻿using System.IO;
+using AssettoServer.Server.Ai.Structs;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Plugin;
 using Autofac;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 
 namespace AssettoServer.Server.Ai;
 
@@ -40,18 +42,19 @@ public class AiModule : Module
             }
 
             string mapAiBasePath = Path.Join(contentPath, "tracks/" + _configuration.Server.Track + "/ai/");
-            TrafficMap trafficMap;
-            if (File.Exists(mapAiBasePath + "traffic_map.obj"))
-            {
-                trafficMap = WavefrontObjParser.ParseFile(mapAiBasePath + "traffic_map.obj", _configuration.Extra.AiParams.LaneWidthMeters);
-            } 
-            else
+            var cacheKey = AiCache.GenerateCacheKey(mapAiBasePath);
+            Log.Debug("AI cache key: {0}", cacheKey);
+            Directory.CreateDirectory("cache");
+            var cachePath = Path.Join("cache", cacheKey);
+            if (!File.Exists(cachePath))
             {
                 var parser = new FastLaneParser(_configuration);
-                trafficMap = parser.FromFiles(mapAiBasePath);
+                var aiPackage = parser.FromFiles(mapAiBasePath);
+                AiCacheWriter.ToFile(aiPackage, cachePath);
             }
 
-            builder.RegisterInstance(trafficMap).AsSelf();
+            var aiCache = new AiCache(_configuration, cacheKey);
+            builder.RegisterInstance(aiCache).AsSelf();
         }
     }
 }

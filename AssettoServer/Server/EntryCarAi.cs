@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Threading;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
+using AssettoServer.Server.Ai.Structs;
 
 namespace AssettoServer.Server;
 
@@ -38,6 +39,7 @@ public partial class EntryCar
     private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
     
     private readonly Func<EntryCar, AiState> _aiStateFactory;
+    private readonly AiCache _cache;
 
     private void AiInit()
     {
@@ -208,17 +210,19 @@ public partial class EntryCar
         }
     }
 
-    public bool IsPositionSafe(TrafficSplinePoint point)
+    public bool IsPositionSafe(int pointId)
     {
         _aiStatesLock.EnterReadLock();
         try
         {
+            var points = _cache.Points;
+            
             for (var i = 0; i < _aiStates.Count; i++)
             {
                 var aiState = _aiStates[i];
                 if (aiState.Initialized 
-                    && Vector3.DistanceSquared(aiState.Status.Position, point.Position) < aiState.SafetyDistanceSquared
-                    && aiState.CurrentSplinePoint.IsSameDirection(point))
+                    && Vector3.DistanceSquared(aiState.Status.Position, points[pointId].Position) < aiState.SafetyDistanceSquared
+                    && _cache.IsSameDirection(aiState.CurrentSplinePointId, pointId))
                 {
                     return false;
                 }

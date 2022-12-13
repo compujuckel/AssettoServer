@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Server.Ai.Structs;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using AssettoServer.Utils;
@@ -17,37 +18,20 @@ public class AiState
     public EntryCar EntryCar { get; }
     public bool Initialized { get; private set; }
 
-    public TrafficSplinePoint CurrentSplinePoint
+    public int CurrentSplinePointId
     {
-        get => _currentSplinePoint!;
+        get => _currentSplinePointId;
         private set
         {
-            lock (value.SlowestAiStateLock)
-            {
-                if (value.SlowestAiState == null || value.SlowestAiState.CurrentSpeed > CurrentSpeed)
-                {
-                    value.SlowestAiState = this;
-                }
-            }
-
-            if (_currentSplinePoint != null)
-            {
-                lock (_currentSplinePoint.SlowestAiStateLock)
-                {
-                    if (_currentSplinePoint?.SlowestAiState == this)
-                    {
-                        _currentSplinePoint.SlowestAiState = null;
-                    }
-                }
-            }
-
-            _currentSplinePoint = value;
+            _cache.SlowestAiStates.Enter(value, this);
+            _cache.SlowestAiStates.Leave(_currentSplinePointId, this);
+            _currentSplinePointId = value;
         }
     }
 
-    private TrafficSplinePoint? _currentSplinePoint;
+    private int _currentSplinePointId;
 
-    public TrafficMapView MapView { get; private set; }
+    public JunctionEvaluator MapView { get; private set; }
     public long SpawnProtectionEnds { get; set; }
     public float SafetyDistanceSquared { get; set; } = 20 * 20;
     public float Acceleration { get; set; }
@@ -74,7 +58,7 @@ public class AiState
     private long _obstacleHonkStart;
     private long _obstacleHonkEnd;
     private CarStatusFlags _indicator = 0;
-    private TrafficSplineJunction? _nextJunction;
+    private int _nextJunctionId;
     private bool _junctionPassed;
     private float _endIndicatorDistance;
     private float _minObstacleDistance;
@@ -83,6 +67,7 @@ public class AiState
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly WeatherManager _weatherManager;
+    private readonly AiCache _cache;
 
     private static readonly List<Color> CarColors = new()
     {
@@ -106,14 +91,15 @@ public class AiState
         Color.FromArgb(18, 46, 43),
     };
 
-    public AiState(EntryCar entryCar, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager)
+    public AiState(EntryCar entryCar, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, AiCache cache)
     {
         EntryCar = entryCar;
         _sessionManager = sessionManager;
         _weatherManager = weatherManager;
         _configuration = configuration;
         _entryCarManager = entryCarManager;
-        MapView = new TrafficMapView();
+        _cache = cache;
+        MapView = new JunctionEvaluator(cache);
 
         _lastTick = _sessionManager.ServerTimeMilliseconds;
     }
@@ -121,15 +107,7 @@ public class AiState
     public void Despawn()
     {
         Initialized = false;
-        if (_currentSplinePoint == null) return;
-        
-        lock (_currentSplinePoint.SlowestAiStateLock)
-        {
-            if (_currentSplinePoint.SlowestAiState == this)
-            {
-                _currentSplinePoint.SlowestAiState = null;
-            }
-        }
+        _cache.SlowestAiStates.Leave(CurrentSplinePointId, this);
     }
 
     private void SetRandomSpeed()
@@ -137,7 +115,7 @@ public class AiState
         float variation = _configuration.Extra.AiParams.MaxSpeedMs * _configuration.Extra.AiParams.MaxSpeedVariationPercent;
 
         float fastLaneOffset = 0;
-        if (CurrentSplinePoint.Left != null)
+        if (_cache.Points[CurrentSplinePointId].LeftId >= 0)
         {
             fastLaneOffset = _configuration.Extra.AiParams.RightLaneOffsetMs;
         }
@@ -152,23 +130,23 @@ public class AiState
         Color = CarColors[Random.Shared.Next(CarColors.Count)];
     }
 
-    public void Teleport(TrafficSplinePoint point)
+    public void Teleport(int pointId)
     {
         MapView.Clear();
-        CurrentSplinePoint = point;
-        if (!MapView.TryNext(CurrentSplinePoint, out var nextPoint))
-            throw new InvalidOperationException($"Cannot get next spline point for {CurrentSplinePoint.Id}");
-        _currentVecLength = (nextPoint.Position - CurrentSplinePoint.Position).Length();
+        CurrentSplinePointId = pointId;
+        if (!MapView.TryNext(CurrentSplinePointId, out var nextPointId))
+            throw new InvalidOperationException($"Cannot get next spline point for {CurrentSplinePointId}");
+        _currentVecLength = (_cache.Points[nextPointId].Position - _cache.Points[CurrentSplinePointId].Position).Length();
         _currentVecProgress = 0;
             
         CalculateTangents();
-            
+        
         SetRandomSpeed();
         SetRandomColor();
 
         var minDist = _configuration.Extra.AiParams.MinAiSafetyDistanceSquared;
         var maxDist = _configuration.Extra.AiParams.MaxAiSafetyDistanceSquared;
-        if (_configuration.Extra.AiParams.LaneCountSpecificOverrides.TryGetValue(point.Lanes.Length, out var overrides))
+        if (_configuration.Extra.AiParams.LaneCountSpecificOverrides.TryGetValue(_cache.Lanes[CurrentSplinePointId].Length, out var overrides))
         {
             minDist = overrides.MinAiSafetyDistanceSquared;
             maxDist = overrides.MaxAiSafetyDistanceSquared;
@@ -182,7 +160,7 @@ public class AiState
         _obstacleHonkEnd = 0;
         _obstacleHonkStart = 0;
         _indicator = 0;
-        _nextJunction = null;
+        _nextJunctionId = -1;
         _junctionPassed = false;
         _endIndicatorDistance = 0;
         _lastTick = _sessionManager.ServerTimeMilliseconds;
@@ -194,43 +172,48 @@ public class AiState
 
     private void CalculateTangents()
     {
-        if (!MapView.TryNext(CurrentSplinePoint, out var nextPoint))
+        if (!MapView.TryNext(CurrentSplinePointId, out var nextPointId))
             throw new InvalidOperationException("Cannot get next spline point");
-            
-        if (MapView.TryPrevious(CurrentSplinePoint, out var previousPoint))
+
+        var points = _cache.Points;
+        
+        if (MapView.TryPrevious(CurrentSplinePointId, out var previousPointId))
         {
-            _startTangent = (nextPoint.Position - previousPoint.Position) * 0.5f;
+            _startTangent = (points[nextPointId].Position - points[previousPointId].Position) * 0.5f;
         }
         else
         {
-            _startTangent = (nextPoint.Position - CurrentSplinePoint.Position) * 0.5f;
+            _startTangent = (points[nextPointId].Position - points[CurrentSplinePointId].Position) * 0.5f;
         }
 
-        if (MapView.TryNext(CurrentSplinePoint, out var nextNextPoint, 2))
+        if (MapView.TryNext(CurrentSplinePointId, out var nextNextPointId, 2))
         {
-            _endTangent = (nextNextPoint.Position - CurrentSplinePoint.Position) * 0.5f;
+            _endTangent = (points[nextNextPointId].Position - points[CurrentSplinePointId].Position) * 0.5f;
         }
         else
         {
-            _endTangent = (nextPoint.Position - CurrentSplinePoint.Position) * 0.5f;
+            _endTangent = (points[nextPointId].Position - points[CurrentSplinePointId].Position) * 0.5f;
         }
     }
 
     private bool Move(float progress)
     {
+        var points = _cache.Points;
+        var junctions = _cache.Junctions;
+        
         bool recalculateTangents = false;
         while (progress > _currentVecLength)
         {
             progress -= _currentVecLength;
                 
-            if (!MapView.TryNext(CurrentSplinePoint, out var nextPoint)
-                || !MapView.TryNext(nextPoint, out var nextNextPoint))
+            if (!MapView.TryNext(CurrentSplinePointId, out var nextPointId)
+                || !MapView.TryNext(nextPointId, out var nextNextPointId))
             {
                 return false;
             }
 
-            CurrentSplinePoint = nextPoint;
-            _currentVecLength = (nextNextPoint.Position - CurrentSplinePoint.Position).Length();
+            CurrentSplinePointId = nextPointId;
+            _currentVecLength = (points[nextNextPointId].Position - points[CurrentSplinePointId].Position).Length();
             recalculateTangents = true;
 
             if (_junctionPassed)
@@ -245,11 +228,11 @@ public class AiState
                 }
             }
                 
-            if (_nextJunction != null && CurrentSplinePoint.JunctionEnd == _nextJunction)
+            if (_nextJunctionId >= 0 && points[CurrentSplinePointId].JunctionEndId == _nextJunctionId)
             {
                 _junctionPassed = true;
-                _endIndicatorDistance = _nextJunction.IndicateDistancePost;
-                _nextJunction = null;
+                _endIndicatorDistance = junctions[_nextJunctionId].IndicateDistancePost;
+                _nextJunctionId = -1;
             }
         }
 
@@ -270,49 +253,48 @@ public class AiState
 
     private (AiState? ClosestAiState, float ClosestAiStateDistance, float MaxSpeed) SplineLookahead()
     {
+        var points = _cache.Points;
+        var junctions = _cache.Junctions;
+        
         float maxBrakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed, EntryCar.AiDeceleration) * 2 + 20;
         AiState? closestAiState = null;
         float closestAiStateDistance = float.MaxValue;
         bool junctionFound = false;
         float distanceTravelled = 0;
-        var point = CurrentSplinePoint ?? throw new InvalidOperationException("CurrentSplinePoint is null");
+        var pointId = CurrentSplinePointId;
+        ref var point = ref points[pointId]; 
         float maxSpeed = float.MaxValue;
         float currentSpeedSquared = CurrentSpeed * CurrentSpeed;
         while (distanceTravelled < maxBrakingDistance)
         {
             distanceTravelled += point.Length;
-            point = MapView.Next(point);
-            if (point == null)
+            pointId = MapView.Next(pointId);
+            if (pointId < 0)
                 break;
 
-            if (!junctionFound && point.JunctionStart != null && distanceTravelled < point.JunctionStart.IndicateDistancePre)
+            point = ref points[pointId];
+
+            if (!junctionFound && point.JunctionStartId >= 0 && distanceTravelled < junctions[point.JunctionStartId].IndicateDistancePre)
             {
-                var indicator = MapView.WillTakeJunction(point.JunctionStart) ? point.JunctionStart.IndicateWhenTaken : point.JunctionStart.IndicateWhenNotTaken;
+                ref var jct = ref junctions[point.JunctionStartId];
+                
+                var indicator = MapView.WillTakeJunction(point.JunctionStartId) ? jct.IndicateWhenTaken : jct.IndicateWhenNotTaken;
                 if (indicator != 0)
                 {
                     _indicator = indicator;
-                    _nextJunction = point.JunctionStart;
+                    _nextJunctionId = point.JunctionStartId;
                     junctionFound = true;
                 }
             }
 
-            if (closestAiState == null && point.SlowestAiState != null)
+            if (closestAiState == null)
             {
-                lock (point.SlowestAiStateLock)
+                var slowest = _cache.SlowestAiStates[pointId];
+
+                if (slowest != null)
                 {
-                    if (point.SlowestAiState != null)
-                    {
-                        if (point.SlowestAiState.CurrentSplinePoint != point)
-                        {
-                            Log.Debug("Found invalid slowest AI state");
-                            point.SlowestAiState = null;
-                        }
-                        else
-                        {
-                            closestAiState = point.SlowestAiState;
-                            closestAiStateDistance = Vector3.Distance(Status.Position, closestAiState.Status.Position);
-                        }
-                    }
+                    closestAiState = slowest;
+                    closestAiStateDistance = Vector3.Distance(Status.Position, closestAiState.Status.Position);
                 }
             }
 
@@ -527,6 +509,8 @@ public class AiState
         if (!Initialized)
             return;
 
+        var points = _cache.Points;
+
         long currentTime = _sessionManager.ServerTimeMilliseconds;
         long dt = currentTime - _lastTick;
         _lastTick = currentTime;
@@ -543,15 +527,15 @@ public class AiState
         }
 
         float moveMeters = (dt / 1000.0f) * CurrentSpeed;
-        if (!Move(_currentVecProgress + moveMeters) || !MapView.TryNext(CurrentSplinePoint, out var nextPoint))
+        if (!Move(_currentVecProgress + moveMeters) || !MapView.TryNext(CurrentSplinePointId, out var nextPoint))
         {
             Log.Debug("Car {SessionId} reached spline end, despawning", EntryCar.SessionId);
             Despawn();
             return;
         }
 
-        CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(CurrentSplinePoint.Position, 
-            nextPoint.Position, 
+        CatmullRom.CatmullRomPoint smoothPos = CatmullRom.Evaluate(points[CurrentSplinePointId].Position, 
+            points[nextPoint].Position, 
             _startTangent, 
             _endTangent, 
             _currentVecProgress / _currentVecLength);
@@ -560,7 +544,7 @@ public class AiState
         {
             X = MathF.Atan2(smoothPos.Tangent.Z, smoothPos.Tangent.X) - MathF.PI / 2,
             Y = (MathF.Atan2(new Vector2(smoothPos.Tangent.Z, smoothPos.Tangent.X).Length(), smoothPos.Tangent.Y) - MathF.PI / 2) * -1f,
-            Z = CurrentSplinePoint.GetCamber(_currentVecProgress / _currentVecLength)
+            Z = _cache.GetCamber(CurrentSplinePointId, _currentVecProgress / _currentVecLength)
         };
 
         float tyreAngularSpeed = GetTyreAngularSpeed(CurrentSpeed, EntryCar.TyreDiameterMeters);

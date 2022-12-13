@@ -11,6 +11,7 @@ using App.Metrics.Gauge;
 using App.Metrics.Timer;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Tcp;
+using AssettoServer.Server.Ai.Structs;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Utils;
@@ -24,11 +25,11 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
-    private readonly TrafficMap _trafficMap;
     private readonly IMetricsRoot _metrics;
+    private readonly AiCache _cache;
     //private readonly EntryCar.Factory _entryCarFactory;
-    
-    private readonly TrafficMapView _mapView = new(false);
+
+    private readonly JunctionEvaluator _junctionEvaluator;
 
     private readonly GaugeOptions _aiStateCountMetric = new GaugeOptions
     {
@@ -41,18 +42,19 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
     public AiBehavior(SessionManager sessionManager,
         ACServerConfiguration configuration,
-        TrafficMap trafficMap,
         EntryCarManager entryCarManager,
         IMetricsRoot metrics,
         IHostApplicationLifetime applicationLifetime,
         //EntryCar.Factory entryCarFactory,
-        CSPServerScriptProvider serverScriptProvider) : base(applicationLifetime)
+        CSPServerScriptProvider serverScriptProvider, 
+        AiCache cache) : base(applicationLifetime)
     {
         _sessionManager = sessionManager;
         _configuration = configuration;
-        _trafficMap = trafficMap;
         _entryCarManager = entryCarManager;
         _metrics = metrics;
+        _cache = cache;
+        _junctionEvaluator = new JunctionEvaluator(cache, false);
         //_entryCarFactory = entryCarFactory;
 
         if (_configuration.Extra.AiParams.Debug)
@@ -282,24 +284,24 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
         while (_playerCars.Count > 0 && _uninitializedAiStates.Count > 0)
         {
-            TrafficSplinePoint? spawnPoint = null;
-            while (spawnPoint == null && _playerCars.Count > 0)
+            int spawnPointId = -1;
+            while (spawnPointId < 0 && _playerCars.Count > 0)
             {
                 var targetPlayerCar = _playerCars.ElementAt(GetRandomWeighted(_playerCars.Count));
                 _playerCars.Remove(targetPlayerCar);
 
-                spawnPoint = GetSpawnPoint(targetPlayerCar);
+                spawnPointId = GetSpawnPoint(targetPlayerCar);
             }
 
-            if (spawnPoint == null || !_mapView.TryNext(spawnPoint, out _))
+            if (spawnPointId < 0 || !_junctionEvaluator.TryNext(spawnPointId, out _))
                 continue;
 
             foreach (var targetAiState in _uninitializedAiStates)
             {
-                if (!targetAiState.CanSpawn(spawnPoint.Position))
+                if (!targetAiState.CanSpawn(_junctionEvaluator.Cache.Points[spawnPointId].Position))
                     continue;
 
-                targetAiState.Teleport(spawnPoint);
+                targetAiState.Teleport(spawnPointId);
 
                 _uninitializedAiStates.Remove(targetAiState);
                 break;
@@ -333,20 +335,6 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         }
     }
 
-    private readonly struct AiDistance
-    {
-        public readonly AiState AiCar;
-        public readonly EntryCar PlayerCar;
-        public readonly float DistanceSquared;
-
-        public AiDistance(AiState aiCar, EntryCar playerCar, float distanceSquared)
-        {
-            AiCar = aiCar;
-            PlayerCar = playerCar;
-            DistanceSquared = distanceSquared;
-        }
-    }
-
     private int GetRandomWeighted(int max)
     {
         // Probabilities for max = 4
@@ -367,18 +355,18 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         return target;
     }
 
-    private bool IsPositionSafe(TrafficSplinePoint point)
+    private bool IsPositionSafe(int pointId)
     {
         for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
         {
             var entryCar = _entryCarManager.EntryCars[i];
-            if (entryCar.AiControlled && !entryCar.IsPositionSafe(point))
+            if (entryCar.AiControlled && !entryCar.IsPositionSafe(pointId))
             {
                 return false;
             }
 
             if (entryCar.Client?.HasSentFirstUpdate == true
-                && Vector3.DistanceSquared(entryCar.Status.Position, point.Position) < _configuration.Extra.AiParams.SpawnSafetyDistanceToPlayerSquared)
+                && Vector3.DistanceSquared(entryCar.Status.Position, _junctionEvaluator.Cache.Points[pointId].Position) < _configuration.Extra.AiParams.SpawnSafetyDistanceToPlayerSquared)
             {
                 return false;
             }
@@ -387,34 +375,44 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         return true;
     }
 
-    private TrafficSplinePoint? GetSpawnPoint(EntryCar playerCar)
+    private int GetSpawnPoint(EntryCar playerCar)
     {
-        var targetPlayerSplinePos = _trafficMap.WorldToSpline(playerCar.Status.Position);
+        var result = _cache.WorldToSpline(playerCar.Status.Position);
 
-        if (targetPlayerSplinePos.Point?.Next == null) return null;
-            
-        int direction = Vector3.Dot(targetPlayerSplinePos.Point.GetForwardVector(), playerCar.Status.Velocity) > 0 ? 1 : -1;
-            
+        if (result.PointId < 0 || _junctionEvaluator.Cache.Points[result.PointId].NextId < 0) return -1;
+        
+        int direction = Vector3.Dot(_junctionEvaluator.Cache.GetForwardVector(result.PointId), playerCar.Status.Velocity) > 0 ? 1 : -1;
+        
         // Do not not spawn if a player is too far away from the AI spline, e.g. in pits or in a part of the map without traffic
-        if (targetPlayerSplinePos.DistanceSquared > _configuration.Extra.AiParams.MaxPlayerDistanceToAiSplineSquared)
+        if (result.DistanceSquared > _configuration.Extra.AiParams.MaxPlayerDistanceToAiSplineSquared)
         {
-            return null;
+            return -1;
         }
-            
+        
         int spawnDistance = Random.Shared.Next(_configuration.Extra.AiParams.MinSpawnDistancePoints, _configuration.Extra.AiParams.MaxSpawnDistancePoints);
-        var spawnPoint = _mapView.Traverse(targetPlayerSplinePos.Point, spawnDistance * direction)?.RandomLane();
-            
-        if (spawnPoint != null && spawnPoint.Next != null)
+        var spawnPointId = _junctionEvaluator.Traverse(result.PointId, spawnDistance * direction);
+
+        if (spawnPointId >= 0)
         {
-            direction = Vector3.Dot(spawnPoint.GetForwardVector(), playerCar.Status.Velocity) > 0 ? 1 : -1;
+            spawnPointId = _cache.RandomLane(spawnPointId);
+        }
+        
+        if (spawnPointId >= 0 && _junctionEvaluator.Cache.Points[spawnPointId].NextId >= 0)
+        {
+            direction = Vector3.Dot(_junctionEvaluator.Cache.GetForwardVector(spawnPointId), playerCar.Status.Velocity) > 0 ? 1 : -1;
         }
 
-        while (spawnPoint != null && !IsPositionSafe(spawnPoint))
+        while (spawnPointId >= 0 && !IsPositionSafe(spawnPointId))
         {
-            spawnPoint = _mapView.Traverse(spawnPoint, direction * 5);
+            spawnPointId = _junctionEvaluator.Traverse(spawnPointId, direction * 5);
+        }
+        
+        if (spawnPointId >= 0)
+        {
+            spawnPointId = _cache.RandomLane(spawnPointId);
         }
 
-        return spawnPoint?.RandomLane();
+        return spawnPointId;
     }
 
     private void AdjustOverbooking()

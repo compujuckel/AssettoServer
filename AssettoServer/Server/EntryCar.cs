@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
+using AssettoServer.Server.Ai.Structs;
 using AssettoServer.Server.Configuration;
 using Serilog;
 using Serilog.Core;
@@ -83,7 +84,7 @@ public partial class EntryCar
         }
     }
         
-    public EntryCar(string model, string? skin, byte sessionId, Func<EntryCar, AiState> aiStateFactory, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager)
+    public EntryCar(string model, string? skin, byte sessionId, Func<EntryCar, AiState> aiStateFactory, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, AiCache cache)
     {
         Model = model;
         Skin = skin ?? "";
@@ -91,6 +92,7 @@ public partial class EntryCar
         _sessionManager = sessionManager;
         _configuration = configuration;
         _entryCarManager = entryCarManager;
+        _cache = cache;
         _aiStateFactory = aiStateFactory;
         OtherCarsLastSentUpdateTime = new long[entryCarManager.EntryCars.Length];
 

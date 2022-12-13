@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Numerics;
+using AssettoServer.Server.Ai.Structs;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using Serilog;
@@ -35,7 +36,7 @@ public class FastLaneParser
         }
     }
 
-    public TrafficMap FromFiles(string folder)
+    public AiPackage FromFiles(string folder)
     {
         Dictionary<string, TrafficSpline> splines = new();
         TrafficConfiguration? configuration = null;
@@ -114,23 +115,29 @@ public class FastLaneParser
             throw new InvalidOperationException($"No AI splines found. Please put at least one AI spline fast_lane.ai(p) into {Path.GetFullPath(folder)}");
         }
 
-        return new TrafficMap(splines, _configuration.Extra.AiParams.LaneWidthMeters, _configuration.Extra.AiParams.TwoWayTraffic, configuration, _logger);
+        return new AiPackage(splines, _configuration.Extra.AiParams.LaneWidthMeters, _configuration.Extra.AiParams.TwoWayTraffic, configuration, _logger);
     }
 
-    private TrafficSplinePoint[] FromFileV7(BinaryReader reader, int idOffset)
+    private SplinePointStruct[] FromFileV7(BinaryReader reader, int idOffset)
     {
         int detailCount = reader.ReadInt32();
         reader.ReadInt32(); // LapTime
         reader.ReadInt32(); // SampleCount
 
-        TrafficSplinePoint[] points = new TrafficSplinePoint[detailCount];
+        var points = new SplinePointStruct[detailCount];
 
         for (var i = 0; i < detailCount; i++)
         {
-            var p = new TrafficSplinePoint
+            var p = new SplinePointStruct
             {
                 Id = idOffset + i,
-                Position = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle())
+                Position = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
+                JunctionStartId = -1,
+                JunctionEndId = -1,
+                LeftId = -1,
+                RightId = -1,
+                NextId = -1,
+                PreviousId = -1
             };
 
             reader.ReadSingle(); // Length
@@ -165,20 +172,26 @@ public class FastLaneParser
         return points;
     }
         
-    private TrafficSplinePoint[] FromFileVn1(BinaryReader reader, int idOffset)
+    private SplinePointStruct[] FromFileVn1(BinaryReader reader, int idOffset)
     {
         int detailCount = reader.ReadInt32();
-
-        TrafficSplinePoint[] points = new TrafficSplinePoint[detailCount];
+        
+        var points = new SplinePointStruct[detailCount];
 
         for (var i = 0; i < detailCount; i++)
         {
-            points[i] = new TrafficSplinePoint
+            points[i] = new SplinePointStruct
             {
                 Id = idOffset + i,
                 Position = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
                 Radius = reader.ReadSingle(),
-                Camber = reader.ReadSingle()
+                Camber = reader.ReadSingle(),
+                JunctionStartId = -1,
+                JunctionEndId = -1,
+                LeftId = -1,
+                RightId = -1,
+                NextId = -1,
+                PreviousId = -1
             };
         }
 
@@ -193,7 +206,7 @@ public class FastLaneParser
         float minRadius = float.MaxValue;
 
         int version = reader.ReadInt32();
-        TrafficSplinePoint[] points = version switch
+        var points = version switch
         {
             7 => FromFileV7(reader, idOffset),
             -1 => FromFileVn1(reader, idOffset),
@@ -217,10 +230,11 @@ public class FastLaneParser
                 
             minRadius = Math.Min(minRadius, points[i].Radius);
                 
-            points[i].Previous = points[i == 0 ? points.Length - 1 : i - 1];
-            points[i].Next = points[i == points.Length - 1 ? 0 : i + 1];
+            points[i].PreviousId = points[i == 0 ? points.Length - 1 : i - 1].Id;
+            ref var nextPoint = ref points[i == points.Length - 1 ? 0 : i + 1];
+            points[i].NextId = nextPoint.Id;
 
-            points[i].Length = Vector3.Distance(points[i].Position, points[i].Next!.Position);
+            points[i].Length = Vector3.Distance(points[i].Position, nextPoint.Position);
 
             if (avg != null)
             {
@@ -231,8 +245,8 @@ public class FastLaneParser
         bool closedLoop = Vector3.Distance(points[0].Position, points[^1].Position) < 50;
         if (!closedLoop)
         {
-            points[0].Previous = null;
-            points[^1].Next = null;
+            points[0].PreviousId = -1;
+            points[^1].NextId = -1;
             points[^1].Length = 1;
             _logger.Debug("Distance between spline start and end too big, not closing loop");
         }

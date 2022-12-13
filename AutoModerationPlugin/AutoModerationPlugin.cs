@@ -37,7 +37,7 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
         CSPServerScriptProvider scriptProvider,
         Func<EntryCar, EntryCarAutoModeration> entryCarAutoModerationFactory,
         IHostApplicationLifetime applicationLifetime,
-        TrafficMap? trafficMap = null) : base(applicationLifetime)
+        AiPackage? trafficMap = null) : base(applicationLifetime)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;

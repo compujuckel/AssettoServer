@@ -3,41 +3,47 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Server.Ai.Structs;
 using Serilog;
 using Supercluster.KDTree;
 
 namespace AssettoServer.Server.Ai;
 
-public class TrafficMap
+public class AiPackage
 {
     public Dictionary<string, TrafficSpline> Splines { get; }
-    public Dictionary<int, TrafficSplinePoint> PointsById { get; }
-    public KDTree<TrafficSplinePoint> KdTree { get; }
+    public SplinePointStruct[] PointsById;
+    public List<SplineJunctionStruct> Junctions { get; } = new();
+    public KDTree<int> KdTree { get; }
     public float MinRadius { get; }
 
     private readonly ILogger _logger;
 
-    public TrafficMap(Dictionary<string, TrafficSpline> splines, float laneWidth, bool twoWayTraffic = false, TrafficConfiguration? configuration = null, ILogger? logger = null)
+    public AiPackage(Dictionary<string, TrafficSpline> splines, float laneWidth, bool twoWayTraffic = false, TrafficConfiguration? configuration = null, ILogger? logger = null)
     {
         _logger = logger ?? Log.Logger;
         Splines = splines;
-        PointsById = new Dictionary<int, TrafficSplinePoint>();
         MinRadius = Splines.Values.Min(s => s.MinRadius);
 
+        int total = splines.Values.Sum(s => s.Points.Length);
+        PointsById = new SplinePointStruct[total];
+        
+        int i = 0;
         foreach (var point in splines.Values.SelectMany(spline => spline.Points))
         {
-            if (PointsById.ContainsKey(point.Id))
+            if (i != point.Id)
             {
-                throw new InvalidOperationException("Traffic map has spline points with duplicate id");
+                throw new InvalidOperationException("Mismatched ID");
             }
-                
-            PointsById.Add(point.Id, point);
+
+            PointsById[i] = point;
+            i++;
         }
             
         var treeData = CreateTreeData();
-        var treeNodes = PointsById.Values.ToArray();
+        var treeNodes = Enumerable.Range(0, PointsById.Length).ToArray();
 
-        KdTree = new KDTree<TrafficSplinePoint>(treeData, treeNodes);
+        KdTree = new KDTree<int>(treeData, treeNodes);
             
         AdjacentLaneDetector.DetectAdjacentLanes(this, laneWidth, twoWayTraffic);
         if (configuration != null)
@@ -51,69 +57,77 @@ public class TrafficMap
         var data = new List<Vector3>();
         foreach (var point in PointsById)
         {
-            data.Add(point.Value.Position);
+            data.Add(point.Position);
         }
 
         return data.ToArray();
     }
 
-    public TrafficSplinePoint GetByIdentifier(string identifier)
+    public ref SplinePointStruct GetByIdentifier(string identifier)
     {
         int separator = identifier.IndexOf('@');
         string splineName = identifier.Substring(0, separator);
         int id = int.Parse(identifier.Substring(separator + 1));
-        return Splines[splineName].Points[id];
+        int globalId = Splines[splineName].Points[id].Id;
+        return ref PointsById[globalId];
     }
 
-    public (TrafficSplinePoint? Point, float DistanceSquared) WorldToSpline(Vector3 position)
+    public (int PointId, float DistanceSquared) WorldToSpline(Vector3 position)
     {
         var nearest = KdTree.NearestNeighbors(position, 1);
         if (nearest.Length == 0)
         {
-            return (null, float.PositiveInfinity);
+            return (-1, float.PositiveInfinity);
         }
-            
-        float dist = Vector3.DistanceSquared(position, nearest[0].Item2.Position);
+
+        float dist = Vector3.DistanceSquared(position, PointsById[nearest[0].Item2].Position);
         return (nearest[0].Item2, dist);
     }
 
     private void ApplyConfiguration(TrafficConfiguration config)
     {
+        int junctionsIndex = 0;
+        
         foreach (var spline in config.Splines)
         {
             var startSpline = Splines[spline.Name];
 
             if (spline.ConnectEnd != null)
             {
-                var endPoint = GetByIdentifier(spline.ConnectEnd);
-                var startPoint = startSpline.Points[^1];
-                startPoint.Next = endPoint;
+                ref var endPoint = ref GetByIdentifier(spline.ConnectEnd);
+                ref var startPoint = ref PointsById[startSpline.Points[^1].Id];
                 
-                var jct = new TrafficSplineJunction
+                startPoint.NextId = endPoint.Id;
+                
+                var jct = new SplineJunctionStruct
                 {
-                    StartPoint = startPoint,
-                    EndPoint = endPoint,
+                    Id = junctionsIndex++,
+                    StartPointId = startPoint.Id,
+                    EndPointId = endPoint.Id,
                     Probability = 1.0f,
                     IndicateWhenTaken = IndicatorToStatusFlags(spline.IndicateEnd),
                     IndicateDistancePre = spline.IndicateEndDistancePre,
                     IndicateDistancePost = spline.IndicateEndDistancePost
                 };
 
-                startPoint.JunctionStart = jct;
-                endPoint.JunctionEnd = jct;
+                startPoint.JunctionStartId = jct.Id;
+                endPoint.JunctionEndId = jct.Id;
+
+                Junctions.Add(jct);
             }
 
             foreach (var junction in spline.Junctions)
             {
                 _logger.Debug("Junction {Name} from {StartSpline} {StartId} to {End}", junction.Name, startSpline.Name, junction.Start, junction.End);
 
-                var startPoint = startSpline.Points[junction.Start];
-                var endPoint = GetByIdentifier(junction.End);
+                ref var startPoint = ref PointsById[startSpline.Points[junction.Start].Id];
+                ref var endPoint = ref GetByIdentifier(junction.End);
 
-                var jct = new TrafficSplineJunction
+                var jct = new SplineJunctionStruct
                 {
-                    StartPoint = startPoint,
-                    EndPoint = endPoint,
+                    Id = junctionsIndex++,
+                    StartPointId = startPoint.Id,
+                    EndPointId = endPoint.Id,
                     Probability = junction.Probability,
                     IndicateWhenTaken = IndicatorToStatusFlags(junction.IndicateWhenTaken),
                     IndicateWhenNotTaken = IndicatorToStatusFlags(junction.IndicateWhenNotTaken),
@@ -121,8 +135,10 @@ public class TrafficMap
                     IndicateDistancePost = junction.IndicateDistancePost
                 };
 
-                startPoint.JunctionStart = jct;
-                endPoint.JunctionEnd = jct;
+                startPoint.JunctionStartId = jct.Id;
+                endPoint.JunctionEndId = jct.Id;
+
+                Junctions.Add(jct);
             }
         }
     }

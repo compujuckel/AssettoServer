@@ -4,6 +4,7 @@ namespace AssettoServer.Server.Ai;
 
 public class TrafficSplineJunction
 {
+    public int Id { get; set; }
     public TrafficSplinePoint? StartPoint { get; set; }
     public TrafficSplinePoint? EndPoint { get; set; }
     public float Probability { get; set; }

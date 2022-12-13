@@ -130,7 +130,7 @@ public class ACServerConfiguration
             }
             else
             {
-                throw new ConfigurationException(errorMsg);
+                throw new ConfigurationException(errorMsg) { HelpLink = "https://assettoserver.org/docs/common-configuration-errors#wrong-server-details" };
             }
         }
 

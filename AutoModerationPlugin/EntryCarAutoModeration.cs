@@ -22,9 +22,9 @@ public class EntryCarAutoModeration
     
     public Flags CurrentFlags { get; set; }
 
-    private readonly TrafficMap? _trafficMap;
+    private readonly AiPackage? _trafficMap;
     
-    public EntryCarAutoModeration(EntryCar entryCar, TrafficMap? trafficMap = null)
+    public EntryCarAutoModeration(EntryCar entryCar, AiPackage? trafficMap = null)
     {
         EntryCar = entryCar;
         EntryCar.ResetInvoked += OnResetInvoked;

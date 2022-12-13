@@ -55,6 +55,9 @@ public class Steam : CriticalBackgroundService
     private readonly ACServerConfiguration _configuration;
     private readonly IBlacklistService _blacklistService;
     private readonly CSPFeatureManager _cspFeatureManager;
+
+    private bool _firstRun = true;
+    
     public Steam(ACServerConfiguration configuration, IBlacklistService blacklistService, CSPFeatureManager cspFeatureManager, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
@@ -88,8 +91,11 @@ public class Steam : CriticalBackgroundService
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Error trying to initialize SteamServer");
+            if (_firstRun) throw;
+            Log.Error(ex, "Error trying to initialize SteamServer");
         }
+
+        _firstRun = false;
     }
 
     internal void HandleIncomingPacket(byte[] data, IPEndPoint endpoint)
@@ -143,10 +149,8 @@ public class Steam : CriticalBackgroundService
                     taskCompletionSource.SetResult(false);
                     return;
                 }
-                else
-                {
-                    client.Logger.Information("{ClientName} ({SteamId}) is using Steam family sharing, owner {OwnerSteamId}", client.Name, playerSteamId, ownerSteamId);
-                }
+
+                client.Logger.Information("{ClientName} ({SteamId}) is using Steam family sharing, owner {OwnerSteamId}", client.Name, playerSteamId, ownerSteamId);
             }
 
             foreach (int appid in _configuration.Extra.ValidateDlcOwnership)

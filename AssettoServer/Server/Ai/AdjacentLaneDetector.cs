@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Numerics;
-using System.Threading.Tasks;
+using AssettoServer.Server.Ai.Structs;
 using Serilog;
 using SerilogTimings;
 
@@ -20,7 +20,7 @@ public static class AdjacentLaneDetector
         };
     }
 
-    public static void DetectAdjacentLanes(TrafficMap map, float laneWidth, bool twoWayTraffic)
+    public static void DetectAdjacentLanes(AiPackage map, float laneWidth, bool twoWayTraffic)
     {
         const float minRadius = LaneDetectionRadius * 1.05f;
         if (laneWidth < minRadius)
@@ -29,60 +29,49 @@ public static class AdjacentLaneDetector
         }
             
         Log.Information("Adjacent lane detection...");
-            
+        
         using var t = Operation.Time("Adjacent lane detection");
 
-        foreach (var spline in map.Splines)
+        var spo = new SplinePointOperations(map.PointsById.AsSpan());
+
+        for (int i = 0; i < spo.Points.Length; i++)
         {
-            Parallel.ForEach(spline.Value.Points, point =>
+            ref var point = ref spo.Points[i];
+            
+            if (point.RightId < 0 && point.NextId >= 0)
             {
-                if (point.Right == null && point.Next != null)
+                float direction = (float) (Math.Atan2(point.Position.Z - map.PointsById[point.NextId].Position.Z, map.PointsById[point.NextId].Position.X - point.Position.X) * (180 / Math.PI) * -1);
+
+                var targetVec = OffsetVec(point.Position, -direction + 90, laneWidth);
+
+                var found = map.WorldToSpline(targetVec);
+                if (found.PointId >= 0 && found.DistanceSquared < LaneDetectionRadius * LaneDetectionRadius)
                 {
-                    float direction = (float) (Math.Atan2(point.Position.Z - point.Next.Position.Z, point.Next.Position.X - point.Position.X) * (180 / Math.PI) * -1);
-
-                    var targetVec = OffsetVec(point.Position, -direction + 90, laneWidth);
-
-                    var found = map.WorldToSpline(targetVec);
-                    if (found.Point != null && found.DistanceSquared < LaneDetectionRadius * LaneDetectionRadius)
+                    point.LeftId = found.PointId;
+                    if (spo.IsSameDirection(point.Id, found.PointId))
                     {
-                        point.Left = found.Point;
-                        if (point.IsSameDirection(found.Point))
-                        {
-                            found.Point.Right = point;
-                        }
-                        else
-                        {
-                            found.Point.Left = point;
-                        }
+                        spo.Points[found.PointId].RightId = point.Id;
                     }
-                        
-                    targetVec = OffsetVec(point.Position, -direction - 90, laneWidth);
-
-                    found = map.WorldToSpline(targetVec);
-                    if (found.Point != null && found.DistanceSquared < LaneDetectionRadius * LaneDetectionRadius)
+                    else
                     {
-                        point.Right = found.Point;
-                        if (point.IsSameDirection(found.Point))
-                        {
-                            found.Point.Left = point;
-                        }
-                        else
-                        {
-                            found.Point.Right = point;
-                        }
+                        spo.Points[found.PointId].LeftId = point.Id;
                     }
                 }
-            });
-        }
-            
-        foreach (var point in map.PointsById.Values)
-        {
-            if (point.Lanes.Length == 0)
-            {
-                var lanes = point.GetLanes(twoWayTraffic).ToArray();
-                foreach (var lane in lanes)
+                        
+                targetVec = OffsetVec(point.Position, -direction - 90, laneWidth);
+
+                found = map.WorldToSpline(targetVec);
+                if (found.PointId >= 0 && found.DistanceSquared < LaneDetectionRadius * LaneDetectionRadius)
                 {
-                    lane.Lanes = lanes;
+                    point.RightId = found.PointId;
+                    if (spo.IsSameDirection(point.Id, found.PointId))
+                    {
+                        spo.Points[found.PointId].LeftId = point.Id;
+                    }
+                    else
+                    {
+                        spo.Points[found.PointId].RightId = point.Id;
+                    }
                 }
             }
         }

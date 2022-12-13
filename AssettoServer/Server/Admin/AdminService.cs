@@ -39,7 +39,7 @@ public class AdminService : IAdminService
             }
             else
             {
-                throw new ConfigurationException(errorMsg);
+                throw new ConfigurationException(errorMsg) { HelpLink = "https://assettoserver.org/docs/common-configuration-errors#unsafe-admin-whitelist" };
             }
         }
     }

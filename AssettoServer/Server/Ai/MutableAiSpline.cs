@@ -3,30 +3,30 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Server.Ai.Configuration;
 using AssettoServer.Server.Ai.Structs;
 using Serilog;
 using Supercluster.KDTree;
 
 namespace AssettoServer.Server.Ai;
 
-public class AiPackage
+public class MutableAiSpline
 {
-    public Dictionary<string, TrafficSpline> Splines { get; }
-    public SplinePointStruct[] PointsById;
-    public List<SplineJunctionStruct> Junctions { get; } = new();
+    public Dictionary<string, FastLane> Splines { get; }
+    public SplinePoint[] Points { get; }
+    public List<SplineJunction> Junctions { get; } = new();
     public KDTree<int> KdTree { get; }
-    public float MinRadius { get; }
+    public List<int[]> Lanes { get; }
 
     private readonly ILogger _logger;
 
-    public AiPackage(Dictionary<string, TrafficSpline> splines, float laneWidth, bool twoWayTraffic = false, TrafficConfiguration? configuration = null, ILogger? logger = null)
+    internal MutableAiSpline(Dictionary<string, FastLane> splines, float laneWidth, bool twoWayTraffic = false, TrafficConfiguration? configuration = null, ILogger? logger = null)
     {
         _logger = logger ?? Log.Logger;
         Splines = splines;
-        MinRadius = Splines.Values.Min(s => s.MinRadius);
 
         int total = splines.Values.Sum(s => s.Points.Length);
-        PointsById = new SplinePointStruct[total];
+        Points = new SplinePoint[total];
         
         int i = 0;
         foreach (var point in splines.Values.SelectMany(spline => spline.Points))
@@ -36,16 +36,35 @@ public class AiPackage
                 throw new InvalidOperationException("Mismatched ID");
             }
 
-            PointsById[i] = point;
+            Points[i] = point;
             i++;
         }
             
         var treeData = CreateTreeData();
-        var treeNodes = Enumerable.Range(0, PointsById.Length).ToArray();
+        var treeNodes = Enumerable.Range(0, Points.Length).ToArray();
 
         KdTree = new KDTree<int>(treeData, treeNodes);
             
         AdjacentLaneDetector.DetectAdjacentLanes(this, laneWidth, twoWayTraffic);
+
+        var ops = new SplinePointOperations(Points);
+        Lanes = new List<int[]>();
+        int offset = 0;
+        for (i = 0; i < Points.Length; i++)
+        {
+            if (Points[i].LanesId == -1)
+            {
+                var lanes = ops.GetLanes(i, twoWayTraffic).ToArray();
+                Lanes.Add(lanes);
+                foreach (var lane in lanes)
+                {
+                    Points[lane].LanesId = offset;
+                }
+
+                offset += sizeof(int) + lanes.Length * sizeof(int);
+            }
+        }
+        
         if (configuration != null)
         {
             ApplyConfiguration(configuration);
@@ -55,7 +74,7 @@ public class AiPackage
     private Vector3[] CreateTreeData()
     {
         var data = new List<Vector3>();
-        foreach (var point in PointsById)
+        foreach (var point in Points)
         {
             data.Add(point.Position);
         }
@@ -63,13 +82,13 @@ public class AiPackage
         return data.ToArray();
     }
 
-    public ref SplinePointStruct GetByIdentifier(string identifier)
+    private ref SplinePoint GetByIdentifier(string identifier)
     {
         int separator = identifier.IndexOf('@');
         string splineName = identifier.Substring(0, separator);
         int id = int.Parse(identifier.Substring(separator + 1));
         int globalId = Splines[splineName].Points[id].Id;
-        return ref PointsById[globalId];
+        return ref Points[globalId];
     }
 
     public (int PointId, float DistanceSquared) WorldToSpline(Vector3 position)
@@ -80,7 +99,7 @@ public class AiPackage
             return (-1, float.PositiveInfinity);
         }
 
-        float dist = Vector3.DistanceSquared(position, PointsById[nearest[0].Item2].Position);
+        float dist = Vector3.DistanceSquared(position, Points[nearest[0].Item2].Position);
         return (nearest[0].Item2, dist);
     }
 
@@ -95,11 +114,11 @@ public class AiPackage
             if (spline.ConnectEnd != null)
             {
                 ref var endPoint = ref GetByIdentifier(spline.ConnectEnd);
-                ref var startPoint = ref PointsById[startSpline.Points[^1].Id];
+                ref var startPoint = ref Points[startSpline.Points[^1].Id];
                 
                 startPoint.NextId = endPoint.Id;
                 
-                var jct = new SplineJunctionStruct
+                var jct = new SplineJunction
                 {
                     Id = junctionsIndex++,
                     StartPointId = startPoint.Id,
@@ -120,10 +139,10 @@ public class AiPackage
             {
                 _logger.Debug("Junction {Name} from {StartSpline} {StartId} to {End}", junction.Name, startSpline.Name, junction.Start, junction.End);
 
-                ref var startPoint = ref PointsById[startSpline.Points[junction.Start].Id];
+                ref var startPoint = ref Points[startSpline.Points[junction.Start].Id];
                 ref var endPoint = ref GetByIdentifier(junction.End);
 
-                var jct = new SplineJunctionStruct
+                var jct = new SplineJunction
                 {
                     Id = junctionsIndex++,
                     StartPointId = startPoint.Id,

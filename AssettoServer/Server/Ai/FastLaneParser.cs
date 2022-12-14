@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Numerics;
+using AssettoServer.Server.Ai.Configuration;
 using AssettoServer.Server.Ai.Structs;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
@@ -36,13 +37,12 @@ public class FastLaneParser
         }
     }
 
-    public AiPackage FromFiles(string folder)
+    public MutableAiSpline FromFiles(string folder)
     {
-        Dictionary<string, TrafficSpline> splines = new();
+        Dictionary<string, FastLane> splines = new();
         TrafficConfiguration? configuration = null;
 
         int idOffset = 0;
-        // List of files should be ordered to guarantee consistent IDs for junctions etc.
 
         string aipPath = Path.Join(folder, "fast_lane.aip");
         if (File.Exists(aipPath))
@@ -74,8 +74,8 @@ public class FastLaneParser
                     using var fileStream = entry.Open();
                     var spline = FromFile(fileStream, entry.Name, idOffset);
                     splines.Add(entry.Name, spline);
-                        
-                    _logger.Debug("Parsed {Path}, id range {MinId} - {MaxId}, min. radius {MinRadius}m", entry, idOffset, idOffset + spline.Points.Length - 1, MathF.Round(spline.MinRadius));
+                    
+                    _logger.Debug("Parsed {Path}, id range {MinId} - {MaxId}", entry, idOffset, idOffset + spline.Points.Length - 1);
                     idOffset += spline.Points.Length;
                 }
             }
@@ -95,7 +95,8 @@ public class FastLaneParser
             {
                 throw new ConfigurationException($"No ai folder found. Please put at least one AI spline fast_lane.ai(p) into {Path.GetFullPath(folder)}");
             }
-                
+             
+            // List of files should be ordered to guarantee consistent IDs for junctions etc.
             foreach (string file in Directory.EnumerateFiles(folder, "fast_lane*.ai").OrderBy(f => f))
             {
                 string filename = Path.GetFileName(file);
@@ -104,8 +105,7 @@ public class FastLaneParser
                 var spline = FromFile(fileStream, filename, idOffset);
                 splines.Add(filename, spline);
 
-                _logger.Debug("Parsed {Path}, id range {MinId} - {MaxId}, min. radius {MinRadius}m", file, idOffset, idOffset + spline.Points.Length - 1,
-                    MathF.Round(spline.MinRadius));
+                _logger.Debug("Parsed {Path}, id range {MinId} - {MaxId}", file, idOffset, idOffset + spline.Points.Length - 1);
                 idOffset += spline.Points.Length;
             }
         }
@@ -115,20 +115,20 @@ public class FastLaneParser
             throw new InvalidOperationException($"No AI splines found. Please put at least one AI spline fast_lane.ai(p) into {Path.GetFullPath(folder)}");
         }
 
-        return new AiPackage(splines, _configuration.Extra.AiParams.LaneWidthMeters, _configuration.Extra.AiParams.TwoWayTraffic, configuration, _logger);
+        return new MutableAiSpline(splines, _configuration.Extra.AiParams.LaneWidthMeters, _configuration.Extra.AiParams.TwoWayTraffic, configuration, _logger);
     }
 
-    private SplinePointStruct[] FromFileV7(BinaryReader reader, int idOffset)
+    private SplinePoint[] FromFileV7(BinaryReader reader, int idOffset)
     {
         int detailCount = reader.ReadInt32();
         reader.ReadInt32(); // LapTime
         reader.ReadInt32(); // SampleCount
 
-        var points = new SplinePointStruct[detailCount];
+        var points = new SplinePoint[detailCount];
 
         for (var i = 0; i < detailCount; i++)
         {
-            var p = new SplinePointStruct
+            var p = new SplinePoint
             {
                 Id = idOffset + i,
                 Position = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
@@ -137,7 +137,8 @@ public class FastLaneParser
                 LeftId = -1,
                 RightId = -1,
                 NextId = -1,
-                PreviousId = -1
+                PreviousId = -1,
+                LanesId = -1
             };
 
             reader.ReadSingle(); // Length
@@ -172,15 +173,15 @@ public class FastLaneParser
         return points;
     }
         
-    private SplinePointStruct[] FromFileVn1(BinaryReader reader, int idOffset)
+    private SplinePoint[] FromFileVn1(BinaryReader reader, int idOffset)
     {
         int detailCount = reader.ReadInt32();
         
-        var points = new SplinePointStruct[detailCount];
+        var points = new SplinePoint[detailCount];
 
         for (var i = 0; i < detailCount; i++)
         {
-            points[i] = new SplinePointStruct
+            points[i] = new SplinePoint
             {
                 Id = idOffset + i,
                 Position = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
@@ -191,19 +192,18 @@ public class FastLaneParser
                 LeftId = -1,
                 RightId = -1,
                 NextId = -1,
-                PreviousId = -1
+                PreviousId = -1,
+                LanesId = -1
             };
         }
 
         return points;
     }
 
-    private TrafficSpline FromFile(Stream file, string name, int idOffset = 0)
+    private FastLane FromFile(Stream file, string name, int idOffset = 0)
     {
         _logger.Debug("Loading AI spline {Path}", name);
         using var reader = new BinaryReader(file);
-
-        float minRadius = float.MaxValue;
 
         int version = reader.ReadInt32();
         var points = version switch
@@ -227,9 +227,7 @@ public class FastLaneParser
                 _logger.Debug("Resetting radius of last spline point");
                 points[i].Radius = 1000;
             }
-                
-            minRadius = Math.Min(minRadius, points[i].Radius);
-                
+
             points[i].PreviousId = points[i == 0 ? points.Length - 1 : i - 1].Id;
             ref var nextPoint = ref points[i == points.Length - 1 ? 0 : i + 1];
             points[i].NextId = nextPoint.Id;
@@ -251,17 +249,10 @@ public class FastLaneParser
             _logger.Debug("Distance between spline start and end too big, not closing loop");
         }
 
-        /*using (var writer = new StreamWriter(Path.GetFileName(filename) + ".csv"))
-        using (var csv = new CsvWriter(writer, new CultureInfo("de-DE", false)))
-        {
-            csv.WriteRecords(points);
-        }*/
-
-        return new TrafficSpline
+        return new FastLane
         {
             Name = name,
             Points = points,
-            MinRadius = minRadius
         };
     }
 }

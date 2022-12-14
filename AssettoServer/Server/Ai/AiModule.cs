@@ -42,7 +42,7 @@ public class AiModule : Module
             }
 
             string mapAiBasePath = Path.Join(contentPath, "tracks/" + _configuration.Server.Track + "/ai/");
-            var cacheKey = AiCache.GenerateCacheKey(mapAiBasePath);
+            var cacheKey = AiSpline.GenerateCacheKey(mapAiBasePath);
             Log.Debug("AI cache key: {0}", cacheKey);
             Directory.CreateDirectory("cache");
             var cachePath = Path.Join("cache", cacheKey);
@@ -50,10 +50,10 @@ public class AiModule : Module
             {
                 var parser = new FastLaneParser(_configuration);
                 var aiPackage = parser.FromFiles(mapAiBasePath);
-                AiCacheWriter.ToFile(aiPackage, cachePath);
+                AiSplineWriter.ToFile(aiPackage, cachePath);
             }
 
-            var aiCache = new AiCache(_configuration, cacheKey);
+            var aiCache = new AiSpline(cachePath);
             builder.RegisterInstance(aiCache).AsSelf();
         }
     }

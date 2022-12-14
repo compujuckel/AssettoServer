@@ -1,8 +1,10 @@
-﻿using AssettoServer.Network.Packets.Outgoing;
+﻿using System.Runtime.InteropServices;
+using AssettoServer.Network.Packets.Outgoing;
 
 namespace AssettoServer.Server.Ai.Structs;
 
-public struct SplineJunctionStruct
+[StructLayout(LayoutKind.Sequential, Pack = 4)]
+public struct SplineJunction
 {
     public int Id;
     public int StartPointId;

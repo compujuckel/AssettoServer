@@ -20,7 +20,7 @@ public static class AdjacentLaneDetector
         };
     }
 
-    public static void DetectAdjacentLanes(AiPackage map, float laneWidth, bool twoWayTraffic)
+    public static void DetectAdjacentLanes(MutableAiSpline map, float laneWidth, bool twoWayTraffic)
     {
         const float minRadius = LaneDetectionRadius * 1.05f;
         if (laneWidth < minRadius)
@@ -32,15 +32,15 @@ public static class AdjacentLaneDetector
         
         using var t = Operation.Time("Adjacent lane detection");
 
-        var spo = new SplinePointOperations(map.PointsById.AsSpan());
+        var spo = new SplinePointOperations(map.Points.AsSpan());
 
         for (int i = 0; i < spo.Points.Length; i++)
         {
-            ref var point = ref spo.Points[i];
+            ref var point = ref map.Points[i];
             
             if (point.RightId < 0 && point.NextId >= 0)
             {
-                float direction = (float) (Math.Atan2(point.Position.Z - map.PointsById[point.NextId].Position.Z, map.PointsById[point.NextId].Position.X - point.Position.X) * (180 / Math.PI) * -1);
+                float direction = (float) (Math.Atan2(point.Position.Z - map.Points[point.NextId].Position.Z, map.Points[point.NextId].Position.X - point.Position.X) * (180 / Math.PI) * -1);
 
                 var targetVec = OffsetVec(point.Position, -direction + 90, laneWidth);
 
@@ -50,11 +50,11 @@ public static class AdjacentLaneDetector
                     point.LeftId = found.PointId;
                     if (spo.IsSameDirection(point.Id, found.PointId))
                     {
-                        spo.Points[found.PointId].RightId = point.Id;
+                        map.Points[found.PointId].RightId = point.Id;
                     }
                     else
                     {
-                        spo.Points[found.PointId].LeftId = point.Id;
+                        map.Points[found.PointId].LeftId = point.Id;
                     }
                 }
                         
@@ -66,11 +66,11 @@ public static class AdjacentLaneDetector
                     point.RightId = found.PointId;
                     if (spo.IsSameDirection(point.Id, found.PointId))
                     {
-                        spo.Points[found.PointId].LeftId = point.Id;
+                        map.Points[found.PointId].LeftId = point.Id;
                     }
                     else
                     {
-                        spo.Points[found.PointId].RightId = point.Id;
+                        map.Points[found.PointId].RightId = point.Id;
                     }
                 }
             }

@@ -1,8 +1,10 @@
 ﻿using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace AssettoServer.Server.Ai.Structs;
 
-public struct SplinePointStruct
+[StructLayout(LayoutKind.Sequential, Pack = 4)]
+public struct SplinePoint
 {
     public int Id;
     public Vector3 Position;
@@ -16,4 +18,5 @@ public struct SplinePointStruct
     public int NextId;
     public int LeftId;
     public int RightId;
+    public int LanesId;
 }

@@ -1,5 +1,5 @@
 ﻿using AssettoServer.Server;
-using AssettoServer.Server.Ai;
+using AssettoServer.Server.Ai.Structs;
 using AutoModerationPlugin.Packets;
 
 namespace AutoModerationPlugin;
@@ -7,8 +7,8 @@ namespace AutoModerationPlugin;
 public class EntryCarAutoModeration
 {
     public EntryCar EntryCar { get; }
-    
-    public TrafficSplinePoint? CurrentSplinePoint { get; private set; }
+
+    public int CurrentSplinePointId { get; private set; } = -1;
     public float CurrentSplinePointDistanceSquared { get; private set; }
 
     public int NoLightSeconds { get; set; }
@@ -22,13 +22,13 @@ public class EntryCarAutoModeration
     
     public Flags CurrentFlags { get; set; }
 
-    private readonly AiPackage? _trafficMap;
+    private readonly AiSpline? _aiSpline;
     
-    public EntryCarAutoModeration(EntryCar entryCar, AiPackage? trafficMap = null)
+    public EntryCarAutoModeration(EntryCar entryCar, AiSpline? aiSpline = null)
     {
         EntryCar = entryCar;
         EntryCar.ResetInvoked += OnResetInvoked;
-        _trafficMap = trafficMap;
+        _aiSpline = aiSpline;
     }
 
     private void OnResetInvoked(EntryCar sender, EventArgs args)
@@ -44,9 +44,9 @@ public class EntryCarAutoModeration
 
     public void UpdateSplinePoint()
     {
-        if (_trafficMap != null)
+        if (_aiSpline != null)
         {
-            (CurrentSplinePoint, CurrentSplinePointDistanceSquared) = _trafficMap.WorldToSpline(EntryCar.Status.Position);
+            (CurrentSplinePointId, CurrentSplinePointDistanceSquared) = _aiSpline.WorldToSpline(EntryCar.Status.Position);
         }
     }
 }

@@ -37,10 +37,6 @@ internal static class Program
         
     internal static async Task Main(string[] args)
     {
-        // Prevent parsing errors in floats because some cultures use "," instead of "." as decimal separator
-        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-        CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-
         ValidatorOptions.Global.DisplayNameResolver = (_, member, _) =>
         {
             foreach (var attr in member!.GetCustomAttributes(true))

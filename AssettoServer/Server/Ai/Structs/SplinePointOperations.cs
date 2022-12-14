@@ -1,21 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using AssettoServer.Utils;
+using Serilog;
 
 namespace AssettoServer.Server.Ai.Structs;
 
 public readonly ref struct SplinePointOperations
 {
-    public Span<SplinePointStruct> Points { get; }
+    public ReadOnlySpan<SplinePoint> Points { get; }
 
-    public SplinePointOperations(Span<SplinePointStruct> points)
+    public SplinePointOperations(ReadOnlySpan<SplinePoint> points)
     {
         Points = points;
     }
     
     public Vector3 GetForwardVector(int pointId)
     {
-        var point = Points[pointId];
+        ref readonly var point = ref Points[pointId];
         
         if (point.NextId >= 0)
         {
@@ -41,5 +43,67 @@ public readonly ref struct SplinePointOperations
         }
 
         return camber;
+    }
+    
+    public List<int> GetLanes(int startPointId, bool twoWayTraffic = false)
+    {
+        var ret = new List<int>();
+        const int maxCount = 10;
+
+        int point = Points[startPointId].LeftId;
+        while (point >= 0 && ret.Count < maxCount)
+        {
+            if (IsSameDirection(startPointId, point))
+            {
+                if (ret.Contains(point)) break;
+                
+                ret.Add(point);
+                point = Points[point].LeftId;
+            }
+            else if (twoWayTraffic)
+            {
+                if (ret.Contains(point)) break;
+                
+                ret.Add(point);
+                point = Points[point].RightId;
+            }
+            else
+            {
+                break;
+            }
+        }
+            
+        ret.Reverse();
+        ret.Add(startPointId);
+
+        point = Points[startPointId].RightId;
+        while (point >= 0 && ret.Count < maxCount)
+        {
+            if (IsSameDirection(startPointId, point))
+            {
+                if (ret.Contains(point)) break;
+                
+                ret.Add(point);
+                point = Points[point].RightId;
+            }
+            else if (twoWayTraffic)
+            {
+                if (ret.Contains(point)) break;
+                
+                ret.Add(point);
+                point = Points[point].LeftId;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        if (ret.Count >= maxCount)
+        {
+            Log.Debug("Possible loop at AI spline point {SplinePointId}", startPointId);
+        }
+
+        return ret;
     }
 }

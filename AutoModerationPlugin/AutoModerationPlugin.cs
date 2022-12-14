@@ -3,7 +3,7 @@ using System.Reflection;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
-using AssettoServer.Server.Ai;
+using AssettoServer.Server.Ai.Structs;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
@@ -27,6 +27,7 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
     private readonly EntryCarManager _entryCarManager;
     private readonly WeatherManager _weatherManager;
     private readonly Func<EntryCar, EntryCarAutoModeration> _entryCarAutoModerationFactory;
+    private readonly AiSpline? _aiSpline;
 
     private readonly float _laneRadiusSquared;
 
@@ -37,15 +38,16 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
         CSPServerScriptProvider scriptProvider,
         Func<EntryCar, EntryCarAutoModeration> entryCarAutoModerationFactory,
         IHostApplicationLifetime applicationLifetime,
-        AiPackage? trafficMap = null) : base(applicationLifetime)
+        AiSpline? aiSpline = null) : base(applicationLifetime)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;
         _weatherManager = weatherManager;
         _serverConfiguration = serverConfiguration;
         _entryCarAutoModerationFactory = entryCarAutoModerationFactory;
+        _aiSpline = aiSpline;
 
-        if (trafficMap == null)
+        if (aiSpline == null)
         {
             if (_configuration.WrongWayKick.Enabled)
             {
@@ -80,7 +82,7 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
         {
             throw new ConfigurationException("AutoModerationPlugin: No lights kick does not work with missing track params");
         }
-
+        
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -121,12 +123,12 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
                         }
                     }
 
-                    if (_configuration.WrongWayKick.Enabled)
+                    if (_configuration.WrongWayKick.Enabled && _aiSpline != null)
                     {
-                        if (instance.CurrentSplinePoint != null
+                        if (instance.CurrentSplinePointId >= 0
                             && instance.CurrentSplinePointDistanceSquared < _laneRadiusSquared
                             && instance.EntryCar.Status.Velocity.LengthSquared() > _configuration.WrongWayKick.MinimumSpeedMs * _configuration.WrongWayKick.MinimumSpeedMs
-                            && Vector3.Dot(instance.CurrentSplinePoint.GetForwardVector(), instance.EntryCar.Status.Velocity) < 0)
+                            && Vector3.Dot(_aiSpline.Operations.GetForwardVector(instance.CurrentSplinePointId), instance.EntryCar.Status.Velocity) < 0)
                         {
                             instance.CurrentFlags |= Flags.WrongWay;
                             

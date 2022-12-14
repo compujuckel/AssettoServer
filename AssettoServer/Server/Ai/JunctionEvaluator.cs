@@ -8,11 +8,11 @@ namespace AssettoServer.Server.Ai;
 public class JunctionEvaluator
 {
     private readonly ConcurrentDictionary<int, bool>? _evaluated;
-    public AiCache Cache { get; }
+    private readonly AiSpline _spline;
 
-    public JunctionEvaluator(AiCache cache, bool savesState = true)
+    public JunctionEvaluator(AiSpline spline, bool savesState = true)
     {
-        Cache = cache;
+        _spline = spline;
         
         if (savesState)
             _evaluated = new ConcurrentDictionary<int, bool>();
@@ -25,7 +25,7 @@ public class JunctionEvaluator
 
     public bool WillTakeJunction(int junctionId)
     {
-        ref var junction = ref Cache.Junctions[junctionId]; 
+        ref readonly var junction = ref _spline.Junctions[junctionId]; 
         bool result = Random.Shared.NextDouble() < junction.Probability;
         return _evaluated?.GetOrAdd(junctionId, result) ?? result;
     }
@@ -37,12 +37,12 @@ public class JunctionEvaluator
 
     public int Next(int pointId, int count = 1)
     {
-        var points = Cache.Points;
-        var junctions = Cache.Junctions;
+        var points = _spline.Points;
+        var junctions = _spline.Junctions;
         
         for (int i = 0; i < count && pointId >= 0; i++)
         {
-            ref var point = ref points[pointId];
+            ref readonly var point = ref points[pointId];
             if (point.JunctionStartId >= 0)
             {
                 var junctionId = point.JunctionStartId;
@@ -67,16 +67,16 @@ public class JunctionEvaluator
 
     public int Previous(int pointId, int count = 1)
     {
-        var points = Cache.Points;
-        var junctions = Cache.Junctions;
+        var points = _spline.Points;
+        var junctions = _spline.Junctions;
         
         for (int i = 0; i < count && pointId >= 0; i++)
         {
-            ref var point = ref points[pointId];
+            ref readonly var point = ref points[pointId];
             if (point.JunctionEndId >= 0)
             {
                 var junctionId = point.JunctionEndId;
-                ref var junction = ref junctions[junctionId];
+                ref readonly var junction = ref junctions[junctionId];
 
                 bool result = false;
                 if (_evaluated != null && _evaluated.ContainsKey(junctionId))

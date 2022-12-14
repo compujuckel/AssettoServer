@@ -17,6 +17,7 @@
         <DefineConstants Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">DISABLE_STEAM</DefineConstants>
         <PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
         <TieredPGO>true</TieredPGO>
+        <InvariantGlobalization>true</InvariantGlobalization>
     </PropertyGroup>
 
     <ItemGroup>
@@ -28,7 +29,6 @@
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.1.0-preview1" />
-        <PackageReference Include="CsvHelper" Version="30.0.1" />
         <PackageReference Include="CXuesong.Luaon.Json" Version="0.2.1" />
         <PackageReference Include="DotNext.IO" Version="4.8.0" />
         <PackageReference Include="DotNext.Unsafe" Version="4.8.0" />
@@ -67,8 +67,8 @@
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
         <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.0.1" />
         <PackageReference Include="SerilogTimings" Version="3.0.1" />
-        <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.6" />
-        <PackageReference Include="SunCalcNet" Version="1.2.1" />
+        <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.7" />
+        <PackageReference Include="SunCalcNet" Version="1.2.2" />
         <PackageReference Include="YamlDotNet" Version="12.0.2" />
         <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.244" PrivateAssets="all" Condition="!Exists('packages.config')" />
     </ItemGroup>
@@ -114,8 +114,8 @@
         <ProjectReference Include="..\AssettoServer.Hub.Contracts\AssettoServer.Hub.Contracts.csproj">
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
-        <!--<Reference Include="Supercluster.KDTree, Version=1.0.3.0, Culture=neutral, PublicKeyToken=null">
-          <HintPath>..\..\..\..\RiderProjects\Supercluster.KDTree\KDTree\bin\Debug\net6.0\Supercluster.KDTree.dll</HintPath>
+        <!--<Reference Include="Supercluster.KDTree">
+          <HintPath>..\..\..\..\RiderProjects\Supercluster.KDTree\KDTree\bin\Release\net7.0\Supercluster.KDTree.dll</HintPath>
         </Reference>-->
     </ItemGroup>
 

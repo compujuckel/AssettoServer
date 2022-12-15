@@ -1,4 +1,4 @@
-﻿namespace AssettoServer.Server.Ai.Structs;
+﻿namespace AssettoServer.Server.Ai.Splines;
 
 public struct AiSplineHeader
 {

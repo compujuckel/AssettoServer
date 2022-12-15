@@ -11,7 +11,7 @@ using App.Metrics.Gauge;
 using App.Metrics.Timer;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Tcp;
-using AssettoServer.Server.Ai.Structs;
+using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Utils;

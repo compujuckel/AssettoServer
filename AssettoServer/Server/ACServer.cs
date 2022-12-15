@@ -127,7 +127,7 @@ public class ACServer : CriticalBackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Log.Information("Starting HTTP server on port {HttpPort}", _configuration.Server.HttpPort);
-            
+        
         _entryCarManager.Initialize();
         _checksumManager.Initialize();
         _sessionManager.Initialize();

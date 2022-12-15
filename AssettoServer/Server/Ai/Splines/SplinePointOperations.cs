@@ -4,7 +4,7 @@ using System.Numerics;
 using AssettoServer.Utils;
 using Serilog;
 
-namespace AssettoServer.Server.Ai.Structs;
+namespace AssettoServer.Server.Ai.Splines;
 
 public readonly ref struct SplinePointOperations
 {

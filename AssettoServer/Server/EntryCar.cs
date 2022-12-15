@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using AssettoServer.Network.Packets.Incoming;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
-using AssettoServer.Server.Ai.Structs;
+using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using Serilog;
 using Serilog.Core;

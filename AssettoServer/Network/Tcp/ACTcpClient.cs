@@ -56,7 +56,7 @@ public class ACTcpClient
     internal bool SupportsCSPCustomUpdate { get; private set; }
     internal string ApiKey { get; }
 
-    private ThreadLocal<byte[]> UdpSendBuffer { get; }
+    private static ThreadLocal<byte[]> UdpSendBuffer { get; } = new(() => GC.AllocateArray<byte>(1500, true));
     private Memory<byte> TcpSendBuffer { get; }
     private Channel<IOutgoingNetworkPacket> OutgoingPacketChannel { get; }
     private CancellationTokenSource DisconnectTokenSource { get; }
@@ -150,8 +150,6 @@ public class ACTcpClient
             .Enrich.With(new ACTcpClientLogEventEnricher(this))
             .WriteTo.Logger(Log.Logger)
             .CreateLogger();
-
-        UdpSendBuffer = new ThreadLocal<byte[]>(() => new byte[1500]);
 
         TcpClient = tcpClient;
         _sessionManager = sessionManager;

@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace AssettoServer.Server.Ai.Structs;
+namespace AssettoServer.Server.Ai.Splines;
 
 [StructLayout(LayoutKind.Sequential, Pack = 4)]
 public struct SplinePoint

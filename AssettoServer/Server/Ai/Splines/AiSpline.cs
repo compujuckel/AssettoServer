@@ -2,27 +2,26 @@
 using System.Buffers;
 using System.IO;
 using System.IO.MemoryMappedFiles;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using DotNext.IO.MemoryMappedFiles;
 using DotNext.Runtime.InteropServices;
+using Serilog;
 using Supercluster.KDTree;
 
-namespace AssettoServer.Server.Ai.Structs;
+namespace AssettoServer.Server.Ai.Splines;
 
 public class AiSpline
 {
+    public const int SupportedVersion = 1;
+    
     private readonly MemoryMappedFile _file;
     private readonly IMappedMemoryOwner _fileAccessor;
     private readonly Pointer<SplinePoint> _pointsPointer;
     private readonly Pointer<SplineJunction> _junctionsPointer;
     private readonly IMemoryOwner<Vector3> _treePointsOwner;
     private readonly IMemoryOwner<int> _treeNodesOwner;
-
     private readonly nint _lanesOffset;
 
     public AiSplineHeader Header { get; }
@@ -34,6 +33,8 @@ public class AiSpline
     
     public AiSpline(string path)
     {
+        Log.Debug("Mapping cached AI spline {Path} to memory", Path.GetFileName(path));
+        
         _file = MemoryMappedFile.CreateFromFile(path, FileMode.Open, null, 0, MemoryMappedFileAccess.Read);
         _fileAccessor = _file.CreateMemoryAccessor(0, 0, MemoryMappedFileAccess.Read);
         _fileAccessor.Prefault();
@@ -42,6 +43,11 @@ public class AiSpline
         
         Header = MemoryMarshal.Read<AiSplineHeader>(_fileAccessor.Bytes);
         offset += Marshal.SizeOf<AiSplineHeader>();
+
+        if (Header.Version != SupportedVersion)
+        {
+            throw new InvalidOperationException("Unsupported AI cache file version");
+        }
 
         _pointsPointer = new Pointer<SplinePoint>(_fileAccessor.Pointer.Address + offset);
         offset += Marshal.SizeOf<SplinePoint>() * Header.NumPoints;
@@ -87,42 +93,5 @@ public class AiSpline
     {
         var lanes = GetLanes(pointId);
         return lanes[Random.Shared.Next(lanes.Length)];
-    }
-
-    public static string GenerateCacheKey(string folder)
-    {
-        using var algo = MD5.Create();
-        
-        string aipPath = Path.Join(folder, "fast_lane.aip");
-        if (File.Exists(aipPath))
-        {
-            using var stream = File.OpenRead(aipPath);
-            var hash = algo.ComputeHash(stream);
-            return Convert.ToHexString(hash);
-        }
-        else
-        {
-            var hashStream = new MemoryStream();
-            string configPath = Path.Join(folder, "config.yml");
-            if (File.Exists(configPath))
-            {
-                using var stream = File.OpenRead(configPath);
-                hashStream.Write(algo.ComputeHash(stream));
-            }
-            
-            if (!Directory.Exists(folder))
-            {
-                throw new ConfigurationException($"No ai folder found. Please put at least one AI spline fast_lane.ai(p) into {Path.GetFullPath(folder)}");
-            }
-            
-            foreach (string file in Directory.EnumerateFiles(folder, "fast_lane*.ai").OrderBy(f => f))
-            {
-                using var stream = File.OpenRead(file);
-                hashStream.Write(algo.ComputeHash(stream));
-            }
-            
-            var hash = algo.ComputeHash(hashStream);
-            return Convert.ToHexString(hash);
-        }
     }
 }

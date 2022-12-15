@@ -68,7 +68,7 @@ public class ACUdpServer : CriticalBackgroundService
 
     private void ReceiveLoop(CancellationToken stoppingToken)
     {
-        byte[] buffer = new byte[1500];
+        byte[] buffer = GC.AllocateArray<byte>(1500, true);
         var address = new Address();
         
         while (!stoppingToken.IsCancellationRequested)
@@ -89,6 +89,8 @@ public class ACUdpServer : CriticalBackgroundService
                 Log.Error(ex, "Error in UDP receive loop");
             }
         }
+        
+        UDP.Destroy(ref _socket);
     }
 
     public void Send(Address address, byte[] buffer, int offset, int size)

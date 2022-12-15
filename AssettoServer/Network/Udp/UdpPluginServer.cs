@@ -35,7 +35,7 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
     private Address _outAddress;
     private readonly string _ip;
     private Socket _socket;
-    private ThreadLocal<byte[]> SendBuffer { get; }
+    private static ThreadLocal<byte[]> SendBuffer { get; } = new(() => GC.AllocateArray<byte>(1500, true));
     private const byte RequiredProtocolVersion = 4;
     private ushort _realtimePosInterval = 1000;
 
@@ -73,8 +73,6 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
 
         _outAddress = Address.CreateFromIpPort(_ip, outPort);
         _inAddress = new Address{ Port = _configuration.Server.UdpPluginLocalPort };
-
-        SendBuffer = new ThreadLocal<byte[]>(() => new byte[1500]);
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -84,7 +82,6 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
         UDP.Initialize();
 
         _socket = UDP.Create(256 * 1024, 256 * 1024);
-        // _sendSocket = UDP.Create(256 * 1024, 256 * 1024);
 
         if (UDP.SetIP(ref _inAddress, _ip) != Status.OK)
         {
@@ -125,11 +122,13 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
 
         Task receiveTask = Task.Factory.StartNew(() => ReceiveLoop(cancellationToken), TaskCreationOptions.LongRunning);
         await Task.WhenAll(realtimeTask, receiveTask);
+        
+        UDP.Destroy(ref _socket);
     }
 
     private void ReceiveLoop(CancellationToken stoppingToken)
     {
-        byte[] buffer = new byte[1500];
+        byte[] buffer = GC.AllocateArray<byte>(1500, true);
         var address = new Address();
 
         SendPacket(new Version{ ProtocolVersion = RequiredProtocolVersion });

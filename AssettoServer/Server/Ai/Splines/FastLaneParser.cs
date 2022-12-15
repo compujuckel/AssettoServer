@@ -5,13 +5,12 @@ using System.IO.Compression;
 using System.Linq;
 using System.Numerics;
 using AssettoServer.Server.Ai.Configuration;
-using AssettoServer.Server.Ai.Structs;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using Serilog;
 using YamlDotNet.Serialization;
 
-namespace AssettoServer.Server.Ai;
+namespace AssettoServer.Server.Ai.Splines;
 
 public class FastLaneParser
 {

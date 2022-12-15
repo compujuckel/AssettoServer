@@ -69,6 +69,7 @@
         <PackageReference Include="SerilogTimings" Version="3.0.1" />
         <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.7" />
         <PackageReference Include="SunCalcNet" Version="1.2.2" />
+        <PackageReference Include="System.IO.Hashing" Version="7.0.0" />
         <PackageReference Include="YamlDotNet" Version="12.0.2" />
         <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.244" PrivateAssets="all" Condition="!Exists('packages.config')" />
     </ItemGroup>

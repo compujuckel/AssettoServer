@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Threading;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
-using AssettoServer.Server.Ai.Structs;
+using AssettoServer.Server.Ai.Splines;
 
 namespace AssettoServer.Server;
 

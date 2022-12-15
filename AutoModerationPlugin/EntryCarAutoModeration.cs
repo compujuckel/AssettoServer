@@ -1,5 +1,5 @@
 ﻿using AssettoServer.Server;
-using AssettoServer.Server.Ai.Structs;
+using AssettoServer.Server.Ai.Splines;
 using AutoModerationPlugin.Packets;
 
 namespace AutoModerationPlugin;

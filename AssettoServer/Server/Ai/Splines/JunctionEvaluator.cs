@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using AssettoServer.Server.Ai.Structs;
 
-namespace AssettoServer.Server.Ai;
+namespace AssettoServer.Server.Ai.Splines;
 
 public class JunctionEvaluator
 {

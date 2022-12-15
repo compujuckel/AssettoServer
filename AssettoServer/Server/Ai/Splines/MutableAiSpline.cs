@@ -4,11 +4,10 @@ using System.Linq;
 using System.Numerics;
 using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai.Configuration;
-using AssettoServer.Server.Ai.Structs;
 using Serilog;
 using Supercluster.KDTree;
 
-namespace AssettoServer.Server.Ai;
+namespace AssettoServer.Server.Ai.Splines;
 
 public class MutableAiSpline
 {

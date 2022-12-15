@@ -2,18 +2,18 @@
 using DotNext.IO;
 using Serilog;
 
-namespace AssettoServer.Server.Ai.Structs;
+namespace AssettoServer.Server.Ai.Splines;
 
-public static class AiSplineWriter
+public class AiSplineWriter
 {
-    public static void ToFile(MutableAiSpline map, string path)
+    public void ToFile(MutableAiSpline map, string path)
     {
+        Log.Debug("Writing cached AI spline to file");
         using var file = File.Create(path);
 
         var treePoints = map.KdTree.InternalPointArray;
         var treeNodes = map.KdTree.InternalNodeArray;
 
-        Log.Debug("Writing ai cache to file");
         file.Write(new AiSplineHeader
         {
             Version = 1,

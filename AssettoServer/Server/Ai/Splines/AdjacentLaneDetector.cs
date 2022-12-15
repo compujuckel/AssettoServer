@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Numerics;
-using AssettoServer.Server.Ai.Structs;
 using Serilog;
 using SerilogTimings;
 
-namespace AssettoServer.Server.Ai;
+namespace AssettoServer.Server.Ai.Splines;
 
 public static class AdjacentLaneDetector
 {

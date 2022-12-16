@@ -6,7 +6,7 @@ public struct SetRealtimePositionInterval : IIncomingNetworkPacket
 {
     public ushort Interval;
 
-    public void FromReader(PacketReader reader)
+    public void FromReader(ref PacketReader reader)
     {
         Interval = reader.Read<ushort>();
     }

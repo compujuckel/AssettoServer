@@ -8,7 +8,7 @@ public struct ExecCommandPacket : IIncomingNetworkPacket
 {
     public string Command { get; set; }
     
-    public void FromReader(PacketReader reader)
+    public void FromReader(ref PacketReader reader)
     {
         Command = Encoding.ASCII.GetString(reader.Buffer.Slice(reader.ReadPosition, reader.Buffer.Length - 2 - reader.ReadPosition).Span);
     }

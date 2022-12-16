@@ -396,37 +396,37 @@ public class ACTcpClient
                             Logger.Debug("Received clean exit from {ClientName} ({SessionId})", Name, SessionId);
                             return;
                         case ACServerProtocol.P2PUpdate:
-                            OnP2PUpdate(reader);
+                            OnP2PUpdate(ref reader);
                             break;
                         case ACServerProtocol.CarListRequest:
-                            OnCarListRequest(reader);
+                            OnCarListRequest(ref reader);
                             break;
                         case ACServerProtocol.Checksum:
-                            await OnChecksumAsync(reader);
+                            OnChecksum(ref reader);
                             break;
                         case ACServerProtocol.Chat:
-                            OnChat(reader);
+                            OnChat(ref reader);
                             break;
                         case ACServerProtocol.DamageUpdate:
-                            OnDamageUpdate(reader);
+                            OnDamageUpdate(ref reader);
                             break;
                         case ACServerProtocol.LapCompleted:
-                            OnLapCompletedMessageReceived(reader);
+                            OnLapCompletedMessageReceived(ref reader);
                             break;
                         case ACServerProtocol.TyreCompoundChange:
-                            OnTyreCompoundChange(reader);
+                            OnTyreCompoundChange(ref reader);
                             break;
                         case ACServerProtocol.ClientEvent:
-                            OnClientEvent(reader);
+                            OnClientEvent(ref reader);
                             break;
                         case ACServerProtocol.Extended:
                             byte extendedId = reader.Read<byte>();
                             Logger.Verbose("Received extended TCP packet with ID {PacketId:X}", id);
 
                             if (extendedId == (byte)CSPMessageTypeTcp.SpectateCar)
-                                OnSpectateCar(reader);
+                                OnSpectateCar(ref reader);
                             else if (extendedId == (byte)CSPMessageTypeTcp.ClientMessage)
-                                OnCSPClientMessage(reader);
+                                OnCSPClientMessage(ref reader);
                             break;
                         default:
                             break;
@@ -446,7 +446,7 @@ public class ACTcpClient
         }
     }
 
-    private void OnClientEvent(PacketReader reader)
+    private void OnClientEvent(ref PacketReader reader)
     {
         using var clientEvent = reader.ReadPacket<ClientEvent>();
 
@@ -470,13 +470,13 @@ public class ACTcpClient
         }
     }
 
-    private void OnSpectateCar(PacketReader reader)
+    private void OnSpectateCar(ref PacketReader reader)
     {
         SpectateCar spectatePacket = reader.ReadPacket<SpectateCar>();
         EntryCar.TargetCar = spectatePacket.SessionId != SessionId ? _entryCarManager.EntryCars[spectatePacket.SessionId] : null;
     }
 
-    private void OnCSPClientMessage(PacketReader reader)
+    private void OnCSPClientMessage(ref PacketReader reader)
     {
         CSPClientMessageType packetType = (CSPClientMessageType)reader.Read<ushort>();
         if (packetType == CSPClientMessageType.LuaMessage)
@@ -485,7 +485,7 @@ public class ACTcpClient
 
             if (_cspClientMessageTypeManager.MessageTypes.TryGetValue(luaPacketType, out var handler))
             {
-                handler(this, reader);
+                handler(this, ref reader);
             }
             else
             {
@@ -509,7 +509,7 @@ public class ACTcpClient
         }
     }
 
-    private async ValueTask OnChecksumAsync(PacketReader reader)
+    private void OnChecksum(ref PacketReader reader)
     {
         bool passedChecksum = false;
         byte[] fullChecksum = new byte[16 * (_checksumManager.TrackChecksums.Count + 1)];
@@ -535,7 +535,7 @@ public class ACTcpClient
         if (!passedChecksum)
         {
             ChecksumFailed?.Invoke(this, EventArgs.Empty);
-            await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} failed the checksum check and has been kicked.");
+            _ = _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} failed the checksum check and has been kicked.");
         }
         else
         {
@@ -550,7 +550,7 @@ public class ACTcpClient
         }
     }
 
-    private void OnChat(PacketReader reader)
+    private void OnChat(ref PacketReader reader)
     {
         long currentTime = _sessionManager.ServerTimeMilliseconds;
         if (currentTime - LastChatTime < 1000)
@@ -574,7 +574,7 @@ public class ACTcpClient
         ChatMessageReceived?.Invoke(this, args);
     }
 
-    private void OnDamageUpdate(PacketReader reader)
+    private void OnDamageUpdate(ref PacketReader reader)
     {
         DamageUpdateIncoming damageUpdate = reader.ReadPacket<DamageUpdateIncoming>();
         EntryCar.Status.DamageZoneLevel = damageUpdate.DamageZoneLevel;
@@ -586,7 +586,7 @@ public class ACTcpClient
         }, this);
     }
 
-    private void OnTyreCompoundChange(PacketReader reader)
+    private void OnTyreCompoundChange(ref PacketReader reader)
     {
         TyreCompoundChangeRequest compoundChangeRequest = reader.ReadPacket<TyreCompoundChangeRequest>();
         EntryCar.Status.CurrentTyreCompound = compoundChangeRequest.CompoundName;
@@ -598,7 +598,7 @@ public class ACTcpClient
         });
     }
 
-    private void OnP2PUpdate(PacketReader reader)
+    private void OnP2PUpdate(ref PacketReader reader)
     {
         // ReSharper disable once InconsistentNaming
         P2PUpdateRequest p2pUpdateRequest = reader.ReadPacket<P2PUpdateRequest>();
@@ -622,7 +622,7 @@ public class ACTcpClient
         }
     }
 
-    private void OnCarListRequest(PacketReader reader)
+    private void OnCarListRequest(ref PacketReader reader)
     {
         CarListRequest carListRequest = reader.ReadPacket<CarListRequest>();
 
@@ -637,7 +637,7 @@ public class ACTcpClient
         SendPacket(carListResponse);
     }
 
-    private void OnLapCompletedMessageReceived(PacketReader reader)
+    private void OnLapCompletedMessageReceived(ref PacketReader reader)
     {
         LapCompletedIncoming lapPacket = reader.ReadPacket<LapCompletedIncoming>();
 

@@ -4,7 +4,7 @@ public struct TyreCompoundChangeRequest : IIncomingNetworkPacket
 {
     public string CompoundName;
 
-    public void FromReader(PacketReader reader)
+    public void FromReader(ref PacketReader reader)
     {
         CompoundName = reader.ReadASCIIString();
     }

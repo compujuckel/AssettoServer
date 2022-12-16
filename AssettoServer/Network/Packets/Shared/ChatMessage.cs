@@ -8,7 +8,7 @@ public struct ChatMessage : IIncomingNetworkPacket, IOutgoingNetworkPacket
     public byte SessionId;
     public string Message;
 
-    public void FromReader(PacketReader reader)
+    public void FromReader(ref PacketReader reader)
     {
         SessionId = reader.Read<byte>();
         Message = reader.ReadUTF32String();

@@ -6,7 +6,7 @@ public struct GetCarInfo : IIncomingNetworkPacket
 {
     public byte SessionId;
 
-    public void FromReader(PacketReader reader)
+    public void FromReader(ref PacketReader reader)
     {
         SessionId = reader.Read<byte>();
     }

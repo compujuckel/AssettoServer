@@ -5,9 +5,11 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AssettoServer.Utils;
 
 namespace AssettoServer.Network.Packets;
 
+[NonCopyable]
 public struct PacketReader
 {
     public readonly Stream? Stream;
@@ -30,8 +32,8 @@ public struct PacketReader
     public string ReadASCIIString(bool bigLength = false)
     {
         short stringLength = bigLength ? Read<short>() : Read<byte>();
-            
-        var ret = string.Create(stringLength, this, (span, self) => Encoding.ASCII.GetChars(self.Buffer.Slice(self.ReadPosition, span.Length).Span, span));
+        
+        var ret = Encoding.ASCII.GetString(Buffer.Slice(ReadPosition, stringLength).Span);
         ReadPosition += stringLength;
 
         return ret;
@@ -40,8 +42,8 @@ public struct PacketReader
     public string ReadUTF32String()
     {
         byte stringLength = Read<byte>();
-
-        var ret = string.Create(stringLength, this, (span, self) => Encoding.UTF32.GetChars(self.Buffer.Slice(self.ReadPosition, span.Length * 4).Span, span));
+        
+        var ret = Encoding.UTF32.GetString(Buffer.Slice(ReadPosition, stringLength * 4).Span);
         ReadPosition += stringLength * 4;
 
         return ret;
@@ -64,7 +66,7 @@ public struct PacketReader
     public TPacket ReadPacket<TPacket>() where TPacket : struct, IIncomingNetworkPacket
     {
         TPacket packet = default;
-        packet.FromReader(this);
+        packet.FromReader(ref this);
 
         return packet;
     }

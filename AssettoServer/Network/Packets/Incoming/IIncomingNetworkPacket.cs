@@ -2,5 +2,5 @@
 
 public interface IIncomingNetworkPacket
 {
-    void FromReader(PacketReader reader);
+    void FromReader(ref PacketReader reader);
 }

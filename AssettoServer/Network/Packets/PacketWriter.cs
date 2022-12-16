@@ -5,13 +5,15 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AssettoServer.Utils;
 
 namespace AssettoServer.Network.Packets;
 
+[NonCopyable]
 public struct PacketWriter
 {
     public readonly Stream? Stream;
-    public Memory<byte> Buffer { get; private set; }
+    public Memory<byte> Buffer { get; }
 
     private int _writePosition;
     private readonly bool _rcon = false;
@@ -22,7 +24,6 @@ public struct PacketWriter
         Buffer = buffer;
         _rcon = rcon;
         _writePosition = rcon ? 4 : 2;
-            
     }
     public PacketWriter(Memory<byte> buffer)
     {

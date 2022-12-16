@@ -10,7 +10,7 @@ public struct ClientEvent : IIncomingNetworkPacket, IDisposable
 
     public readonly record struct SingleClientEvent(ClientEventType Type, byte TargetSessionId, float Speed, Vector3 Position, Vector3 RelPosition);
 
-    public void FromReader(PacketReader reader)
+    public void FromReader(ref PacketReader reader)
     {
         var count = reader.Read<short>();
         var array = ArrayPool<SingleClientEvent>.Shared.Rent(count);

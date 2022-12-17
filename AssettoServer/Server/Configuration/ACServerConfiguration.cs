@@ -15,14 +15,14 @@ public class ACServerConfiguration
     public ServerConfiguration Server { get; }
     public EntryList EntryList { get; }
     public List<SessionConfiguration> Sessions { get; }
-    public string FullTrackName { get; }
-    public string WelcomeMessage { get; } = "";
+    [YamlIgnore] public string FullTrackName { get; }
+    [YamlIgnore] public string WelcomeMessage { get; } = "";
     public ACExtraConfiguration Extra { get; private set; } = new();
-    public CMContentConfiguration? ContentConfiguration { get; private set; }
+    [YamlIgnore] public CMContentConfiguration? ContentConfiguration { get; private set; }
     public string ServerVersion { get; }
-    public string? CSPExtraOptions { get; }
+    [YamlIgnore] public string? CSPExtraOptions { get; }
     [YamlIgnore] public string BaseFolder { get; }
-    public bool LoadPluginsFromWorkdir { get; }
+    [YamlIgnore] public bool LoadPluginsFromWorkdir { get; }
     
     /*
      * Search paths are like this:

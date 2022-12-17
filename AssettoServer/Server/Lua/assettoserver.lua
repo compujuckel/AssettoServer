@@ -17,18 +17,20 @@ Additional permission under GNU AGPL version 3 section 7
 If you modify this Program, or any covered work, by linking or combining it with plugins published on https://www.patreon.com/assettoserver, the licensors of this Program grant you additional permission to convey the resulting work. 
 ]]
 
-local baseUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP() .. "/api/configuration"
+local baseUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP()
+local configUrl = baseUrl .. "/api/configuration"
+local logoUrl = baseUrl .. "/assets/logo_42.png"
 local configuration = {}
 local authHeaders = {}
 
 local function getConfiguration()
-    web.get(baseUrl, authHeaders, function (err, response)
+    web.get(configUrl, authHeaders, function (err, response)
         configuration = stringify.parse(response.body)
     end)
 end
 
 local function setValue(key, value)
-    web.post(baseUrl .. "?key=" .. key .."&value=" .. tostring(value), authHeaders, function (err, response)
+    web.post(configUrl .. "?key=" .. key .."&value=" .. tostring(value), authHeaders, function (err, response)
         ac.debug("err", err)
         ac.debug("response", stringify(response))
 
@@ -60,28 +62,40 @@ end)
 
 apiKeyEvent({ key = "" })
 
-local logoSize = vec2(128, 79)
-local buttonSize = vec2(130, 0)
+local logoSize = vec2(68, 42)
 
 local function tab_About()
-    ui.offsetCursorY(30)
-    ui.offsetCursorX((ui.availableSpaceX() - logoSize.x) / 2)
-    ui.image("https://i.imgur.com/qPNhE24.png", logoSize)
-    ui.pushFont(ui.Font.Title)
-    ui.textAligned("AssettoServer", vec2(0.5,0), vec2(ui.availableSpaceX(), 0))
+    ui.offsetCursorY(10)
+    ui.image(logoUrl, logoSize)
+    ui.sameLine()
+    ui.offsetCursorY(-15)
+    ui.pushFont(ui.Font.Huge)
+    ui.text("AssettoServer")
     ui.popFont()
-    ui.textAligned("Custom Assetto Corsa server with focus on freeroam", vec2(0.5,0), vec2(ui.availableSpaceX(), 0))
-    ui.newLine()
-    ui.offsetCursorX((ui.availableSpaceX() - buttonSize.x * 2) / 2)
-    if ui.button("Website", vec2(130,0)) then
+
+    ui.textWrapped("This server runs AssettoServer, making it possible to have online traffic in Assetto Corsa. AssettoServer is free software, so you can run your own traffic server.")
+    ui.text("")
+    ui.textWrapped("Visit the website for more info:")
+    ui.sameLine()
+    if ui.textHyperlink("https://assettoserver.org") then
         os.openURL("https://assettoserver.org/")
     end
+
+    ui.textWrapped("Official Discord server:")
     ui.sameLine()
-    ui.pushStyleColor(ui.StyleColor.Button, rgbm.new("#FF424D"))
-    if ui.button("Become a Patron", vec2(130,0)) then
-        os.openURL("https://www.patreon.com/assettoserver")
+    if ui.textHyperlink("https://discord.gg/uXEXRcSkyz") then
+        os.openURL("https://discord.gg/uXEXRcSkyz")
     end
-    ui.popStyleColor()
+
+    ui.text("")
+    ui.pushFont(ui.Font.Title)
+    ui.textWrapped("Support server development")
+    ui.popFont()
+    ui.textWrapped("Patreon:")
+    ui.sameLine()
+    if ui.textHyperlink("https://patreon.com/assettoserver") then
+        os.openURL("https://patreon.com/assettoserver")
+    end
 end
 
 local function tab_License()
@@ -122,7 +136,7 @@ local function ui_configObject(name, obj)
             ui.textAligned(value.Name, nil, vec2(150, 0))
             if value.ReadOnly then ui.popStyleColor() end
             ui.endGroup()
-            if value.Description ~= "" and ui.itemHovered() then
+            if value.Description ~= nil and ui.itemHovered() then
                 ui.setTooltip(value.Description)
             end
             ui.sameLine()
@@ -164,6 +178,7 @@ local function ui_configObject(name, obj)
 end
 
 local function tab_Configuration()
+    ui.textWrapped("This feature is experimental! Changed values will not persist after a server restart.")
     ui.childWindow("configuration", ui.availableSpace(), function ()
         ui_configObject("Root", configuration)
     end)

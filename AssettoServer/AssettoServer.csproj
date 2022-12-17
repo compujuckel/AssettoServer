@@ -126,5 +126,7 @@
         <EmbeddedResource Include="Server\Ai\ai_debug.lua" />
         <None Remove="Server\Lua\assettoserver.lua" />
         <EmbeddedResource Include="Server\Lua\assettoserver.lua" />
+        <None Remove="Assets\logo_42.png" />
+        <EmbeddedResource Include="Assets\logo_42.png" />
     </ItemGroup>
 </Project>

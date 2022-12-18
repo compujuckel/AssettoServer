@@ -39,7 +39,7 @@ public partial class EntryCar
     private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
     
     private readonly Func<EntryCar, AiState> _aiStateFactory;
-    private readonly AiSpline _spline;
+    private readonly AiSpline? _spline;
 
     private void AiInit()
     {
@@ -212,6 +212,8 @@ public partial class EntryCar
 
     public bool IsPositionSafe(int pointId)
     {
+        ArgumentNullException.ThrowIfNull(_spline);
+        
         _aiStatesLock.EnterReadLock();
         try
         {

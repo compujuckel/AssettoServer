@@ -494,7 +494,7 @@ public class ACTcpClient
                 clientMessage.LuaType = luaPacketType;
                 clientMessage.SessionId = SessionId;
 
-                Logger.Debug("Unknown CSP lua client message with type 0x{LuaType:X} received, data {Data}", clientMessage.LuaType, Convert.ToHexString(clientMessage.Data));
+                Logger.Debug("Unknown CSP lua client message with type 0x{LuaType:X} received from {Name} ({SessionId}), data {Data}", clientMessage.LuaType, Name, SessionId, Convert.ToHexString(clientMessage.Data));
                 _entryCarManager.BroadcastPacket(clientMessage);
             }
         }

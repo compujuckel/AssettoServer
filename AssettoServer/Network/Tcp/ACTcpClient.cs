@@ -402,7 +402,7 @@ public class ACTcpClient
                             OnCarListRequest(reader);
                             break;
                         case ACServerProtocol.Checksum:
-                            await OnChecksumAsync(reader);
+                            OnChecksum(reader);
                             break;
                         case ACServerProtocol.Chat:
                             OnChat(reader);
@@ -509,7 +509,7 @@ public class ACTcpClient
         }
     }
 
-    private async ValueTask OnChecksumAsync(PacketReader reader)
+    private void OnChecksum(PacketReader reader)
     {
         bool passedChecksum = false;
         byte[] fullChecksum = new byte[16 * (_checksumManager.TrackChecksums.Count + 1)];
@@ -535,7 +535,7 @@ public class ACTcpClient
         if (!passedChecksum)
         {
             ChecksumFailed?.Invoke(this, EventArgs.Empty);
-            await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} failed the checksum check and has been kicked.");
+            _ = _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} failed the checksum check and has been kicked.");
         }
         else
         {

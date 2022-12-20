@@ -1,18 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using AssettoServer.Network.Packets;
 using AssettoServer.Network.Tcp;
 
 namespace AssettoServer.Server;
 
-public delegate void ClientMessageHandler(ACTcpClient sender, ref PacketReader reader);
-
 public class CSPClientMessageTypeManager
 {
-    internal IReadOnlyDictionary<uint, ClientMessageHandler> MessageTypes => _types;
+    internal IReadOnlyDictionary<uint, Action<ACTcpClient, PacketReader>> MessageTypes => _types;
 
-    private readonly Dictionary<uint, ClientMessageHandler> _types = new();
+    private readonly Dictionary<uint, Action<ACTcpClient, PacketReader>> _types = new();
 
-    public void RegisterClientMessageType(uint type, ClientMessageHandler handler)
+    public void RegisterClientMessageType(uint type, Action<ACTcpClient, PacketReader> handler)
     {
         _types.Add(type, handler);
     }

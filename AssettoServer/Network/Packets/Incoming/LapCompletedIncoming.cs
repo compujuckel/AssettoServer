@@ -9,7 +9,7 @@ public struct LapCompletedIncoming : IIncomingNetworkPacket
     public byte Cuts;
     public byte NumLap;
 
-    public void FromReader(ref PacketReader reader)
+    public void FromReader(PacketReader reader)
     {
         Timestamp = reader.Read<uint>();
         LapTime = reader.Read<uint>();

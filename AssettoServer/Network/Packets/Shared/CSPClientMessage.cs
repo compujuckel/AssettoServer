@@ -21,7 +21,7 @@ public struct CSPClientMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
         writer.WriteBytes(Data);
     }
 
-    public void FromReader(ref PacketReader reader)
+    public void FromReader(PacketReader reader)
     {
         Data = new byte[reader.Buffer.Length - reader.ReadPosition];
         reader.ReadBytes(Data);

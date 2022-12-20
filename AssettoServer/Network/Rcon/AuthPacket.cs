@@ -8,7 +8,7 @@ public struct AuthPacket : IIncomingNetworkPacket
 {
     public string RconPassword { get; set; }
     
-    public void FromReader(ref PacketReader reader)
+    public void FromReader(PacketReader reader)
     {
         RconPassword = Encoding.ASCII.GetString(reader.Buffer.Slice(reader.ReadPosition, reader.Buffer.Length - 2 - reader.ReadPosition).Span);
     }

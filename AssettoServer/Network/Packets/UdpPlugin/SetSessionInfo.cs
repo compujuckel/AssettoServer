@@ -12,7 +12,7 @@ public struct SetSessionInfo : IIncomingNetworkPacket
     public uint Time;
     public uint WaitTime;
 
-    public void FromReader(ref PacketReader reader)
+    public void FromReader(PacketReader reader)
     {
         SessionIndex = reader.Read<byte>();
         SessionName = reader.ReadUTF32String();

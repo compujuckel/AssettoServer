@@ -12,7 +12,7 @@ public struct HandshakeRequest : IIncomingNetworkPacket
     public string? Features;
     public byte[]? SessionTicket;
 
-    public void FromReader(ref PacketReader reader)
+    public void FromReader(PacketReader reader)
     {
         ClientVersion = reader.Read<ushort>();
         Guid = ulong.Parse(reader.ReadASCIIString());

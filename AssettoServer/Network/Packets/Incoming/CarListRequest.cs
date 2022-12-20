@@ -4,7 +4,7 @@ public struct CarListRequest : IIncomingNetworkPacket
 {
     public int PageIndex;
 
-    public void FromReader(ref PacketReader reader)
+    public void FromReader(PacketReader reader)
     {
         PageIndex = reader.Read<byte>();
     }

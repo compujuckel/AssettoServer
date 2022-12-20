@@ -5,7 +5,7 @@ namespace AssettoServer.Network.Packets.Shared;
 
 public class ApiKeyPacket : IOutgoingNetworkPacket
 {
-    public const int Id = 0x740E57F2;
+    public const int Id = 0x27612FAB;
     public required string Key { get; init; }
 
     public void ToWriter(ref PacketWriter writer)

@@ -64,38 +64,45 @@ apiKeyEvent({ key = "" })
 
 local logoSize = vec2(68, 42)
 
+-- ui.textHyperlink not supported on <0.1.79
+local function ui_hyperlink(link)
+    if ui.textHyperlink == nil then
+        ui.text(link)
+    else
+        if ui.textHyperlink(link) then
+            os.openURL(link)
+        end
+    end
+end
+
 local function tab_About()
-    ui.offsetCursorY(10)
-    ui.image(logoUrl, logoSize)
-    ui.sameLine()
-    ui.offsetCursorY(-15)
-    ui.pushFont(ui.Font.Huge)
-    ui.text("AssettoServer")
-    ui.popFont()
+    ui.childWindow("license", ui.availableSpace(), function ()
+        ui.offsetCursorY(10)
+        ui.image(logoUrl, logoSize)
+        ui.sameLine()
+        ui.offsetCursorY(-15)
+        ui.pushFont(ui.Font.Huge)
+        ui.text("AssettoServer")
+        ui.popFont()
 
-    ui.textWrapped("This server runs AssettoServer, making it possible to have online traffic in Assetto Corsa. AssettoServer is free software, so you can run your own traffic server.")
-    ui.text("")
-    ui.textWrapped("Visit the website for more info:")
-    ui.sameLine()
-    if ui.textHyperlink("https://assettoserver.org") then
-        os.openURL("https://assettoserver.org/")
-    end
+        ui.textWrapped("This server runs AssettoServer, making it possible to have online traffic in Assetto Corsa. AssettoServer is free software, so you can run your own traffic server.")
+        ui.text("")
+        ui.textWrapped("Visit the website for more info:")
+        ui.sameLine()
+        ui_hyperlink("https://assettoserver.org")
 
-    ui.textWrapped("Official Discord server:")
-    ui.sameLine()
-    if ui.textHyperlink("https://discord.gg/uXEXRcSkyz") then
-        os.openURL("https://discord.gg/uXEXRcSkyz")
-    end
+        ui.textWrapped("Official Discord server:")
+        ui.sameLine()
+        ui_hyperlink("https://discord.gg/uXEXRcSkyz")
 
-    ui.text("")
-    ui.pushFont(ui.Font.Title)
-    ui.textWrapped("Support server development")
-    ui.popFont()
-    ui.textWrapped("Patreon:")
-    ui.sameLine()
-    if ui.textHyperlink("https://patreon.com/assettoserver") then
-        os.openURL("https://patreon.com/assettoserver")
-    end
+        ui.text("")
+        ui.pushFont(ui.Font.Title)
+        ui.textWrapped("Support server development")
+        ui.popFont()
+        ui.textWrapped("Patreon:")
+        ui.sameLine()
+        ui_hyperlink("https://patreon.com/assettoserver")
+    end)
 end
 
 local function tab_License()

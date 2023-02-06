@@ -450,6 +450,12 @@ public class ACTcpClient
     {
         using var clientEvent = reader.ReadPacket<ClientEvent>();
 
+        if (clientEvent.ClientEvents.Count > 5)
+        {
+            Logger.Debug("Client event from {Name} ({SessionId}) contained {Count} events", 
+                Name, EntryCar.SessionId, clientEvent.ClientEvents.Count);
+        }
+
         foreach (var evt in clientEvent.ClientEvents)
         {
             EntryCar? targetCar = null;

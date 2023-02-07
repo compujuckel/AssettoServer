@@ -324,8 +324,6 @@ public class CarSpecificOverrides
     public int? EngineIdleRpm { get; init; }
     [YamlMember(Description = "AI engine max RPM")]
     public int? EngineMaxRpm { get; init; }
-    [YamlMember(Description = "Allow random color changes after respawn")]
-    public bool? EnableColorChanges { get; init; }
     [YamlMember(Description = "AI car deceleration for obstacle/collision detection (m/s^2)")]
     public float? Acceleration { get; init; }
     [YamlMember(Description = "AI car acceleration for obstacle/collision detection (m/s^2)")]
@@ -338,18 +336,6 @@ public class CarSpecificOverrides
     public float? CorneringBrakeForceFactor { get; init; }
     [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless cars are creating lots of smoke.")]
     public float? TyreDiameterMeters { get; set; }
-
-    [YamlMember(Description = "Override some settings for specific skins of this car model")]
-    public List<SkinSpecificOverrides> SkinSpecificOverrides { get; init; } = new();
-}
-
-[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
-public class SkinSpecificOverrides
-{
-    [YamlMember(Description = "Skin to match for these overrides")]
-    public string? Skin { get; init; }
-    [YamlMember(Description = "Allow random color changes after respawn")]
-    public bool? EnableColorChanges { get; init; }
 }
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]

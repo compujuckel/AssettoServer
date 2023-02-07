@@ -34,10 +34,6 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
                     .When(ai => ai.HourlyTrafficDensity != null)
                     .WithMessage("HourlyTrafficDensity must have exactly 24 entries");
                 aiParams.RuleFor(ai => ai.CarSpecificOverrides).NotNull();
-                aiParams.RuleForEach(ai => ai.CarSpecificOverrides).ChildRules(overrides =>
-                {
-                    overrides.RuleFor(o => o.SkinSpecificOverrides).NotNull();
-                });
                 aiParams.RuleFor(ai => ai.AiBehaviorUpdateIntervalHz).GreaterThan(0);
                 aiParams.RuleFor(ai => ai.LaneCountSpecificOverrides).NotNull();
                 aiParams.RuleForEach(ai => ai.LaneCountSpecificOverrides).ChildRules(overrides =>

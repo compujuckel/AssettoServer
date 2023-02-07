@@ -64,8 +64,6 @@ public partial class EntryCar
         {
             if (carOverrides.Model == Model)
             {
-                if (carOverrides.EnableColorChanges.HasValue)
-                    AiEnableColorChanges = carOverrides.EnableColorChanges.Value;
                 if (carOverrides.SplineHeightOffsetMeters.HasValue)
                     AiSplineHeightOffsetMeters = carOverrides.SplineHeightOffsetMeters.Value;
                 if (carOverrides.EngineIdleRpm.HasValue)
@@ -84,15 +82,6 @@ public partial class EntryCar
                     AiCorneringBrakeForceFactor = carOverrides.CorneringBrakeForceFactor.Value;
                 if (carOverrides.TyreDiameterMeters.HasValue)
                     TyreDiameterMeters = carOverrides.TyreDiameterMeters.Value;
-                
-                foreach (var skinOverrides in carOverrides.SkinSpecificOverrides)
-                {
-                    if (skinOverrides.Skin == Skin)
-                    {
-                        if (skinOverrides.EnableColorChanges.HasValue)
-                            AiEnableColorChanges = skinOverrides.EnableColorChanges.Value;
-                    }
-                }
             }
         }
     }

@@ -307,6 +307,8 @@ public class ACTcpClient
                         SendPacket(new WrongPasswordResponse());
                     else if (!_sessionManager.CurrentSession.Configuration.IsOpen)
                         SendPacket(new SessionClosedResponse());
+                    else if (Name.Length == 0)
+                        SendPacket(new AuthFailedResponse("Driver name cannot be empty."));
                     else if (!_cspFeatureManager.ValidateHandshake(cspFeatures))
                         SendPacket(new AuthFailedResponse("Missing CSP features. Please update CSP and/or Content Manager."));
                     else if ((response = await _openSlotFilter.ShouldAcceptConnectionAsync(this, handshakeRequest)).HasValue)

@@ -254,7 +254,7 @@ public class ACTcpClient
     {
         byte[] buffer = new byte[2046];
         NetworkStream stream = TcpStream;
-
+        
         try
         {
             while (!DisconnectTokenSource.IsCancellationRequested)
@@ -451,12 +451,6 @@ public class ACTcpClient
     private void OnClientEvent(PacketReader reader)
     {
         using var clientEvent = reader.ReadPacket<ClientEvent>();
-
-        if (clientEvent.ClientEvents.Count > 5)
-        {
-            Logger.Debug("Client event from {Name} ({SessionId}) contained {Count} events", 
-                Name, EntryCar.SessionId, clientEvent.ClientEvents.Count);
-        }
 
         foreach (var evt in clientEvent.ClientEvents)
         {
@@ -868,9 +862,7 @@ public class ACTcpClient
         {
             if (Interlocked.CompareExchange(ref _disconnectRequested, 1, 0) == 1)
                 return;
-
-            await Task.Yield();
-
+            
             if (!string.IsNullOrEmpty(Name))
             {
                 Logger.Debug("Disconnecting {ClientName} ({$ClientIpEndpoint})", Name, TcpClient.Client.RemoteEndPoint);

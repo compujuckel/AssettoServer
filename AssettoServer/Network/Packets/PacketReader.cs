@@ -76,18 +76,22 @@ public struct PacketReader
 
         _readPacket = true;
 
-        int packetSize;
+        int packetSize = 0;
         if (_rcon)
         {
-            await ReadBytesInternalAsync(Buffer.Slice(0, 4), cancellationToken);
-            packetSize = MemoryMarshal.Read<int>(Buffer.Span);
+            if (await ReadBytesInternalAsync(Buffer.Slice(0, 4), cancellationToken))
+            {
+                packetSize = MemoryMarshal.Read<int>(Buffer.Span);
+            }
         }
         else
         {
-            await ReadBytesInternalAsync(Buffer.Slice(0, 2), cancellationToken);
-            packetSize = MemoryMarshal.Read<ushort>(Buffer.Span);
+            if (await ReadBytesInternalAsync(Buffer.Slice(0, 2), cancellationToken))
+            {
+                packetSize = MemoryMarshal.Read<ushort>(Buffer.Span);
+            }
         }
-            
+
         if (packetSize > Buffer.Length)
         {
             Buffer.Span.Clear();
@@ -106,15 +110,22 @@ public struct PacketReader
         Buffer = Buffer.Slice(0, newSize);
     }
 
-    private async ValueTask ReadBytesInternalAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    private async ValueTask<bool> ReadBytesInternalAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
     {
-        if (Stream == null)
-            throw new ArgumentNullException(nameof(Stream));
+        ArgumentNullException.ThrowIfNull(Stream);
 
         int totalBytesRead = 0;
         int bytesRead;
         int bufferLength = buffer.Length;
+
+        while (totalBytesRead < bufferLength)
+        {
+            bytesRead = await Stream.ReadAsync(buffer.Slice(totalBytesRead), cancellationToken);
+            if (bytesRead == 0) return false;
             
-        while ((bytesRead = await Stream.ReadAsync(buffer.Slice(totalBytesRead), cancellationToken)) > 0 && (totalBytesRead += bytesRead) < bufferLength) { }
+            totalBytesRead += bytesRead;
+        }
+
+        return true;
     }
 }

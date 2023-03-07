@@ -1,6 +1,5 @@
 ﻿using AssettoServer.Server.Configuration;
 using System;
-using System.Globalization;
 using System.Threading.Tasks;
 using AssettoServer.Network.Http;
 using AssettoServer.Utils;

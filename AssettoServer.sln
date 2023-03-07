@@ -27,8 +27,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeDilationPlugin", "TimeD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoModerationPlugin", "AutoModerationPlugin\AutoModerationPlugin.csproj", "{59C320A4-11D8-4BAE-81F1-226D012F5484}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServer.Hub.Contracts", "AssettoServer.Hub.Contracts\AssettoServer.Hub.Contracts.csproj", "{C894D6B1-DA6B-4E88-B3BA-3490163F59D7}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RandomWeatherPlugin", "RandomWeatherPlugin\RandomWeatherPlugin.csproj", "{7289448F-D8EF-4EB7-AFE3-4EDB27EE75E0}"
 EndProject
 Global
@@ -85,10 +83,6 @@ Global
 		{59C320A4-11D8-4BAE-81F1-226D012F5484}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{59C320A4-11D8-4BAE-81F1-226D012F5484}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{59C320A4-11D8-4BAE-81F1-226D012F5484}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C894D6B1-DA6B-4E88-B3BA-3490163F59D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C894D6B1-DA6B-4E88-B3BA-3490163F59D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C894D6B1-DA6B-4E88-B3BA-3490163F59D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C894D6B1-DA6B-4E88-B3BA-3490163F59D7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7289448F-D8EF-4EB7-AFE3-4EDB27EE75E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7289448F-D8EF-4EB7-AFE3-4EDB27EE75E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7289448F-D8EF-4EB7-AFE3-4EDB27EE75E0}.Release|Any CPU.ActiveCfg = Release|Any CPU

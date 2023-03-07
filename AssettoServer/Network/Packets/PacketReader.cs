@@ -46,6 +46,14 @@ public struct PacketReader
 
         return ret;
     }
+    
+    public string ReadStringFixed(Encoding encoding, int length)
+    {
+        int bytesToRead = Math.Min(length, Buffer.Length - ReadPosition);
+        var ret = encoding.GetString(Buffer.Slice(ReadPosition, bytesToRead).Span);
+        ReadPosition += bytesToRead;
+        return ret;
+    }
 
     public T Read<T>() where T : unmanaged
     {

@@ -6,6 +6,7 @@ services:
     container_name: AssettoServer
     ports:
       - "9600:9600"
+      - "9600:9600/udp"
       - "8081:8081"
     volumes:
       - ./data/:/data

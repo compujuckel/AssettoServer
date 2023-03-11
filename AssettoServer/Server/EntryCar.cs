@@ -129,7 +129,7 @@ public partial class EntryCar
 
     internal void CheckAfk()
     {
-        if (!_configuration.Extra.EnableAntiAfk || Client?.IsAdministrator == true)
+        if (!_configuration.Extra.EnableAntiAfk || Client?.IsAdministrator == true || !Client?.HasSentFirstUpdate == true)
             return;
 
         long timeAfk = _sessionManager.ServerTimeMilliseconds - LastActiveTime;

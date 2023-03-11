@@ -20,7 +20,8 @@ If you modify this Program, or any covered work, by linking or combining it with
 local baseUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP()
 local configUrl = baseUrl .. "/api/configuration"
 local logoUrl = baseUrl .. "/assets/logo_42.png"
-local configuration = {}
+local srpLogoUrl = baseUrl .. "/assets/srp_64.png"
+local configuration
 local authHeaders = {}
 
 local function getConfiguration()
@@ -56,13 +57,13 @@ local apiKeyEvent = ac.OnlineEvent({
     ac.debug("key", message.key)
     authHeaders["X-Car-Id"] = car.sessionID
     authHeaders["X-Api-Key"] = message.key
-
-    getConfiguration()
 end)
 
 apiKeyEvent({ key = "" })
 
 local logoSize = vec2(68, 42)
+local srpLogoSize = vec2(64, 64)
+local isSRP = ac.getTrackID():find("^shuto_revival_project_beta") ~= nil
 
 -- ui.textHyperlink not supported on <0.1.79
 local function ui_hyperlink(link)
@@ -97,11 +98,37 @@ local function tab_About()
 
         ui.text("")
         ui.pushFont(ui.Font.Title)
-        ui.textWrapped("Support server development")
+        ui.textWrapped("Support AssettoServer development")
         ui.popFont()
         ui.textWrapped("Patreon:")
         ui.sameLine()
         ui_hyperlink("https://patreon.com/assettoserver")
+
+        if isSRP then
+            ui.offsetCursorY(10)
+            ui.image(srpLogoUrl, srpLogoSize)
+            ui.sameLine()
+            ui.offsetCursorY(-3)
+            ui.pushFont(ui.Font.Huge)
+            ui.text("Shutoko Revival Project")
+            ui.popFont()
+
+            ui.offsetCursorY(5)
+            ui.textWrapped("This server is running the Shutoko Revival Project track.")
+            ui.textWrapped("This project aims to be the definitive version of Shutoko, otherwise known as Tokyo Metropolitan Expressway, or the Wangan. Exclusively for Assetto Corsa.")
+            ui.text("")
+            ui.textWrapped("Official Discord server:")
+            ui.sameLine()
+            ui_hyperlink("https://discord.gg/shutokorevivalproject")
+
+            ui.text("")
+            ui.pushFont(ui.Font.Title)
+            ui.textWrapped("Support SRP development")
+            ui.popFont()
+            ui.textWrapped("Patreon:")
+            ui.sameLine()
+            ui_hyperlink("https://www.patreon.com/Shutoko_Revival_Project")
+        end
     end)
 end
 
@@ -196,6 +223,9 @@ local function window_AssettoServer()
         ui.tabItem("About", tab_About)
         ui.tabItem("License", tab_License)
         if sim.isAdmin then
+            if configuration == nil then
+                getConfiguration()
+            end
             ui.tabItem("Configuration", tab_Configuration)
         end
     end)

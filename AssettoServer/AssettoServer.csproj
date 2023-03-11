@@ -25,13 +25,13 @@
         <PackageReference Include="App.Metrics.AspNetCore.All" Version="4.3.0" />
         <PackageReference Include="App.Metrics.Prometheus" Version="4.3.0" />
         <PackageReference Include="App.Metrics.Reporting.Console" Version="4.3.0" />
-        <PackageReference Include="Autofac" Version="6.5.0" />
+        <PackageReference Include="Autofac" Version="7.0.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.1.0" />
         <PackageReference Include="CXuesong.Luaon.Json" Version="0.2.1" />
-        <PackageReference Include="DotNext.IO" Version="4.10.0" />
-        <PackageReference Include="DotNext.Unsafe" Version="4.10.0" />
+        <PackageReference Include="DotNext.IO" Version="4.11.0" />
+        <PackageReference Include="DotNext.Unsafe" Version="4.11.0" />
         <PackageReference Include="ErrorProne.NET.CoreAnalyzers" Version="0.4.0-beta.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -49,7 +49,7 @@
         <PackageReference Include="JetBrains.Annotations" Version="2022.3.1" />
         <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="7.0.3" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="NodaTime" Version="3.1.6" />
         <PackageReference Include="Open.NAT" Version="2.1.0">
             <NoWarn>NU1701</NoWarn>
@@ -70,7 +70,7 @@
         <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.8" />
         <PackageReference Include="SunCalcNet" Version="1.2.2" />
         <PackageReference Include="System.IO.Hashing" Version="7.0.0" />
-        <PackageReference Include="YamlDotNet" Version="13.0.1" />
+        <PackageReference Include="YamlDotNet" Version="13.0.2" />
         <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.244" PrivateAssets="all" Condition="!Exists('packages.config')" />
     </ItemGroup>
 
@@ -112,6 +112,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\AssettoServer.Hub.Contracts\AssettoServer.Hub.Contracts.csproj">
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
         <!--<Reference Include="Supercluster.KDTree">
           <HintPath>..\..\..\..\RiderProjects\Supercluster.KDTree\KDTree\bin\Release\net7.0\Supercluster.KDTree.dll</HintPath>
         </Reference>-->

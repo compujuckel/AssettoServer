@@ -52,27 +52,14 @@ public class ACPluginLoader
         }
     }
 
-    [UnconditionalSuppressMessage("SingleFile", 
-        "IL3000:Avoid accessing Assembly file path when publishing as a single file",
-        Justification = "Class libraries cannot be single file")]
     public void LoadPlugin(string name)
     {
         if (!AvailablePlugins.TryGetValue(name, out var loader))
         {
-            throw new ArgumentException($"No plugin found with name {name}");
+            throw new ConfigurationException($"No plugin found with name {name}");
         }
         
         var assembly = loader.LoadDefaultAssembly();
-
-        var exportsType = assembly.GetTypes().FirstOrDefault(t => typeof(IExports).IsAssignableFrom(t) && !t.IsAbstract);
-        if (exportsType != null)
-        {
-            var pluginExports = (IExports)Activator.CreateInstance(exportsType)!;
-            foreach (var type in pluginExports.GetExportedTypes())
-            {
-                AssemblyLoadContext.Default.LoadFromAssemblyPath(type.Module.Assembly.Location);
-            }
-        }
 
         foreach (var type in assembly.GetTypes())
         {

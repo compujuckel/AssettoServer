@@ -28,6 +28,12 @@ or another Discord server.
     public static void PrintExceptionHelp(Exception ex)
     {
         string? helpLink = null;
+
+        var inner = ex;
+        while (inner.InnerException != null)
+        {
+            inner = inner.InnerException;
+        }
         
         Console.WriteLine();
         if (ex is YamlException yamlException)
@@ -42,7 +48,7 @@ or another Discord server.
         {
             WrapText(AddressInUseExceptionHelp());
         }
-        else if (ex is ConfigurationException configurationException)
+        else if (inner is ConfigurationException configurationException)
         {
             WrapText(configurationException.Message);
             helpLink = configurationException.HelpLink;

@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoModerationPlugin", "Aut
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RandomWeatherPlugin", "RandomWeatherPlugin\RandomWeatherPlugin.csproj", "{7289448F-D8EF-4EB7-AFE3-4EDB27EE75E0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServer.Hub.Contracts", "AssettoServer.Hub.Contracts\AssettoServer.Hub.Contracts.csproj", "{026F3E90-7757-4700-9E2E-89E3210888C6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,10 @@ Global
 		{7289448F-D8EF-4EB7-AFE3-4EDB27EE75E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7289448F-D8EF-4EB7-AFE3-4EDB27EE75E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7289448F-D8EF-4EB7-AFE3-4EDB27EE75E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{026F3E90-7757-4700-9E2E-89E3210888C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{026F3E90-7757-4700-9E2E-89E3210888C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{026F3E90-7757-4700-9E2E-89E3210888C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{026F3E90-7757-4700-9E2E-89E3210888C6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

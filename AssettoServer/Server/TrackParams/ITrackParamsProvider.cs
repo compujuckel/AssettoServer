@@ -4,6 +4,6 @@ namespace AssettoServer.Server.TrackParams;
 
 public interface ITrackParamsProvider
 {
-    public Task Initialize();
+    public Task InitializeAsync();
     public TrackParams? GetParamsForTrack(string track);
 }

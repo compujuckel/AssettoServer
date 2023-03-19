@@ -22,7 +22,7 @@ public class IniTrackParamsProvider : ITrackParamsProvider
         _httpClient.Timeout = TimeSpan.FromSeconds(10);
     }
 
-    public async Task Initialize()
+    public async Task InitializeAsync()
     {
         if (!File.Exists(TrackParamsPath))
         {

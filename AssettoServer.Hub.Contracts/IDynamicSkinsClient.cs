@@ -25,13 +25,6 @@ public class Skin
 }
 
 [DataContract]
-public class GetBaseUrlResponse
-{
-    [DataMember(Order = 1)]
-    public required string Url { get; init; }
-} 
-
-[DataContract]
 public class ListSkinsResponse
 {
     [DataMember(Order = 1)]
@@ -43,7 +36,4 @@ public interface IDynamicSkinsClient
 {
     [OperationContract]
     Task<ListSkinsResponse> ListSkins(ListSkinsRequest request, CallContext context = default);
-
-    [OperationContract]
-    Task<GetBaseUrlResponse> GetBaseUrl(CallContext context = default);
 }

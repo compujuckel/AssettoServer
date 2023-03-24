@@ -21,12 +21,15 @@ local baseUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP()
 local configUrl = baseUrl .. "/api/configuration"
 local logoUrl = baseUrl .. "/assets/logo_42.png"
 local srpLogoUrl = baseUrl .. "/assets/srp_64.png"
+local configurationLoading = false
 local configuration
 local authHeaders = {}
 
 local function getConfiguration()
     web.get(configUrl, authHeaders, function (err, response)
+        ac.log("config loaded")
         configuration = stringify.parse(response.body)
+        configurationLoading = false
     end)
 end
 
@@ -53,7 +56,6 @@ local apiKeyEvent = ac.OnlineEvent({
     key = ac.StructItem.string(32)
 }, function (sender, message)
     if sender ~= nil then return end
-    ac.debug("sender", sender)
     ac.debug("key", message.key)
     authHeaders["X-Car-Id"] = car.sessionID
     authHeaders["X-Api-Key"] = message.key
@@ -223,7 +225,8 @@ local function window_AssettoServer()
         ui.tabItem("About", tab_About)
         ui.tabItem("License", tab_License)
         if sim.isAdmin then
-            if configuration == nil then
+            if configuration == nil and not configurationLoading then
+                configurationLoading = true
                 getConfiguration()
             end
             ui.tabItem("Configuration", tab_Configuration)

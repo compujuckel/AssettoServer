@@ -10,6 +10,7 @@ using AssettoServer.Server;
 using AssettoServer.Server.Admin;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Blacklist;
+using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.OpenSlotFilters;
@@ -81,6 +82,7 @@ public class Startup
         builder.RegisterType<ConfigurationSerializer>().AsSelf();
         builder.RegisterType<ACClientAuthentication>().AsSelf().SingleInstance().AutoActivate();
         builder.RegisterType<HttpInfoCache>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
+        builder.RegisterType<DefaultCMContentProvider>().As<ICMContentProvider>().SingleInstance();
 
         if (_configuration.Extra.EnableLegacyPluginInterface)
         {
@@ -106,7 +108,7 @@ public class Startup
 
         _configuration.Extra.LoadPluginConfig(_loader, builder);
     }
-        
+    
     // This method gets called by the runtime. Use this method to add services to the container.
     // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
     public void ConfigureServices(IServiceCollection services)

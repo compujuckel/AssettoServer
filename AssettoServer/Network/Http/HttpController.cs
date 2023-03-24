@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using AssettoServer.Network.Http.Responses;
 using AssettoServer.Server;
 using AssettoServer.Server.Admin;
+using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.OpenSlotFilters;
@@ -25,8 +26,19 @@ public class HttpController : ControllerBase
     private readonly IAdminService _adminService;
     private readonly OpenSlotFilterChain _openSlotFilter;
     private readonly HttpInfoCache _cache;
+    private readonly ICMContentProvider _contentProvider;
 
-    public HttpController(CSPServerScriptProvider serverScriptProvider, WeatherManager weatherManager, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager, CSPFeatureManager cspFeatureManager, IAdminService adminService, OpenSlotFilterChain openSlotFilter, HttpInfoCache cache)
+    public HttpController(CSPServerScriptProvider serverScriptProvider,
+        WeatherManager weatherManager,
+        SessionManager sessionManager,
+        ACServerConfiguration configuration,
+        EntryCarManager entryCarManager,
+        GeoParamsManager geoParamsManager,
+        CSPFeatureManager cspFeatureManager,
+        IAdminService adminService,
+        OpenSlotFilterChain openSlotFilter,
+        HttpInfoCache cache,
+        ICMContentProvider contentProvider)
     {
         _serverScriptProvider = serverScriptProvider;
         _weatherManager = weatherManager;
@@ -38,6 +50,7 @@ public class HttpController : ControllerBase
         _adminService = adminService;
         _openSlotFilter = openSlotFilter;
         _cache = cache;
+        _contentProvider = contentProvider;
     }
 
     [HttpGet("/INFO")]
@@ -142,7 +155,7 @@ public class HttpController : ControllerBase
                 })
             },
             Until = DateTimeOffset.Now.ToUnixTimeSeconds() + _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
-            Content = _configuration.ContentConfiguration,
+            Content = await _contentProvider.GetContentAsync(ulongGuid),
             TrackBase = _configuration.Server.Track,
             City = _geoParamsManager.GeoParams.City,
             Frequency = _configuration.Server.RefreshRateHz,

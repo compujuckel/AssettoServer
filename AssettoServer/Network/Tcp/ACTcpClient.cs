@@ -320,6 +320,11 @@ public class ACTcpClient
                         if (EntryCar == null)
                             throw new InvalidOperationException("No EntryCar set even though handshake started");
 
+                        if (_configuration.Extra.ForcePlayerTrafficName)
+                        {
+                            Name = $"Traffic {SessionId}";
+                        }
+                        
                         EntryCar.SetActive();
                         SupportsCSPCustomUpdate = _configuration.Extra.EnableCustomUpdate && cspFeatures.Contains("CUSTOM_UPDATE");
 

@@ -89,6 +89,8 @@ public partial class ACExtraConfiguration : ObservableObject
     public string WhitelistUserGroup { get; init; } = "default_whitelist";
     [YamlMember(Description = "Name of user group to be used for admins")]
     public string AdminUserGroup { get; init; } = "default_admins";
+    [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    public bool ForcePlayerTrafficName { get; set; }
     
     public AiParams AiParams { get; init; } = new AiParams();
 
@@ -292,6 +294,8 @@ public partial class AiParams : ObservableObject
     public int AiBehaviorUpdateIntervalHz { get; set; } = 2;
     [YamlMember(Description = "Override some settings for newly spawned cars based on the number of lanes")]
     public Dictionary<int, LaneCountSpecificOverrides> LaneCountSpecificOverrides { get; set; } = new();
+    [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
+    public List<string>? RandomTrafficNames { get; set; }
     [YamlMember(Description = "Override some settings for specific car models/skins")]
     public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new();
 

@@ -24,7 +24,7 @@ public partial class EntryCar
     public byte[] LastSeenAiSpawn { get; }
     public byte[] AiPakSequenceIds { get; }
     public AiState?[] LastSeenAiState { get; }
-    public string? AiName { get; private set; }
+    public string? AiName { get; set; }
     public bool AiEnableColorChanges { get; set; } = false;
     public int AiIdleEngineRpm { get; set; } = 800;
     public int AiMaxEngineRpm { get; set; } = 3000;

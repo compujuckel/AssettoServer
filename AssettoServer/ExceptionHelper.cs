@@ -25,7 +25,7 @@ Security of the files cannot be guaranteed if you downloaded it from a random Yo
 or another Discord server.
 """;
 
-    public static void PrintExceptionHelp(Exception ex)
+    public static void PrintExceptionHelp(Exception ex, bool isContentManager)
     {
         string? helpLink = null;
 
@@ -38,19 +38,19 @@ or another Discord server.
         Console.WriteLine();
         if (ex is YamlException yamlException)
         {
-            WrapText(YamlExceptionHelp(yamlException));
+            WrapText(YamlExceptionHelp(yamlException), isContentManager);
         }
         else if (ex is ParsingException iniException)
         {
-            WrapText(IniExceptionHelp(iniException));
+            WrapText(IniExceptionHelp(iniException), isContentManager);
         }
         else if (ex is IOException { InnerException: AddressInUseException } or SocketException { ErrorCode: 10048 })
         {
-            WrapText(AddressInUseExceptionHelp());
+            WrapText(AddressInUseExceptionHelp(), isContentManager);
         }
         else if (inner is ConfigurationException configurationException)
         {
-            WrapText(configurationException.Message);
+            WrapText(configurationException.Message, isContentManager);
             helpLink = configurationException.HelpLink;
         }
 
@@ -58,7 +58,7 @@ or another Discord server.
         Console.WriteLine(GeneralInformation);
         Console.WriteLine(HorizontalSeparator);
         
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Console.IsInputRedirected)
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Console.IsInputRedirected && !isContentManager)
         {
             var old = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -89,12 +89,25 @@ or another Discord server.
         }
     }
 
-    private static void WrapText(string text)
+    private static void WrapText(string text, bool isContentManager)
     {
         Console.WriteLine(HorizontalSeparator);
         var old = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine(text);
+        if (isContentManager)
+        {
+            var reader = new StringReader(text);
+            while (reader.ReadLine() is { } line)
+            {
+                Console.Write("▲ ");
+                Console.WriteLine(line);
+            }
+        }
+        else
+        {
+            Console.WriteLine(text);
+        }
+
         Console.ForegroundColor = old;
     }
 

@@ -1,5 +1,7 @@
 ﻿using AssettoServer.Server.Configuration;
 using System;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using AssettoServer.Network.Http;
 using AssettoServer.Utils;
@@ -12,6 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.Grafana.Loki;
+using Serilog.Templates;
 using Parser = CommandLine.Parser;
 
 namespace AssettoServer;
@@ -50,6 +53,15 @@ internal static class Program
             
         var options = Parser.Default.ParseArguments<Options>(args).Value;
         if (options == null) return;
+        
+        var isContentManager = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                               && !string.IsNullOrEmpty(options.ServerCfgPath)
+                               && !string.IsNullOrEmpty(options.EntryListPath);
+
+        if (isContentManager)
+        {
+            Console.OutputEncoding = Encoding.UTF8;
+        }
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
         
@@ -58,10 +70,22 @@ internal static class Program
             .MinimumLevel.Override("AssettoServer.Network.Http.Authentication.ACClientAuthenticationHandler", LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
-            .WriteTo.Async(a => a.Console())
+            .WriteTo.Async(a =>
+            {
+                if (isContentManager)
+                {
+                    a.Console(new ExpressionTemplate(
+                        "{#if @l = 'Debug'}…{#else if @l = 'Warning'}‽{#else if @l = 'Error' or @l = 'Fatal'}▲{#else} {#end} {@m}\n{@x}"));
+                }
+                else
+                {
+                    a.Console();
+                }
+            })
             .WriteTo.File($"logs/{logPrefix}-.txt",
                 rollingInterval: RollingInterval.Day)
             .CreateLogger();
+        
         
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
@@ -121,7 +145,7 @@ internal static class Program
         {
             Log.Fatal(ex, "Error starting server");
             await Log.CloseAndFlushAsync();
-            ExceptionHelper.PrintExceptionHelp(ex);
+            ExceptionHelper.PrintExceptionHelp(ex, isContentManager);
         }
     }
 

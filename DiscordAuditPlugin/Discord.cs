@@ -101,33 +101,35 @@ public class Discord
 
     private void OnChatMessageReceived(ACTcpClient sender, ChatEventArgs args)
     {
-        if (!args.Message.StartsWith("\t\t\t\t$CSP0:") && !string.IsNullOrWhiteSpace(args.Message))
+        if (args.Message.StartsWith("\t\t\t\t$CSP0:")
+            || string.IsNullOrWhiteSpace(args.Message)
+            || _configuration.ChatIgnoreGuids.Contains(sender.Guid)) 
+            return;
+        
+        string username;
+        string content;
+
+        if (_configuration.ChatMessageIncludeServerName)
         {
-            string username;
-            string content;
-
-            if (_configuration.ChatMessageIncludeServerName)
-            {
-                username = _serverNameSanitized;
-                content = $"**{sender.Name}:** {Sanitize(args.Message)}";
-            }
-            else
-            {
-                username = SanitizeUsername(sender.Name) ?? throw new InvalidOperationException("ACTcpClient has no name set");
-                content = Sanitize(args.Message);
-            }
-
-            DiscordMessage msg = new DiscordMessage
-            {
-                AvatarUrl = _configuration.PictureUrl,
-                Username = username,
-                Content = content,
-                AllowedMentions = new AllowedMentions()
-            };
-
-            ChatHook!.SendAsync(msg)
-                .ContinueWith(t => Log.Error(t.Exception, "Error in Discord webhook"), TaskContinuationOptions.OnlyOnFaulted);
+            username = _serverNameSanitized;
+            content = $"**{sender.Name}:** {Sanitize(args.Message)}";
         }
+        else
+        {
+            username = SanitizeUsername(sender.Name) ?? throw new InvalidOperationException("ACTcpClient has no name set");
+            content = Sanitize(args.Message);
+        }
+
+        DiscordMessage msg = new DiscordMessage
+        {
+            AvatarUrl = _configuration.PictureUrl,
+            Username = username,
+            Content = content,
+            AllowedMentions = new AllowedMentions()
+        };
+
+        ChatHook!.SendAsync(msg)
+            .ContinueWith(t => Log.Error(t.Exception, "Error in Discord webhook"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
     private DiscordMessage PrepareAuditMessage(

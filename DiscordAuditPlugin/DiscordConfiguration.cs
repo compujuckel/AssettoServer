@@ -9,4 +9,5 @@ public class DiscordConfiguration
     public string? AuditUrl { get; init; }
     public string? ChatUrl { get; init; }
     public bool ChatMessageIncludeServerName { get; init; } = false;
+    public List<ulong> ChatIgnoreGuids { get; init; } = new();
 }

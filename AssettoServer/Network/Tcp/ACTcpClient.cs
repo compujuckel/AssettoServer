@@ -18,6 +18,7 @@ using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
 using AssettoServer.Server.Blacklist;
+using AssettoServer.Server.ClientRenamers;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
@@ -74,6 +75,7 @@ public class ACTcpClient
     private readonly CSPServerExtraOptions _cspServerExtraOptions;
     private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
     private readonly OpenSlotFilterChain _openSlotFilter;
+    private readonly IClientRenamer? _clientRenamer;
 
     /// <summary>
     /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
@@ -142,7 +144,8 @@ public class ACTcpClient
         CSPFeatureManager cspFeatureManager,
         CSPServerExtraOptions cspServerExtraOptions,
         CSPClientMessageTypeManager cspClientMessageTypeManager,
-        OpenSlotFilterChain openSlotFilter)
+        OpenSlotFilterChain openSlotFilter, 
+        IClientRenamer? clientRenamer = null)
     {
         UdpServer = udpServer;
         Logger = new LoggerConfiguration()
@@ -162,6 +165,8 @@ public class ACTcpClient
         _cspServerExtraOptions = cspServerExtraOptions;
         _cspClientMessageTypeManager = cspClientMessageTypeManager;
         _openSlotFilter = openSlotFilter;
+        _clientRenamer = clientRenamer;
+        
         tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
         tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
         tcpClient.LingerState = new LingerOption(true, 2);
@@ -329,7 +334,18 @@ public class ACTcpClient
                         if (handshakeRequest.Password == _configuration.Server.AdminPassword)
                             IsAdministrator = true;
 
-                        Logger.Information("{ClientName} ({ClientSteamId}, {SessionId} ({Car})) has connected", Name, Guid, SessionId, EntryCar.Model + "-" + EntryCar.Skin);
+                        if (_clientRenamer != null)
+                        {
+                            var renamed = await _clientRenamer.RenameAsync(this);
+                            if (renamed != Name)
+                            {
+                                Logger.Debug("Player {OldName} renamed to {NewName}", Name, renamed);
+                                Name = renamed;
+                            }
+                        }
+
+                        Logger.Information("{ClientName} ({ClientSteamId}, {SessionId} ({CarModel}-{CarSkin})) has connected", 
+                            Name, Guid, SessionId, EntryCar.Model, EntryCar.Skin);
 
                         var cfg = _configuration.Server;
                         HandshakeResponse handshakeResponse = new HandshakeResponse

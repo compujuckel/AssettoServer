@@ -30,8 +30,8 @@
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.1.0" />
         <PackageReference Include="CXuesong.Luaon.Json" Version="0.2.1" />
-        <PackageReference Include="DotNext.IO" Version="4.11.0" />
-        <PackageReference Include="DotNext.Unsafe" Version="4.11.0" />
+        <PackageReference Include="DotNext.IO" Version="4.12.0" />
+        <PackageReference Include="DotNext.Unsafe" Version="4.12.0" />
         <PackageReference Include="ErrorProne.NET.CoreAnalyzers" Version="0.4.0-beta.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -48,14 +48,14 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
         <PackageReference Include="JetBrains.Annotations" Version="2022.3.1" />
         <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="7.0.3" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="7.0.4" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="NodaTime" Version="3.1.6" />
+        <PackageReference Include="NodaTime" Version="3.1.8" />
         <PackageReference Include="Open.NAT" Version="2.1.0">
             <NoWarn>NU1701</NoWarn>
         </PackageReference>
         <PackageReference Include="Polly" Version="7.2.3" />
-        <PackageReference Include="Grpc.Net.Client" Version="2.51.0" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.52.0" />
         <PackageReference Include="protobuf-net.Grpc" Version="1.1.1" />
         <PackageReference Include="protobuf-net.Grpc.ClientFactory" Version="1.1.1" />
         <PackageReference Include="Qmmands" Version="5.0.2" />

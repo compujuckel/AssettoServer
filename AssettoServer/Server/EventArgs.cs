@@ -2,13 +2,20 @@
 using System.ComponentModel;
 using System.Numerics;
 using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
+using CommunityToolkit.Common.Deferred;
 
 namespace AssettoServer.Server;
 
 public delegate void EventHandler<TSender, TArgs>(TSender sender, TArgs args) where TArgs : EventArgs;
 public delegate void EventHandlerIn<TSender, TArg>(TSender sender, in TArg args) where TArg : struct;
+
+public class HandshakeAcceptedEventArgs : DeferredEventArgs
+{
+    public HandshakeResponse HandshakeResponse { get; init; }
+}
 
 public class ClientAuditEventArgs : EventArgs
 {

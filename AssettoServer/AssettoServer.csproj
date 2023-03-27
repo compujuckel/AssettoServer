@@ -28,6 +28,7 @@
         <PackageReference Include="Autofac" Version="7.0.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
+        <PackageReference Include="CommunityToolkit.Common" Version="8.1.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.1.0" />
         <PackageReference Include="CXuesong.Luaon.Json" Version="0.2.1" />
         <PackageReference Include="DotNext.IO" Version="4.12.0" />

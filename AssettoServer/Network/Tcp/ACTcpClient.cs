@@ -18,10 +18,10 @@ using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
 using AssettoServer.Server.Blacklist;
-using AssettoServer.Server.ClientRenamers;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
+using AssettoServer.Utils;
 using NanoSockets;
 using Serilog;
 using Serilog.Core;
@@ -34,7 +34,7 @@ public class ACTcpClient
     private ACUdpServer UdpServer { get; }
     public ILogger Logger { get; }
     public byte SessionId { get; set; }
-    public string? Name { get; private set; }
+    public string? Name { get; set; }
     public string? Team { get; private set; }
     public string? NationCode { get; private set; }
     public bool IsAdministrator { get; internal set; }
@@ -75,7 +75,6 @@ public class ACTcpClient
     private readonly CSPServerExtraOptions _cspServerExtraOptions;
     private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
     private readonly OpenSlotFilterChain _openSlotFilter;
-    private readonly IClientRenamer? _clientRenamer;
 
     /// <summary>
     /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
@@ -96,7 +95,12 @@ public class ACTcpClient
     /// Fires when a player has started disconnecting.
     /// </summary>
     public event EventHandler<ACTcpClient, EventArgs>? Disconnecting;
-        
+
+    /// <summary>
+    ///  Fires when a slot has been secured for a player and the handshake response is about to be sent.
+    /// </summary>
+    public event EventHandler<ACTcpClient, HandshakeAcceptedEventArgs> HandshakeAccepted = null!;
+
     /// <summary>
     /// Fires when a client has sent the first position update and is visible to other players.
     /// </summary>
@@ -144,8 +148,7 @@ public class ACTcpClient
         CSPFeatureManager cspFeatureManager,
         CSPServerExtraOptions cspServerExtraOptions,
         CSPClientMessageTypeManager cspClientMessageTypeManager,
-        OpenSlotFilterChain openSlotFilter, 
-        IClientRenamer? clientRenamer = null)
+        OpenSlotFilterChain openSlotFilter)
     {
         UdpServer = udpServer;
         Logger = new LoggerConfiguration()
@@ -165,8 +168,7 @@ public class ACTcpClient
         _cspServerExtraOptions = cspServerExtraOptions;
         _cspClientMessageTypeManager = cspClientMessageTypeManager;
         _openSlotFilter = openSlotFilter;
-        _clientRenamer = clientRenamer;
-        
+
         tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
         tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
         tcpClient.LingerState = new LingerOption(true, 2);
@@ -334,16 +336,6 @@ public class ACTcpClient
                         if (handshakeRequest.Password == _configuration.Server.AdminPassword)
                             IsAdministrator = true;
 
-                        if (_clientRenamer != null)
-                        {
-                            var renamed = await _clientRenamer.RenameAsync(this);
-                            if (renamed != Name)
-                            {
-                                Logger.Debug("Player {OldName} renamed to {NewName}", Name, renamed);
-                                Name = renamed;
-                            }
-                        }
-
                         Logger.Information("{ClientName} ({ClientSteamId}, {SessionId} ({CarModel}-{CarSkin})) has connected", 
                             Name, Guid, SessionId, EntryCar.Model, EntryCar.Skin);
 
@@ -389,6 +381,13 @@ public class ACTcpClient
                             TrackGrip = _weatherManager.CurrentWeather.TrackGrip,
                             MaxContactsPerKm = cfg.MaxContactsPerKm
                         };
+
+                        var args = new HandshakeAcceptedEventArgs
+                        {
+                            HandshakeResponse = handshakeResponse
+                        };
+                        
+                        await HandshakeAccepted.InvokeAsync(this, args);
 
                         HasStartedHandshake = true;
                         SendPacket(handshakeResponse);

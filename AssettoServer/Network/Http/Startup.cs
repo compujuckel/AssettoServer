@@ -84,12 +84,6 @@ public class Startup
         builder.RegisterType<HttpInfoCache>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         builder.RegisterType<DefaultCMContentProvider>().As<ICMContentProvider>().SingleInstance();
 
-        if (_configuration.Extra.AiParams.RandomTrafficNames == null ||
-            _configuration.Extra.AiParams.RandomTrafficNames.Count == 0)
-        {
-            builder.RegisterType<AiRandomNameService>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
-        }
-
         if (_configuration.Extra.EnableLegacyPluginInterface)
         {
             builder.RegisterType<UdpPluginServer>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();

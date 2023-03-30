@@ -35,6 +35,7 @@ public class AiModule : Module
             builder.RegisterType<FastLaneParser>().AsSelf();
             builder.RegisterType<AiSplineLocator>().AsSelf();
             builder.Register((AiSplineLocator locator) => locator.Locate()).AsSelf().SingleInstance();
+            builder.RegisterType<AiRandomNameService>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         }
     }
 }

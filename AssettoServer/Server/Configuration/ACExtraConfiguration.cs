@@ -89,6 +89,8 @@ public partial class ACExtraConfiguration : ObservableObject
     public string WhitelistUserGroup { get; init; } = "default_whitelist";
     [YamlMember(Description = "Name of user group to be used for admins")]
     public string AdminUserGroup { get; init; } = "default_admins";
+    [YamlMember(Description = "List of allowed origins for Cross-Origin Resource Sharing. Use this if you want to query this server from a website")]
+    public List<string>? CorsAllowedOrigins { get; init; }
     
     public AiParams AiParams { get; init; } = new AiParams();
 

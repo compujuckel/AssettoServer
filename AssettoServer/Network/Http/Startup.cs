@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using App.Metrics;
 using AssettoServer.Commands;
 using AssettoServer.Commands.TypeParsers;
@@ -117,6 +118,14 @@ public class Startup
             .Configuration.Configure(options => { options.DefaultContextLabel = "AssettoServer"; })
             .OutputMetrics.AsPrometheusPlainText()
             .Build());
+        services.AddCors(options =>
+        {
+            options.AddPolicy(name: "ServerQueryPolicy",
+                policy =>
+                {
+                    policy.WithOrigins(_configuration.Extra.CorsAllowedOrigins?.ToArray() ?? Array.Empty<string>());
+                });
+        });
         services.AddAppMetricsCollectors();
         services.AddAuthentication(
                 options => options.DefaultScheme = ACClientAuthenticationSchemeOptions.Scheme)
@@ -153,6 +162,7 @@ public class Startup
         }
 
         app.UseRouting();
+        app.UseCors();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseMetricsEndpoint();

@@ -9,6 +9,7 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AssettoServer.Network.Http;
@@ -53,6 +54,7 @@ public class HttpController : ControllerBase
         _contentProvider = contentProvider;
     }
 
+    [EnableCors("ServerQueryPolicy")]
     [HttpGet("/INFO")]
     public InfoResponse GetInfo()
     {
@@ -86,6 +88,7 @@ public class HttpController : ControllerBase
         return responseObj;
     }
 
+    [EnableCors("ServerQueryPolicy")]
     [HttpGet("/JSON{guid}")]
     public async Task<EntryListResponse> GetEntryList(string guid)
     {
@@ -110,6 +113,7 @@ public class HttpController : ControllerBase
         return responseObj;
     }
 
+    [EnableCors("ServerQueryPolicy")]
     [HttpGet("/api/details")]
     public async Task<DetailResponse> GetDetails(string? guid)
     {

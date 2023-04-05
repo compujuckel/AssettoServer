@@ -132,7 +132,15 @@ public class KunosLobbyRegistration : CriticalBackgroundService
 
         if (!body.StartsWith("OK"))
         {
-            throw new KunosLobbyException(body);
+            if (body is "ERROR - RESTART YOUR SERVER TO REGISTER WITH THE LOBBY" 
+                or "ERROR,SERVER NOT REGISTERED WITH LOBBY - PLEASE RESTART")
+            {
+                await RegisterToLobbyAsync(token);
+            }
+            else
+            {
+                throw new KunosLobbyException(body);
+            }
         }
     }
 }

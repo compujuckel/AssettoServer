@@ -11,7 +11,7 @@ public class EntryListResponseCar
     public string? Skin { get; internal set; }
     public string? DriverName { get; set; }
     public string? DriverTeam { get; set; }
-    public bool IsRequestedGuid { get; set; }
+    public bool IsRequestedGUID { get; set; }
     public bool IsEntryList { get; set; }
     public bool IsConnected { get; set; }
 }

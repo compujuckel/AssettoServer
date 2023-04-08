@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
-namespace AssettoServer.Server.Configuration;
+namespace AssettoServer.Shared.Http.Responses;
 
 public class CMContentConfiguration
 {

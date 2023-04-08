@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Http.Responses;
 
 namespace AssettoServer.Server.CMContentProviders;
 

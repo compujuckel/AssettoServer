@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
-namespace AssettoServer.Network.Http.Responses;
+namespace AssettoServer.Shared.Http.Responses;
 
 public class InfoResponse
 {

@@ -1,14 +1,12 @@
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using AssettoServer.Server.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace AssettoServer.Network.Http.Responses;
+namespace AssettoServer.Shared.Http.Responses;
 
 public class DetailResponse : InfoResponse
 {
-    public DetailResponsePlayerList? Players { get; set; }
+    public required DetailResponsePlayerList Players { get; set; }
     public long Until { get; set; }
     public CMContentConfiguration? Content { get; set; }
     public string? TrackBase { get; set; }
@@ -51,5 +49,5 @@ public class DetailResponseCar : EntryListResponseCar
 [JsonObject(NamingStrategyType = typeof(DefaultNamingStrategy))]
 public class DetailResponsePlayerList
 {
-    public IEnumerable<DetailResponseCar>? Cars { get; set; }
+    public required IEnumerable<DetailResponseCar> Cars { get; set; }
 }

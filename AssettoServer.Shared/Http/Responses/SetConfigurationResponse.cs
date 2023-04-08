@@ -1,4 +1,4 @@
-﻿namespace AssettoServer.Network.Http.Responses;
+﻿namespace AssettoServer.Shared.Http.Responses;
 
 public class SetConfigurationResponse
 {

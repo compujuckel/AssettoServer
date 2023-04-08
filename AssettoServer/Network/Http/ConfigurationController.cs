@@ -1,6 +1,6 @@
 ﻿using System;
-using AssettoServer.Network.Http.Responses;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Http.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;

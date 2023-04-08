@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AssettoServer.Network.Http.Responses;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Shared.Http.Responses;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Qommon.Collections.ReadOnly;

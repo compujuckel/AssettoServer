@@ -1,14 +1,13 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace AssettoServer.Network.Http.Responses;
+namespace AssettoServer.Shared.Http.Responses;
 
 [JsonObject(NamingStrategyType = typeof(DefaultNamingStrategy))]
 public class EntryListResponseCar
 {
-    public string? Model { get; internal set; }
-    public string? Skin { get; internal set; }
+    public string? Model { get; set; }
+    public string? Skin { get; set; }
     public string? DriverName { get; set; }
     public string? DriverTeam { get; set; }
     public bool IsRequestedGUID { get; set; }

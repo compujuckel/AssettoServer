@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using AssettoServer.Shared.Http.Responses;
 using AssettoServer.Utils;
 using FluentValidation;
 using Newtonsoft.Json;

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using AssettoServer.Network.Http.Responses;
 using AssettoServer.Server;
 using AssettoServer.Server.Admin;
 using AssettoServer.Server.CMContentProviders;
@@ -9,6 +8,7 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Http.Responses;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 

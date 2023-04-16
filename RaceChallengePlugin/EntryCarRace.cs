@@ -1,9 +1,9 @@
 ﻿using System.Numerics;
-using AssettoServer.Network.Packets.Incoming;
-using AssettoServer.Network.Packets.Outgoing;
-using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
+using AssettoServer.Shared.Network.Packets.Incoming;
+using AssettoServer.Shared.Network.Packets.Outgoing;
+using AssettoServer.Shared.Network.Packets.Shared;
 
 namespace RaceChallengePlugin;
 

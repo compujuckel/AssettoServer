@@ -1,10 +1,10 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Numerics;
-using AssettoServer.Network.Packets.Outgoing;
-using AssettoServer.Network.Packets.Outgoing.Handshake;
-using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
+using AssettoServer.Shared.Network.Packets.Outgoing;
+using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
+using AssettoServer.Shared.Network.Packets.Shared;
 using CommunityToolkit.Common.Deferred;
 
 namespace AssettoServer.Server;

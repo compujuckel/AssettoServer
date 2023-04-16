@@ -1,5 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Shared.Network.Packets.Outgoing;
 
 namespace AssettoServer.Server.Ai.Splines;
 

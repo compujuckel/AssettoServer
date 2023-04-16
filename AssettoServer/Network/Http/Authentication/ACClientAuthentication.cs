@@ -1,5 +1,5 @@
-﻿using AssettoServer.Network.Packets.Shared;
-using AssettoServer.Server;
+﻿using AssettoServer.Server;
+using AssettoServer.Shared.Network.Packets.Shared;
 
 namespace AssettoServer.Network.Http.Authentication;
 

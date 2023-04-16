@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Shared.Http.Responses;
+using AssettoServer.Shared.Network.Http.Responses;
 
 namespace AssettoServer.Server.CMContentProviders;
 

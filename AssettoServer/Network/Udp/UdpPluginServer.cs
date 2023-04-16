@@ -3,24 +3,26 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Commands;
-using AssettoServer.Network.Packets;
-using AssettoServer.Network.Packets.Outgoing;
-using AssettoServer.Network.Packets.Shared;
-using AssettoServer.Network.Packets.UdpPlugin;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Model;
+using AssettoServer.Shared.Network.Packets;
+using AssettoServer.Shared.Network.Packets.Outgoing;
+using AssettoServer.Shared.Network.Packets.Shared;
+using AssettoServer.Shared.Network.Packets.UdpPlugin;
+using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using NanoSockets;
 using Serilog;
-using ClientEvent = AssettoServer.Network.Packets.UdpPlugin.ClientEvent;
-using CarConnected = AssettoServer.Network.Packets.UdpPlugin.CarConnected;
-using CarDisconnected = AssettoServer.Network.Packets.UdpPlugin.CarDisconnected;
-using Error = AssettoServer.Network.Packets.UdpPlugin.Error;
-using Version = AssettoServer.Network.Packets.UdpPlugin.Version;
+using ClientEvent = AssettoServer.Shared.Network.Packets.UdpPlugin.ClientEvent;
+using CarConnected = AssettoServer.Shared.Network.Packets.UdpPlugin.CarConnected;
+using CarDisconnected = AssettoServer.Shared.Network.Packets.UdpPlugin.CarDisconnected;
+using Error = AssettoServer.Shared.Network.Packets.UdpPlugin.Error;
+using Version = AssettoServer.Shared.Network.Packets.UdpPlugin.Version;
 
 namespace AssettoServer.Network.Udp;
 
@@ -354,7 +356,7 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
     private void SendSessionInfo(short sessionId, bool isNew)
     {
         SessionState currentSession = _sessionManager.CurrentSession;
-        SessionConfiguration sessionConfig;
+        ISession sessionConfig;
 
         if (sessionId == -1)
         {

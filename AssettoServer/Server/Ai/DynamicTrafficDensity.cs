@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;

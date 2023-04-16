@@ -5,6 +5,7 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather.Implementation;
+using AssettoServer.Shared.Services;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;

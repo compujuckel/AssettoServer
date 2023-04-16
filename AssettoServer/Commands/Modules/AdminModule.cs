@@ -1,6 +1,4 @@
 ﻿using AssettoServer.Commands.Attributes;
-using AssettoServer.Network.Packets.Outgoing;
-using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Weather;
 using Qmmands;
@@ -12,6 +10,8 @@ using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather.Implementation;
 using AssettoServer.Server.Whitelist;
+using AssettoServer.Shared.Network.Packets.Outgoing;
+using AssettoServer.Shared.Network.Packets.Shared;
 using JetBrains.Annotations;
 
 namespace AssettoServer.Commands.Modules;

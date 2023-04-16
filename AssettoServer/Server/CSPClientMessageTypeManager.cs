@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using AssettoServer.Network.Packets;
 using AssettoServer.Network.Tcp;
+using AssettoServer.Shared.Network.Packets;
 
 namespace AssettoServer.Server;
 

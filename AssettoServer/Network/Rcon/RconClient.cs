@@ -5,9 +5,9 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using AssettoServer.Commands;
-using AssettoServer.Network.Packets;
-using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Network.Packets;
+using AssettoServer.Shared.Network.Packets.Outgoing;
 using Serilog;
 
 namespace AssettoServer.Network.Rcon;

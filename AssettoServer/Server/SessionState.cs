@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Model;
 
 namespace AssettoServer.Server;
 
-public class SessionState
+public class SessionState : ISessionState
 {
-    public SessionConfiguration Configuration { get; init; }
+    public ISession Configuration { get; init; }
     public int EndTime { get; set; } // TODO
     public long StartTimeMilliseconds { get; set; }
     public int TimeLeftMilliseconds => (int)(StartTimeMilliseconds + Configuration.Time * 60_000 - _timeSource.ServerTimeMilliseconds);
@@ -15,7 +16,7 @@ public class SessionState
     public bool LeaderHasCompletedLastLap { get; set; } = false;
     public bool SessionOverFlag { get; set; } = false;
     public Dictionary<byte, EntryCarResult>? Results { get; set; }
-    public IEnumerable<EntryCar>? Grid { get; set; }
+    public IEnumerable<IEntryCar<IClient>>? Grid { get; set; }
 
     private readonly SessionManager _timeSource;
 
@@ -24,13 +25,4 @@ public class SessionState
         Configuration = configuration;
         _timeSource = timeSource;
     }
-}
-
-public class EntryCarResult
-{
-    public uint BestLap { get; set; } = 999999999;
-    public uint NumLaps { get; set; } = 0;
-    public uint TotalTime { get; set; } = 0;
-    public uint LastLap { get; set; } = 999999999;
-    public bool HasCompletedLastLap { get; set; } = false;
 }

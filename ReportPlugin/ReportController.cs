@@ -1,6 +1,6 @@
 ﻿using System.Net;
-using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Server;
+using AssettoServer.Shared.Network.Packets.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;

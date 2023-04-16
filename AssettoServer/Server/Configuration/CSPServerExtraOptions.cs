@@ -4,7 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
-using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Shared.Network.Packets.Outgoing;
 using Serilog;
 
 namespace AssettoServer.Server.Configuration;

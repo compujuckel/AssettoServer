@@ -1,10 +1,10 @@
 ﻿using System.Text.RegularExpressions;
 using AssettoServer.Commands;
-using AssettoServer.Network.Packets.Incoming;
-using AssettoServer.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.OpenSlotFilters;
+using AssettoServer.Shared.Network.Packets.Incoming;
+using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
 
 namespace WordFilterPlugin;
 

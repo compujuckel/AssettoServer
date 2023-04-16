@@ -1,10 +1,10 @@
 ﻿using System.Drawing;
 using AssettoServer.Commands;
-using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Discord;
+using AssettoServer.Shared.Network.Packets.Outgoing;
 using CSharpDiscordWebhook.NET.Discord;
 using Serilog;
 

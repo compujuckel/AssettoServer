@@ -1,21 +1,22 @@
-﻿using AssettoServer.Network.Packets.Shared;
-using AssettoServer.Network.Tcp;
+﻿using AssettoServer.Network.Tcp;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
-using AssettoServer.Network.Packets.Incoming;
-using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Model;
+using AssettoServer.Shared.Network.Packets.Incoming;
+using AssettoServer.Shared.Network.Packets.Outgoing;
+using AssettoServer.Shared.Network.Packets.Shared;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 
 namespace AssettoServer.Server;
 
-public partial class EntryCar
+public partial class EntryCar : IEntryCar<ACTcpClient>
 { 
     public ACTcpClient? Client { get; internal set; }
     public CarStatus Status { get; private set; } = new CarStatus();

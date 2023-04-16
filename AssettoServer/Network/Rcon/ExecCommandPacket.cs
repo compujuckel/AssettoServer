@@ -1,6 +1,6 @@
 ﻿using System.Text;
-using AssettoServer.Network.Packets;
-using AssettoServer.Network.Packets.Incoming;
+using AssettoServer.Shared.Network.Packets;
+using AssettoServer.Shared.Network.Packets.Incoming;
 
 namespace AssettoServer.Network.Rcon;
 

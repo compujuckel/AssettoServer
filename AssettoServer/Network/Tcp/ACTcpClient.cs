@@ -1,5 +1,4 @@
-﻿using AssettoServer.Network.Packets;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -11,16 +10,18 @@ using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using AssettoServer.Network.Packets.Incoming;
-using AssettoServer.Network.Packets.Outgoing;
-using AssettoServer.Network.Packets.Outgoing.Handshake;
-using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Model;
+using AssettoServer.Shared.Network.Packets;
+using AssettoServer.Shared.Network.Packets.Incoming;
+using AssettoServer.Shared.Network.Packets.Outgoing;
+using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
+using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using NanoSockets;
@@ -30,7 +31,7 @@ using Serilog.Events;
 
 namespace AssettoServer.Network.Tcp;
 
-public class ACTcpClient
+public class ACTcpClient : IClient
 {
     private ACUdpServer UdpServer { get; }
     public ILogger Logger { get; }
@@ -644,7 +645,7 @@ public class ACTcpClient
     {
         CarListRequest carListRequest = reader.ReadPacket<CarListRequest>();
 
-        List<EntryCar> carsInPage = _entryCarManager.EntryCars.Skip(carListRequest.PageIndex).Take(10).ToList();
+        var carsInPage = _entryCarManager.EntryCars.Skip(carListRequest.PageIndex).Take(10).ToList();
         CarListResponse carListResponse = new CarListResponse
         {
             PageIndex = carListRequest.PageIndex,

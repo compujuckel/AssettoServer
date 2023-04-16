@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Numerics;
 using System.Threading;
-using AssettoServer.Network.Packets.Outgoing;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Ai.Splines;
+using AssettoServer.Shared.Model;
+using AssettoServer.Shared.Network.Packets.Outgoing;
 
 namespace AssettoServer.Server;
 

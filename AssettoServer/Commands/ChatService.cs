@@ -2,11 +2,11 @@
 using System.Reflection;
 using System.Threading.Tasks;
 using AssettoServer.Commands.TypeParsers;
-using AssettoServer.Network.Packets.Shared;
 using AssettoServer.Network.Rcon;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Shared.Network.Packets.Shared;
 using Qmmands;
 using Serilog;
 

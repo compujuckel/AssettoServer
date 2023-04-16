@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
-using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Model;
+using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Utils;
 using JPBotelho;
 using Serilog;

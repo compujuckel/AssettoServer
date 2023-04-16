@@ -8,7 +8,7 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
-using AssettoServer.Shared.Http.Responses;
+using AssettoServer.Shared.Network.Http.Responses;
 using AssettoServer.Shared.Weather;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;

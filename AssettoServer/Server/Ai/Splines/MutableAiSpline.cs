@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using AssettoServer.Network.Packets.Outgoing;
 using AssettoServer.Server.Ai.Configuration;
+using AssettoServer.Shared.Network.Packets.Outgoing;
 using Serilog;
 using Supercluster.KDTree;
 

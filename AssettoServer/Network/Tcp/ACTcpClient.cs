@@ -21,6 +21,7 @@ using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using NanoSockets;
 using Serilog;

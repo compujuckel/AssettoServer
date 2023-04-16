@@ -14,6 +14,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj">
+            <Private>false</Private>
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </ProjectReference>
         <ProjectReference Include="..\AssettoServer\AssettoServer.csproj">
             <Private>false</Private>
             <ExcludeAssets>runtime</ExcludeAssets>

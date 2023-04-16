@@ -3,6 +3,7 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;

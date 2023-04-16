@@ -1,6 +1,7 @@
 ﻿using AssettoServer.Server.Plugin;
 using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;

@@ -1,12 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using System.Drawing;
-using System.Text.RegularExpressions;
 using AssettoServer.Commands;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Shared.Discord;
 using AssettoServer.Utils;
 using CSharpDiscordWebhook.NET.Discord;
 using Microsoft.Extensions.Hosting;
@@ -16,11 +16,6 @@ namespace ReportPlugin;
 
 public class ReportPlugin : CriticalBackgroundService, IAssettoServerAutostart
 {
-    private static readonly string[] SensitiveCharacters = { "\\", "*", "_", "~", "`", "|", ">", ":", "@" };
-    // https://discord.com/developers/docs/resources/webhook#create-webhook
-    private static readonly string[] ForbiddenUsernameSubstrings = { "clyde", "discord", "@", "#", ":", "```" };
-    private static readonly string[] ForbiddenUsernames = { "everyone", "here" };
-    
     internal Guid Key { get; }
     
     private readonly ReportConfiguration _configuration;
@@ -52,7 +47,7 @@ public class ReportPlugin : CriticalBackgroundService, IAssettoServerAutostart
         _entryCarManager.ClientDisconnected += OnClientDisconnected;
         chatService.MessageReceived += OnChatMessage;
 
-        _serverNameTruncated = SanitizeUsername(serverConfiguration.Server.Name);
+        _serverNameTruncated = DiscordUtils.SanitizeUsername(serverConfiguration.Server.Name);
 
         if (!string.IsNullOrEmpty(_configuration.WebhookUrl))
         {
@@ -132,34 +127,6 @@ public class ReportPlugin : CriticalBackgroundService, IAssettoServerAutostart
             }
         }
     }
-    
-    private static string Sanitize(string? text)
-    {
-        text ??= "";
-        
-        foreach (string unsafeChar in SensitiveCharacters)
-            text = text.Replace(unsafeChar, $"\\{unsafeChar}");
-        return text;
-    }
-    
-    private static string SanitizeUsername(string? name)
-    {
-        name ??= "";
-
-        foreach (string str in ForbiddenUsernames)
-        {
-            if (name == str) return $"_{str}";
-        }
-
-        foreach (string str in ForbiddenUsernameSubstrings)
-        {
-            name = Regex.Replace(name, str, new string('*', str.Length), RegexOptions.IgnoreCase);
-        }
-
-        name = name.Substring(0, Math.Min(name.Length, 80));
-
-        return name;
-    }
 
     internal AuditLog GetAuditLog(DateTime timestamp)
     {
@@ -182,11 +149,11 @@ public class ReportPlugin : CriticalBackgroundService, IAssettoServerAutostart
                 {
                     Author = new EmbedAuthor
                     {
-                        Name = Sanitize(client.Name),
+                        Name = DiscordUtils.Sanitize(client.Name),
                         Url = $"https://steamcommunity.com/profiles/{client.Guid}"
                     },
                     Color = Color.Red,
-                    Description = Sanitize(reason),
+                    Description = DiscordUtils.Sanitize(reason),
                     Footer = new EmbedFooter
                     {
                         Text = "AssettoServer"

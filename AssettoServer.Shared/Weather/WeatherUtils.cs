@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace AssettoServer.Server.Weather;
+﻿namespace AssettoServer.Shared.Weather;
 
 public static class WeatherUtils
 {

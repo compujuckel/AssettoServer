@@ -1,5 +1,6 @@
 ﻿using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -25,12 +26,9 @@ public class RandomWeather : CriticalBackgroundService, IAssettoServerAutostart
         _weatherManager = weatherManager;
         _weatherTypeProvider = weatherTypeProvider;
 
-        foreach (WeatherFxType weather in Enum.GetValues<WeatherFxType>())
+        foreach (var weather in Enum.GetValues<WeatherFxType>())
         {
-            if (!_configuration.WeatherWeights.ContainsKey(weather))
-            {
-                _configuration.WeatherWeights.Add(weather, 1.0f);
-            }
+            _configuration.WeatherWeights.TryAdd(weather, 1.0f);
         }
 
         _configuration.WeatherWeights[WeatherFxType.None] = 0;

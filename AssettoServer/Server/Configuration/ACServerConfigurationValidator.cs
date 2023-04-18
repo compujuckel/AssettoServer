@@ -59,7 +59,6 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
             server.RuleForEach(s => s.Weathers).ChildRules(weather =>
             {
                 weather.RuleFor(w => w.BaseTemperatureAmbient).GreaterThanOrEqualTo(0);
-                weather.RuleFor(w => w.BaseTemperatureRoad).GreaterThanOrEqualTo(0);
                 weather.RuleFor(w => w.WindBaseSpeedMin).LessThanOrEqualTo(w => w.WindBaseSpeedMax);
             });
 

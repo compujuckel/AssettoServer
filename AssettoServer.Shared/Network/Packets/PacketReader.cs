@@ -11,7 +11,7 @@ public struct PacketReader
     public int ReadPosition { get; private set; }
 
     private bool _readPacket;
-    private readonly bool _rcon = false; 
+    private readonly bool _rcon = false;
 
     public PacketReader(Stream? stream, Memory<byte> buffer, bool rcon = false)
     {
@@ -102,7 +102,7 @@ public struct PacketReader
             return 0;
         }
 
-        Buffer = Buffer.Slice(0, packetSize);
+        SliceBuffer(packetSize);
 
         await ReadBytesInternalAsync(Buffer, cancellationToken);
 
@@ -111,7 +111,7 @@ public struct PacketReader
 
     public void SliceBuffer(int newSize)
     {
-        Buffer = Buffer.Slice(0, newSize);
+        Buffer = Buffer.Slice(_rcon ? 4 : 2, newSize);
     }
 
     private async ValueTask<bool> ReadBytesInternalAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)

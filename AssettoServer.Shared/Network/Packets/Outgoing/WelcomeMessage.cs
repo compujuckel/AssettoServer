@@ -1,6 +1,8 @@
-﻿namespace AssettoServer.Shared.Network.Packets.Outgoing;
+﻿using AssettoServer.Shared.Network.Packets.Incoming;
 
-public class WelcomeMessage : IOutgoingNetworkPacket
+namespace AssettoServer.Shared.Network.Packets.Outgoing;
+
+public class WelcomeMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
 {
     public string? Message;
 
@@ -9,5 +11,11 @@ public class WelcomeMessage : IOutgoingNetworkPacket
         writer.Write((byte)ACServerProtocol.WelcomeMessage);
         writer.Write<byte>(0);
         writer.WriteUTF32String(Message, true);
+    }
+
+    public void FromReader(PacketReader reader)
+    {
+        reader.Read<byte>();
+        Message = reader.ReadUTF32String(true);
     }
 }

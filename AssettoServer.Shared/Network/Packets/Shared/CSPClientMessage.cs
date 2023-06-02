@@ -28,7 +28,7 @@ public struct CSPClientMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
     }
 }
 
-public enum CSPClientMessageType
+public enum CSPClientMessageType : ushort
 {
     HandshakeIn = 0,
     HandshakeOut = 1,

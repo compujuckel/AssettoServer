@@ -4,18 +4,16 @@ namespace AssettoServer.Shared.Network.Packets.Outgoing;
 
 public class CurrentSessionUpdate : IOutgoingNetworkPacket
 {
-    public ISession? CurrentSession;
+    public Session? CurrentSession;
     public float TrackGrip;
     public IEnumerable<IEntryCar<IClient>>? Grid;
     public long StartTime;
 
     public void ToWriter(ref PacketWriter writer)
     {
-        if (CurrentSession == null)
-            throw new ArgumentNullException(nameof(CurrentSession));
-        if (Grid == null)
-            throw new ArgumentNullException(nameof(Grid));
-
+        ArgumentNullException.ThrowIfNull(CurrentSession);
+        ArgumentNullException.ThrowIfNull(Grid);
+        
         writer.Write((byte)ACServerProtocol.CurrentSessionUpdate);
         writer.WriteASCIIString(CurrentSession.Name);
         writer.Write((byte)CurrentSession.Id);

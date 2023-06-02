@@ -356,7 +356,7 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
     private void SendSessionInfo(short sessionId, bool isNew)
     {
         SessionState currentSession = _sessionManager.CurrentSession;
-        ISession sessionConfig;
+        SessionConfiguration sessionConfig;
 
         if (sessionId == -1)
         {

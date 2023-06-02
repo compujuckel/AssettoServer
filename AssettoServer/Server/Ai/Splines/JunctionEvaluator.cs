@@ -78,9 +78,9 @@ public class JunctionEvaluator
                 ref readonly var junction = ref junctions[junctionId];
 
                 bool result = false;
-                if (_evaluated != null && _evaluated.ContainsKey(junctionId))
+                if (_evaluated != null && _evaluated.TryGetValue(junctionId, out var value))
                 {
-                    result = _evaluated[junctionId];
+                    result = value;
                 }
                 else if (point.PreviousId < 0)
                 {
@@ -99,7 +99,7 @@ public class JunctionEvaluator
         return pointId;
     }
         
-    public bool TryPrevious(int pointId, [MaybeNullWhen(false)] out int nextPointId, int count = 1)
+    public bool TryPrevious(int pointId, out int nextPointId, int count = 1)
     {
         nextPointId = Previous(pointId, count);
         return nextPointId >= 0;

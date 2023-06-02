@@ -4,9 +4,9 @@ using AssettoServer.Shared.Model;
 
 namespace AssettoServer.Server;
 
-public class SessionState : ISessionState
+public class SessionState
 {
-    public ISession Configuration { get; init; }
+    public SessionConfiguration Configuration { get; }
     public int EndTime { get; set; } // TODO
     public long StartTimeMilliseconds { get; set; }
     public int TimeLeftMilliseconds => (int)(StartTimeMilliseconds + Configuration.Time * 60_000 - _timeSource.ServerTimeMilliseconds);

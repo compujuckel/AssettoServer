@@ -22,7 +22,7 @@ public class InfoResponse
     public bool Pass { get; set; }
     public bool Pickup { get; set; }
     public bool Pit { get; set; }
-    public int Port { get; set; }
+    public ushort Port { get; set; }
     public int Session { get; set; }
     [JsonProperty("sessiontypes")]
     public IEnumerable<int>? SessionTypes { get; set; }
@@ -33,7 +33,7 @@ public class InfoResponse
     public int TimeOfDay { get; set; }
     public long Timestamp { get; set; }
     [JsonProperty("tport")]
-    public int TPort { get; set; }
+    public ushort TPort { get; set; }
     public string? Track { get; set; }
     public string? PoweredBy { get; set; }
 }

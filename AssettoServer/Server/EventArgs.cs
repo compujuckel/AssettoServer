@@ -14,7 +14,7 @@ public delegate void EventHandlerIn<TSender, TArg>(TSender sender, in TArg args)
 
 public class HandshakeAcceptedEventArgs : DeferredEventArgs
 {
-    public HandshakeResponse HandshakeResponse { get; init; }
+    public required HandshakeResponse HandshakeResponse { get; init; }
 }
 
 public class ClientAuditEventArgs : EventArgs

@@ -33,9 +33,9 @@ public struct PacketReader
         return ret;
     }
 
-    public string ReadUTF32String()
+    public string ReadUTF32String(bool bigLength = false)
     {
-        byte stringLength = Read<byte>();
+        short stringLength = bigLength ? Read<short>() : Read<byte>();
 
         var ret = string.Create(stringLength, this, (span, self) => Encoding.UTF32.GetChars(self.Buffer.Slice(self.ReadPosition, span.Length * 4).Span, span));
         ReadPosition += stringLength * 4;
@@ -54,7 +54,8 @@ public struct PacketReader
     public T Read<T>() where T : unmanaged
     {
         T result = MemoryMarshal.Read<T>(Buffer.Slice(ReadPosition).Span);
-        ReadPosition += Marshal.SizeOf(typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T));
+        // Marshal.SizeOf(typeof(bool)) returns 4 - we need 1. See https://stackoverflow.com/a/47956291
+        ReadPosition += typeof(T) == typeof(bool) ? 1 : Marshal.SizeOf(typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T));
 
         return result;
     }
@@ -65,9 +66,9 @@ public struct PacketReader
         ReadPosition += buffer.Length;
     }
 
-    public TPacket ReadPacket<TPacket>() where TPacket : struct, IIncomingNetworkPacket
+    public TPacket ReadPacket<TPacket>() where TPacket : IIncomingNetworkPacket, new()
     {
-        TPacket packet = default;
+        TPacket packet = new TPacket();
         packet.FromReader(this);
 
         return packet;
@@ -117,19 +118,6 @@ public struct PacketReader
     private async ValueTask<bool> ReadBytesInternalAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(Stream);
-
-        int totalBytesRead = 0;
-        int bytesRead;
-        int bufferLength = buffer.Length;
-
-        while (totalBytesRead < bufferLength)
-        {
-            bytesRead = await Stream.ReadAsync(buffer.Slice(totalBytesRead), cancellationToken);
-            if (bytesRead == 0) return false;
-            
-            totalBytesRead += bytesRead;
-        }
-
-        return true;
+        return await Stream.ReadAtLeastAsync(buffer, buffer.Length, throwOnEndOfStream: false, cancellationToken) == buffer.Length;
     }
 }

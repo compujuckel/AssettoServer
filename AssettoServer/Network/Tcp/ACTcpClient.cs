@@ -47,6 +47,7 @@ public class ACTcpClient : IClient
     public bool IsDisconnectRequested => _disconnectRequested == 1;
     [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode))]
     public bool HasSentFirstUpdate { get; private set; }
+    public bool HasReceivedFirstPositionUpdate { get; private set; }
     public bool IsConnected { get; set; }
     public TcpClient TcpClient { get; }
 
@@ -550,8 +551,7 @@ public class ACTcpClient : IClient
                 }
             }
         }
-
-        HasPassedChecksum = passedChecksum;
+        
         if (!passedChecksum)
         {
             ChecksumFailed?.Invoke(this, EventArgs.Empty);
@@ -568,6 +568,8 @@ public class ACTcpClient : IClient
                 Nation = NationCode
             }, this);
         }
+        
+        HasPassedChecksum = passedChecksum;
     }
 
     private void OnChat(PacketReader reader)
@@ -791,6 +793,22 @@ public class ACTcpClient : IClient
         return false;
     }
 
+    internal void ReceivedFirstPositionUpdate()
+    {
+        if (HasReceivedFirstPositionUpdate)
+            return;
+
+        HasReceivedFirstPositionUpdate = true;
+        
+        _ = Task.Delay(40000).ContinueWith(async _ =>
+        {
+            if (!HasPassedChecksum && IsConnected)
+            {
+                await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} did not send the requested checksums.");
+            }
+        });
+    }
+
     internal void SendFirstUpdate()
     {
         if (HasSentFirstUpdate)
@@ -828,14 +846,6 @@ public class ACTcpClient : IClient
 
         SendPacket(CreateLapCompletedPacket(0xFF, 0, 0));
 
-        _ = Task.Delay(40000).ContinueWith(async _ =>
-        {
-            if (!HasPassedChecksum && IsConnected)
-            {
-                await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} did not send the requested checksums.");
-            }
-        });
-            
         FirstUpdateSent?.Invoke(this, EventArgs.Empty);
     }
         

@@ -100,7 +100,7 @@ public class ACServer : CriticalBackgroundService
     {
         if (_sessionManager.CurrentSession.Configuration.Type != SessionType.Race)
         {
-            return (_sessionManager.ServerTimeMilliseconds - _sessionManager.CurrentSession.StartTimeMilliseconds) > 60_000 * _sessionManager.CurrentSession.Configuration.Time;
+            return _sessionManager.CurrentSession.TimeLeftMilliseconds < 0;
         }
 
         return false;

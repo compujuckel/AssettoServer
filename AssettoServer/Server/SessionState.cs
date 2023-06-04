@@ -9,7 +9,7 @@ public class SessionState
     public SessionConfiguration Configuration { get; }
     public int EndTime { get; set; } // TODO
     public long StartTimeMilliseconds { get; set; }
-    public int TimeLeftMilliseconds => (int)(StartTimeMilliseconds + Configuration.Time * 60_000 - _timeSource.ServerTimeMilliseconds);
+    public int TimeLeftMilliseconds => Configuration.Infinite ? Configuration.Time * 60_000 : (int)(StartTimeMilliseconds + Configuration.Time * 60_000 - _timeSource.ServerTimeMilliseconds);
     public int SessionTimeMilliseconds => (int)(_timeSource.ServerTimeMilliseconds - StartTimeMilliseconds);
     public uint TargetLap { get; set; } = 0;
     public uint LeaderLapCount { get; set; } = 0;

@@ -8,7 +8,6 @@ using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Network.Http.Responses;
 using AssettoServer.Shared.Services;
-using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Qommon.Collections.ReadOnly;
 
@@ -20,7 +19,7 @@ public class HttpInfoCache : CriticalBackgroundService, IAssettoServerAutostart
     private readonly EntryCarManager _entryCarManager;
 
     public IReadOnlyList<string> Cars { get; private set; } = null!;
-    public IReadOnlyList<uint> Durations { get; }
+    public IReadOnlyList<int> Durations { get; }
     public string ServerName { get; }
     public IReadOnlyList<int> SessionTypes { get; }
     public string Track { get; }

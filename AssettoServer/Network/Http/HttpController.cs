@@ -80,7 +80,7 @@ public class HttpController : ControllerBase
             Timed = false,
             TimeLeft = _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
             TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay),
-            Timestamp = _sessionManager.ServerTimeMilliseconds,
+            Timestamp = 0,
             TPort = _configuration.Server.TcpPort,
             Track = _cache.Track,
             PoweredBy = _cache.PoweredBy
@@ -142,7 +142,7 @@ public class HttpController : ControllerBase
             Timed = false,
             TimeLeft = _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
             TimeOfDay = (int)WeatherUtils.SunAngleFromTicks(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay),
-            Timestamp = _sessionManager.ServerTimeMilliseconds,
+            Timestamp = 0,
             TPort = _configuration.Server.TcpPort,
             Track = _cache.Track,
             Players = new DetailResponsePlayerList
@@ -159,7 +159,7 @@ public class HttpController : ControllerBase
                     ID = ec.Client?.HashedGuid
                 })
             },
-            Until = DateTimeOffset.Now.ToUnixTimeSeconds() + _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
+            Until = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
             Content = await _contentProvider.GetContentAsync(ulongGuid),
             TrackBase = _configuration.Server.Track,
             City = _geoParamsManager.GeoParams.City,

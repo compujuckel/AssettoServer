@@ -53,10 +53,24 @@ public struct PacketReader
 
     public T Read<T>() where T : unmanaged
     {
-        T result = MemoryMarshal.Read<T>(Buffer.Slice(ReadPosition).Span);
         // Marshal.SizeOf(typeof(bool)) returns 4 - we need 1. See https://stackoverflow.com/a/47956291
-        ReadPosition += typeof(T) == typeof(bool) ? 1 : Marshal.SizeOf(typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T));
+        var bytesToRead = typeof(T) == typeof(bool) ? 1 : Marshal.SizeOf(typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T));
+        var slice = Buffer.Slice(ReadPosition).Span;
 
+        T result;
+        // Workaround for CSP client messages. Zeroes are removed from the end of a message
+        if (ReadPosition + bytesToRead > Buffer.Length)
+        {
+            Span<byte> tmp = stackalloc byte[bytesToRead];
+            slice.CopyTo(tmp);
+            result = MemoryMarshal.Read<T>(tmp);
+        }
+        else
+        {
+            result = MemoryMarshal.Read<T>(slice);
+        }
+        
+        ReadPosition += bytesToRead;
         return result;
     }
 

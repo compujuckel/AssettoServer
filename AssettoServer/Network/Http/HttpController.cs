@@ -145,6 +145,7 @@ public class HttpController : ControllerBase
             Timestamp = 0,
             TPort = _configuration.Server.TcpPort,
             Track = _cache.Track,
+            LoadingImageUrl = _configuration.Extra.LoadingImageUrl,
             Players = new DetailResponsePlayerList
             {
                 Cars = _entryCarManager.EntryCars.Select(ec => new DetailResponseCar

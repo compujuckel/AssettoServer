@@ -23,6 +23,7 @@ public class DetailResponse : InfoResponse
     public float Grip { get; set; }
     public float GripTransfer { get; set; }
     public IEnumerable<string>? Features { get; set; }
+    public string? LoadingImageUrl { get; set; }
 }
 
 public class DetailResponseAssists

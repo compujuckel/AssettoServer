@@ -55,6 +55,9 @@ public class ACTcpClient : IClient
     [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode))]
     public bool HasStartedHandshake { get; private set; }
     public bool HasPassedChecksum { get; private set; }
+    public int SecurityLevel { get; set; }
+    public ulong? HardwareIdentifier { get; set; }
+    public InputMethod? InputMethod { get; set; }
 
     internal Address? UdpEndpoint { get; private set; }
     internal bool SupportsCSPCustomUpdate { get; private set; }
@@ -136,6 +139,10 @@ public class ACTcpClient : IClient
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientSteamId", _client.Guid));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientIpAddress", endpoint.Address.ToString()));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientPort", endpoint.Port));
+            if (_client.HardwareIdentifier.HasValue)
+            {
+                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientHWID", _client.HardwareIdentifier.Value));
+            }
         }
     }
 
@@ -515,17 +522,28 @@ public class ACTcpClient : IClient
                 clientMessage.LuaType = luaPacketType;
                 clientMessage.SessionId = SessionId;
 
-                Logger.Debug("Unknown CSP lua client message with type 0x{LuaType:X} received from {Name} ({SessionId}), data {Data}", clientMessage.LuaType, Name, SessionId, Convert.ToHexString(clientMessage.Data));
+                Logger.Debug("Unknown CSP lua client message with type 0x{LuaType:X} received from {ClientName} ({SessionId}), data {Data}", clientMessage.LuaType, Name, SessionId, Convert.ToHexString(clientMessage.Data));
                 _entryCarManager.BroadcastPacket(clientMessage);
             }
+        }
+        else if (packetType == CSPClientMessageType.HandshakeOut)
+        {
+            var packet = reader.ReadPacket<CSPHandshakeOut>();
+
+            Logger.Information("CSP handshake received from {ClientName} ({SessionId}): Version={Version} WeatherFX={WeatherFxActive} InputMethod={InputMethod} RainFX={RainFxActive} HWID={HardwareId}", 
+                Name, SessionId, packet.Version, packet.IsWeatherFxActive, packet.InputMethod, packet.IsRainFxActive, packet.UniqueKey);
+        }
+        else if (_cspClientMessageTypeManager.RawMessageTypes.TryGetValue(packetType, out var handler))
+        {
+            handler(this, reader);
         }
         else
         {
             CSPClientMessage clientMessage = reader.ReadPacket<CSPClientMessage>();
             clientMessage.Type = packetType;
             clientMessage.SessionId = SessionId;
-                
-            Log.Verbose("Client message received from {Name} ({SessionId}), type {Type}, data {Data}", Name, SessionId, packetType, clientMessage.Data);
+
+            Log.Verbose("Client message received from {ClientName} ({SessionId}), type {Type}, data {Data}", Name, SessionId, packetType, clientMessage.Data);
             _entryCarManager.BroadcastPacket(clientMessage);
         }
     }
@@ -845,6 +863,15 @@ public class ACTcpClient : IClient
         // TODO: sent DRS zones
 
         SendPacket(CreateLapCompletedPacket(0xFF, 0, 0));
+
+        if (_configuration.Extra.EnableClientMessages)
+        {
+            SendPacket(new CSPHandshakeIn
+            {
+                MinVersion = _configuration.CSPTrackOptions.MinimumCSPVersion ?? 0,
+                RequiresWeatherFx = _configuration.Extra.EnableWeatherFx
+            });
+        }
 
         FirstUpdateSent?.Invoke(this, EventArgs.Empty);
     }

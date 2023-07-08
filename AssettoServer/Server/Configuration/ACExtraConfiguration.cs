@@ -22,6 +22,8 @@ public partial class ACExtraConfiguration : ObservableObject
     public bool UseSteamAuth { get; init; } = false;
     [YamlMember(Description = "List of DLC App IDs that are required to join. Steam auth must be enabled. Possible values: https://steamdb.info/app/244210/dlc/")]
     public List<int> ValidateDlcOwnership { get; init; } = new();
+    [YamlMember(Description = "Enable protection against cheats/hacks. 0 = No protection. 1 = Block all public cheats as of 2023-07-08 (ClientSecurityPlugin and CSP 0.1.80+ required)")]
+    public int MandatoryClientSecurityLevel { get; init; }
     [YamlMember(Description = "Enable AFK autokick")]
     public bool EnableAntiAfk { get; set; } = true;
     [YamlMember(Description = "Maximum allowed AFK time before kick")]

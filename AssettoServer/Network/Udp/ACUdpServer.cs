@@ -162,7 +162,8 @@ public class ACUdpServer : CriticalBackgroundService
                     if (!car.Client.HasReceivedFirstPositionUpdate)
                         car.Client.ReceivedFirstPositionUpdate();
 
-                    if (!car.Client.HasPassedChecksum) return;
+                    if (!car.Client.HasPassedChecksum
+                        || car.Client.SecurityLevel < _configuration.Extra.MandatoryClientSecurityLevel) return;
 
                     if (!car.Client.HasSentFirstUpdate)
                         car.Client.SendFirstUpdate();

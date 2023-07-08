@@ -10,8 +10,8 @@ namespace AssettoServer.Server;
 
 public class ChecksumManager
 {
-    internal IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; } = null!;
-    internal IReadOnlyDictionary<string, List<byte[]>> CarChecksums { get; private set; } = null!;
+    public IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; } = null!;
+    public IReadOnlyDictionary<string, List<byte[]>> CarChecksums { get; private set; } = null!;
 
     private readonly ACServerConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;

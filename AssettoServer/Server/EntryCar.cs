@@ -155,7 +155,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         {
             var client = Client;
             if (client == null) return;
-            client.Logger.Debug("Invalid position update received from {Name} ({SessionId}), disconnecting", client.Name, client.SessionId);
+            client.Logger.Debug("Invalid position update received from {ClientName} ({SessionId}), disconnecting", client.Name, client.SessionId);
             _ = client.DisconnectAsync();
             return;
         }

@@ -81,6 +81,12 @@ public class ACServer : CriticalBackgroundService
 
         if (_configuration.Extra.EnableClientMessages)
         {
+            if (_configuration.CSPTrackOptions.MinimumCSPVersion < 1937)
+            {
+                throw new ConfigurationException(
+                    "Client messages need a minimum required CSP version of 0.1.77 (1937)");
+            }
+            
             cspFeatureManager.Add(new CSPFeature { Name = "CLIENT_MESSAGES", Mandatory = true });
             CSPClientMessageOutgoing.ChatEncoded = false;
         }

@@ -32,6 +32,8 @@ public enum CSPClientMessageType : ushort
 {
     HandshakeIn = 0,
     HandshakeOut = 1,
+    SignatureIn = 2,
+    SignatureOut = 3,
     ConditionsV1 = 1000,
     ConditionsV2 = 1001,
     ChatSharedSetup = 2000,

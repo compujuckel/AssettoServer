@@ -18,6 +18,7 @@ public class ACServerConfiguration
     public EntryList EntryList { get; }
     public List<SessionConfiguration> Sessions { get; }
     [YamlIgnore] public string FullTrackName { get; }
+    [YamlIgnore] public CSPTrackOptions CSPTrackOptions { get; }
     [YamlIgnore] public string WelcomeMessage { get; } = "";
     public ACExtraConfiguration Extra { get; private set; } = new();
     [YamlIgnore] public CMContentConfiguration? ContentConfiguration { get; private set; }
@@ -64,6 +65,7 @@ public class ACServerConfiguration
         ServerVersion = ThisAssembly.AssemblyInformationalVersion;
 
         FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : Server.Track + "-" + Server.TrackConfig;
+        CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
 
         string welcomeMessagePath = string.IsNullOrEmpty(preset) ? Server.WelcomeMessagePath : Path.Join(BaseFolder, Server.WelcomeMessagePath);
         if (File.Exists(welcomeMessagePath))

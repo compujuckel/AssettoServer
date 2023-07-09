@@ -39,6 +39,8 @@ public class RegisterTimingLapTimeRequest
     public bool Valid { get; set; }
     [DataMember(Order = 8)]
     public int SecurityLevel { get; set; }
+    [DataMember(Order = 9)]
+    public int InputMethod { get; set; }
 }
 
 [DataContract]

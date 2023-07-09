@@ -57,7 +57,7 @@ public class ACTcpClient : IClient
     public bool HasPassedChecksum { get; private set; }
     public int SecurityLevel { get; set; }
     public ulong? HardwareIdentifier { get; set; }
-    public InputMethod? InputMethod { get; set; }
+    public InputMethod InputMethod { get; set; }
 
     internal Address? UdpEndpoint { get; private set; }
     internal bool SupportsCSPCustomUpdate { get; private set; }
@@ -529,6 +529,7 @@ public class ACTcpClient : IClient
         else if (packetType == CSPClientMessageType.HandshakeOut)
         {
             var packet = reader.ReadPacket<CSPHandshakeOut>();
+            InputMethod = packet.InputMethod;
 
             Logger.Information("CSP handshake received from {ClientName} ({SessionId}): Version={Version} WeatherFX={WeatherFxActive} InputMethod={InputMethod} RainFX={RainFxActive} HWID={HardwareId}", 
                 Name, SessionId, packet.Version, packet.IsWeatherFxActive, packet.InputMethod, packet.IsRainFxActive, packet.UniqueKey);

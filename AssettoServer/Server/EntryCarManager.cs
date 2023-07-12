@@ -61,7 +61,7 @@ public class EntryCarManager
         if (client == null) return;
         
         string? clientReason = reason != null ? $"You have been kicked for {reason}" : null;
-        string broadcastReason = reason != null ? $"{client.Name} has been kicked for {reason}." : $"{client.Name} has been kicked.";
+        string broadcastReason = reason != null ? $"{client.Name} has been kicked from the server for {reason}." : $"{client.Name} has been kicked from the server.";
 
         await KickAsync(client, KickReason.Kicked, reason, clientReason, broadcastReason, admin);
     }
@@ -71,7 +71,7 @@ public class EntryCarManager
         if (client == null) return;
         
         string clientReason = reason != null ? $"You have been banned for {reason}" : "You have been banned from the server";
-        string broadcastReason = reason != null ? $"{client.Name} has been banned for {reason}." : $"{client.Name} has been banned.";
+        string broadcastReason = reason != null ? $"{client.Name} has been banned from the server for {reason}." : $"{client.Name} has been banned from the server.";
 
         await KickAsync(client, KickReason.VoteBlacklisted, reason, clientReason, broadcastReason, admin);
         await _blacklist.AddAsync(client.Guid);

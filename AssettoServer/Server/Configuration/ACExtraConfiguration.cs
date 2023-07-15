@@ -342,6 +342,26 @@ public class CarSpecificOverrides
     public float? CorneringBrakeForceFactor { get; init; }
     [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless cars are creating lots of smoke.")]
     public float? TyreDiameterMeters { get; set; }
+    // TODO docs
+    public int? MaxOverbooking { get; set; }
+    public int? MinSpawnProtectionTimeSeconds { get; set; }
+    public int? MaxSpawnProtectionTimeSeconds { get; set; }
+    public int? MinLaneCount { get; set; }
+    public int? MaxLaneCount { get; set; }
+    public int? MinCollisionStopTimeSeconds { get; set; }
+    public int? MaxCollisionStopTimeSeconds { get; set; }
+    public float? VehicleLengthPreMeters { get; set; }
+    public float? VehicleLengthPostMeters { get; set; }
+    public int? MinAiSafetyDistanceMeters { get; set; }
+    public int? MaxAiSafetyDistanceMeters { get; set; }
+    public LaneSpawnBehavior? AllowedLane { get; set; }
+
+    [YamlIgnore] public int? MinSpawnProtectionTimeMilliseconds => MinSpawnProtectionTimeSeconds * 1000;
+    [YamlIgnore] public int? MaxSpawnProtectionTimeMilliseconds => MaxSpawnProtectionTimeSeconds * 1000;
+    [YamlIgnore] public int? MinCollisionStopTimeMilliseconds => MinCollisionStopTimeSeconds * 1000;
+    [YamlIgnore] public int? MaxCollisionStopTimeMilliseconds => MaxCollisionStopTimeSeconds * 1000;
+    [YamlIgnore] public int? MinAiSafetyDistanceMetersSquared => MinAiSafetyDistanceMeters * MinAiSafetyDistanceMeters;
+    [YamlIgnore] public int? MaxAiSafetyDistanceMetersSquared => MaxAiSafetyDistanceMeters * MaxAiSafetyDistanceMeters;
 }
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
@@ -359,4 +379,11 @@ public enum AfkKickBehavior
 {
     PlayerInput,
     MinimumSpeed
+}
+
+public enum LaneSpawnBehavior
+{
+    Left,
+    Middle,
+    Right
 }

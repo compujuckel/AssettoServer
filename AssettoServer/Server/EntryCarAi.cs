@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Numerics;
 using System.Threading;
-using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Ai.Splines;
+using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 
@@ -36,6 +36,18 @@ public partial class EntryCar
     public float AiCorneringBrakeDistanceFactor { get; set; }
     public float AiCorneringBrakeForceFactor { get; set; }
     public float AiSplineHeightOffsetMeters { get; set; } = 0;
+    public int? AiMaxOverbooking { get; set; }
+    public int AiMinSpawnProtectionTimeMilliseconds { get; set; }
+    public int AiMaxSpawnProtectionTimeMilliseconds { get; set; }
+    public int? MinLaneCount { get; set; }
+    public int? MaxLaneCount { get; set; }
+    public int AiMinCollisionStopTimeMilliseconds { get; set; }
+    public int AiMaxCollisionStopTimeMilliseconds { get; set; }
+    public float VehicleLengthPreMeters { get; set; }
+    public float VehicleLengthPostMeters { get; set; }
+    public int? MinAiSafetyDistanceMetersSquared { get; set; }
+    public int? MaxAiSafetyDistanceMetersSquared { get; set; }
+    public LaneSpawnBehavior? AiAllowedLane { get; set; }
     public float TyreDiameterMeters { get; set; }
     private readonly List<AiState> _aiStates = new List<AiState>();
     private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
@@ -61,6 +73,10 @@ public partial class EntryCar
         AiCorneringBrakeDistanceFactor = _configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
         AiCorneringBrakeForceFactor = _configuration.Extra.AiParams.CorneringBrakeForceFactor;
         TyreDiameterMeters = _configuration.Extra.AiParams.TyreDiameterMeters;
+        AiMinSpawnProtectionTimeMilliseconds = _configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds;
+        AiMaxSpawnProtectionTimeMilliseconds = _configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds;
+        AiMinCollisionStopTimeMilliseconds = _configuration.Extra.AiParams.MaxCollisionStopTimeMilliseconds;
+        AiMaxCollisionStopTimeMilliseconds = _configuration.Extra.AiParams.MaxCollisionStopTimeMilliseconds;
 
         foreach (var carOverrides in _configuration.Extra.AiParams.CarSpecificOverrides)
         {
@@ -84,6 +100,27 @@ public partial class EntryCar
                     AiCorneringBrakeForceFactor = carOverrides.CorneringBrakeForceFactor.Value;
                 if (carOverrides.TyreDiameterMeters.HasValue)
                     TyreDiameterMeters = carOverrides.TyreDiameterMeters.Value;
+                if (carOverrides.MaxOverbooking.HasValue)
+                    AiMaxOverbooking = carOverrides.MaxOverbooking.Value;
+                if (carOverrides.MinSpawnProtectionTimeMilliseconds.HasValue)
+                    AiMinSpawnProtectionTimeMilliseconds = carOverrides.MinSpawnProtectionTimeMilliseconds.Value;
+                if (carOverrides.MaxSpawnProtectionTimeMilliseconds.HasValue)
+                    AiMaxSpawnProtectionTimeMilliseconds = carOverrides.MaxSpawnProtectionTimeMilliseconds.Value;
+                if (carOverrides.MinCollisionStopTimeMilliseconds.HasValue)
+                    AiMinCollisionStopTimeMilliseconds = carOverrides.MinCollisionStopTimeMilliseconds.Value;
+                if (carOverrides.MaxCollisionStopTimeMilliseconds.HasValue)
+                    AiMaxCollisionStopTimeMilliseconds = carOverrides.MaxCollisionStopTimeMilliseconds.Value;
+                if (carOverrides.VehicleLengthPreMeters.HasValue)
+                    VehicleLengthPreMeters = carOverrides.VehicleLengthPreMeters.Value;
+                if (carOverrides.VehicleLengthPostMeters.HasValue)
+                    VehicleLengthPostMeters = carOverrides.VehicleLengthPostMeters.Value;
+                if (carOverrides.AllowedLane.HasValue)
+                    AiAllowedLane = carOverrides.AllowedLane.Value;
+                
+                MinAiSafetyDistanceMetersSquared = carOverrides.MinAiSafetyDistanceMetersSquared;
+                MaxAiSafetyDistanceMetersSquared = carOverrides.MaxAiSafetyDistanceMetersSquared;
+                MinLaneCount = carOverrides.MinLaneCount;
+                MaxLaneCount = carOverrides.MaxLaneCount;
             }
         }
     }
@@ -378,6 +415,11 @@ public partial class EntryCar
         _aiStatesLock.EnterUpgradeableReadLock();
         try
         {
+            if (AiMaxOverbooking.HasValue)
+            {
+                count = Math.Min(count, AiMaxOverbooking.Value);
+            }
+
             if (count > _aiStates.Count)
             {
                 _aiStatesLock.EnterWriteLock();

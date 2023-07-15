@@ -152,8 +152,13 @@ public class AiState
             minDist = overrides.MinAiSafetyDistanceSquared;
             maxDist = overrides.MaxAiSafetyDistanceSquared;
         }
+        
+        if (_entryCar.MinAiSafetyDistanceMetersSquared.HasValue)
+            minDist = _entryCar.MinAiSafetyDistanceMetersSquared.Value;
+        if (_entryCar.MaxAiSafetyDistanceMetersSquared.HasValue)
+            maxDist = _entryCar.MaxAiSafetyDistanceMetersSquared.Value;
             
-        SpawnProtectionEnds = _sessionManager.ServerTimeMilliseconds + Random.Shared.Next(_configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds, _configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds);
+        SpawnProtectionEnds = _sessionManager.ServerTimeMilliseconds + Random.Shared.Next(_entryCar.AiMinSpawnProtectionTimeMilliseconds, _entryCar.AiMaxSpawnProtectionTimeMilliseconds);
         SafetyDistanceSquared = Random.Shared.Next((int)Math.Round(minDist * (1.0f / _configuration.Extra.AiParams.TrafficDensity)),
             (int)Math.Round(maxDist * (1.0f / _configuration.Extra.AiParams.TrafficDensity)));
         _stoppedForCollisionUntil = 0;
@@ -247,9 +252,29 @@ public class AiState
         return true;
     }
 
-    public bool CanSpawn(Vector3 spawnPoint)
+    public bool CanSpawn(int spawnPointId)
     {
-        return _entryCar.CanSpawnAiState(spawnPoint, this);
+        var ops = _spline.Operations;
+        var laneCount = _spline.GetLanes(spawnPointId).Length;
+        var spawnPoint = ops.Points[spawnPointId];
+
+        if (_entryCar.MinLaneCount.HasValue && laneCount < _entryCar.MinLaneCount.Value)
+            return false;
+        if (_entryCar.MaxLaneCount.HasValue && laneCount > _entryCar.MaxLaneCount.Value)
+            return false;
+
+        if (_entryCar.AiAllowedLane.HasValue)
+        {
+            switch (_entryCar.AiAllowedLane.Value)
+            {
+                case LaneSpawnBehavior.Middle when spawnPoint.LeftId < 0 || spawnPoint.RightId < 0:
+                case LaneSpawnBehavior.Left when spawnPoint.LeftId >= 0:
+                case LaneSpawnBehavior.Right when spawnPoint.RightId >= 0:
+                    return false;
+            }
+        }
+
+        return _entryCar.CanSpawnAiState(spawnPoint.Position, this);
     }
 
     private (AiState? ClosestAiState, float ClosestAiStateDistance, float MaxSpeed) SplineLookahead()
@@ -295,7 +320,9 @@ public class AiState
                 if (slowest != null)
                 {
                     closestAiState = slowest;
-                    closestAiStateDistance = Vector3.Distance(Status.Position, closestAiState.Status.Position);
+                    closestAiStateDistance = MathF.Max(0, Vector3.Distance(Status.Position, closestAiState.Status.Position)
+                                                          - _entryCar.VehicleLengthPreMeters
+                                                          - closestAiState._entryCar.VehicleLengthPostMeters);
                 }
             }
 
@@ -467,7 +494,7 @@ public class AiState
 
     public void StopForCollision()
     {
-        _stoppedForCollisionUntil = _sessionManager.ServerTimeMilliseconds + Random.Shared.Next(_configuration.Extra.AiParams.MinCollisionStopTimeMilliseconds, _configuration.Extra.AiParams.MaxCollisionStopTimeMilliseconds);
+        _stoppedForCollisionUntil = _sessionManager.ServerTimeMilliseconds + Random.Shared.Next(_entryCar.AiMinCollisionStopTimeMilliseconds, _entryCar.AiMaxCollisionStopTimeMilliseconds);
     }
 
     public float GetAngleToCar(CarStatus car)

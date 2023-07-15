@@ -300,7 +300,7 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
             foreach (var targetAiState in _uninitializedAiStates)
             {
-                if (!targetAiState.CanSpawn(ops.Points[spawnPointId].Position))
+                if (!targetAiState.CanSpawn(spawnPointId))
                     continue;
 
                 targetAiState.Teleport(spawnPointId);

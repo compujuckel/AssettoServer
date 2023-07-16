@@ -344,28 +344,47 @@ public class AiState
         return (closestAiState, closestAiStateDistance, maxSpeed);
     }
 
-    private (EntryCar? entryCar, float distance) FindClosestPlayerObstacle()
+    private bool ShouldIgnorePlayerObstacles()
     {
-        EntryCar? closestCar = null;
-        float minDistance = float.MaxValue;
-        for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
+        if (_configuration.Extra.AiParams.IgnorePlayerObstacleSpheres != null)
         {
-            var playerCar = _entryCarManager.EntryCars[i];
-            if (playerCar.Client?.HasSentFirstUpdate == true)
+            foreach (var sphere in _configuration.Extra.AiParams.IgnorePlayerObstacleSpheres)
             {
-                float distance = Vector3.DistanceSquared(playerCar.Status.Position, Status.Position);
-
-                if (distance < minDistance && GetAngleToCar(playerCar.Status) is > 166 and < 194)
+                if (Vector3.DistanceSquared(Status.Position, sphere.Center) < sphere.RadiusMeters * sphere.RadiusMeters)
                 {
-                    minDistance = distance;
-                    closestCar = playerCar;
+                    return true;
                 }
             }
         }
 
-        if (closestCar != null)
+        return false;
+    }
+
+    private (EntryCar? entryCar, float distance) FindClosestPlayerObstacle()
+    {
+        if (!ShouldIgnorePlayerObstacles())
         {
-            return (closestCar, MathF.Sqrt(minDistance));
+            EntryCar? closestCar = null;
+            float minDistance = float.MaxValue;
+            for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
+            {
+                var playerCar = _entryCarManager.EntryCars[i];
+                if (playerCar.Client?.HasSentFirstUpdate == true)
+                {
+                    float distance = Vector3.DistanceSquared(playerCar.Status.Position, Status.Position);
+
+                    if (distance < minDistance && GetAngleToCar(playerCar.Status) is > 166 and < 194)
+                    {
+                        minDistance = distance;
+                        closestCar = playerCar;
+                    }
+                }
+            }
+
+            if (closestCar != null)
+            {
+                return (closestCar, MathF.Sqrt(minDistance));
+            }
         }
 
         return (null, float.MaxValue);
@@ -494,7 +513,10 @@ public class AiState
 
     public void StopForCollision()
     {
-        _stoppedForCollisionUntil = _sessionManager.ServerTimeMilliseconds + Random.Shared.Next(_entryCar.AiMinCollisionStopTimeMilliseconds, _entryCar.AiMaxCollisionStopTimeMilliseconds);
+        if (!ShouldIgnorePlayerObstacles())
+        {
+            _stoppedForCollisionUntil = _sessionManager.ServerTimeMilliseconds + Random.Shared.Next(_entryCar.AiMinCollisionStopTimeMilliseconds, _entryCar.AiMaxCollisionStopTimeMilliseconds);
+        }
     }
 
     public float GetAngleToCar(CarStatus car)

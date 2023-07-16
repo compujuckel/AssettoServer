@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using System.Reflection;
 using AssettoServer.Server.Plugin;
 using Autofac;
@@ -296,6 +297,8 @@ public partial class AiParams : ObservableObject
     public bool Debug { get; set; } = false;
     [YamlMember(Description = "Update interval for AI spawn point finder")]
     public int AiBehaviorUpdateIntervalHz { get; set; } = 2;
+    [YamlMember(Description = "AI cars inside these areas will ignore all player obstacles")]
+    public List<Sphere>? IgnorePlayerObstacleSpheres { get; set; }
     [YamlMember(Description = "Override some settings for newly spawned cars based on the number of lanes")]
     public Dictionary<int, LaneCountSpecificOverrides> LaneCountSpecificOverrides { get; set; } = new();
     [YamlMember(Description = "Override some settings for specific car models/skins")]
@@ -386,4 +389,10 @@ public enum LaneSpawnBehavior
     Left,
     Middle,
     Right
+}
+
+public class Sphere
+{
+    public Vector3 Center { get; set; }
+    public float RadiusMeters { get; set; }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net.Http;
-using App.Metrics;
 using AssettoServer.Commands;
 using AssettoServer.Commands.TypeParsers;
 using AssettoServer.Network.Http.Authentication;
@@ -26,6 +25,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Prometheus;
 
 namespace AssettoServer.Network.Http;
 
@@ -114,10 +114,6 @@ public class Startup
     // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddMetrics(new MetricsBuilder()
-            .Configuration.Configure(options => { options.DefaultContextLabel = "AssettoServer"; })
-            .OutputMetrics.AsPrometheusPlainText()
-            .Build());
         services.AddCors(options =>
         {
             options.AddPolicy(name: "ServerQueryPolicy",
@@ -126,13 +122,11 @@ public class Startup
                     policy.WithOrigins(_configuration.Extra.CorsAllowedOrigins?.ToArray() ?? Array.Empty<string>());
                 });
         });
-        services.AddAppMetricsCollectors();
         services.AddAuthentication(
                 options => options.DefaultScheme = ACClientAuthenticationSchemeOptions.Scheme)
             .AddScheme<ACClientAuthenticationSchemeOptions, ACClientAuthenticationHandler>(
                 ACClientAuthenticationSchemeOptions.Scheme, options => { });
         services.AddAuthorization();
-        services.AddMetricsEndpoints();
         services.AddControllers().AddNewtonsoftJson();
         services.AddControllers(options =>
         {
@@ -165,10 +159,10 @@ public class Startup
         app.UseCors();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseMetricsEndpoint();
 
         app.UseEndpoints(endpoints =>
         {
+            endpoints.MapMetrics();
             endpoints.MapControllers();
         });
     }

@@ -21,10 +21,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="App.Metrics" Version="4.3.0" />
-        <PackageReference Include="App.Metrics.AspNetCore.All" Version="4.3.0" />
-        <PackageReference Include="App.Metrics.Prometheus" Version="4.3.0" />
-        <PackageReference Include="App.Metrics.Reporting.Console" Version="4.3.0" />
         <PackageReference Include="Autofac" Version="7.0.1" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
@@ -58,6 +54,8 @@
         </PackageReference>
         <PackageReference Include="Polly" Version="7.2.4" />
         <PackageReference Include="Grpc.Net.Client" Version="2.55.0" />
+        <PackageReference Include="prometheus-net" Version="8.0.0" />
+        <PackageReference Include="prometheus-net.AspNetCore" Version="8.0.0" />
         <PackageReference Include="protobuf-net.Grpc" Version="1.1.1" />
         <PackageReference Include="protobuf-net.Grpc.ClientFactory" Version="1.1.1" />
         <PackageReference Include="Qmmands" Version="5.0.2" />

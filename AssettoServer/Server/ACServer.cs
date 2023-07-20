@@ -5,9 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using App.Metrics;
-using App.Metrics.Counter;
-using App.Metrics.Timer;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Network.Udp;
@@ -22,6 +19,7 @@ using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
+using Prometheus;
 using Serilog;
 
 namespace AssettoServer.Server;
@@ -32,7 +30,6 @@ public class ACServer : CriticalBackgroundService
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly GeoParamsManager _geoParamsManager;
-    private readonly IMetricsRoot _metrics;
     private readonly ChecksumManager _checksumManager;
     private readonly List<IHostedService> _autostartServices;
     private readonly IHostApplicationLifetime _applicationLifetime;
@@ -50,7 +47,6 @@ public class ACServer : CriticalBackgroundService
         EntryCarManager entryCarManager,
         WeatherManager weatherManager,
         GeoParamsManager geoParamsManager,
-        IMetricsRoot metrics,
         ChecksumManager checksumManager,
         ACTcpServer tcpServer,
         ACUdpServer udpServer,
@@ -66,7 +62,6 @@ public class ACServer : CriticalBackgroundService
         _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
         _geoParamsManager = geoParamsManager;
-        _metrics = metrics;
         _checksumManager = checksumManager;
         _applicationLifetime = applicationLifetime;
 
@@ -184,26 +179,25 @@ public class ACServer : CriticalBackgroundService
 
         Log.Information("Starting update loop with an update rate of {RefreshRateHz}hz", _configuration.Server.RefreshRateHz);
 
-        var updateLoopTimer = _metrics.Provider.Timer.Instance(new TimerOptions
+        var updateLoopTimer = Metrics.CreateSummary("assettoserver_acserver_updateasync", "ACServer.UpdateAsync Duration", new SummaryConfiguration
         {
-            Name = "ACServer.UpdateAsync",
-            MeasurementUnit = Unit.Calls,
-            DurationUnit = TimeUnit.Milliseconds,
-            RateUnit = TimeUnit.Milliseconds
+            Objectives = new[]
+            {
+                new QuantileEpsilonPair(0.5, 0.05),
+                new QuantileEpsilonPair(0.75, 0.05),
+                new QuantileEpsilonPair(0.95, 0.01),
+                new QuantileEpsilonPair(0.99, 0.005),
+            }
         });
 
-        var updateLoopLateCounter = new CounterOptions
-        {
-            Name = "ACServer.UpdateAsync.Late",
-            MeasurementUnit = Unit.None
-        };
-        _metrics.Measure.Counter.Increment(updateLoopLateCounter, 0);
+        var updateLoopLateCounter = Metrics.CreateCounter("assettoserver_acserver_updateasync_late", "Total number of milliseconds the server was running behind");
+        updateLoopLateCounter.Inc(0);
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                using (updateLoopTimer.NewContext())
+                using (updateLoopTimer.NewTimer())
                 {
                     Update?.Invoke(this, EventArgs.Empty);
 
@@ -296,7 +290,7 @@ public class ACServer : CriticalBackgroundService
                             if (tickDelta < -1000)
                                 Log.Warning("Server is running {TickDelta}ms behind", -tickDelta);
 
-                            _metrics.Measure.Counter.Increment(updateLoopLateCounter, -tickDelta);
+                            updateLoopLateCounter.Inc(-tickDelta);
                             nextTick = 0;
                             break;
                         }

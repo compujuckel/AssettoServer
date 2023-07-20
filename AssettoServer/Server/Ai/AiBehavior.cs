@@ -6,9 +6,6 @@ using System.Numerics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using App.Metrics;
-using App.Metrics.Gauge;
-using App.Metrics.Timer;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
@@ -17,6 +14,7 @@ using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
+using Prometheus;
 using Serilog;
 
 namespace AssettoServer.Server.Ai;
@@ -26,25 +24,19 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
-    private readonly IMetricsRoot _metrics;
     private readonly AiSpline _spline;
     //private readonly EntryCar.Factory _entryCarFactory;
 
     private readonly JunctionEvaluator _junctionEvaluator;
 
-    private readonly GaugeOptions _aiStateCountMetric = new GaugeOptions
-    {
-        Name = "AiStateCount",
-        MeasurementUnit = Unit.Items
-    };
+    private readonly Gauge _aiStateCountMetric = Metrics.CreateGauge("assettoserver_aistatecount", "Number of AI states");
 
-    private readonly ITimer _updateDurationTimer;
-    private readonly ITimer _obstacleDetectionDurationTimer;
+    private readonly Summary _updateDurationTimer;
+    private readonly Summary _obstacleDetectionDurationTimer;
 
     public AiBehavior(SessionManager sessionManager,
         ACServerConfiguration configuration,
         EntryCarManager entryCarManager,
-        IMetricsRoot metrics,
         IHostApplicationLifetime applicationLifetime,
         //EntryCar.Factory entryCarFactory,
         CSPServerScriptProvider serverScriptProvider, 
@@ -53,7 +45,6 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         _sessionManager = sessionManager;
         _configuration = configuration;
         _entryCarManager = entryCarManager;
-        _metrics = metrics;
         _spline = spline;
         _junctionEvaluator = new JunctionEvaluator(spline, false);
         //_entryCarFactory = entryCarFactory;
@@ -64,20 +55,8 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
             serverScriptProvider.AddScript(streamReader.ReadToEnd(), "ai_debug.lua");
         }
 
-        _updateDurationTimer = _metrics.Provider.Timer.Instance(new TimerOptions
-        {
-            Name = "AiBehavior.Update",
-            MeasurementUnit = Unit.Calls,
-            DurationUnit = TimeUnit.Milliseconds,
-            RateUnit = TimeUnit.Milliseconds
-        });
-        _obstacleDetectionDurationTimer = _metrics.Provider.Timer.Instance(new TimerOptions
-        {
-            Name = "AiBehavior.ObstacleDetection",
-            MeasurementUnit = Unit.Calls,
-            DurationUnit = TimeUnit.Milliseconds,
-            RateUnit = TimeUnit.Milliseconds
-        });
+        _updateDurationTimer = Metrics.CreateSummary("assettoserver_aibehavior_update", "AiBehavior.Update Duration", MetricDefaults.DefaultQuantiles);
+        _obstacleDetectionDurationTimer = Metrics.CreateSummary("assettoserver_aibehavior_obstacledetection", "AiBehavior.ObstacleDetection Duration", MetricDefaults.DefaultQuantiles);
 
         _entryCarManager.ClientConnected += (client, _) =>
         {
@@ -115,8 +94,8 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         {
             try
             {
-                using var context = _obstacleDetectionDurationTimer.NewContext();
-                    
+                using var context = _obstacleDetectionDurationTimer.NewTimer();
+
                 for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
                 {
                     var entryCar = _entryCarManager.EntryCars[i];
@@ -193,7 +172,7 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     private readonly List<KeyValuePair<EntryCar, float>> _playerMinDistanceToAi = new();
     private void Update()
     {
-        using var context = _updateDurationTimer.NewContext();
+        using var context = _updateDurationTimer.NewTimer();
         var ops = _spline.Operations;
 
         _playerCars.Clear();
@@ -218,7 +197,7 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
             }
         }
 
-        _metrics.Measure.Gauge.SetValue(_aiStateCountMetric, _initializedAiStates.Count);
+        _aiStateCountMetric.Set(_initializedAiStates.Count);
 
         for (int i = 0; i < _initializedAiStates.Count; i++)
         {

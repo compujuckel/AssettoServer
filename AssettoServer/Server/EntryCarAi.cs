@@ -47,7 +47,7 @@ public partial class EntryCar
     public float VehicleLengthPostMeters { get; set; }
     public int? MinAiSafetyDistanceMetersSquared { get; set; }
     public int? MaxAiSafetyDistanceMetersSquared { get; set; }
-    public LaneSpawnBehavior? AiAllowedLane { get; set; }
+    public List<LaneSpawnBehavior>? AiAllowedLanes { get; set; }
     public float TyreDiameterMeters { get; set; }
     private readonly List<AiState> _aiStates = new List<AiState>();
     private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
@@ -114,9 +114,8 @@ public partial class EntryCar
                     VehicleLengthPreMeters = carOverrides.VehicleLengthPreMeters.Value;
                 if (carOverrides.VehicleLengthPostMeters.HasValue)
                     VehicleLengthPostMeters = carOverrides.VehicleLengthPostMeters.Value;
-                if (carOverrides.AllowedLane.HasValue)
-                    AiAllowedLane = carOverrides.AllowedLane.Value;
                 
+                AiAllowedLanes = carOverrides.AllowedLanes;
                 MinAiSafetyDistanceMetersSquared = carOverrides.MinAiSafetyDistanceMetersSquared;
                 MaxAiSafetyDistanceMetersSquared = carOverrides.MaxAiSafetyDistanceMetersSquared;
                 MinLaneCount = carOverrides.MinLaneCount;

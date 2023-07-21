@@ -357,7 +357,7 @@ public class CarSpecificOverrides
     public float? VehicleLengthPostMeters { get; set; }
     public int? MinAiSafetyDistanceMeters { get; set; }
     public int? MaxAiSafetyDistanceMeters { get; set; }
-    public LaneSpawnBehavior? AllowedLane { get; set; }
+    public List<LaneSpawnBehavior>? AllowedLanes { get; set; }
 
     [YamlIgnore] public int? MinSpawnProtectionTimeMilliseconds => MinSpawnProtectionTimeSeconds * 1000;
     [YamlIgnore] public int? MaxSpawnProtectionTimeMilliseconds => MaxSpawnProtectionTimeSeconds * 1000;

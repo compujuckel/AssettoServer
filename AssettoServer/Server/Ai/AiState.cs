@@ -263,18 +263,15 @@ public class AiState
         if (_entryCar.MaxLaneCount.HasValue && laneCount > _entryCar.MaxLaneCount.Value)
             return false;
 
-        if (_entryCar.AiAllowedLane.HasValue)
+        var isAllowedLane = true;
+        if (_entryCar.AiAllowedLanes != null)
         {
-            switch (_entryCar.AiAllowedLane.Value)
-            {
-                case LaneSpawnBehavior.Middle when spawnPoint.LeftId < 0 || spawnPoint.RightId < 0:
-                case LaneSpawnBehavior.Left when spawnPoint.LeftId >= 0:
-                case LaneSpawnBehavior.Right when spawnPoint.RightId >= 0:
-                    return false;
-            }
+            isAllowedLane = (_entryCar.AiAllowedLanes.Contains(LaneSpawnBehavior.Middle) && spawnPoint.LeftId >= 0 && spawnPoint.RightId >= 0)
+                            || (_entryCar.AiAllowedLanes.Contains(LaneSpawnBehavior.Left) && spawnPoint.LeftId < 0)
+                            || (_entryCar.AiAllowedLanes.Contains(LaneSpawnBehavior.Right) && spawnPoint.RightId < 0);
         }
 
-        return _entryCar.CanSpawnAiState(spawnPoint.Position, this);
+        return isAllowedLane && _entryCar.CanSpawnAiState(spawnPoint.Position, this);
     }
 
     private (AiState? ClosestAiState, float ClosestAiStateDistance, float MaxSpeed) SplineLookahead()

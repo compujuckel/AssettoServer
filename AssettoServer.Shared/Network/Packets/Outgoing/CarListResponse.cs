@@ -19,11 +19,11 @@ public class CarListResponse : IOutgoingNetworkPacket
         foreach(var car in EntryCars)
         {
             writer.Write(car.SessionId);
-            writer.WriteASCIIString(car.Model);
-            writer.WriteASCIIString(car.Skin);
-            writer.WriteASCIIString(car.Client?.Name);
-            writer.WriteASCIIString(car.Client?.Team);
-            writer.WriteASCIIString(car.Client?.NationCode);
+            writer.WriteUTF8String(car.Model);
+            writer.WriteUTF8String(car.Skin);
+            writer.WriteUTF8String(car.Client?.Name);
+            writer.WriteUTF8String(car.Client?.Team);
+            writer.WriteUTF8String(car.Client?.NationCode);
             writer.Write(car.IsSpectator);
 
             for (int i = 0; i < car.Status.DamageZoneLevel.Length; i++)

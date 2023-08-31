@@ -9,6 +9,6 @@ public class TyreCompoundUpdate : IOutgoingNetworkPacket
     {
         writer.Write((byte)ACServerProtocol.TyreCompoundChange);
         writer.Write(SessionId);
-        writer.WriteASCIIString(CompoundName);
+        writer.WriteUTF8String(CompoundName);
     }
 }

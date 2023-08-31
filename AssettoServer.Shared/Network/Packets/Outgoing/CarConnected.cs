@@ -10,7 +10,7 @@ public class CarConnected : IOutgoingNetworkPacket
     {
         writer.Write((byte)ACServerProtocol.CarConnected);
         writer.Write(SessionId);
-        writer.WriteASCIIString(Name);
-        writer.WriteASCIIString(Nation);
+        writer.WriteUTF8String(Name);
+        writer.WriteUTF8String(Nation);
     }
 }

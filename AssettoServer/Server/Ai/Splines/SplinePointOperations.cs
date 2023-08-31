@@ -35,7 +35,7 @@ public readonly ref struct SplinePointOperations
     
     public float GetCamber(int pointId, float lerp = 0)
     {
-        var point = Points[pointId];
+        ref readonly var point = ref Points[pointId];
         float camber = point.Camber;
         if (lerp != 0 && point.NextId >= 0)
         {

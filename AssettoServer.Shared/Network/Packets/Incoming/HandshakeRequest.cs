@@ -15,16 +15,16 @@ public struct HandshakeRequest : IIncomingNetworkPacket
     public void FromReader(PacketReader reader)
     {
         ClientVersion = reader.Read<ushort>();
-        Guid = ulong.Parse(reader.ReadASCIIString());
+        Guid = ulong.Parse(reader.ReadUTF8String());
         Name = reader.ReadUTF32String();
-        Team = reader.ReadASCIIString();
-        Nation = reader.ReadASCIIString();
-        RequestedCar = reader.ReadASCIIString();
-        Password = reader.ReadASCIIString();
+        Team = reader.ReadUTF8String();
+        Nation = reader.ReadUTF8String();
+        RequestedCar = reader.ReadUTF8String();
+        Password = reader.ReadUTF8String();
 
         if (reader.Buffer.Length > reader.ReadPosition + 2)
         {
-            Features = reader.ReadASCIIString(true);
+            Features = reader.ReadUTF8String(true);
 
             if (reader.Buffer.Length > reader.ReadPosition + 2)
             {

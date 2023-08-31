@@ -15,7 +15,7 @@ public class CurrentSessionUpdate : IOutgoingNetworkPacket
         ArgumentNullException.ThrowIfNull(Grid);
         
         writer.Write((byte)ACServerProtocol.CurrentSessionUpdate);
-        writer.WriteASCIIString(CurrentSession.Name);
+        writer.WriteUTF8String(CurrentSession.Name);
         writer.Write((byte)CurrentSession.Id);
         writer.Write((byte)CurrentSession.Type);
         writer.Write((ushort)CurrentSession.Time);

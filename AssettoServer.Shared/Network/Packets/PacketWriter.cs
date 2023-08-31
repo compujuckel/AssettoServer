@@ -55,8 +55,12 @@ public struct PacketWriter
         }
     }
 
+    [Obsolete("This function uses UTF8 internally. Use WriteUTF8String instead")]
     public void WriteASCIIString(string? str, bool bigLength = false)
-        => WriteString(str, Encoding.ASCII, bigLength ? 2 : 1);
+        => WriteUTF8String(str, bigLength);
+
+    public void WriteUTF8String(string? str, bool bigLength = false)
+        => WriteString(str, Encoding.UTF8, bigLength ? 2 : 1);
 
     public void WriteUTF32String(string? str, bool bigLength = false)
         => WriteString(str, Encoding.UTF32, bigLength ? 2: 1);
@@ -64,17 +68,23 @@ public struct PacketWriter
     public void WriteString(string? str, Encoding encoding, int length = 1)
     {
         str ??= string.Empty;
+        
+        int bytesWritten = encoding.GetBytes(str, Buffer.Slice(_writePosition + length).Span);
 
+        var networkLength = bytesWritten;
+
+        if (Encoding.UTF32.Equals(encoding))
+            networkLength /= 4;
+        
         if (length == 1)
-            Write((byte)str.Length);
+            Write((byte)networkLength);
         else if (length == 2)
-            Write((ushort)str.Length);
+            Write((ushort)networkLength);
         else if (length == 4)
-            Write((uint)str.Length);
+            Write((uint)networkLength);
         else
             throw new ArgumentOutOfRangeException(nameof(length));
-
-        int bytesWritten = encoding.GetBytes(str, Buffer.Slice(_writePosition).Span);
+        
         _writePosition += bytesWritten;
     }
 
@@ -88,7 +98,7 @@ public struct PacketWriter
         if (pad)
         {
             int remaining = capacity - bytesWritten;
-            Buffer.Slice(_writePosition, remaining).Span.Fill(0);
+            Buffer.Slice(_writePosition, remaining).Span.Clear();
             _writePosition += remaining;
         }
     }

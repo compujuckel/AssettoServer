@@ -23,11 +23,14 @@ public struct PacketReader
         ReadPosition = 0;
     }
 
-    public string ReadASCIIString(bool bigLength = false)
+    [Obsolete("This function uses UTF8 internally. Use ReadUTF8String instead")]
+    public string ReadASCIIString(bool bigLength = false) => ReadUTF8String(bigLength);
+
+    public string ReadUTF8String(bool bigLength = false)
     {
         short stringLength = bigLength ? Read<short>() : Read<byte>();
-            
-        var ret = string.Create(stringLength, this, (span, self) => Encoding.ASCII.GetChars(self.Buffer.Slice(self.ReadPosition, span.Length).Span, span));
+        
+        var ret = Encoding.UTF8.GetString(Buffer.Slice(ReadPosition, stringLength).Span);
         ReadPosition += stringLength;
 
         return ret;
@@ -36,10 +39,10 @@ public struct PacketReader
     public string ReadUTF32String(bool bigLength = false)
     {
         short stringLength = bigLength ? Read<short>() : Read<byte>();
-
-        var ret = string.Create(stringLength, this, (span, self) => Encoding.UTF32.GetChars(self.Buffer.Slice(self.ReadPosition, span.Length * 4).Span, span));
+        
+        var ret = Encoding.UTF32.GetString(Buffer.Slice(ReadPosition, stringLength * 4).Span);
         ReadPosition += stringLength * 4;
-
+        
         return ret;
     }
     

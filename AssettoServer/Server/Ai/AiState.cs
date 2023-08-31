@@ -256,7 +256,7 @@ public class AiState
     {
         var ops = _spline.Operations;
         var laneCount = _spline.GetLanes(spawnPointId).Length;
-        var spawnPoint = ops.Points[spawnPointId];
+        ref readonly var spawnPoint = ref ops.Points[spawnPointId];
 
         if (_entryCar.MinLaneCount.HasValue && laneCount < _entryCar.MinLaneCount.Value)
             return false;

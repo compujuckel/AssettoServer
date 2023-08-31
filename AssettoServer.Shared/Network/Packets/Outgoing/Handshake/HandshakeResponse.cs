@@ -51,10 +51,10 @@ public class HandshakeResponse : IOutgoingNetworkPacket, IIncomingNetworkPacket
         writer.WriteUTF32String(ServerName);
         writer.Write<ushort>(UdpPort);
         writer.Write(RefreshRateHz);
-        writer.WriteASCIIString(TrackName);
-        writer.WriteASCIIString(TrackConfig);
-        writer.WriteASCIIString(CarModel);
-        writer.WriteASCIIString(CarSkin);
+        writer.WriteUTF8String(TrackName);
+        writer.WriteUTF8String(TrackConfig);
+        writer.WriteUTF8String(CarModel);
+        writer.WriteUTF8String(CarSkin);
         writer.Write(SunAngle);
         writer.Write(AllowedTyresOutCount);
         writer.Write(AllowTyreBlankets);
@@ -85,7 +85,7 @@ public class HandshakeResponse : IOutgoingNetworkPacket, IIncomingNetworkPacket
             writer.Write((ushort)sessionConfiguration.Time);
         }
 
-        writer.WriteASCIIString(CurrentSession.Name);
+        writer.WriteUTF8String(CurrentSession.Name);
         writer.Write((byte)CurrentSession.Id);
         writer.Write((byte)CurrentSession.Type);
         writer.Write((ushort)CurrentSession.Time);
@@ -98,9 +98,9 @@ public class HandshakeResponse : IOutgoingNetworkPacket, IIncomingNetworkPacket
         writer.Write(ChecksumCount);
         if (ChecksumPaths != null)
             foreach (string path in ChecksumPaths)
-                writer.WriteASCIIString(path);
+                writer.WriteUTF8String(path);
 
-        writer.WriteASCIIString(LegalTyres);
+        writer.WriteUTF8String(LegalTyres);
         writer.Write(RandomSeed);
         writer.Write<uint>((uint)CurrentTime);
     }
@@ -110,10 +110,10 @@ public class HandshakeResponse : IOutgoingNetworkPacket, IIncomingNetworkPacket
         ServerName = reader.ReadUTF32String();
         UdpPort = reader.Read<ushort>();
         RefreshRateHz = reader.Read<byte>();
-        TrackName = reader.ReadASCIIString();
-        TrackConfig = reader.ReadASCIIString();
-        CarModel = reader.ReadASCIIString();
-        CarSkin = reader.ReadASCIIString();
+        TrackName = reader.ReadUTF8String();
+        TrackConfig = reader.ReadUTF8String();
+        CarModel = reader.ReadUTF8String();
+        CarSkin = reader.ReadUTF8String();
         SunAngle = reader.Read<float>();
         AllowedTyresOutCount = reader.Read<short>();
         AllowTyreBlankets = reader.Read<bool>();
@@ -153,7 +153,7 @@ public class HandshakeResponse : IOutgoingNetworkPacket, IIncomingNetworkPacket
 
         CurrentSession = new Session
         {
-            Name = reader.ReadASCIIString(),
+            Name = reader.ReadUTF8String(),
             Id = reader.Read<byte>(),
             Type = reader.Read<SessionType>(),
             Time = reader.Read<ushort>(),
@@ -170,12 +170,12 @@ public class HandshakeResponse : IOutgoingNetworkPacket, IIncomingNetworkPacket
 
         for (int i = 0; i < checksumPaths.Length; i++)
         {
-            checksumPaths[i] = reader.ReadASCIIString();
+            checksumPaths[i] = reader.ReadUTF8String();
         }
 
         ChecksumPaths = checksumPaths;
 
-        LegalTyres = reader.ReadASCIIString();
+        LegalTyres = reader.ReadUTF8String();
         RandomSeed = reader.Read<int>();
         CurrentTime = reader.Read<uint>();
     }

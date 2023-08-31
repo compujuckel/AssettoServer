@@ -73,6 +73,7 @@ public class ACServer : CriticalBackgroundService
 
         cspFeatureManager.Add(new CSPFeature { Name = "SPECTATING_AWARE" });
         cspFeatureManager.Add(new CSPFeature { Name = "LOWER_CLIENTS_SENDING_RATE" });
+        cspFeatureManager.Add(new CSPFeature { Name = "EMOJI" });
 
         if (_configuration.Extra.EnableClientMessages)
         {

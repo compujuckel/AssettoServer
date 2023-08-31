@@ -6,6 +6,6 @@ public struct TyreCompoundChangeRequest : IIncomingNetworkPacket
 
     public void FromReader(PacketReader reader)
     {
-        CompoundName = reader.ReadASCIIString();
+        CompoundName = reader.ReadUTF8String();
     }
 }

@@ -16,7 +16,6 @@
         <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
         <DefineConstants Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">DISABLE_STEAM</DefineConstants>
         <PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
-        <TieredPGO>true</TieredPGO>
         <InvariantGlobalization>true</InvariantGlobalization>
         <ApplicationIcon>Assets/assettoserver.ico</ApplicationIcon>
     </PropertyGroup>
@@ -85,19 +84,9 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>steam_appid.txt</TargetPath>
         </ContentWithTargetPath>
-        <ContentWithTargetPath Include="Redist/libnanosockets.so">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>libnanosockets.so</TargetPath>
-        </ContentWithTargetPath>
         <Reference Include="Facepunch.Steamworks.Posix">
             <HintPath>..\Redist\Facepunch.Steamworks.Posix.dll</HintPath>
         </Reference>
-    </ItemGroup>
-    <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">
-        <ContentWithTargetPath Include="Redist/libnanosockets_arm64.so">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>libnanosockets.so</TargetPath>
-        </ContentWithTargetPath>
     </ItemGroup>
     <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
         <ContentWithTargetPath Include="Redist/steam_api64.dll">

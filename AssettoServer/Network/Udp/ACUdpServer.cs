@@ -12,6 +12,7 @@ using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Services;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -94,9 +95,10 @@ public class ACUdpServer : CriticalBackgroundService
                 int sessionId = packetReader.Read<byte>();
                 if (_entryCarManager.ConnectedCars.TryGetValue(sessionId, out EntryCar? car) && car.Client != null)
                 {
-                    if (car.Client.TryAssociateUdp(address))
+                    var clonedAddress = address.Clone();
+                    if (car.Client.TryAssociateUdp(clonedAddress))
                     {
-                        _endpointCars[address] = car;
+                        _endpointCars[clonedAddress] = car;
                         car.Client.Disconnecting += OnClientDisconnecting;
                         
                         Send(address, CarConnectResponse, 0, CarConnectResponse.Length);

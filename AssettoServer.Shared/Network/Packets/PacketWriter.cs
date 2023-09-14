@@ -42,14 +42,14 @@ public struct PacketWriter
         {
             Write<byte>(0);
             int packetSize = _writePosition - 4;
-            MemoryMarshal.Write(Buffer.Span, ref packetSize);
+            MemoryMarshal.Write(Buffer.Span, in packetSize);
                 
             await Stream.WriteAsync(Buffer.Slice(0, packetSize + 4), cancellationToken);
         }
         else
         {
             ushort packetSize = (ushort)(_writePosition - 2);
-            MemoryMarshal.Write(Buffer.Span, ref packetSize);
+            MemoryMarshal.Write(Buffer.Span, in packetSize);
 
             await Stream.WriteAsync(Buffer.Slice(0, packetSize + 2), cancellationToken);
         }

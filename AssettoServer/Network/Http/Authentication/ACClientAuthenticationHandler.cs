@@ -16,7 +16,7 @@ public class ACClientAuthenticationHandler : AuthenticationHandler<ACClientAuthe
     
     private readonly EntryCarManager _entryCarManager;
     
-    public ACClientAuthenticationHandler(IOptionsMonitor<ACClientAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, EntryCarManager entryCarManager) : base(options, logger, encoder, clock)
+    public ACClientAuthenticationHandler(IOptionsMonitor<ACClientAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, EntryCarManager entryCarManager) : base(options, logger, encoder)
     {
         _entryCarManager = entryCarManager;
     }

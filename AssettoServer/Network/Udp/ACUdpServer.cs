@@ -11,7 +11,6 @@ using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Services;
-using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using NanoSockets;
 using Serilog;
@@ -40,7 +39,7 @@ public class ACUdpServer : CriticalBackgroundService
         _lobbyCheckResponse = new byte[3];
         _lobbyCheckResponse[0] = (byte)ACServerProtocol.LobbyCheck;
         ushort httpPort = _configuration.Server.HttpPort;
-        MemoryMarshal.Write(_lobbyCheckResponse.AsSpan()[1..], ref httpPort);
+        MemoryMarshal.Write(_lobbyCheckResponse.AsSpan()[1..], in httpPort);
     }
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

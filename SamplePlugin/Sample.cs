@@ -1,6 +1,5 @@
 ﻿using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Services;
-using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 

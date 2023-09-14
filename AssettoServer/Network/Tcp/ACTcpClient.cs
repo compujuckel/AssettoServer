@@ -24,7 +24,6 @@ using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
-using NanoSockets;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -59,7 +58,7 @@ public class ACTcpClient : IClient
     public ulong? HardwareIdentifier { get; set; }
     public InputMethod InputMethod { get; set; }
 
-    internal Address? UdpEndpoint { get; private set; }
+    internal SocketAddress? UdpEndpoint { get; private set; }
     internal bool SupportsCSPCustomUpdate { get; private set; }
     internal string ApiKey { get; }
 
@@ -226,7 +225,7 @@ public class ACTcpClient : IClient
             PacketWriter writer = new PacketWriter(buffer);
             int bytesWritten = writer.WritePacket(in packet);
 
-            UdpServer.Send(UdpEndpoint.Value, buffer, 0, bytesWritten);
+            UdpServer.Send(UdpEndpoint, buffer, 0, bytesWritten);
         }
         catch (Exception ex)
         {
@@ -903,7 +902,7 @@ public class ACTcpClient : IClient
         };
     }
 
-    internal bool TryAssociateUdp(Address endpoint)
+    internal bool TryAssociateUdp(SocketAddress endpoint)
     {
         if (UdpEndpoint != null)
             return false;

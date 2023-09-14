@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Web;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Services;
-using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Polly;
 using Serilog;

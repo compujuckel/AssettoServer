@@ -8,7 +8,6 @@ using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Services;
-using AssettoServer.Utils;
 using AutoModerationPlugin.Packets;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;

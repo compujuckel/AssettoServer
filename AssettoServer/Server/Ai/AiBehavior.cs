@@ -173,7 +173,6 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     private void Update()
     {
         using var context = _updateDurationTimer.NewTimer();
-        var ops = _spline.Operations;
 
         _playerCars.Clear();
         _initializedAiStates.Clear();

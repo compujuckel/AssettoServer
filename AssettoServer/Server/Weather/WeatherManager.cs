@@ -7,7 +7,6 @@ using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather.Implementation;
 using AssettoServer.Shared.Services;
 using AssettoServer.Shared.Weather;
-using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
 using NodaTime.Extensions;

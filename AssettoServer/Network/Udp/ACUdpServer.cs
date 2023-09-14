@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
@@ -12,7 +13,6 @@ using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
-using NanoSockets;
 using Serilog;
 
 namespace AssettoServer.Network.Udp;
@@ -23,9 +23,9 @@ public class ACUdpServer : CriticalBackgroundService
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly ushort _port;
-    private Socket _socket;
+    private readonly Socket _socket;
     
-    private readonly ConcurrentDictionary<Address, EntryCar> _endpointCars = new();
+    private readonly ConcurrentDictionary<SocketAddress, EntryCar> _endpointCars = new();
     private static readonly byte[] CarConnectResponse = { (byte)ACServerProtocol.CarConnect };
     private readonly byte[] _lobbyCheckResponse;
 
@@ -35,6 +35,7 @@ public class ACUdpServer : CriticalBackgroundService
         _configuration = configuration;
         _entryCarManager = entryCarManager;
         _port = _configuration.Server.UdpPort;
+        _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         
         _lobbyCheckResponse = new byte[3];
         _lobbyCheckResponse[0] = (byte)ACServerProtocol.LobbyCheck;
@@ -46,65 +47,35 @@ public class ACUdpServer : CriticalBackgroundService
     {
         Log.Information("Starting UDP server on port {Port}", _port);
         
-        UDP.Initialize();
-        
-        _socket = UDP.Create(256 * 1024, 256 * 1024);
-        var address = new Address
-        {
-            Port = _port
-        };
-
-        if (UDP.SetIP(ref address, "0.0.0.0") != Status.OK)
-        {
-            throw new InvalidOperationException("Could not set UDP address");
-        }
-        
-        if (UDP.Bind(_socket, ref address) != 0)
-        {
-            throw new InvalidOperationException("Could not bind UDP socket. Maybe the port is already in use?");
-        }
-        
+        _socket.Bind(new IPEndPoint(IPAddress.Any, _port));
         await Task.Factory.StartNew(() => ReceiveLoop(stoppingToken), TaskCreationOptions.LongRunning);
     }
 
     private void ReceiveLoop(CancellationToken stoppingToken)
     {
-        byte[] buffer = GC.AllocateArray<byte>(1500, true);
-        var address = new Address();
+        byte[] buffer = new byte[1500];
+        var address = new SocketAddress(AddressFamily.InterNetwork);
         
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                if (UDP.Poll(_socket, 1000) > 0)
-                {
-                    int dataLength = 0;
-                    while ((dataLength = UDP.Receive(_socket, ref address, buffer, buffer.Length)) > 0)
-                    {
-                        OnReceived(ref address, buffer, dataLength);
-                    }
-                }
+                var bytesRead = _socket.ReceiveFrom(buffer, SocketFlags.None, address);
+                OnReceived(address, buffer, bytesRead);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in UDP receive loop");
             }
         }
-        
-        UDP.Destroy(ref _socket);
     }
 
-    public void Send(Address address, byte[] buffer, int offset, int size)
+    public void Send(SocketAddress address, byte[] buffer, int offset, int size)
     {
-        if (UDP.Send(_socket, ref address, buffer, offset, size) < 0)
-        {
-            var ip = new StringBuilder(UDP.hostNameSize);
-            UDP.GetIP(ref address, ip, ip.Capacity);
-            Log.Error("Error sending UDP packet to {Address}", ip.ToString());
-        }
+        _socket.SendTo(buffer.AsSpan().Slice(offset, size), SocketFlags.None, address);
     }
 
-    private void OnReceived(ref Address address, byte[] buffer, int size)
+    private void OnReceived(SocketAddress address, byte[] buffer, int size)
     {
         // moved to separate method because it always allocated a closure
         void HighPingKickAsync(EntryCar car)
@@ -196,7 +167,7 @@ public class ACUdpServer : CriticalBackgroundService
     {
         if (sender.UdpEndpoint != null)
         {
-            _endpointCars.TryRemove(sender.UdpEndpoint.Value, out _);
+            _endpointCars.TryRemove(sender.UdpEndpoint, out _);
         }
     }
 }

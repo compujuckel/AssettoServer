@@ -8,7 +8,6 @@ using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Discord;
 using AssettoServer.Shared.Services;
-using AssettoServer.Utils;
 using CSharpDiscordWebhook.NET.Discord;
 using Microsoft.Extensions.Hosting;
 using Serilog;

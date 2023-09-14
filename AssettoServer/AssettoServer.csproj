@@ -104,10 +104,6 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>steam_api64.dll</TargetPath>
         </ContentWithTargetPath>
-        <ContentWithTargetPath Include="Redist/nanosockets.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>nanosockets.dll</TargetPath>
-        </ContentWithTargetPath>
         <Reference Include="Facepunch.Steamworks.Win64">
             <HintPath>..\Redist\Facepunch.Steamworks.Win64.dll</HintPath>
         </Reference>

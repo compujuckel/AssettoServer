@@ -27,9 +27,11 @@ local authHeaders = {}
 
 local function getConfiguration()
     web.get(configUrl, authHeaders, function (err, response)
-        ac.log("config loaded")
-        configuration = stringify.parse(response.body)
-        configurationLoading = false
+        if response.status == 200 then
+            ac.log("config loaded")
+            configuration = stringify.parse(response.body)
+            configurationLoading = false
+        end
     end)
 end
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using AssettoServer.Network.Http.Authentication;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Network.Http.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +10,7 @@ namespace AssettoServer.Network.Http;
 
 [ApiController]
 [Route("/api/configuration")]
-[Authorize(Roles = "Administrator")]
+[Authorize(AuthenticationSchemes = ACClientAuthenticationSchemeOptions.Scheme, Roles = "Administrator")]
 public class ConfigurationController : ControllerBase
 {
     private readonly ConfigurationSerializer _serializer;

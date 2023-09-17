@@ -122,10 +122,12 @@ public class Startup
                     policy.WithOrigins(_configuration.Extra.CorsAllowedOrigins?.ToArray() ?? Array.Empty<string>());
                 });
         });
-        services.AddAuthentication(
-                options => options.DefaultScheme = ACClientAuthenticationSchemeOptions.Scheme)
+        services.AddAuthentication(o =>
+            {
+                o.DefaultScheme = "";
+            })
             .AddScheme<ACClientAuthenticationSchemeOptions, ACClientAuthenticationHandler>(
-                ACClientAuthenticationSchemeOptions.Scheme, options => { });
+                ACClientAuthenticationSchemeOptions.Scheme, _ => { });
         services.AddAuthorization();
         services.AddControllers().AddJsonOptions(options =>
         {

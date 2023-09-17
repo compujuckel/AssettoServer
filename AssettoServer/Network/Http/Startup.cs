@@ -127,7 +127,12 @@ public class Startup
             .AddScheme<ACClientAuthenticationSchemeOptions, ACClientAuthenticationHandler>(
                 ACClientAuthenticationSchemeOptions.Scheme, options => { });
         services.AddAuthorization();
-        services.AddControllers().AddNewtonsoftJson();
+        services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, InfoResponseSourceGenerationContext.Default);
+            options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, EntryListResponseSourceGenerationContext.Default);
+            options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, DetailResponseSourceGenerationContext.Default);
+        });
         services.AddControllers(options =>
         {
             options.OutputFormatters.Add(new LuaOutputFormatter());

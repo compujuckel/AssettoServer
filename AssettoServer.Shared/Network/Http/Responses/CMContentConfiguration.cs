@@ -1,29 +1,29 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace AssettoServer.Shared.Network.Http.Responses;
 
 public class CMContentConfiguration
 {
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, CMContentEntryCar>? Cars { get; set; }
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CMContentEntryVersionized? Track { get; set; }
 }
 
 public class CMContentEntryCar : CMContentEntryVersionized
 {
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, CMContentEntry>? Skins { get; set; }
 }
 
 public class CMContentEntryVersionized : CMContentEntry
 {
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Version { get; set; }
 }
 
 public class CMContentEntry
 {
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Url { get; set; }
 }

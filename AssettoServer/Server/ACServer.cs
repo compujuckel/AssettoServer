@@ -180,16 +180,7 @@ public class ACServer : CriticalBackgroundService
 
         Log.Information("Starting update loop with an update rate of {RefreshRateHz}hz", _configuration.Server.RefreshRateHz);
 
-        var updateLoopTimer = Metrics.CreateSummary("assettoserver_acserver_updateasync", "ACServer.UpdateAsync Duration", new SummaryConfiguration
-        {
-            Objectives = new[]
-            {
-                new QuantileEpsilonPair(0.5, 0.05),
-                new QuantileEpsilonPair(0.75, 0.05),
-                new QuantileEpsilonPair(0.95, 0.01),
-                new QuantileEpsilonPair(0.99, 0.005),
-            }
-        });
+        var updateLoopTimer = Metrics.CreateSummary("assettoserver_acserver_updateasync", "ACServer.UpdateAsync Duration", MetricDefaults.DefaultQuantiles);
 
         var updateLoopLateCounter = Metrics.CreateCounter("assettoserver_acserver_updateasync_late", "Total number of milliseconds the server was running behind");
         updateLoopLateCounter.Inc(0);

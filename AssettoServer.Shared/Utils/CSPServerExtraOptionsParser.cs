@@ -62,6 +62,6 @@ public static class CSPServerExtraOptionsParser
         }
         
         byte[] bytes = output.ToArray();
-        return Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+        return Encoding.UTF8.GetString(bytes);
     }
 }

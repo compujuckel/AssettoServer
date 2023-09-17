@@ -10,19 +10,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 7.0.x
+        dotnet-version: 8.x
     - name: Publish (Linux x64)
-      run: dotnet publish --runtime linux-x64 --no-self-contained -c Release
+      run: dotnet publish --runtime linux-x64 --self-contained -c Release
     - name: Publish (Linux arm64)
-      run: dotnet publish --runtime linux-arm64 --no-self-contained -c Release
+      run: dotnet publish --runtime linux-arm64 --self-contained -c Release
     - name: Publish (Windows x64)
-      run: dotnet publish --runtime win-x64 --no-self-contained -c Release
+      run: dotnet publish --runtime win-x64 --self-contained -c Release
     - name: Package (Linux x64)
       run: cd out-linux-x64 && tar -czf assetto-server-linux-x64.tar.gz * && cd ..
     - name: Package (Linux arm64)

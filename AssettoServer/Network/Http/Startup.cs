@@ -131,15 +131,13 @@ public class Startup
         services.AddAuthorization();
         services.AddControllers().AddJsonOptions(options =>
         {
-            options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, InfoResponseSourceGenerationContext.Default);
-            options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, EntryListResponseSourceGenerationContext.Default);
-            options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, DetailResponseSourceGenerationContext.Default);
+            options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, JsonSourceGenerationContext.Default);
         });
         services.AddControllers(options =>
         {
             options.OutputFormatters.Add(new LuaOutputFormatter());
         });
-            
+        
         var mvcBuilder = services.AddControllers();
             
         foreach (string pluginName in _configuration.Extra.EnablePlugins)

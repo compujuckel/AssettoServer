@@ -11,6 +11,7 @@ using FluentValidation;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Prometheus;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.Grafana.Loki;
@@ -138,6 +139,18 @@ internal static class Program
                         .UseUrls($"http://0.0.0.0:{config.Server.HttpPort}");
                 })
                 .Build();
+            
+            Metrics.ConfigureMeterAdapter(adapterOptions =>
+            {
+                // Disable a bunch of verbose / unnecessary default metrics
+                adapterOptions.InstrumentFilterPredicate = inst => inst.Name != "kestrel.active_connections"
+                                                                   && inst.Name != "http.server.active_requests"
+                                                                   && inst.Name != "kestrel.queued_connections"
+                                                                   && inst.Name != "http.server.request.duration"
+                                                                   && inst.Name != "kestrel.connection.duration"
+                                                                   && inst.Name != "aspnetcore.routing.match_attempts"
+                                                                   && !inst.Name.StartsWith("http.client.");
+            });
             
             await host.RunAsync();
         }

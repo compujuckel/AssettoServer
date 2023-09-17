@@ -130,8 +130,11 @@ public class ConfigurationSerializer
 
         var ret = new List<ConfigurationProperty>();
         
-        foreach (var prop in obj.GetType().GetProperties())
+        foreach (var prop in obj.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
+            // Special case for Vector3 Item[]
+            if (prop.GetMethod?.GetParameters().Length > 0) continue;
+            
             var parsed = ParseProperty(obj, prop);
             if (parsed != null)
             {

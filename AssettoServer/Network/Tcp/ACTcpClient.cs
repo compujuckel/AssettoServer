@@ -382,7 +382,7 @@ public class ACTcpClient : IClient
                             SessionTime = _sessionManager.CurrentSession.SessionTimeMilliseconds,
                             ChecksumCount = (byte)_checksumManager.TrackChecksums.Count,
                             ChecksumPaths = _checksumManager.TrackChecksums.Keys,
-                            CurrentTime = _sessionManager.ServerTimeMilliseconds,
+                            CurrentTime = 0, // Ignored by AC
                             LegalTyres = cfg.LegalTyres,
                             RandomSeed = 123,
                             SessionCount = (byte)_configuration.Sessions.Count,

@@ -43,7 +43,7 @@ public class HandshakeResponse : IOutgoingNetworkPacket, IIncomingNetworkPacket
     public IEnumerable<string>? ChecksumPaths;
     public string LegalTyres = "";
     public int RandomSeed;
-    public long CurrentTime;
+    public int CurrentTime;
 
     public void ToWriter(ref PacketWriter writer)
     {
@@ -93,7 +93,7 @@ public class HandshakeResponse : IOutgoingNetworkPacket, IIncomingNetworkPacket
 
         writer.Write(TrackGrip);
         writer.Write(SessionId);
-        writer.Write<long>(SessionTime);
+        writer.Write(SessionTime);
 
         writer.Write(ChecksumCount);
         if (ChecksumPaths != null)
@@ -102,7 +102,7 @@ public class HandshakeResponse : IOutgoingNetworkPacket, IIncomingNetworkPacket
 
         writer.WriteUTF8String(LegalTyres);
         writer.Write(RandomSeed);
-        writer.Write<uint>((uint)CurrentTime);
+        writer.Write(CurrentTime);
     }
 
     public void FromReader(PacketReader reader)
@@ -177,6 +177,6 @@ public class HandshakeResponse : IOutgoingNetworkPacket, IIncomingNetworkPacket
 
         LegalTyres = reader.ReadUTF8String();
         RandomSeed = reader.Read<int>();
-        CurrentTime = reader.Read<uint>();
+        CurrentTime = reader.Read<int>();
     }
 }

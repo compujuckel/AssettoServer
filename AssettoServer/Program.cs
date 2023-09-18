@@ -149,6 +149,7 @@ internal static class Program
                                                                    && inst.Name != "http.server.request.duration"
                                                                    && inst.Name != "kestrel.connection.duration"
                                                                    && inst.Name != "aspnetcore.routing.match_attempts"
+                                                                   && inst.Name != "dns.lookups.duration"
                                                                    && !inst.Name.StartsWith("http.client.");
             });
             

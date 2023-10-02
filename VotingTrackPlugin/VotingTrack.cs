@@ -23,7 +23,7 @@ public class VotingTrack : CriticalBackgroundService, IAssettoServerAutostart
         public int Votes { get; set; }
     }
 
-    public VotingWeather(VotingTrackConfiguration configuration, EntryCarManager entryCarManager, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public VotingTrack(VotingTrackConfiguration configuration, EntryCarManager entryCarManager, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;

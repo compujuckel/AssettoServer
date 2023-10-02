@@ -4,3 +4,6 @@
 [submodule "VotingTrackPlugin"]
 	path = VotingTrackPlugin
 	url = https://github.com/nvrlift/VotingTrackPlugin
+[submodule "nvrlift.AssettoServer"]
+	path = nvrlift.AssettoServer
+	url = https://github.com/nvrlift/nvrlift.AssettoServer

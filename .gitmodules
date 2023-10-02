@@ -1,0 +1,6 @@
+[submodule "RandomTrackPlugin"]
+	path = RandomTrackPlugin
+	url = https://github.com/nvrlift/RandomTrackPlugin
+[submodule "VotingTrackPlugin"]
+	path = VotingTrackPlugin
+	url = https://github.com/nvrlift/VotingTrackPlugin

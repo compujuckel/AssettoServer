@@ -4,8 +4,9 @@
 This repository is uses to create more plugins for [AssettoServer](https://github.com/compujuckel/AssettoServer)
 
 ## Plugins
-[RandomTrackPlugin](https://github.com/nvrlift/AssettoServer/blob/master/RandomTrackPlugin/README.md)
-[VotingTrackPlugin](https://github.com/nvrlift/AssettoServer/blob/master/VotingTrackPlugin/README.md)
+[RandomTrackPlugin](https://github.com/nvrlift/RandomTrackPlugin)
+
+[VotingTrackPlugin](https://github.com/nvrlift/VotingTrackPlugin)
 
 ## License
 AssettoServer is licensed under the GNU Affero General Public License v3.0, see [LICENSE](https://github.com/compujuckel/AssettoServer/blob/master/LICENSE) for more info.  

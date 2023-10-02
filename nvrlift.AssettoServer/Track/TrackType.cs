@@ -1,4 +1,4 @@
-namespace nvrlift.AssettoServer.Server.Track;
+namespace nvrlift.AssettoServer.Track;
 
 public class TrackType
 {

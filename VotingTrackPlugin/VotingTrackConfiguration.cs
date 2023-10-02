@@ -12,6 +12,7 @@ public class VotingTrackConfiguration : IValidateConfiguration<VotingTrackConfig
     public int NumChoices { get; init; } = 3;
     public int VotingIntervalMinutes { get; init; } = 90;
     public int VotingDurationSeconds { get; init; } = 300;
+    public bool UpdateContentManager { get; init; } = false;
 
     [YamlIgnore] public int VotingIntervalMilliseconds => VotingIntervalMinutes * 60_000;
     [YamlIgnore] public int VotingDurationMilliseconds => VotingDurationSeconds * 1000;
@@ -22,4 +23,5 @@ public class AvailableTrack
     public required string DisplayName { get; init; }
     public required string TrackFolder { get; init; }
     public required string TrackLayoutConfig { get; init; }
+    public string ContentManagerLink { get; init; } = "";
 }

@@ -18,14 +18,17 @@ NumChoices: 3
 VotingDurationSeconds: 300
 # How often a vote takes place
 VotingIntervalMinutes: 90
+# Should content manager download links be updated
+UpdateContentManager: true
 # Tracks that can be voted on
 AvailableTracks:
 - DisplayName: Gunsai
   TrackFolder: some/path/to/gunsai
   TrackLayoutConfig: GunsaiTogue
-  Weight: 1.0
+  ContentManagerLink: https://mega.nz/...... # field only required with UpdateContentManager: true
 - DisplayName: Shutoko
   TrackFolder: some/path/to/Shutoko
   TrackLayoutConfig: Default
-  Weight: 2.0
+  ContentManagerLink: https://mega.nz/...... # field only required with UpdateContentManager: true
+
 ```

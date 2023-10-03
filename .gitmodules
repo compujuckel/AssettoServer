@@ -10,3 +10,6 @@
 [submodule "nvrlift.AssettoServer.HostExtension"]
 	path = nvrlift.AssettoServer.HostExtension
 	url = https://github.com/nvrlift/nvrlift.AssettoServer.HostExtension
+[submodule "DisableSlowCollisionPlugin"]
+	path = DisableSlowCollisionPlugin
+	url = https://github.com/nvrlift/DisableSlowCollisionPlugin

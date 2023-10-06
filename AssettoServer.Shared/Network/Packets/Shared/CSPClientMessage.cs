@@ -5,18 +5,22 @@ namespace AssettoServer.Shared.Network.Packets.Shared;
 
 public struct CSPClientMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
 {
+    public bool Udp;
     public byte SessionId;
     public CSPClientMessageType Type;
+    public byte? TargetSessionId;
     public uint? LuaType;
     public byte[] Data;
     
     public void ToWriter(ref PacketWriter writer)
     {
         writer.Write((byte)ACServerProtocol.Extended);
-        writer.Write((byte)CSPMessageTypeTcp.ClientMessage);
+        writer.Write(Udp ? (byte)CSPMessageTypeUdp.ClientMessage : (byte)CSPMessageTypeTcp.ClientMessage);
         writer.Write(SessionId);
         writer.Write((ushort)Type);
-        if(LuaType.HasValue)
+        if (TargetSessionId.HasValue) // TODO is this correct?
+            writer.Write(TargetSessionId.Value);
+        if (LuaType.HasValue)
             writer.Write(LuaType.Value);
         writer.WriteBytes(Data);
     }
@@ -46,5 +50,8 @@ public enum CSPClientMessageType : ushort
     NewModeChaseAnnouncement = 30000,
     NewModeChaseCapture = 30001,
     AdminPenalty = 50000,
-    LuaMessage = 60000
+    LuaMessage = 60000,
+    LuaMessageTargeted = 60001,
+    LuaMessageRanged = 60002,
+    LuaMessageRangedTargeted = 60003,
 }

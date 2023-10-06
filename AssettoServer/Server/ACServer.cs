@@ -87,6 +87,11 @@ public class ACServer : CriticalBackgroundService
             CSPClientMessageOutgoing.ChatEncoded = false;
         }
 
+        if (_configuration.Extra.EnableUdpClientMessages)
+        {
+            cspFeatureManager.Add(new CSPFeature { Name = "CLIENT_UDP_MESSAGES" });
+        }
+
         if (_configuration.Extra.EnableCustomUpdate)
         {
             cspFeatureManager.Add(new CSPFeature { Name = "CUSTOM_UPDATE" });

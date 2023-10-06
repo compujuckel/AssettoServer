@@ -97,4 +97,5 @@ public enum CSPMessageTypeUdp : byte
 {
     WeatherUpdate        = 0x01,
     CustomUpdate         = 0x03,
+    ClientMessage        = 0x05,
 }

@@ -23,6 +23,7 @@ public class ACUdpServer : CriticalBackgroundService
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
+    private readonly CSPClientMessageHandler _clientMessageHandler;
     private readonly ushort _port;
     private readonly Socket _socket;
     
@@ -30,11 +31,16 @@ public class ACUdpServer : CriticalBackgroundService
     private static readonly byte[] CarConnectResponse = { (byte)ACServerProtocol.CarConnect };
     private readonly byte[] _lobbyCheckResponse;
 
-    public ACUdpServer(SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public ACUdpServer(SessionManager sessionManager,
+        ACServerConfiguration configuration,
+        EntryCarManager entryCarManager,
+        IHostApplicationLifetime applicationLifetime,
+        CSPClientMessageHandler clientMessageHandler) : base(applicationLifetime)
     {
         _sessionManager = sessionManager;
         _configuration = configuration;
         _entryCarManager = entryCarManager;
+        _clientMessageHandler = clientMessageHandler;
         _port = _configuration.Server.UdpPort;
         _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         
@@ -86,9 +92,9 @@ public class ACUdpServer : CriticalBackgroundService
         
         try
         {
-            PacketReader packetReader = new PacketReader(null, buffer);
+            var packetReader = new PacketReader(null, buffer.AsMemory()[..size]);
 
-            ACServerProtocol packetId = (ACServerProtocol)packetReader.Read<byte>();
+            var packetId = (ACServerProtocol)packetReader.Read<byte>();
 
             if (packetId == ACServerProtocol.CarConnect)
             {
@@ -122,23 +128,26 @@ public class ACUdpServer : CriticalBackgroundService
                     Server.Steam.HandleIncomingPacket(data, remoteEp);
                 }
             }*/
-            else if (_endpointCars.TryGetValue(address, out EntryCar? car) && car.Client != null)
+            else if (_endpointCars.TryGetValue(address, out var car))
             {
+                var client = car.Client;
+                if (client == null) return;
+                
                 if (packetId == ACServerProtocol.SessionRequest)
                 {
                     if (_sessionManager.CurrentSession.Configuration.Type != packetReader.Read<SessionType>())
-                        _sessionManager.SendCurrentSession(car.Client);
+                        _sessionManager.SendCurrentSession(client);
                 }
                 else if (packetId == ACServerProtocol.PositionUpdate)
                 {
-                    if (!car.Client.HasReceivedFirstPositionUpdate)
-                        car.Client.ReceivedFirstPositionUpdate();
+                    if (!client.HasReceivedFirstPositionUpdate)
+                        client.ReceivedFirstPositionUpdate();
 
-                    if (!car.Client.HasPassedChecksum
-                        || car.Client.SecurityLevel < _configuration.Extra.MandatoryClientSecurityLevel) return;
+                    if (!client.HasPassedChecksum
+                        || client.SecurityLevel < _configuration.Extra.MandatoryClientSecurityLevel) return;
 
-                    if (!car.Client.HasSentFirstUpdate)
-                        car.Client.SendFirstUpdate();
+                    if (!client.HasSentFirstUpdate)
+                        client.SendFirstUpdate();
 
                     car.UpdatePosition(packetReader.Read<PositionUpdateIn>());
                 }
@@ -156,6 +165,14 @@ public class ACUdpServer : CriticalBackgroundService
                             HighPingKickAsync(car);
                     }
                     else car.HighPingSeconds = 0;
+                }
+                else if (_configuration.Extra.EnableUdpClientMessages && packetId == ACServerProtocol.Extended)
+                {
+                    var extendedId = packetReader.Read<CSPMessageTypeUdp>();
+                    if (extendedId == CSPMessageTypeUdp.ClientMessage)
+                    {
+                        _clientMessageHandler.OnCSPClientMessageUdp(client, packetReader);
+                    }
                 }
             }
         }

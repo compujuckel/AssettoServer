@@ -1,4 +1,4 @@
-﻿using AssettoServer.Server.Weather;
+﻿using AssettoServer.Shared.Weather;
 using Newtonsoft.Json.Linq;
 
 namespace LiveWeatherPlugin;

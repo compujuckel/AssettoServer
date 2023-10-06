@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using AssettoServer.Shared.Weather;
 
 namespace AssettoServer.Server.Weather;
 

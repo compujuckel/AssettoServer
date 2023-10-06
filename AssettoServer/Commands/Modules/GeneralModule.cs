@@ -3,6 +3,7 @@ using Qmmands;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using AssettoServer.Commands.Attributes;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using JetBrains.Annotations;

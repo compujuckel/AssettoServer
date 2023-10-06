@@ -18,7 +18,7 @@ public struct CSPClientMessage : IOutgoingNetworkPacket, IIncomingNetworkPacket
         writer.Write(Udp ? (byte)CSPMessageTypeUdp.ClientMessage : (byte)CSPMessageTypeTcp.ClientMessage);
         writer.Write(SessionId);
         writer.Write((ushort)Type);
-        if (TargetSessionId.HasValue) // TODO is this correct?
+        if (TargetSessionId.HasValue)
             writer.Write(TargetSessionId.Value);
         if (LuaType.HasValue)
             writer.Write(LuaType.Value);

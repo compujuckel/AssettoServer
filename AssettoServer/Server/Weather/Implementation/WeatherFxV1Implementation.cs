@@ -37,11 +37,11 @@ public class WeatherFxV1Implementation : IWeatherImplementation
 
         if (client == null)
         {
-            _entryCarManager.BroadcastPacketUdp(newWeather);
+            _entryCarManager.BroadcastPacketUdp(in newWeather);
         }
         else
         {
-            client.SendPacketUdp(newWeather);
+            client.SendPacketUdp(in newWeather);
         }
     }
 }

@@ -111,10 +111,8 @@ public class CSPClientMessageHandler(CSPClientMessageTypeManager cspClientMessag
 
         var clientMessage = reader.ReadPacket<CSPClientMessage>();
         clientMessage.SessionId = sender.SessionId;
-        // TODO CSPClientMessageType.LuaMessageTargeted seems to not work with CSP 0.1.80-preview386, so change them to LuaMessage instead
-        clientMessage.Type = CSPClientMessageType.LuaMessage;
-        // clientMessage.Type = IsTargeted(type) ? CSPClientMessageType.LuaMessageTargeted : CSPClientMessageType.LuaMessage;
-        // clientMessage.TargetSessionId = sessionId;
+        clientMessage.Type = IsTargeted(type) ? CSPClientMessageType.LuaMessageTargeted : CSPClientMessageType.LuaMessage;
+        clientMessage.TargetSessionId = sessionId;
         clientMessage.LuaType = luaPacketType;
         clientMessage.Udp = udp;
 

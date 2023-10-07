@@ -117,7 +117,7 @@
         <EmbeddedResource Include="Server\Lua\assettoserver.lua" />
         <None Remove="Assets\logo_42.png" />
         <EmbeddedResource Include="Assets\logo_42.png" />
-        <None Remove="Assets\srp_64.png" />
-        <EmbeddedResource Include="Assets\srp_64.png" />
+        <None Remove="Assets\srp-logo-new.png" />
+        <EmbeddedResource Include="Assets\srp-logo-new.png" />
     </ItemGroup>
 </Project>

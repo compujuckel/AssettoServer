@@ -78,8 +78,8 @@ public class ACTcpClient : IClient
     private readonly ChecksumManager _checksumManager;
     private readonly CSPFeatureManager _cspFeatureManager;
     private readonly CSPServerExtraOptions _cspServerExtraOptions;
-    private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
     private readonly OpenSlotFilterChain _openSlotFilter;
+    private readonly CSPClientMessageHandler _clientMessageHandler;
 
     /// <summary>
     /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
@@ -156,8 +156,8 @@ public class ACTcpClient : IClient
         ChecksumManager checksumManager,
         CSPFeatureManager cspFeatureManager,
         CSPServerExtraOptions cspServerExtraOptions,
-        CSPClientMessageTypeManager cspClientMessageTypeManager,
-        OpenSlotFilterChain openSlotFilter)
+        OpenSlotFilterChain openSlotFilter, 
+        CSPClientMessageHandler clientMessageHandler)
     {
         UdpServer = udpServer;
         Logger = new LoggerConfiguration()
@@ -175,8 +175,8 @@ public class ACTcpClient : IClient
         _checksumManager = checksumManager;
         _cspFeatureManager = cspFeatureManager;
         _cspServerExtraOptions = cspServerExtraOptions;
-        _cspClientMessageTypeManager = cspClientMessageTypeManager;
         _openSlotFilter = openSlotFilter;
+        _clientMessageHandler = clientMessageHandler;
 
         tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
         tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
@@ -453,7 +453,7 @@ public class ACTcpClient : IClient
                             if (extendedId == (byte)CSPMessageTypeTcp.SpectateCar)
                                 OnSpectateCar(reader);
                             else if (extendedId == (byte)CSPMessageTypeTcp.ClientMessage)
-                                OnCSPClientMessage(reader);
+                                _clientMessageHandler.OnCSPClientMessageTcp(this, reader);
                             break;
                         default:
                             break;
@@ -501,51 +501,6 @@ public class ACTcpClient : IClient
     {
         SpectateCar spectatePacket = reader.ReadPacket<SpectateCar>();
         EntryCar.TargetCar = spectatePacket.SessionId != SessionId ? _entryCarManager.EntryCars[spectatePacket.SessionId] : null;
-    }
-
-    private void OnCSPClientMessage(PacketReader reader)
-    {
-        CSPClientMessageType packetType = (CSPClientMessageType)reader.Read<ushort>();
-        if (packetType == CSPClientMessageType.LuaMessage)
-        {
-            uint luaPacketType = reader.Read<uint>();
-
-            if (_cspClientMessageTypeManager.MessageTypes.TryGetValue(luaPacketType, out var handler))
-            {
-                handler(this, reader);
-            }
-            else
-            {
-                CSPClientMessage clientMessage = reader.ReadPacket<CSPClientMessage>();
-                clientMessage.Type = packetType;
-                clientMessage.LuaType = luaPacketType;
-                clientMessage.SessionId = SessionId;
-
-                Logger.Debug("Unknown CSP lua client message with type 0x{LuaType:X} received from {ClientName} ({SessionId}), data {Data}", clientMessage.LuaType, Name, SessionId, Convert.ToHexString(clientMessage.Data));
-                _entryCarManager.BroadcastPacket(clientMessage);
-            }
-        }
-        else if (packetType == CSPClientMessageType.HandshakeOut)
-        {
-            var packet = reader.ReadPacket<CSPHandshakeOut>();
-            InputMethod = packet.InputMethod;
-
-            Logger.Information("CSP handshake received from {ClientName} ({SessionId}): Version={Version} WeatherFX={WeatherFxActive} InputMethod={InputMethod} RainFX={RainFxActive} HWID={HardwareId}", 
-                Name, SessionId, packet.Version, packet.IsWeatherFxActive, packet.InputMethod, packet.IsRainFxActive, packet.UniqueKey);
-        }
-        else if (_cspClientMessageTypeManager.RawMessageTypes.TryGetValue(packetType, out var handler))
-        {
-            handler(this, reader);
-        }
-        else
-        {
-            CSPClientMessage clientMessage = reader.ReadPacket<CSPClientMessage>();
-            clientMessage.Type = packetType;
-            clientMessage.SessionId = SessionId;
-
-            Log.Verbose("Client message received from {ClientName} ({SessionId}), type {Type}, data {Data}", Name, SessionId, packetType, clientMessage.Data);
-            _entryCarManager.BroadcastPacket(clientMessage);
-        }
     }
 
     private void OnChecksum(PacketReader reader)

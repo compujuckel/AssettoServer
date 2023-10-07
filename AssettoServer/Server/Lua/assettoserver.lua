@@ -20,7 +20,7 @@ If you modify this Program, or any covered work, by linking or combining it with
 local baseUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP()
 local configUrl = baseUrl .. "/api/configuration"
 local logoUrl = baseUrl .. "/assets/logo_42.png"
-local srpLogoUrl = baseUrl .. "/assets/srp_64.png"
+local srpLogoUrl = baseUrl .. "/assets/srp-logo-new.png?3"
 local configurationLoading = false
 local configuration
 local authHeaders = {}
@@ -66,7 +66,7 @@ end)
 apiKeyEvent({ key = "" })
 
 local logoSize = vec2(68, 42)
-local srpLogoSize = vec2(64, 64)
+local srpLogoSize = vec2(244, 64)
 local isSRP = ac.getTrackID():find("^shuto_revival_project_beta") ~= nil
 
 -- ui.textHyperlink not supported on <0.1.79
@@ -111,11 +111,6 @@ local function tab_About()
         if isSRP then
             ui.offsetCursorY(10)
             ui.image(srpLogoUrl, srpLogoSize)
-            ui.sameLine()
-            ui.offsetCursorY(-3)
-            ui.pushFont(ui.Font.Huge)
-            ui.text("Shutoko Revival Project")
-            ui.popFont()
 
             ui.offsetCursorY(5)
             ui.textWrapped("This server is running the Shutoko Revival Project track.")
@@ -127,7 +122,7 @@ local function tab_About()
 
             ui.text("")
             ui.pushFont(ui.Font.Title)
-            ui.textWrapped("Support SRP development")
+            ui.textWrapped("Support Shutoko Revival Project development")
             ui.popFont()
             ui.textWrapped("Patreon:")
             ui.sameLine()

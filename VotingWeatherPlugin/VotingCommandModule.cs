@@ -1,5 +1,5 @@
 ﻿using AssettoServer.Commands;
-using AssettoServer.Commands.Modules;
+using AssettoServer.Commands.Attributes;
 using Qmmands;
 
 namespace VotingWeatherPlugin;

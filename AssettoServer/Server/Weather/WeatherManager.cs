@@ -100,7 +100,7 @@ public class WeatherManager : CriticalBackgroundService
         TrackParams = _trackParamsProvider.GetParamsForTrack(_configuration.Server.Track);
 
         DateTimeZone? timeZone;
-        if (TrackParams == null)
+        if (TrackParams == null || string.IsNullOrEmpty(TrackParams.Timezone))
         {
             if (_configuration.Extra.IgnoreConfigurationErrors.MissingTrackParams)
             {
@@ -110,21 +110,6 @@ public class WeatherManager : CriticalBackgroundService
             else
             {
                 throw new ConfigurationException($"No track params found for {_configuration.Server.Track}. More info: https://assettoserver.org/docs/common-configuration-errors#missing-track-params")
-                {
-                    HelpLink = "https://assettoserver.org/docs/common-configuration-errors#missing-track-params"
-                };
-            }
-        }
-        else if (string.IsNullOrEmpty(TrackParams.Timezone))
-        {
-            if (_configuration.Extra.IgnoreConfigurationErrors.MissingTrackParams)
-            {
-                Log.Warning("Using UTC as default time zone");
-                timeZone = DateTimeZone.Utc;
-            }
-            else
-            {
-                throw new ConfigurationException($"No time zone found for {_configuration.Server.Track}. More info: https://assettoserver.org/docs/common-configuration-errors#missing-track-params")
                 {
                     HelpLink = "https://assettoserver.org/docs/common-configuration-errors#missing-track-params"
                 };
@@ -145,20 +130,47 @@ public class WeatherManager : CriticalBackgroundService
             _cspServerExtraOptions.ExtraOptions += $"\r\n[WEATHER_FX]\r\nTIMEZONE_ID = {TrackParams.Timezone}\r\nLATITUDE = {TrackParams.Latitude}\r\nLONGITUDE = {TrackParams.Longitude}\r\n";
         }
         
-        CurrentDateTime = SystemClock.Instance.InZone(timeZone).GetCurrentDate().AtStartOfDayInZone(timeZone).PlusSeconds((long)WeatherUtils.SecondsFromSunAngle(_configuration.Server.SunAngle));
+        CurrentDateTime = SystemClock.Instance
+            .InZone(timeZone)
+            .GetCurrentDate()
+            .AtStartOfDayInZone(timeZone)
+            .PlusSeconds((long)WeatherUtils.SecondsFromSunAngle(_configuration.Server.SunAngle));
+
+        await LoopAsync(stoppingToken);
+    }
+
+    private async Task LoopAsync(CancellationToken token)
+    {
+        var lastTimeUpdate = _timeSource.ServerTimeMilliseconds;
+        var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
         
-        long lastTimeUpdate = _timeSource.ServerTimeMilliseconds;
-        while (!stoppingToken.IsCancellationRequested)
+        while (await timer.WaitForNextTickAsync(token))
         {
             try
             {
                 if (_configuration.Extra.EnableRealTime)
                 {
-                    CurrentDateTime = SystemClock.Instance.InZone(CurrentDateTime.Zone).GetCurrentZonedDateTime();
+                    CurrentDateTime = SystemClock.Instance
+                        .InZone(CurrentDateTime.Zone)
+                        .GetCurrentZonedDateTime();
                 }
                 else
                 {
                     CurrentDateTime += Duration.FromMilliseconds((_timeSource.ServerTimeMilliseconds - lastTimeUpdate) * _configuration.Server.TimeOfDayMultiplier);
+                    
+                    if (_configuration.Extra.LockServerDate)
+                    {
+                        var realDate = SystemClock.Instance
+                            .InZone(CurrentDateTime.Zone)
+                            .GetCurrentDate();
+
+                        if (realDate != CurrentDateTime.Date)
+                        {
+                            CurrentDateTime = realDate
+                                .AtStartOfDayInZone(CurrentDateTime.Zone)
+                                .PlusTicks(CurrentDateTime.TickOfDay);
+                        }
+                    }
                 }
                 
                 _rainHelper.Update(CurrentWeather, _configuration.Server.DynamicTrack.BaseGrip, _configuration.Extra.RainTrackGripReductionPercent, _timeSource.ServerTimeMilliseconds - lastTimeUpdate);
@@ -168,10 +180,6 @@ public class WeatherManager : CriticalBackgroundService
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in weather service update");
-            }
-            finally
-            {
-                await Task.Delay(1000, stoppingToken);
             }
         }
     }

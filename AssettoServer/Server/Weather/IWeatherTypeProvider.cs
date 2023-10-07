@@ -1,4 +1,6 @@
-﻿namespace AssettoServer.Server.Weather;
+﻿using AssettoServer.Shared.Weather;
+
+namespace AssettoServer.Server.Weather;
 
 public interface IWeatherTypeProvider
 {

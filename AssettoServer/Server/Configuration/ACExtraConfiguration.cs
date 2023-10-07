@@ -49,6 +49,8 @@ public partial class ACExtraConfiguration : ObservableObject
     public bool EnableRealTime { get; set; } = false;
     [YamlMember(Description = "Enable new CSP weather handling. Allows rain and smooth weather transitions. Requires CSP 0.1.76+")]
     public bool EnableWeatherFx { get; init; } = false;
+    [YamlMember(Description = "Lock server date to real date. This stops server time \"running away\" when using a high time multiplier, so that in-game sunrise/sunset times are based on the current date")]
+    public bool LockServerDate { get; set; } = true;
     [YamlMember(Description = "Reduce track grip when the track is wet. This is much worse than proper CSP rain physics but allows you to run clients with public/Patreon CSP at the same time")]
     public double RainTrackGripReductionPercent { get; set; } = 0;
     [YamlMember(Description = "Enable AI traffic")]
@@ -61,6 +63,10 @@ public partial class ACExtraConfiguration : ObservableObject
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
     public bool EnableClientMessages { get; init; } = false;
+    [YamlMember(Description = "Enable CSP UDP client messages feature. Required for VR head/hand syncing. Requires CSP 0.1.80+")]
+    public bool EnableUdpClientMessages { get; init; } = false;
+    [YamlMember(Description = "Log unknown CSP Lua client messages / online events")]
+    public bool DebugClientMessages { get; set; } = false;
     [YamlMember(Description = "Enable CSP custom position updates. This is an improved version of batched position updates, reducing network traffic even further. CSP 0.1.77+ required")]
     public bool EnableCustomUpdate { get; set; } = false;
     [YamlMember(Description = "Maximum time a player can spend on the loading screen before being disconnected")]

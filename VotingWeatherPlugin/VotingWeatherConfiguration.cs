@@ -1,5 +1,5 @@
 ﻿using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Weather;
 using JetBrains.Annotations;
 using YamlDotNet.Serialization;
 

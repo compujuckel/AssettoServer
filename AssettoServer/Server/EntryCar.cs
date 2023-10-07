@@ -291,4 +291,10 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
             status.Gas);
         return true;
     }
+    
+    public bool IsInRange(EntryCar target, float range)
+    {
+        var targetPosition = target.TargetCar != null ? target.TargetCar.Status.Position : target.Status.Position;
+        return Vector3.DistanceSquared(Status.Position, targetPosition) < range * range;
+    }
 }

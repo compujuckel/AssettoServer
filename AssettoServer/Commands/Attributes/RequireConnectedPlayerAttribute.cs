@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Qmmands;
 
-namespace AssettoServer.Commands.Modules;
+namespace AssettoServer.Commands.Attributes;
 
 public class RequireConnectedPlayerAttribute : CheckAttribute
 {

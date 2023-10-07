@@ -65,6 +65,7 @@ public class Startup
         builder.RegisterType<IniTrackParamsProvider>().As<ITrackParamsProvider>().SingleInstance();
         builder.RegisterType<CSPServerScriptProvider>().AsSelf().SingleInstance();
         builder.RegisterType<CSPClientMessageTypeManager>().AsSelf().SingleInstance();
+        builder.RegisterType<CSPClientMessageHandler>().AsSelf().SingleInstance();
         builder.RegisterType<Steam>().As<IHostedService>().AsSelf().SingleInstance();
         builder.RegisterType<SessionManager>().AsSelf().SingleInstance();
         builder.RegisterType<EntryCarManager>().AsSelf().SingleInstance();

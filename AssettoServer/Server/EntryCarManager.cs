@@ -148,9 +148,8 @@ public class EntryCarManager
 
     public void BroadcastPacket<TPacket>(TPacket packet, ACTcpClient? sender = null) where TPacket : IOutgoingNetworkPacket
     {
-        for (int i = 0; i < EntryCars.Length; i++)
+        foreach (var car in EntryCars)
         {
-            var car = EntryCars[i];
             if (car.Client is { HasSentFirstUpdate: true } && car.Client != sender)
             {
                 car.Client?.SendPacket(packet);
@@ -158,12 +157,13 @@ public class EntryCarManager
         }
     }
         
-    public void BroadcastPacketUdp<TPacket>(TPacket packet, ACTcpClient? sender = null) where TPacket : IOutgoingNetworkPacket
+    public void BroadcastPacketUdp<TPacket>(in TPacket packet, ACTcpClient? sender = null, float? range = null, bool skipSender = true) where TPacket : IOutgoingNetworkPacket
     {
-        for (int i = 0; i < EntryCars.Length; i++)
+        foreach (var car in EntryCars)
         {
-            var car = EntryCars[i];
-            if (car.Client is { HasSentFirstUpdate: true, UdpEndpoint: not null } && car.Client != sender)
+            if (car.Client is { HasSentFirstUpdate: true, UdpEndpoint: not null } 
+                && (!skipSender || car.Client != sender)
+                && (!range.HasValue || (sender != null && sender.EntryCar.IsInRange(car, range.Value))))
             {
                 car.Client?.SendPacketUdp(in packet);
             }

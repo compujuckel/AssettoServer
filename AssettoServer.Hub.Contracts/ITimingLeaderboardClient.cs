@@ -41,6 +41,18 @@ public class RegisterTimingLapTimeRequest
     public int SecurityLevel { get; set; }
     [DataMember(Order = 9)]
     public int InputMethod { get; set; }
+    [DataMember(Order = 10)]
+    public int WeatherFxType { get; set; } = -1;
+    [DataMember(Order = 11)]
+    public float TrackGrip { get; set; }
+    [DataMember(Order = 12)]
+    public float TrackTemperature { get; set; }
+    [DataMember(Order = 13)]
+    public float AmbientTemperature { get; set; }
+    [DataMember(Order = 14)]
+    public string? Tyre { get; set; }
+    [DataMember(Order = 15)]
+    public string? GameTime { get; set; }
 }
 
 [DataContract]

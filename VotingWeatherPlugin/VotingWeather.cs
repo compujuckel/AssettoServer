@@ -71,7 +71,7 @@ public class VotingWeather : CriticalBackgroundService, IAssettoServerAutostart
             return;
         }
 
-        if (choice >= _configuration.NumChoices || choice < 0)
+        if (choice >= _availableWeathers.Count || choice < 0)
         {
             client.SendPacket(new ChatMessage { SessionId = 255, Message = "Invalid choice." });
             return;
@@ -103,6 +103,8 @@ public class VotingWeather : CriticalBackgroundService, IAssettoServerAutostart
         _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = "Vote for next weather:" });
         for (int i = 0; i < _configuration.NumChoices; i++)
         {
+            if (weathersLeft.Count < 1) break;
+            
             var nextWeather = weathersLeft[Random.Shared.Next(weathersLeft.Count)];
             _availableWeathers.Add(new WeatherChoice { Weather = nextWeather, Votes = 0 });
             weathersLeft.Remove(nextWeather);

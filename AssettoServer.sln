@@ -43,6 +43,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nvrlift.AssettoServer.HostE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoftAutoModerationPlugin", "SoftAutoModerationPlugin\SoftAutoModerationPlugin.csproj", "{266D19E0-6F02-44BD-B4A2-6796A982BB8D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyclePresetPlugin", "CyclePresetPlugin\CyclePresetPlugin.csproj", "{096A9CFA-47E5-4E7A-B344-0E24D6AB7626}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -129,6 +131,10 @@ Global
 		{266D19E0-6F02-44BD-B4A2-6796A982BB8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{266D19E0-6F02-44BD-B4A2-6796A982BB8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{266D19E0-6F02-44BD-B4A2-6796A982BB8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{096A9CFA-47E5-4E7A-B344-0E24D6AB7626}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{096A9CFA-47E5-4E7A-B344-0E24D6AB7626}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{096A9CFA-47E5-4E7A-B344-0E24D6AB7626}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{096A9CFA-47E5-4E7A-B344-0E24D6AB7626}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

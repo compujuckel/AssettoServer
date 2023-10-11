@@ -4,7 +4,7 @@
 This repository is uses to create more plugins for [AssettoServer](https://github.com/compujuckel/AssettoServer)
 
 ## Plugins
-[CycleTrackPlugin](https://github.com/nvrlift/CycleTrackPlugin/)
+[CyclePresetPlugin](https://github.com/nvrlift/CyclePresetPlugin)
 
 [SoftAutoModerationPlugin](https://github.com/nvrlift/SoftAutoModerationPlugin)
 

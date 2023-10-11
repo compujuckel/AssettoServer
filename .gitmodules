@@ -7,6 +7,6 @@
 [submodule "SoftAutoModerationPlugin"]
 	path = SoftAutoModerationPlugin
 	url = https://github.com/nvrlift/SoftAutoModerationPlugin.git
-[submodule "CycleTrackPlugin"]
-	path = CycleTrackPlugin
-	url = https://github.com/nvrlift/CycleTrackPlugin
+[submodule "CyclePresetPlugin"]
+	path = CyclePresetPlugin
+	url = https://github.com/nvrlift/CyclePresetPlugin

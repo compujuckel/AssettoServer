@@ -1,6 +1,3 @@
-[submodule "RandomTrackPlugin"]
-	path = RandomTrackPlugin
-	url = https://github.com/nvrlift/RandomTrackPlugin
 [submodule "nvrlift.AssettoServer.HostExtension"]
 	path = nvrlift.AssettoServer.HostExtension
 	url = https://github.com/nvrlift/nvrlift.AssettoServer.HostExtension
@@ -10,3 +7,6 @@
 [submodule "SoftAutoModerationPlugin"]
 	path = SoftAutoModerationPlugin
 	url = https://github.com/nvrlift/SoftAutoModerationPlugin.git
+[submodule "CycleTrackPlugin"]
+	path = CycleTrackPlugin
+	url = https://github.com/nvrlift/CycleTrackPlugin

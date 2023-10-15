@@ -1,4 +1,6 @@
-﻿namespace AssettoServer.Shared.Network.Packets.Incoming;
+﻿using AssettoServer.Shared.Model;
+
+namespace AssettoServer.Shared.Network.Packets.Incoming;
 
 public class CSPHandshakeOut : IIncomingNetworkPacket
 {
@@ -17,12 +19,4 @@ public class CSPHandshakeOut : IIncomingNetworkPacket
         reader.Read<byte>(); // Padding
         UniqueKey = reader.Read<ulong>();
     }
-}
-
-public enum InputMethod : byte
-{
-    Unknown = 0,
-    Keyboard = 1,
-    Gamepad = 2,
-    Wheel = 3
 }

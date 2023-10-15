@@ -85,13 +85,12 @@ public class RconClient
     private async Task ReceiveLoopAsync()
     {
         byte[] buffer = new byte[2046];
-        NetworkStream stream = _stream;
 
         try
         {
             while (!_disconnectTokenSource.IsCancellationRequested)
             {
-                PacketReader reader = new PacketReader(stream, buffer, true);
+                var reader = new PacketReader(_stream, buffer, true);
                 reader.SliceBuffer(await reader.ReadPacketAsync());
 
                 if (reader.Buffer.Length == 0)

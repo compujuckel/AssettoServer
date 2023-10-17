@@ -1,12 +1,12 @@
 [submodule "nvrlift.AssettoServer.HostExtension"]
 	path = nvrlift.AssettoServer.HostExtension
 	url = https://github.com/nvrlift/nvrlift.AssettoServer.HostExtension
-[submodule "nvrlift.AssettoServer"]
-	path = nvrlift.AssettoServer
-	url = https://github.com/nvrlift/nvrlift.AssettoServer
 [submodule "SoftAutoModerationPlugin"]
 	path = SoftAutoModerationPlugin
 	url = https://github.com/nvrlift/SoftAutoModerationPlugin.git
 [submodule "CyclePresetPlugin"]
 	path = CyclePresetPlugin
 	url = https://github.com/nvrlift/CyclePresetPlugin
+[submodule "VotingTimePlugin"]
+	path = VotingTimePlugin
+	url = https://github.com/nvrlift/VotingTimePlugin

@@ -33,13 +33,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServer.Hub.Contracts
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServer.Shared", "AssettoServer.Shared\AssettoServer.Shared.csproj", "{C7A903BD-6640-460A-BDD1-DFF6FC407E31}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nvrlift.AssettoServer", "nvrlift.AssettoServer\nvrlift.AssettoServer.csproj", "{2722F8B7-48DD-49E7-B908-B832B7D4CEED}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nvrlift.AssettoServer.HostExtension", "nvrlift.AssettoServer.HostExtension\nvrlift.AssettoServer.HostExtension.csproj", "{69813E8B-0B63-4ACE-BBC3-7EF61507741C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoftAutoModerationPlugin", "SoftAutoModerationPlugin\SoftAutoModerationPlugin.csproj", "{266D19E0-6F02-44BD-B4A2-6796A982BB8D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyclePresetPlugin", "CyclePresetPlugin\CyclePresetPlugin.csproj", "{096A9CFA-47E5-4E7A-B344-0E24D6AB7626}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VotingTimePlugin", "VotingTimePlugin\VotingTimePlugin.csproj", "{D645DF6E-45C2-49C4-A1F7-694449E2FEDA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -107,10 +107,6 @@ Global
 		{C7A903BD-6640-460A-BDD1-DFF6FC407E31}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7A903BD-6640-460A-BDD1-DFF6FC407E31}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7A903BD-6640-460A-BDD1-DFF6FC407E31}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2722F8B7-48DD-49E7-B908-B832B7D4CEED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2722F8B7-48DD-49E7-B908-B832B7D4CEED}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2722F8B7-48DD-49E7-B908-B832B7D4CEED}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2722F8B7-48DD-49E7-B908-B832B7D4CEED}.Release|Any CPU.Build.0 = Release|Any CPU
 		{69813E8B-0B63-4ACE-BBC3-7EF61507741C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{69813E8B-0B63-4ACE-BBC3-7EF61507741C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{69813E8B-0B63-4ACE-BBC3-7EF61507741C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -123,6 +119,10 @@ Global
 		{096A9CFA-47E5-4E7A-B344-0E24D6AB7626}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{096A9CFA-47E5-4E7A-B344-0E24D6AB7626}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{096A9CFA-47E5-4E7A-B344-0E24D6AB7626}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D645DF6E-45C2-49C4-A1F7-694449E2FEDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D645DF6E-45C2-49C4-A1F7-694449E2FEDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D645DF6E-45C2-49C4-A1F7-694449E2FEDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D645DF6E-45C2-49C4-A1F7-694449E2FEDA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

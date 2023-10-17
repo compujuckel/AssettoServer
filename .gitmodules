@@ -7,3 +7,6 @@
 [submodule "CyclePresetPlugin"]
 	path = CyclePresetPlugin
 	url = https://github.com/nvrlift/CyclePresetPlugin
+[submodule "VotingTimePlugin"]
+	path = VotingTimePlugin
+	url = https://github.com/nvrlift/VotingTimePlugin

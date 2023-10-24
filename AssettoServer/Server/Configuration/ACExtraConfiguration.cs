@@ -351,18 +351,29 @@ public class CarSpecificOverrides
     public float? CorneringBrakeForceFactor { get; init; }
     [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless cars are creating lots of smoke.")]
     public float? TyreDiameterMeters { get; set; }
-    // TODO docs
+    [YamlMember(Description = "Maximum number of AI states for a car slot of this car model")]
     public int? MaxOverbooking { get; set; }
+    [YamlMember(Description = "Minimum time in which a newly spawned AI car cannot despawn")]
     public int? MinSpawnProtectionTimeSeconds { get; set; }
+    [YamlMember(Description = "Maximum time in which a newly spawned AI car cannot despawn")]
     public int? MaxSpawnProtectionTimeSeconds { get; set; }
+    [YamlMember(Description = "Minimum number of lanes needed to spawn a car of this car model")]
     public int? MinLaneCount { get; set; }
+    [YamlMember(Description = "Maximum number of lanes needed to spawn a car of this car model")]
     public int? MaxLaneCount { get; set; }
+    [YamlMember(Description = "Minimum time an AI car will stop/slow down after a collision")]
     public int? MinCollisionStopTimeSeconds { get; set; }
+    [YamlMember(Description = "Maximum time an AI car will stop/slow down after a collision")]
     public int? MaxCollisionStopTimeSeconds { get; set; }
+    [YamlMember(Description = "Length of this vehicle in front of car origin")]
     public float? VehicleLengthPreMeters { get; set; }
+    [YamlMember(Description = "Length of this vehicle behind car origin")]
     public float? VehicleLengthPostMeters { get; set; }
+    [YamlMember(Description = "Minimum distance between AI cars")]
     public int? MinAiSafetyDistanceMeters { get; set; }
+    [YamlMember(Description = "Maximum distance between AI cars")]
     public int? MaxAiSafetyDistanceMeters { get; set; }
+    [YamlMember(Description = "List of allowed lanes for this car model. Possible values Left, Middle, Right")]
     public List<LaneSpawnBehavior>? AllowedLanes { get; set; }
 
     [YamlIgnore] public int? MinSpawnProtectionTimeMilliseconds => MinSpawnProtectionTimeSeconds * 1000;
@@ -397,6 +408,7 @@ public enum LaneSpawnBehavior
     Right
 }
 
+[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class Sphere
 {
     public Vector3 Center { get; set; }

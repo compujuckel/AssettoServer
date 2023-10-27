@@ -49,7 +49,7 @@ public struct PacketReader
     public string ReadStringFixed(Encoding encoding, int length)
     {
         int bytesToRead = Math.Min(length, Buffer.Length - ReadPosition);
-        var ret = encoding.GetString(Buffer.Slice(ReadPosition, bytesToRead).Span);
+        var ret = encoding.GetString(Buffer.Slice(ReadPosition, bytesToRead).Span.TrimEnd(stackalloc byte[] { 0 }));
         ReadPosition += bytesToRead;
         return ret;
     }

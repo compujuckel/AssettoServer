@@ -54,6 +54,7 @@ public class ACTcpClient : IClient
     [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode))]
     public bool HasStartedHandshake { get; private set; }
     public bool HasPassedChecksum { get; private set; }
+    public byte[]? CarChecksum { get; private set; }
     public int SecurityLevel { get; set; }
     public ulong? HardwareIdentifier { get; set; }
     public InputMethod InputMethod { get; set; }
@@ -510,8 +511,10 @@ public class ACTcpClient : IClient
         if (reader.Buffer.Length == fullChecksum.Length + 1)
         {
             reader.ReadBytes(fullChecksum);
-            passedChecksum = !_checksumManager.CarChecksums.TryGetValue(EntryCar.Model, out List<byte[]>? modelChecksums) || modelChecksums.Count == 0
-                || modelChecksums.Any(c => fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).SequenceEqual(c));
+            CarChecksum = fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).ToArray();
+            passedChecksum = !_checksumManager.CarChecksums.TryGetValue(EntryCar.Model, out var modelChecksums)
+                             || modelChecksums.Count == 0 
+                             || modelChecksums.Any(c => CarChecksum.AsSpan().SequenceEqual(c));
 
             KeyValuePair<string, byte[]>[] allChecksums = _checksumManager.TrackChecksums.ToArray();
             for (int i = 0; i < allChecksums.Length; i++)

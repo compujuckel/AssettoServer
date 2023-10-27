@@ -20,8 +20,6 @@ public class Skin
     public required string Name { get; init; }
     [DataMember(Order = 2)]
     public required string SkinUrl { get; init; }
-    [DataMember(Order = 3)]
-    public required string IconUrl { get; init; }
 }
 
 [DataContract]
@@ -29,6 +27,8 @@ public class ListSkinsResponse
 {
     [DataMember(Order = 1)]
     public required IDictionary<string, Skin> Skins { get; init; } = new Dictionary<string, Skin>();
+    [DataMember(Order = 2)]
+    public required string IconsUrl { get; init; }
 }
 
 [ServiceContract]

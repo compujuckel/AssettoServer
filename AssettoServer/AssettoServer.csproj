@@ -29,7 +29,7 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
         <PackageReference Include="CXuesong.Luaon" Version="0.2.7" />
         <PackageReference Include="CXuesong.Luaon.Json" Version="0.2.1" />
-        <PackageReference Include="DotNext.IO" Version="4.14.0" />
+        <PackageReference Include="DotNext.IO" Version="4.15.0" />
         <PackageReference Include="DotNext.Unsafe" Version="4.14.0" />
         <PackageReference Include="ErrorProne.NET.CoreAnalyzers" Version="0.4.0-beta.1">
             <PrivateAssets>all</PrivateAssets>
@@ -39,7 +39,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="FluentValidation" Version="11.7.1" />
+        <PackageReference Include="FluentValidation" Version="11.8.0" />
         <PackageReference Include="Humanizer.Core" Version="2.14.1" />
         <PackageReference Include="ini-parser" Version="2.5.2">
             <NoWarn>NU1701</NoWarn>
@@ -52,8 +52,8 @@
         <PackageReference Include="Open.NAT" Version="2.1.0">
             <NoWarn>NU1701</NoWarn>
         </PackageReference>
-        <PackageReference Include="Polly" Version="7.2.4" />
-        <PackageReference Include="Grpc.Net.Client" Version="2.57.0" />
+        <PackageReference Include="Polly" Version="8.0.0" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.58.0" />
         <PackageReference Include="prometheus-net" Version="8.0.1" />
         <PackageReference Include="prometheus-net.AspNetCore" Version="8.0.1" />
         <PackageReference Include="protobuf-net.Grpc" Version="1.1.1" />
@@ -61,7 +61,7 @@
         <PackageReference Include="Qmmands" Version="5.0.2" />
         <PackageReference Include="Serilog" Version="3.0.1" />
         <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
-        <PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0" />
+        <PackageReference Include="Serilog.Enrichers.Environment" Version="2.3.0" />
         <PackageReference Include="Serilog.Expressions" Version="3.4.1" />
         <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
@@ -71,7 +71,7 @@
         <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.8" />
         <PackageReference Include="SunCalcNet" Version="1.2.2" />
         <PackageReference Include="System.IO.Hashing" Version="7.0.0" />
-        <PackageReference Include="YamlDotNet" Version="13.3.1" />
+        <PackageReference Include="YamlDotNet" Version="13.7.1" />
         <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.244" PrivateAssets="all" Condition="!Exists('packages.config')" />
     </ItemGroup>
 

@@ -53,6 +53,12 @@ public class RegisterTimingLapTimeRequest
     public string? Tyre { get; set; }
     [DataMember(Order = 15)]
     public string? GameTime { get; set; }
+    [DataMember(Order = 16)]
+    public List<long>? Sectors { get; set; }
+    [DataMember(Order = 17)]
+    public int Shifter { get; set; }
+    [DataMember(Order = 18)]
+    public byte[]? CarChecksum { get; set; }
 }
 
 [DataContract]

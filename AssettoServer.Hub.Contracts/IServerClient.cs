@@ -24,9 +24,24 @@ public class OnStartupResponse
     public string Pong { get; set; } = "";
 }
 
+[DataContract]
+public class NameUpdateRequest
+{
+    [DataMember(Order = 1)]
+    public required string Id { get; set; }
+    [DataMember(Order = 2)]
+    public required string FriendlyName { get; set; }
+}
+
 [ServiceContract]
 public interface IServerClient
 {
     [OperationContract]
     public Task<OnStartupResponse> OnStartup(OnStartupRequest request, CallContext context = default);
+
+    [OperationContract]
+    public Task UpdateTrackName(NameUpdateRequest request, CallContext context = default);
+
+    [OperationContract]
+    public Task UpdateCarName(NameUpdateRequest request, CallContext context = default);
 }

@@ -276,9 +276,12 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
             if (spawnPointId < 0 || !_junctionEvaluator.TryNext(spawnPointId, out _))
                 continue;
 
+            var previousAi = FindClosestAiState(spawnPointId, false);
+            var nextAi = FindClosestAiState(spawnPointId, true);
+
             foreach (var targetAiState in _uninitializedAiStates)
             {
-                if (!targetAiState.CanSpawn(spawnPointId))
+                if (!targetAiState.CanSpawn(spawnPointId, previousAi, nextAi))
                     continue;
 
                 targetAiState.Teleport(spawnPointId);
@@ -287,6 +290,34 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
                 break;
             }
         }
+    }
+
+    private AiState? FindClosestAiState(int pointId, bool forward)
+    {
+        var points = _spline.Points;
+        float distanceTravelled = 0;
+        float searchDistance = 50;
+        ref readonly var point = ref points[pointId];
+        
+        AiState? closestAiState = null;
+        while (distanceTravelled < searchDistance && closestAiState == null)
+        {
+            distanceTravelled += point.Length;
+            // TODO reuse this junction evaluator for the newly spawned car
+            pointId = forward ? _junctionEvaluator.Next(pointId) : _junctionEvaluator.Previous(pointId);
+            if (pointId < 0)
+                break;
+
+            point = ref points[pointId];
+            
+            var slowest = _spline.SlowestAiStates[pointId];
+            if (slowest != null)
+            {
+                closestAiState = slowest;
+            }
+        }
+
+        return closestAiState;
     }
 
     private async Task UpdateAsync(CancellationToken stoppingToken)

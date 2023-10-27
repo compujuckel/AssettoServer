@@ -1,6 +1,6 @@
 # Dummy since Steam doesn't support arm64
 FROM --platform=$BUILDPLATFORM scratch AS steam-arm64
-COPY docker/not-supported /home/steam/steamcmd/linux64/
+COPY docker/steamclient.not-supported /home/steam/steamcmd/linux64/
 
 # Download Steam client
 FROM --platform=$BUILDPLATFORM cm2network/steamcmd:latest AS steam-amd64
@@ -29,7 +29,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0
 
 WORKDIR /app
 
-COPY --from=steam /home/steam/steamcmd/linux64/* /root/.steam/sdk64/
+COPY --from=steam /home/steam/steamcmd/linux64/steamclient.* /root/.steam/sdk64/
 COPY --from=build /app/out-linux-* .
 
 WORKDIR /data

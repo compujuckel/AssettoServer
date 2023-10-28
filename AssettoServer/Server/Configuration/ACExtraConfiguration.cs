@@ -102,6 +102,8 @@ public partial class ACExtraConfiguration : ObservableObject
     public string AdminUserGroup { get; init; } = "default_admins";
     [YamlMember(Description = "List of allowed origins for Cross-Origin Resource Sharing. Use this if you want to query this server from a website")]
     public List<string>? CorsAllowedOrigins { get; init; }
+    [YamlMember(Description = "Allow a user group to execute specific admin commands")]
+    public List<UserGroupCommandPermissions>? UserGroupCommandPermissions { get; init; }
     
     public AiParams AiParams { get; init; } = new AiParams();
 
@@ -413,4 +415,11 @@ public class Sphere
 {
     public Vector3 Center { get; set; }
     public float RadiusMeters { get; set; }
+}
+
+[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
+public class UserGroupCommandPermissions
+{
+    public required string UserGroup { get; set; }
+    public required List<string> Commands { get; set; }
 }

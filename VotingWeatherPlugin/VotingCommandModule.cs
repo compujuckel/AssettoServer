@@ -16,6 +16,6 @@ public class VotingCommandModule : ACModuleBase
     [Command("w"), RequireConnectedPlayer]
     public void VoteWeather(int choice)
     {
-        _votingWeather.CountVote(Context.Client!, choice);
+        _votingWeather.CountVote(Client!, choice);
     }
 }

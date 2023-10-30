@@ -16,7 +16,7 @@ public class ReportCommandModule : ACModuleBase
     [Command("report"), RequireConnectedPlayer]
     public async Task Report([Remainder] string reason)
     {
-        var report = _plugin.GetLastReplay(Context.Client!);
+        var report = _plugin.GetLastReplay(Client!);
 
         if (report == null)
         {
@@ -28,9 +28,9 @@ public class ReportCommandModule : ACModuleBase
         }
         else
         {
-            Context.Client!.Logger.Information("Report received from {ClientName} ({SessionId}), ID: {Id}, Reason: {Reason}",
-                Context.Client.Name, Context.Client.SessionId, report.Guid, reason);
-            await _plugin.SubmitReport(Context.Client, report, reason);
+            Client!.Logger.Information("Report received from {ClientName} ({SessionId}), ID: {Id}, Reason: {Reason}",
+                Client.Name, Client.SessionId, report.Guid, reason);
+            await _plugin.SubmitReport(Client, report, reason);
             Reply("Your report has been submitted.");
             report.Submitted = true;
         }

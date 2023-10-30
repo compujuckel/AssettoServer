@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Http;
 using AssettoServer.Commands;
+using AssettoServer.Commands.Contexts;
 using AssettoServer.Commands.TypeParsers;
 using AssettoServer.Network.Http.Authentication;
 using AssettoServer.Network.Rcon;
@@ -50,7 +51,8 @@ public class Startup
         builder.RegisterType<HttpClient>().AsSelf();
         builder.RegisterType<ACTcpClient>().AsSelf();
         builder.RegisterType<EntryCar>().AsSelf();
-        builder.RegisterType<ACCommandContext>().AsSelf();
+        builder.RegisterType<ChatCommandContext>().AsSelf();
+        builder.RegisterType<RconCommandContext>().AsSelf();
         builder.RegisterType<SessionState>().AsSelf();
         builder.RegisterType<ACClientTypeParser>().AsSelf();
         builder.RegisterType<ChatService>().AsSelf().SingleInstance().AutoActivate();

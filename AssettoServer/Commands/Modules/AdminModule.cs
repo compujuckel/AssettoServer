@@ -43,14 +43,14 @@ public class AdminModule : ACModuleBase
     [Command("kick", "kick_id")]
     public Task KickAsync(ACTcpClient player, [Remainder] string? reason = null)
     {
-        if (player.SessionId == Context.Client?.SessionId)
+        if (player.SessionId == Client?.SessionId)
             Reply("You cannot kick yourself.");
         else if (player.IsAdministrator)
             Reply("You cannot kick an administrator");
         else
         {
             Reply($"Steam profile of {player.Name}: https://steamcommunity.com/profiles/{player.Guid}");
-            return _entryCarManager.KickAsync(player, reason, Context.Client);
+            return _entryCarManager.KickAsync(player, reason, Client);
         }
 
         return Task.CompletedTask;
@@ -59,7 +59,7 @@ public class AdminModule : ACModuleBase
     [Command("ban", "ban_id")]
     public Task BanAsync(ACTcpClient player, [Remainder] string? reason = null)
     {
-        if (player.SessionId == Context.Client?.SessionId)
+        if (player.SessionId == Client?.SessionId)
             Reply("You cannot ban yourself.");
         else if (player.IsAdministrator)
             Reply("You cannot ban an administrator.");
@@ -70,7 +70,7 @@ public class AdminModule : ACModuleBase
             {
                 Reply($"{player.Name} is using Steam Family Sharing, banning game owner https://steamcommunity.com/profiles/{player.OwnerGuid}");
             }
-            return _entryCarManager.BanAsync(player, reason, Context.Client);
+            return _entryCarManager.BanAsync(player, reason, Client);
         }
 
         return Task.CompletedTask;
@@ -82,7 +82,7 @@ public class AdminModule : ACModuleBase
         _sessionManager.SendCurrentSession(player);
         player.SendPacket(new ChatMessage { SessionId = 255, Message = "You have been teleported to the pits." });
 
-        if (player.SessionId != Context.Client?.SessionId)
+        if (player.SessionId != Client?.SessionId)
             Reply($"{player.Name} has been teleported to the pits.");
     }
 
@@ -156,7 +156,7 @@ public class AdminModule : ACModuleBase
     [Command("distance"), RequireConnectedPlayer]
     public void GetDistance([Remainder] ACTcpClient player)
     {
-        Reply(Vector3.Distance(Context.Client!.EntryCar.Status.Position, player.EntryCar.Status.Position).ToString(CultureInfo.InvariantCulture));
+        Reply(Vector3.Distance(Client!.EntryCar.Status.Position, player.EntryCar.Status.Position).ToString(CultureInfo.InvariantCulture));
     }
 
     [Command("forcelights")]

@@ -15,14 +15,14 @@ public class RaceCommandModule : ACModuleBase
         _plugin = plugin;
     }
 
-    [Command("race")]
+    [Command("race"), RequireConnectedPlayer]
     public void Race(ACTcpClient player)
-        => _plugin.GetRace(Context.Client!.EntryCar).ChallengeCar(player.EntryCar);
+        => _plugin.GetRace(Client!.EntryCar).ChallengeCar(player.EntryCar);
 
-    [Command("accept")]
+    [Command("accept"), RequireConnectedPlayer]
     public async ValueTask AcceptRaceAsync()
     {
-        var currentRace = _plugin.GetRace(Context.Client!.EntryCar).CurrentRace;
+        var currentRace = _plugin.GetRace(Client!.EntryCar).CurrentRace;
         if (currentRace == null)
             Reply("You do not have a pending race request.");
         else if (currentRace.HasStarted)

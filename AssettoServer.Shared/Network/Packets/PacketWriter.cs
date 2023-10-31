@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
 using AssettoServer.Shared.Network.Packets.Outgoing;
+using AssettoServer.Shared.Utils;
 
 namespace AssettoServer.Shared.Network.Packets;
 
@@ -108,9 +109,23 @@ public struct PacketWriter
         WriteBytes(MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value, 1)));
     }
 
-    public void WriteBytes(Span<byte> bytes)
+    public void WriteBytes(ReadOnlySpan<byte> bytes)
     {
         bytes.CopyTo(Buffer.Slice(_writePosition).Span);
         _writePosition += bytes.Length;
+    }
+
+    public void WriteArrayFixed<T>(ReadOnlySpan<T> value, int capacity, bool pad = true) where T : struct
+    {
+        var bytes = MemoryMarshal.AsBytes(value[..Math.Min(value.Length, capacity)]);
+        bytes.CopyTo(Buffer.Slice(_writePosition).Span);
+        _writePosition += bytes.Length;
+        
+        if (pad)
+        {
+            int remaining = capacity * MarshalUtils.SizeOf(typeof(T)) - bytes.Length;
+            Buffer.Slice(_writePosition, remaining).Span.Clear();
+            _writePosition += remaining;
+        }
     }
 }

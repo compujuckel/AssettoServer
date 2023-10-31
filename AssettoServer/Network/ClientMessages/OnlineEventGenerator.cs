@@ -97,7 +97,7 @@ internal static class OnlineEventGenerator
         
         foreach (var field in messageType.GetFields())
         {
-            var attr = field.GetCustomAttribute<OnlineEventField>();
+            var attr = field.GetCustomAttribute<OnlineEventFieldAttribute>();
             if (attr == null) continue;
 
             var type = field.FieldType;

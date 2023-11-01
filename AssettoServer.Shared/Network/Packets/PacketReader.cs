@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
 using AssettoServer.Shared.Network.Packets.Incoming;
+using AssettoServer.Shared.Utils;
 
 namespace AssettoServer.Shared.Network.Packets;
 
@@ -54,10 +55,17 @@ public struct PacketReader
         return ret;
     }
 
+    public Span<T> ReadArrayFixed<T>(int length) where T : unmanaged
+    {
+        int bytesToRead = Math.Min(MarshalUtils.SizeOf(typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T)) * length, Buffer.Length - ReadPosition);
+        var ret = MemoryMarshal.Cast<byte, T>(Buffer.Slice(ReadPosition, bytesToRead).Span);
+        ReadPosition += bytesToRead;
+        return ret;
+    }
+
     public T Read<T>() where T : unmanaged
     {
-        // Marshal.SizeOf(typeof(bool)) returns 4 - we need 1. See https://stackoverflow.com/a/47956291
-        var bytesToRead = typeof(T) == typeof(bool) ? 1 : Marshal.SizeOf(typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T));
+        var bytesToRead = MarshalUtils.SizeOf(typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T));
         var slice = Buffer.Slice(ReadPosition, Math.Min(bytesToRead, Buffer.Length - ReadPosition)).Span;
 
         T result;

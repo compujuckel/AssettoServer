@@ -19,7 +19,12 @@
         <PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
         <InvariantGlobalization>true</InvariantGlobalization>
         <ApplicationIcon>Assets/assettoserver.ico</ApplicationIcon>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="AssettoServer.Tests" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Autofac" Version="7.1.0" />
@@ -69,8 +74,9 @@
         <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.1.0" />
         <PackageReference Include="SerilogTimings" Version="3.0.1" />
         <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.8" />
+        <PackageReference Include="Sigil" Version="5.0.0" />
         <PackageReference Include="SunCalcNet" Version="1.2.2" />
-        <PackageReference Include="System.IO.Hashing" Version="7.0.0" />
+        <PackageReference Include="System.IO.Hashing" Version="8.0.0-rc.2.23479.6" />
         <PackageReference Include="YamlDotNet" Version="13.7.1" />
         <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.244" PrivateAssets="all" Condition="!Exists('packages.config')" />
     </ItemGroup>
@@ -87,6 +93,16 @@
         <Reference Include="Facepunch.Steamworks.Posix">
             <HintPath>..\Redist\Facepunch.Steamworks.Posix.dll</HintPath>
         </Reference>
+        <ContentWithTargetPath Include="Redist/libcsp_xxhash3.so">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>libcsp_xxhash3.so</TargetPath>
+        </ContentWithTargetPath>
+    </ItemGroup>
+    <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">
+        <ContentWithTargetPath Include="Redist/libcsp_xxhash3_arm64.so">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>libcsp_xxhash3.so</TargetPath>
+        </ContentWithTargetPath>
     </ItemGroup>
     <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
         <ContentWithTargetPath Include="Redist/steam_api64.dll">
@@ -96,6 +112,10 @@
         <Reference Include="Facepunch.Steamworks.Win64">
             <HintPath>..\Redist\Facepunch.Steamworks.Win64.dll</HintPath>
         </Reference>
+        <ContentWithTargetPath Include="Redist/csp_xxhash3.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>csp_xxhash3.dll</TargetPath>
+        </ContentWithTargetPath>
     </ItemGroup>
 
     <ItemGroup>

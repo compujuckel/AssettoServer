@@ -273,15 +273,15 @@ public partial class AiParams : ObservableObject
     
     [ObservableProperty]
     [property: YamlMember(Description = "AI cornering speed factor. Lower = AI cars will drive slower around corners.")]
-    private float _corneringSpeedFactor = 1;
+    private float _corneringSpeedFactor = 0.65f;
     
     [ObservableProperty]
     [property: YamlMember(Description = "AI cornering brake distance factor. Lower = AI cars will brake later for corners.")]
-    private float _corneringBrakeDistanceFactor = 1;
+    private float _corneringBrakeDistanceFactor = 3;
     
     [ObservableProperty]
     [property: YamlMember(Description = "AI cornering brake force factor. This is multiplied with DefaultDeceleration. Lower = AI cars will brake less hard for corners.")]
-    private float _corneringBrakeForceFactor = 1;
+    private float _corneringBrakeForceFactor = 0.5f;
     
     [YamlMember(Description = "Name prefix for AI cars. Names will be in the form of '<NamePrefix> <SessionId>'")]
     public string NamePrefix { get; init; } = "Traffic";
@@ -309,8 +309,36 @@ public partial class AiParams : ObservableObject
     public List<Sphere>? IgnorePlayerObstacleSpheres { get; set; }
     [YamlMember(Description = "Override some settings for newly spawned cars based on the number of lanes")]
     public Dictionary<int, LaneCountSpecificOverrides> LaneCountSpecificOverrides { get; set; } = new();
-    [YamlMember(Description = "Override some settings for specific car models/skins")]
-    public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new();
+
+    [YamlMember(Description = "Override some settings for specific car models")]
+    public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new()
+    {
+        new CarSpecificOverrides
+        {
+            Model = "my_car_model",
+            Acceleration = 2.5f,
+            Deceleration = 8.5f,
+            AllowedLanes = new List<LaneSpawnBehavior> { LaneSpawnBehavior.Left, LaneSpawnBehavior.Middle, LaneSpawnBehavior.Right },
+            MaxOverbooking = 1,
+            CorneringSpeedFactor = 0.5f,
+            CorneringBrakeDistanceFactor = 3,
+            CorneringBrakeForceFactor = 0.5f,
+            EngineIdleRpm = 800,
+            EngineMaxRpm = 3000,
+            MaxLaneCount = 2,
+            MinLaneCount = 1,
+            TyreDiameterMeters = 0.8f,
+            SplineHeightOffsetMeters = 0,
+            VehicleLengthPostMeters = 2,
+            VehicleLengthPreMeters = 2,
+            MinAiSafetyDistanceMeters = 20,
+            MaxAiSafetyDistanceMeters = 25,
+            MinCollisionStopTimeSeconds = 0,
+            MaxCollisionStopTimeSeconds = 0,
+            MinSpawnProtectionTimeSeconds = 30,
+            MaxSpawnProtectionTimeSeconds = 60
+        }
+    };
 
     [YamlIgnore] public float PlayerRadiusSquared => PlayerRadiusMeters * PlayerRadiusMeters;
     [YamlIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeoutSeconds * 1000;

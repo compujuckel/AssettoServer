@@ -3,7 +3,7 @@
 namespace AssettoServer.Tests;
 
 // Based on https://github.com/ac-custom-shaders-patch/acc-lua-sdk/blob/ca9530fbb5c81d0c23c4c1ba7a8f198870d2b2a3/tests/test_struct_item.lua
-public class ClientMessageGeneratorTests
+public class OnlineEventGeneratorTests
 {
     [Test]
     public void Test_Minimal()
@@ -41,7 +41,7 @@ public class TestMessage2
 public class TestMessage3
 {
     [OnlineEventField(Name = "i20", Size = 20)]
-    public string i20;
+    public string i20 = null!;
     [OnlineEventField(Name = "i21")]
     public byte i21;
     [OnlineEventField(Name = "i22")]
@@ -53,11 +53,11 @@ public class TestMessage3
 public class TestMessage4
 {
     [OnlineEventField(Name = "i20", Size = 20)]
-    public string i20;
+    public string i20 = null!;
     [OnlineEventField(Name = "i21")]
     public byte i21;
     [OnlineEventField(Name = "i22", Size = 4)]
-    public int[] i22;
+    public int[] i22 = null!;
     [OnlineEventField(Name = "i23")]
     public double i23;
 }

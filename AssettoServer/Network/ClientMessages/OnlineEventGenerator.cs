@@ -17,7 +17,7 @@ internal static class OnlineEventGenerator
 {
     private static readonly Dictionary<Type, string> TypeMapping = new()
     {
-        { typeof(bool), "bool" }, // TODO test
+        { typeof(bool), "bool" },
         { typeof(byte), "uint8_t" },
         { typeof(sbyte), "char" },
         { typeof(ushort), "uint16_t" },
@@ -152,7 +152,7 @@ internal static class OnlineEventGenerator
             PacketType = GenerateKey(structure)
         };
         
-        Log.Debug("Parsed client message for {Type}, Type {0:X}, Structure {Structure}", 
+        Log.Verbose("Parsed client message for {Class}, Type {Type:X}, Structure {Structure}", 
             messageType.Name, ret.PacketType, ret.Structure);
 
         return ret;

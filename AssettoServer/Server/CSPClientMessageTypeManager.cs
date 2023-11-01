@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using AssettoServer.Network.ClientMessages;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Shared.Network.Packets.Shared;
@@ -22,5 +23,14 @@ public class CSPClientMessageTypeManager
     public void RegisterRawClientMessageType(CSPClientMessageType type, Action<ACTcpClient, PacketReader> handler)
     {
         _rawTypes.Add(type, handler);
+    }
+
+    public void RegisterOnlineEvent<TEvent>(Action<ACTcpClient, TEvent> handler) where TEvent : OnlineEvent<TEvent>, new()
+    {
+        _types.Add(OnlineEvent<TEvent>.PacketType, (sender, reader) =>
+        {
+            var packet = reader.ReadPacket<TEvent>();
+            handler(sender, packet);
+        });
     }
 }

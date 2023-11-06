@@ -114,7 +114,8 @@ internal static class OnlineEventGenerator
             {
                 type = typeof(sbyte);
             }
-            else if (type.IsEnum)
+            
+            if (type.IsEnum)
             {
                 type = Enum.GetUnderlyingType(type);
             }

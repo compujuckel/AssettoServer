@@ -66,7 +66,8 @@ public struct PacketReader
     public T Read<T>() where T : unmanaged
     {
         var bytesToRead = MarshalUtils.SizeOf(typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T));
-        var slice = Buffer.Slice(ReadPosition, Math.Min(bytesToRead, Buffer.Length - ReadPosition)).Span;
+        var actualBytesRead = Math.Min(bytesToRead, Buffer.Length - ReadPosition);
+        var slice = Buffer.Slice(ReadPosition, actualBytesRead).Span;
 
         T result;
         // Workaround for CSP client messages. Zeroes are removed from the end of a message
@@ -75,13 +76,14 @@ public struct PacketReader
             Span<byte> tmp = stackalloc byte[bytesToRead];
             slice.CopyTo(tmp);
             result = MemoryMarshal.Read<T>(tmp);
+            ReadPosition = actualBytesRead;
         }
         else
         {
             result = MemoryMarshal.Read<T>(slice);
+            ReadPosition += bytesToRead;
         }
         
-        ReadPosition += bytesToRead;
         return result;
     }
 

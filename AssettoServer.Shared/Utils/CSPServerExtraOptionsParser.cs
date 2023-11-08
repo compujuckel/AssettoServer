@@ -5,16 +5,17 @@ using System.Text.RegularExpressions;
 namespace AssettoServer.Shared.Utils;
 
 // https://github.com/ac-custom-shaders-patch/acc-extension-config/wiki/Misc-%E2%80%93-Server-extra-options
-public static class CSPServerExtraOptionsParser
+public static partial class CSPServerExtraOptionsParser
 {
-    private const string CspConfigPattern = @"\t+\$CSP0:([^\s]+)";
+    [GeneratedRegex(@"\t+\$CSP0:([^\s]+)")]
+    private static partial Regex CspConfigRegex();
     private static readonly string CspConfigSeparator = RepeatString("\t", 32) + "$CSP0:";
     
     public static (string WelcomeMessage, string ExtraOptions) Decode(string? welcomeMessage)
     {
         welcomeMessage ??= "";
         
-        var match = Regex.Match(welcomeMessage, CspConfigPattern);
+        var match = CspConfigRegex().Match(welcomeMessage);
         if (match.Success)
         {
             string extraOptionsEncoded = match.Groups[1].Value;
@@ -24,9 +25,11 @@ public static class CSPServerExtraOptionsParser
         return (welcomeMessage, "");
     }
 
-    public static string Encode(string welcomeMessage, string? extraOptions) {
-        if (string.IsNullOrWhiteSpace(extraOptions)) return welcomeMessage;
-        return $"{welcomeMessage}{CspConfigSeparator}{ToCutBase64(CompressZlib(Encoding.UTF8.GetBytes(extraOptions)))}";
+    public static string Encode(string welcomeMessage, string? extraOptions)
+    {
+        return string.IsNullOrWhiteSpace(extraOptions)
+            ? welcomeMessage 
+            : $"{welcomeMessage}{CspConfigSeparator}{ToCutBase64(CompressZlib(Encoding.UTF8.GetBytes(extraOptions)))}";
     }
 
     private static string RepeatString(string s, int number) {

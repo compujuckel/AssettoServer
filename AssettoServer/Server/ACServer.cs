@@ -26,6 +26,12 @@ namespace AssettoServer.Server;
 
 public class ACServer : CriticalBackgroundService
 {
+#if DEBUG
+    public const bool IsDebugBuild = true;
+#else
+    public const bool IsDebugBuild = false;
+#endif
+    
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;

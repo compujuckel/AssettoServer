@@ -182,13 +182,8 @@ public class HttpController : ControllerBase
     }
 
     [HttpGet("/api/scripts/{scriptId:int}")]
-    public ActionResult<string> GetScript(int scriptId)
+    public IActionResult GetScript(int scriptId)
     {
-        if (scriptId < _serverScriptProvider.Scripts.Count)
-        {
-            return _serverScriptProvider.Scripts[scriptId];
-        }
-
-        return NotFound();
+        return scriptId < _serverScriptProvider.Scripts.Count ? _serverScriptProvider.Scripts[scriptId]() : NotFound();
     }
 }

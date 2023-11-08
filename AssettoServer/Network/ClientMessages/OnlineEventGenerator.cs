@@ -4,6 +4,7 @@ using System.IO;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
+using AssettoServer.Server;
 using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Utils;
@@ -152,9 +153,12 @@ internal static class OnlineEventGenerator
             Structure = structure,
             PacketType = GenerateKey(structure)
         };
-        
-        Log.Verbose("Parsed client message for {Class}, Type {Type:X}, Structure {Structure}", 
-            messageType.Name, ret.PacketType, ret.Structure);
+
+        if (ACServer.IsDebugBuild)
+        {
+            Log.Debug("Parsed client message for {Class}, Type {Type:X}, Structure {Structure}",
+                messageType.Name, ret.PacketType, ret.Structure);
+        }
 
         return ret;
     }

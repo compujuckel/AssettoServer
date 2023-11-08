@@ -1,13 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using AssettoServer.Server.Configuration;
 using IniParser.Model;
+using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
 namespace AssettoServer.Server;
 
 public class CSPServerScriptProvider
 {
-    internal List<string> Scripts { get; } = new();
+    internal List<Func<IActionResult>> Scripts { get; } = new();
 
     private readonly CSPServerExtraOptions _cspServerExtraOptions;
 
@@ -15,18 +18,22 @@ public class CSPServerScriptProvider
     {
         _cspServerExtraOptions = cspServerExtraOptions;
     }
+
+    public void AddScriptFile(string path, string? debugFilename = null, Dictionary<string, object>? configuration = null) 
+        => AddScriptInternal(() => new PhysicalFileResult(path, "text/x-lua") { FileDownloadName = debugFilename }, debugFilename, configuration);
     
     public void AddScript(string script, string? debugFilename = null, Dictionary<string, object>? configuration = null)
     {
-        bool debug = false;
-        #if DEBUG
-        debug = true;
-        #endif
+        var bytes = Encoding.UTF8.GetBytes(script);
+        AddScriptInternal(() => new FileContentResult(bytes, "text/x-lua") { FileDownloadName = debugFilename }, debugFilename, configuration);
+    }
 
+    private void AddScriptInternal(Func<IActionResult> script, string? debugFilename = null, Dictionary<string, object>? configuration = null)
+    {
         var data = new IniData();
-        var scriptSection = data["SCRIPT_..."];
+        var scriptSection = data[$"SCRIPT_{Scripts.Count}-{debugFilename}"];
 
-        if (debug && !string.IsNullOrEmpty(debugFilename))
+        if (ACServer.IsDebugBuild && !string.IsNullOrEmpty(debugFilename))
         {
             Log.Warning("Loading Lua script {File} locally, don't forget to sync changes for release", debugFilename);
             scriptSection["SCRIPT"] = debugFilename;

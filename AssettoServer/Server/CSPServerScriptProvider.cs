@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using System.Text;
 using AssettoServer.Server.Configuration;
 using IniParser.Model;
@@ -19,19 +21,31 @@ public class CSPServerScriptProvider
         _cspServerExtraOptions = cspServerExtraOptions;
     }
 
+    public virtual void AddScriptFromResource(string resourceName, string? debugFilename = null, Dictionary<string, object>? configuration = null)
+    {
+        using var stream = Assembly.GetCallingAssembly().GetManifestResourceStream(resourceName)!;
+        using var memory = new MemoryStream();
+        stream.CopyTo(memory);
+        var bytes = memory.ToArray();
+        AddScript(bytes, debugFilename, configuration);
+    }
+
     public virtual void AddScriptFile(string path, string? debugFilename = null, Dictionary<string, object>? configuration = null)
         => AddScriptInternal(() => new PhysicalFileResult(path, "text/x-lua") { FileDownloadName = debugFilename }, debugFilename, configuration);
     
     public virtual void AddScript(string script, string? debugFilename = null, Dictionary<string, object>? configuration = null)
     {
         var bytes = Encoding.UTF8.GetBytes(script);
-        AddScriptInternal(() => new FileContentResult(bytes, "text/x-lua") { FileDownloadName = debugFilename }, debugFilename, configuration);
+        AddScript(bytes, debugFilename, configuration);
     }
+
+    public virtual void AddScript(byte[] script, string? debugFilename = null, Dictionary<string, object>? configuration = null) 
+        => AddScriptInternal(() => new FileContentResult(script, "text/x-lua") { FileDownloadName = debugFilename }, debugFilename, configuration);
 
     private void AddScriptInternal(Func<IActionResult> script, string? debugFilename = null, Dictionary<string, object>? configuration = null)
     {
         var data = new IniData();
-        var scriptSection = data[$"SCRIPT_{Scripts.Count}-{debugFilename}"];
+        var scriptSection = data[$"SCRIPT_{10 + Scripts.Count}-{debugFilename}"];
 
         if (ACServer.IsDebugBuild && !string.IsNullOrEmpty(debugFilename))
         {

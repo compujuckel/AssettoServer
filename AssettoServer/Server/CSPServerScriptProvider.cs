@@ -19,10 +19,10 @@ public class CSPServerScriptProvider
         _cspServerExtraOptions = cspServerExtraOptions;
     }
 
-    public void AddScriptFile(string path, string? debugFilename = null, Dictionary<string, object>? configuration = null) 
+    public virtual void AddScriptFile(string path, string? debugFilename = null, Dictionary<string, object>? configuration = null)
         => AddScriptInternal(() => new PhysicalFileResult(path, "text/x-lua") { FileDownloadName = debugFilename }, debugFilename, configuration);
     
-    public void AddScript(string script, string? debugFilename = null, Dictionary<string, object>? configuration = null)
+    public virtual void AddScript(string script, string? debugFilename = null, Dictionary<string, object>? configuration = null)
     {
         var bytes = Encoding.UTF8.GetBytes(script);
         AddScriptInternal(() => new FileContentResult(bytes, "text/x-lua") { FileDownloadName = debugFilename }, debugFilename, configuration);

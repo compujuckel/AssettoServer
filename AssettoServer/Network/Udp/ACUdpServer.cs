@@ -47,7 +47,7 @@ public class ACUdpServer : CriticalBackgroundService
         _lobbyCheckResponse = new byte[3];
         _lobbyCheckResponse[0] = (byte)ACServerProtocol.LobbyCheck;
         ushort httpPort = _configuration.Server.HttpPort;
-        MemoryMarshal.Write(_lobbyCheckResponse.AsSpan()[1..], in httpPort);
+        MemoryMarshal.Write(_lobbyCheckResponse.AsSpan(1), in httpPort);
     }
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -79,7 +79,7 @@ public class ACUdpServer : CriticalBackgroundService
 
     public void Send(SocketAddress address, byte[] buffer, int offset, int size)
     {
-        _socket.SendTo(buffer.AsSpan().Slice(offset, size), SocketFlags.None, address);
+        _socket.SendTo(buffer.AsSpan(offset, size), SocketFlags.None, address);
     }
 
     private void OnReceived(SocketAddress address, byte[] buffer, int size)

@@ -54,9 +54,10 @@ public class CSPServerScriptProvider
         }
         else
         {
-            Scripts.Add(script);
-            scriptSection["SCRIPT"] = $"'http://{{ServerIP}}:{{ServerHTTPPort}}/api/scripts/{Scripts.Count - 1}'";
+            scriptSection["SCRIPT"] = $"'http://{{ServerIP}}:{{ServerHTTPPort}}/api/scripts/{Scripts.Count}'";
         }
+        
+        Scripts.Add(script);
 
         if (configuration != null)
         {

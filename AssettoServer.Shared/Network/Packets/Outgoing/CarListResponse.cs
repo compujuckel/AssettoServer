@@ -25,9 +25,7 @@ public class CarListResponse : IOutgoingNetworkPacket
             writer.WriteUTF8String(car.Client?.Team);
             writer.WriteUTF8String(car.Client?.NationCode);
             writer.Write(car.IsSpectator);
-
-            for (int i = 0; i < car.Status.DamageZoneLevel.Length; i++)
-                writer.Write(car.Status.DamageZoneLevel[i]);
+            writer.Write(car.Status.DamageZoneLevel);
         }
     }
 }

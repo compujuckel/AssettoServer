@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Utils;
+using AssettoServer.Utils;
 using Serilog;
 
 namespace AssettoServer.Server.Configuration;
@@ -60,7 +61,9 @@ public class CSPServerExtraOptions
     {
         EncodedWelcomeMessage = CSPServerExtraOptionsParser.Encode(_welcomeMessage, _extraOptions);
         
-        if (!_hasShownMessageLengthWarning && EncodedWelcomeMessage.Length > 2039)
+        if (_configuration.CSPTrackOptions.MinimumCSPVersion is null or < CSPVersion.V0_1_77
+            && !_hasShownMessageLengthWarning
+            && EncodedWelcomeMessage.Length > 2039)
         {
             _hasShownMessageLengthWarning = true;
             Log.Warning("Long welcome message detected. This will lead to crashes on CSP versions older than 0.1.77");

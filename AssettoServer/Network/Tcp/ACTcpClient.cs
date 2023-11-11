@@ -507,19 +507,19 @@ public class ACTcpClient : IClient
     private void OnChecksum(PacketReader reader)
     {
         bool passedChecksum = false;
-        byte[] fullChecksum = new byte[16 * (_checksumManager.TrackChecksums.Count + 1)];
+        byte[] fullChecksum = new byte[MD5.HashSizeInBytes * (_checksumManager.TrackChecksums.Count + 1)];
         if (reader.Buffer.Length == fullChecksum.Length + 1)
         {
             reader.ReadBytes(fullChecksum);
-            CarChecksum = fullChecksum.AsSpan().Slice(fullChecksum.Length - 16).ToArray();
+            CarChecksum = fullChecksum.AsSpan(fullChecksum.Length - MD5.HashSizeInBytes).ToArray();
             passedChecksum = !_checksumManager.CarChecksums.TryGetValue(EntryCar.Model, out var modelChecksums)
-                             || modelChecksums.Count == 0 
+                             || modelChecksums.Count == 0
                              || modelChecksums.Any(c => CarChecksum.AsSpan().SequenceEqual(c));
 
             KeyValuePair<string, byte[]>[] allChecksums = _checksumManager.TrackChecksums.ToArray();
             for (int i = 0; i < allChecksums.Length; i++)
             {
-                if (!allChecksums[i].Value.AsSpan().SequenceEqual(fullChecksum.AsSpan().Slice(i * 16, 16)))
+                if (!allChecksums[i].Value.AsSpan().SequenceEqual(fullChecksum.AsSpan(i * MD5.HashSizeInBytes, MD5.HashSizeInBytes)))
                 {
                     Logger.Information("{ClientName} failed checksum for file {ChecksumFile}", Name, allChecksums[i].Key);
                     passedChecksum = false;

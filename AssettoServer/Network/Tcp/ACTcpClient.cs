@@ -24,6 +24,7 @@ using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
+using DotNext;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -61,10 +62,11 @@ public class ACTcpClient : IClient
 
     internal SocketAddress? UdpEndpoint { get; private set; }
     internal bool SupportsCSPCustomUpdate { get; private set; }
+    internal int? CSPVersion { get; private set; }
     internal string ApiKey { get; }
 
     private static ThreadLocal<byte[]> UdpSendBuffer { get; } = new(() => GC.AllocateArray<byte>(1500, true));
-    private Memory<byte> TcpSendBuffer { get; }
+    private byte[] TcpSendBuffer { get; }
     private Channel<IOutgoingNetworkPacket> OutgoingPacketChannel { get; }
     private CancellationTokenSource DisconnectTokenSource { get; }
     private Task SendLoopTask { get; set; } = null!;
@@ -182,11 +184,12 @@ public class ACTcpClient : IClient
         tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
         tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
         tcpClient.LingerState = new LingerOption(true, 2);
+        tcpClient.NoDelay = true;
 
         TcpStream = tcpClient.GetStream();
 
-        TcpSendBuffer = new byte[8192 + (_cspServerExtraOptions.EncodedWelcomeMessage.Length * 4) + 2];
-        OutgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(512);
+        TcpSendBuffer = GC.AllocateArray<byte>(ushort.MaxValue + 2, true);
+        OutgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(256);
         DisconnectTokenSource = new CancellationTokenSource();
 
         ApiKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
@@ -251,10 +254,27 @@ public class ACTcpClient : IClient
                         Logger.Verbose("Sending {PacketName} to {ClientName}", packet.GetType().Name, Name);
                 }
 
-                PacketWriter writer = new PacketWriter(TcpStream, TcpSendBuffer);
-                writer.WritePacket(packet);
-
-                await writer.SendAsync(DisconnectTokenSource.Token);
+                if (packet is BatchedPacket batched)
+                {
+                    const int streamLength = 30000;
+                    var streamOffset = TcpSendBuffer.Length - streamLength;
+                    using var tempStream = new MemoryStream(TcpSendBuffer, streamOffset, streamLength);
+                    var tempBuffer = TcpSendBuffer.AsMemory(0, streamOffset);
+                    foreach (var inner in batched.Packets)
+                    {
+                        var writer = new PacketWriter(tempStream, tempBuffer);
+                        writer.WritePacket(inner);
+                        await writer.SendAsync(DisconnectTokenSource.Token);
+                    }
+                    
+                    await TcpStream.WriteAsync(TcpSendBuffer.Slice(streamOffset, tempStream.Position), DisconnectTokenSource.Token);
+                }
+                else
+                {
+                    var writer = new PacketWriter(TcpStream, TcpSendBuffer);
+                    writer.WritePacket(packet);
+                    await writer.SendAsync(DisconnectTokenSource.Token);
+                }
             }
         }
         catch (ChannelClosedException) { }
@@ -339,6 +359,12 @@ public class ACTcpClient : IClient
 
                         EntryCar.SetActive();
                         SupportsCSPCustomUpdate = _configuration.Extra.EnableCustomUpdate && cspFeatures.Contains("CUSTOM_UPDATE");
+
+                        var cspVersionStr = cspFeatures.LastOrDefault("");
+                        if (int.TryParse(cspVersionStr, out var cspVersion))
+                        {
+                            CSPVersion = cspVersion;
+                        }
 
                         // Gracefully despawn AI cars
                         EntryCar.SetAiOverbooking(0);
@@ -448,15 +474,18 @@ public class ACTcpClient : IClient
                             OnClientEvent(reader);
                             break;
                         case ACServerProtocol.Extended:
-                            byte extendedId = reader.Read<byte>();
+                            var extendedId = reader.Read<CSPMessageTypeTcp>();
                             Logger.Verbose("Received extended TCP packet with ID {PacketId:X}", id);
 
-                            if (extendedId == (byte)CSPMessageTypeTcp.SpectateCar)
-                                OnSpectateCar(reader);
-                            else if (extendedId == (byte)CSPMessageTypeTcp.ClientMessage)
-                                _clientMessageHandler.OnCSPClientMessageTcp(this, reader);
-                            break;
-                        default:
+                            switch (extendedId)
+                            {
+                                case CSPMessageTypeTcp.SpectateCar:
+                                    OnSpectateCar(reader);
+                                    break;
+                                case CSPMessageTypeTcp.ClientMessage:
+                                    _clientMessageHandler.OnCSPClientMessageTcp(this, reader);
+                                    break;
+                            }
                             break;
                     }
                 }
@@ -796,21 +825,22 @@ public class ACTcpClient : IClient
 
         List<EntryCar> connectedCars = _entryCarManager.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
-        if (!string.IsNullOrEmpty(_cspServerExtraOptions.EncodedWelcomeMessage))
-            SendPacket(new WelcomeMessage { Message = _cspServerExtraOptions.EncodedWelcomeMessage });
+        SendPacket(new WelcomeMessage { Message = _cspServerExtraOptions.GenerateWelcomeMessage(this) });
 
-        SendPacket(new DriverInfoUpdate { ConnectedCars = connectedCars });
         _weatherManager.SendWeather(this);
-
-        foreach (EntryCar car in connectedCars)
+        
+        var batched = new BatchedPacket();
+        batched.Packets.Add(new DriverInfoUpdate { ConnectedCars = connectedCars });
+        
+        foreach (var car in connectedCars)
         {
-            SendPacket(new MandatoryPitUpdate { MandatoryPit = car.Status.MandatoryPit, SessionId = car.SessionId });
+            batched.Packets.Add(new MandatoryPitUpdate { MandatoryPit = car.Status.MandatoryPit, SessionId = car.SessionId });
             if (car != EntryCar)
-                SendPacket(new TyreCompoundUpdate { SessionId = car.SessionId, CompoundName = car.Status.CurrentTyreCompound });
+                batched.Packets.Add(new TyreCompoundUpdate { SessionId = car.SessionId, CompoundName = car.Status.CurrentTyreCompound });
 
             if (_configuration.Extra.AiParams.HideAiCars)
             {
-                SendPacket(new CSPCarVisibilityUpdate
+                batched.Packets.Add(new CSPCarVisibilityUpdate
                 {
                     SessionId = car.SessionId,
                     Visible = car.AiControlled ? CSPCarVisibility.Invisible : CSPCarVisibility.Visible
@@ -820,16 +850,18 @@ public class ACTcpClient : IClient
 
         // TODO: sent DRS zones
 
-        SendPacket(CreateLapCompletedPacket(0xFF, 0, 0));
+        batched.Packets.Add(CreateLapCompletedPacket(0xFF, 0, 0));
 
         if (_configuration.Extra.EnableClientMessages)
         {
-            SendPacket(new CSPHandshakeIn
+            batched.Packets.Add(new CSPHandshakeIn
             {
                 MinVersion = _configuration.CSPTrackOptions.MinimumCSPVersion ?? 0,
                 RequiresWeatherFx = _configuration.Extra.EnableWeatherFx
             });
         }
+
+        SendPacket(batched);
 
         FirstUpdateSent?.Invoke(this, EventArgs.Empty);
     }
@@ -907,8 +939,8 @@ public class ACTcpClient : IClient
     
     private static string IdFromGuid(ulong guid)
     {
-        using var sha1 = SHA1.Create();
-        var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes($"antarcticfurseal{guid}"));
+        var hash = SHA1.HashData(Encoding.UTF8.GetBytes($"antarcticfurseal{guid}"));
+        // TODO use Convert.ToHexStringLower once https://github.com/dotnet/runtime/issues/60393 is implemented
         StringBuilder sb = new StringBuilder();
         foreach (byte b in hash)
         {

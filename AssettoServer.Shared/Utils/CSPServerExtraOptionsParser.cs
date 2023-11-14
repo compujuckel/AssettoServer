@@ -29,7 +29,7 @@ public static partial class CSPServerExtraOptionsParser
     {
         return string.IsNullOrWhiteSpace(extraOptions)
             ? welcomeMessage 
-            : $"{welcomeMessage}{CspConfigSeparator}{ToCutBase64(CompressZlib(Encoding.UTF8.GetBytes(extraOptions)))}";
+            : $"{welcomeMessage}{CspConfigSeparator}{ToCutBase64(CompressZlib(Encoding.UTF8.GetBytes(extraOptions)).Span)}";
     }
 
     private static string RepeatString(string s, int number) {
@@ -40,19 +40,19 @@ public static partial class CSPServerExtraOptionsParser
         return b.ToString();
     }
 
-    private static string ToCutBase64(byte[] decoded) {
+    private static string ToCutBase64(ReadOnlySpan<byte> decoded) {
         return Convert.ToBase64String(decoded).TrimEnd('=');
     }
 
-    private static byte[] CompressZlib(byte[] data)
+    private static Memory<byte> CompressZlib(byte[] data)
     {
         using var m = new MemoryStream();
-        using (var d = new ZLibStream(m, CompressionLevel.SmallestSize))
+        using (var d = new ZLibStream(m, CompressionLevel.Optimal, true))
         {
             d.Write(data);
         }
         
-        return m.ToArray();
+        return m.GetBuffer().AsMemory(0, (int)m.Position);
     }
     
     private static string DecompressZlib(byte[] data)
@@ -64,7 +64,6 @@ public static partial class CSPServerExtraOptionsParser
             d.CopyTo(output);
         }
         
-        byte[] bytes = output.ToArray();
-        return Encoding.UTF8.GetString(bytes);
+        return Encoding.UTF8.GetString(output.GetBuffer().AsSpan(0, (int)output.Position));
     }
 }

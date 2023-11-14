@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Numerics;
+using System.Text;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
@@ -11,6 +12,16 @@ namespace AssettoServer.Server;
 
 public delegate void EventHandler<TSender, TArgs>(TSender sender, TArgs args) where TArgs : EventArgs;
 public delegate void EventHandlerIn<TSender, TArg>(TSender sender, in TArg args) where TArg : struct;
+
+public class WelcomeMessageSendingEventArgs : EventArgs
+{
+    public required StringBuilder Builder { get; init; }
+}
+
+public class CSPServerExtraOptionsSendingEventArgs : EventArgs
+{
+    public required StringBuilder Builder { get; init; }
+}
 
 public class HandshakeAcceptedEventArgs : DeferredEventArgs
 {

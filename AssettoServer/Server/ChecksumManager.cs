@@ -112,9 +112,8 @@ public class ChecksumManager
     {
         if (File.Exists(filePath))
         {
-            using var md5 = MD5.Create();
             using var fileStream = File.OpenRead(filePath);
-            checksum = md5.ComputeHash(fileStream);
+            checksum = MD5.HashData(fileStream);
             return true;
         }
 

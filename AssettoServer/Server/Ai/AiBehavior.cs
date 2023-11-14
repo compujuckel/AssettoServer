@@ -74,7 +74,7 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
             var targetAiState = args.TargetCar.GetClosestAiState(sender.EntryCar.Status.Position);
             if (targetAiState.AiState != null && targetAiState.DistanceSquared < 25 * 25)
             {
-                targetAiState.AiState.StopForCollision();
+                Task.Delay(Random.Shared.Next(100, 500)).ContinueWith(_ => targetAiState.AiState.StopForCollision());
             }
         }
     }

@@ -5,9 +5,9 @@ services:
     image: compujuckel/assettoserver:latest
     container_name: AssettoServer
     ports:
-      - "9600:9600"
-      - "9600:9600/udp"
-      - "8081:8081"
+      - "9700:9700"
+      - "9700:9700/udp"
+      - "8700:8700"
     volumes:
       - ./data/:/data
     environment:

@@ -8,5 +8,11 @@ target "default" {
     "linux/amd64",
     "linux/arm64",
   ]
+  tags = [
+    "nvrlift/assettoserver:latest"
+  ]
+  target "default" {
+    output = ["type=image"]
+  }
 }
 

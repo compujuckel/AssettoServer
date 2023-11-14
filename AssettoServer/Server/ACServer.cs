@@ -26,6 +26,12 @@ namespace AssettoServer.Server;
 
 public class ACServer : CriticalBackgroundService
 {
+#if DEBUG
+    public const bool IsDebugBuild = true;
+#else
+    public const bool IsDebugBuild = false;
+#endif
+    
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
@@ -97,10 +103,7 @@ public class ACServer : CriticalBackgroundService
             cspFeatureManager.Add(new CSPFeature { Name = "CUSTOM_UPDATE" });
         }
 
-        using (var streamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Lua.assettoserver.lua")!))
-        {
-            cspServerScriptProvider.AddScript(streamReader.ReadToEnd(), "assettoserver.lua");
-        }
+        cspServerScriptProvider.AddScriptFromResource("AssettoServer.Server.Lua.assettoserver.lua", "assettoserver.lua");
     }
 
     private bool IsSessionOver()

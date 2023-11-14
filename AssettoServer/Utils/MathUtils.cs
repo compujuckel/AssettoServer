@@ -15,4 +15,14 @@ public static class MathUtils
     {
         return fromValue * (1 - by) + toValue * by;
     }
+
+    public static double Saturate(double value)
+    {
+        return Math.Clamp(value, 0, 1);
+    }
+
+    public static double LerpInvSat(double value, double min, double max)
+    {
+        return Saturate((value - min) / (max - min));
+    }
 }

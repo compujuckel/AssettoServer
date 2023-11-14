@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using IniParser.Exceptions;
 using Microsoft.AspNetCore.Connections;
@@ -69,21 +70,23 @@ or another Discord server.
             Console.WriteLine("Press W to go to the AssettoServer website");
             Console.WriteLine("Press D to join the official Discord server");
             Console.WriteLine("Press any other key to exit");
-#if !DEBUG
-            var key = Console.ReadKey();
-            if (key.Key == ConsoleKey.D)
+
+            if (!ACServer.IsDebugBuild)
             {
-                OpenURL("https://discord.gg/uXEXRcSkyz");
+                var key = Console.ReadKey();
+                if (key.Key == ConsoleKey.D)
+                {
+                    OpenURL("https://discord.gg/uXEXRcSkyz");
+                }
+                else if (helpLink != null && key.Key == ConsoleKey.I)
+                {
+                    OpenURL(helpLink);
+                }
+                else if (key.Key == ConsoleKey.W)
+                {
+                    OpenURL("https://assettoserver.org/");
+                }
             }
-            else if (helpLink != null && key.Key == ConsoleKey.I)
-            {
-                OpenURL(helpLink);
-            }
-            else if (key.Key == ConsoleKey.W)
-            {
-                OpenURL("https://assettoserver.org/");
-            }
-#endif
 
             Console.ForegroundColor = old;
         }

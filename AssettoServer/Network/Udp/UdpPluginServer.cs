@@ -158,7 +158,7 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
 
     private void Send(byte[] buffer, int offset, int size)
     {
-        _socket.SendTo(buffer.AsSpan().Slice(offset, size), SocketFlags.None, _outAddress);
+        _socket.SendTo(buffer.AsSpan(offset, size), SocketFlags.None, _outAddress);
     }
 
     private void SendPacket<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket

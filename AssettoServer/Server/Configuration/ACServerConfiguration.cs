@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -26,6 +27,7 @@ public class ACServerConfiguration
     [YamlIgnore] public string? CSPExtraOptions { get; }
     [YamlIgnore] public string BaseFolder { get; }
     [YamlIgnore] public bool LoadPluginsFromWorkdir { get; }
+    [YamlIgnore] public int RandomSeed { get; } = Random.Shared.Next();
     
     /*
      * Search paths are like this:

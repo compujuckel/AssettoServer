@@ -30,8 +30,8 @@
         <PackageReference Include="Autofac" Version="7.1.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
-        <PackageReference Include="CommunityToolkit.Common" Version="8.2.1" />
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+        <PackageReference Include="CommunityToolkit.Common" Version="8.2.2" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
         <PackageReference Include="CXuesong.Luaon" Version="0.2.7" />
         <PackageReference Include="CXuesong.Luaon.Json" Version="0.2.1" />
         <PackageReference Include="DotNext.IO" Version="4.15.0" />
@@ -50,33 +50,33 @@
             <NoWarn>NU1701</NoWarn>
         </PackageReference>
         <FrameworkReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
-        <PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
+        <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
         <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="NodaTime" Version="3.1.9" />
         <PackageReference Include="Open.NAT" Version="2.1.0">
             <NoWarn>NU1701</NoWarn>
         </PackageReference>
-        <PackageReference Include="Polly" Version="8.0.0" />
-        <PackageReference Include="Grpc.Net.Client" Version="2.58.0" />
-        <PackageReference Include="prometheus-net" Version="8.0.1" />
-        <PackageReference Include="prometheus-net.AspNetCore" Version="8.0.1" />
+        <PackageReference Include="Polly" Version="8.2.0" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.59.0" />
+        <PackageReference Include="prometheus-net" Version="8.1.0" />
+        <PackageReference Include="prometheus-net.AspNetCore" Version="8.1.0" />
         <PackageReference Include="protobuf-net.Grpc" Version="1.1.1" />
         <PackageReference Include="protobuf-net.Grpc.ClientFactory" Version="1.1.1" />
         <PackageReference Include="Qmmands" Version="5.0.2" />
-        <PackageReference Include="Serilog" Version="3.0.1" />
-        <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
+        <PackageReference Include="Serilog" Version="3.1.1" />
+        <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
         <PackageReference Include="Serilog.Enrichers.Environment" Version="2.3.0" />
-        <PackageReference Include="Serilog.Expressions" Version="3.4.1" />
+        <PackageReference Include="Serilog.Expressions" Version="4.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="5.0.0" />
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-        <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.1.0" />
+        <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.2.0" />
         <PackageReference Include="SerilogTimings" Version="3.0.1" />
         <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.8" />
         <PackageReference Include="Sigil" Version="5.0.0" />
         <PackageReference Include="SunCalcNet" Version="1.2.2" />
-        <PackageReference Include="System.IO.Hashing" Version="8.0.0-rc.2.23479.6" />
+        <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
         <PackageReference Include="YamlDotNet" Version="13.7.1" />
         <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.244" PrivateAssets="all" Condition="!Exists('packages.config')" />
     </ItemGroup>

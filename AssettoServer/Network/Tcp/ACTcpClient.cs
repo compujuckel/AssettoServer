@@ -411,7 +411,7 @@ public class ACTcpClient : IClient
                             ChecksumPaths = _checksumManager.TrackChecksums.Keys,
                             CurrentTime = 0, // Ignored by AC
                             LegalTyres = cfg.LegalTyres,
-                            RandomSeed = 123,
+                            RandomSeed = _configuration.RandomSeed,
                             SessionCount = (byte)_configuration.Sessions.Count,
                             Sessions = _configuration.Sessions,
                             SpawnPosition = SessionId,

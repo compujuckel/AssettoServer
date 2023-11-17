@@ -374,6 +374,7 @@ public class ACTcpClient : IClient
                             Name, Guid, SessionId, EntryCar.Model, EntryCar.Skin);
 
                         var cfg = _configuration.Server;
+                        var checksums = _checksumManager.GetChecksumsForHandshake(EntryCar.Model);
                         HandshakeResponse handshakeResponse = new HandshakeResponse
                         {
                             ABSAllowed = cfg.ABSAllowed,
@@ -405,8 +406,8 @@ public class ACTcpClient : IClient
                             UdpPort = cfg.UdpPort,
                             CurrentSession = _sessionManager.CurrentSession.Configuration,
                             SessionTime = _sessionManager.CurrentSession.SessionTimeMilliseconds,
-                            ChecksumCount = (byte)_checksumManager.TrackChecksums.Count,
-                            ChecksumPaths = _checksumManager.TrackChecksums.Keys,
+                            ChecksumCount = (byte)checksums.Count,
+                            ChecksumPaths = checksums.Select(c => c.Key),
                             CurrentTime = 0, // Ignored by AC
                             LegalTyres = cfg.LegalTyres,
                             RandomSeed = _configuration.RandomSeed,
@@ -533,8 +534,9 @@ public class ACTcpClient : IClient
 
     private void OnChecksum(PacketReader reader)
     {
+        var allChecksums = _checksumManager.GetChecksumsForHandshake(EntryCar.Model);
         bool passedChecksum = false;
-        byte[] fullChecksum = new byte[MD5.HashSizeInBytes * (_checksumManager.TrackChecksums.Count + 1)];
+        byte[] fullChecksum = new byte[MD5.HashSizeInBytes * (allChecksums.Count + 1)];
         if (reader.Buffer.Length == fullChecksum.Length + 1)
         {
             reader.ReadBytes(fullChecksum);
@@ -542,9 +544,8 @@ public class ACTcpClient : IClient
             passedChecksum = !_checksumManager.CarChecksums.TryGetValue(EntryCar.Model, out var modelChecksums)
                              || modelChecksums.Count == 0
                              || modelChecksums.Any(c => CarChecksum.AsSpan().SequenceEqual(c));
-
-            KeyValuePair<string, byte[]>[] allChecksums = _checksumManager.TrackChecksums.ToArray();
-            for (int i = 0; i < allChecksums.Length; i++)
+            
+            for (int i = 0; i < allChecksums.Count; i++)
             {
                 if (!allChecksums[i].Value.AsSpan().SequenceEqual(fullChecksum.AsSpan(i * MD5.HashSizeInBytes, MD5.HashSizeInBytes)))
                 {

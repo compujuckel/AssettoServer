@@ -51,6 +51,13 @@ public class ChecksumManager
         }
     }
 
+    public List<KeyValuePair<string, byte[]>> GetChecksumsForHandshake(string car)
+    {
+        return TrackChecksums
+            .Concat(AdditionalCarChecksums.Where(c => c.Key.StartsWith($"content/cars/{car}")))
+            .ToList();
+    }
+
     private void CalculateTrackChecksums(string track, string trackConfig)
     {
         var dict = new Dictionary<string, byte[]>();
@@ -84,7 +91,7 @@ public class ChecksumManager
         {
             string carFolder = $"content/cars/{car}";
 
-            //AddChecksum((Dictionary<string, byte[]>)TrackChecksums, $"{carFolder}/collider.kn5");
+            AddChecksum(additionalChecksums, $"{carFolder}/collider.kn5");
             
             var checksums = new List<byte[]>();
             if (allowAlternatives && Directory.Exists(carFolder))

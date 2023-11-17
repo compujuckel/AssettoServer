@@ -140,15 +140,11 @@ public class ACUdpServer : CriticalBackgroundService
                 }
                 else if (packetId == ACServerProtocol.PositionUpdate)
                 {
-                    if (!client.HasReceivedFirstPositionUpdate)
-                        client.ReceivedFirstPositionUpdate();
-
-                    if (!client.HasPassedChecksum) return;
-
                     if (!client.HasSentFirstUpdate)
                         client.SendFirstUpdate();
-
-                    if (client.SecurityLevel < _configuration.Extra.MandatoryClientSecurityLevel) return;
+                    
+                    if (client.ChecksumStatus != ChecksumStatus.Succeeded
+                        || client.SecurityLevel < _configuration.Extra.MandatoryClientSecurityLevel) return;
 
                     car.UpdatePosition(packetReader.Read<PositionUpdateIn>());
                 }

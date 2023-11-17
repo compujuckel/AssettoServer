@@ -12,6 +12,7 @@ public class ChecksumManager
 {
     public IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; } = null!;
     public IReadOnlyDictionary<string, List<byte[]>> CarChecksums { get; private set; } = null!;
+    public IReadOnlyDictionary<string, byte[]> AdditionalCarChecksums { get; private set; } = null!;
 
     private readonly ACServerConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
@@ -24,11 +25,11 @@ public class ChecksumManager
     
     public void Initialize()
     {
-        TrackChecksums = CalculateTrackChecksums(_configuration.Server.Track, _configuration.Server.TrackConfig);
+        CalculateTrackChecksums(_configuration.Server.Track, _configuration.Server.TrackConfig);
         Log.Information("Initialized {Count} track checksums", TrackChecksums.Count);
 
         var carModels = _entryCarManager.EntryCars.Select(car => car.Model).Distinct().ToList();
-        CarChecksums = CalculateCarChecksums(carModels, _configuration.Extra.EnableAlternativeCarChecksums);
+        CalculateCarChecksums(carModels, _configuration.Extra.EnableAlternativeCarChecksums);
         Log.Information("Initialized {Count} car checksums", CarChecksums.Select(car => car.Value.Count).Sum());
 
         var modelsWithoutChecksums = CarChecksums.Where(c => c.Value.Count == 0).Select(c => c.Key).ToList();
@@ -50,7 +51,7 @@ public class ChecksumManager
         }
     }
 
-    private static Dictionary<string, byte[]> CalculateTrackChecksums(string track, string trackConfig)
+    private void CalculateTrackChecksums(string track, string trackConfig)
     {
         var dict = new Dictionary<string, byte[]>();
         
@@ -71,16 +72,20 @@ public class ChecksumManager
         
         ChecksumDirectory(dict, trackPath);
 
-        return dict;
+        TrackChecksums = dict;
     }
 
-    private static Dictionary<string, List<byte[]>> CalculateCarChecksums(IEnumerable<string> cars, bool allowAlternatives)
+    private void CalculateCarChecksums(IEnumerable<string> cars, bool allowAlternatives)
     {
-        var dict = new Dictionary<string, List<byte[]>>();
+        var carDataChecksums = new Dictionary<string, List<byte[]>>();
+        var additionalChecksums = new Dictionary<string, byte[]>();
 
         foreach (string car in cars)
         {
             string carFolder = $"content/cars/{car}";
+
+            //AddChecksum((Dictionary<string, byte[]>)TrackChecksums, $"{carFolder}/collider.kn5");
+            
             var checksums = new List<byte[]>();
             if (allowAlternatives && Directory.Exists(carFolder))
             {
@@ -102,10 +107,11 @@ public class ChecksumManager
                 }
             }
 
-            dict.Add(car, checksums);
+            carDataChecksums.Add(car, checksums);
         }
 
-        return dict;
+        CarChecksums = carDataChecksums;
+        AdditionalCarChecksums = additionalChecksums;
     }
 
     private static bool TryCreateChecksum(string filePath, [MaybeNullWhen(false)] out byte[] checksum)

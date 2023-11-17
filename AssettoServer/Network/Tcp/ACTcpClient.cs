@@ -24,7 +24,6 @@ using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
-using DotNext;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -47,14 +46,13 @@ public class ACTcpClient : IClient
     public bool IsDisconnectRequested => _disconnectRequested == 1;
     [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode))]
     public bool HasSentFirstUpdate { get; private set; }
-    public bool HasReceivedFirstPositionUpdate { get; private set; }
     public bool IsConnected { get; set; }
     public TcpClient TcpClient { get; }
 
     private NetworkStream TcpStream { get; }
     [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode))]
     public bool HasStartedHandshake { get; private set; }
-    public bool HasPassedChecksum { get; private set; }
+    public ChecksumStatus ChecksumStatus { get; private set; } = ChecksumStatus.Pending;
     public byte[]? CarChecksum { get; private set; }
     public int SecurityLevel { get; set; }
     public ulong? HardwareIdentifier { get; set; }
@@ -267,7 +265,7 @@ public class ACTcpClient : IClient
                         await writer.SendAsync(DisconnectTokenSource.Token);
                     }
                     
-                    await TcpStream.WriteAsync(TcpSendBuffer.Slice(streamOffset, tempStream.Position), DisconnectTokenSource.Token);
+                    await TcpStream.WriteAsync(TcpSendBuffer.AsMemory(streamOffset, (int)tempStream.Position), DisconnectTokenSource.Token);
                 }
                 else
                 {
@@ -557,10 +555,12 @@ public class ACTcpClient : IClient
             }
         }
         
+        ChecksumStatus = passedChecksum ? ChecksumStatus.Succeeded : ChecksumStatus.Failed;
+        
         if (!passedChecksum)
         {
             ChecksumFailed?.Invoke(this, EventArgs.Empty);
-            _ = _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} failed the checksum check and has been kicked.");
+            if (HasSentFirstUpdate) KickForFailedChecksum();
         }
         else
         {
@@ -573,8 +573,6 @@ public class ACTcpClient : IClient
                 Nation = NationCode
             }, this);
         }
-        
-        HasPassedChecksum = passedChecksum;
     }
 
     private void OnChat(PacketReader reader)
@@ -798,74 +796,92 @@ public class ACTcpClient : IClient
         return false;
     }
 
-    internal void ReceivedFirstPositionUpdate()
-    {
-        if (HasReceivedFirstPositionUpdate)
-            return;
-
-        HasReceivedFirstPositionUpdate = true;
-        
-        _ = Task.Delay(40000).ContinueWith(async _ =>
-        {
-            if (!HasPassedChecksum && IsConnected)
-            {
-                await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} did not send the requested checksums.");
-            }
-        });
-    }
-
     internal void SendFirstUpdate()
     {
         if (HasSentFirstUpdate)
             return;
-
+        
         TcpClient.ReceiveTimeout = 0;
         EntryCar.LastPongTime = _sessionManager.ServerTimeMilliseconds;
         HasSentFirstUpdate = true;
-
-        List<EntryCar> connectedCars = _entryCarManager.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
-
-        SendPacket(new WelcomeMessage { Message = _cspServerExtraOptions.GenerateWelcomeMessage(this) });
-
-        _weatherManager.SendWeather(this);
         
-        var batched = new BatchedPacket();
-        batched.Packets.Add(new DriverInfoUpdate { ConnectedCars = connectedCars });
-        
-        foreach (var car in connectedCars)
+        _ = Task.Run(SendFirstUpdateAsync);
+    }
+
+    private Task SendFirstUpdateAsync()
+    {
+        try
         {
-            batched.Packets.Add(new MandatoryPitUpdate { MandatoryPit = car.Status.MandatoryPit, SessionId = car.SessionId });
-            if (car != EntryCar)
-                batched.Packets.Add(new TyreCompoundUpdate { SessionId = car.SessionId, CompoundName = car.Status.CurrentTyreCompound });
+            var connectedCars = _entryCarManager.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
-            if (_configuration.Extra.AiParams.HideAiCars)
+            SendPacket(new WelcomeMessage { Message = _cspServerExtraOptions.GenerateWelcomeMessage(this) });
+
+            _weatherManager.SendWeather(this);
+
+            var batched = new BatchedPacket();
+            batched.Packets.Add(new DriverInfoUpdate { ConnectedCars = connectedCars });
+
+            foreach (var car in connectedCars)
             {
-                batched.Packets.Add(new CSPCarVisibilityUpdate
+                batched.Packets.Add(new MandatoryPitUpdate { MandatoryPit = car.Status.MandatoryPit, SessionId = car.SessionId });
+                if (car != EntryCar)
+                    batched.Packets.Add(new TyreCompoundUpdate { SessionId = car.SessionId, CompoundName = car.Status.CurrentTyreCompound });
+
+                if (_configuration.Extra.AiParams.HideAiCars)
                 {
-                    SessionId = car.SessionId,
-                    Visible = car.AiControlled ? CSPCarVisibility.Invisible : CSPCarVisibility.Visible
+                    batched.Packets.Add(new CSPCarVisibilityUpdate
+                    {
+                        SessionId = car.SessionId,
+                        Visible = car.AiControlled ? CSPCarVisibility.Invisible : CSPCarVisibility.Visible
+                    });
+                }
+            }
+
+            // TODO: sent DRS zones
+
+            batched.Packets.Add(CreateLapCompletedPacket(0xFF, 0, 0));
+
+            if (_configuration.Extra.EnableClientMessages)
+            {
+                batched.Packets.Add(new CSPHandshakeIn
+                {
+                    MinVersion = _configuration.CSPTrackOptions.MinimumCSPVersion ?? 0,
+                    RequiresWeatherFx = _configuration.Extra.EnableWeatherFx
                 });
             }
-        }
 
-        // TODO: sent DRS zones
+            SendPacket(batched);
 
-        batched.Packets.Add(CreateLapCompletedPacket(0xFF, 0, 0));
-
-        if (_configuration.Extra.EnableClientMessages)
-        {
-            batched.Packets.Add(new CSPHandshakeIn
+            if (ChecksumStatus == ChecksumStatus.Failed)
             {
-                MinVersion = _configuration.CSPTrackOptions.MinimumCSPVersion ?? 0,
-                RequiresWeatherFx = _configuration.Extra.EnableWeatherFx
-            });
+                KickForFailedChecksum();
+                return Task.CompletedTask;
+            }
+
+            if (ChecksumStatus == ChecksumStatus.Pending)
+            {
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(40_000);
+                    if (ChecksumStatus != ChecksumStatus.Succeeded && IsConnected)
+                    {
+                        await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} did not send the requested checksums.");
+                    }
+                });
+            }
+            
+            FirstUpdateSent?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error sending first update to {ClientName}", Name);
         }
 
-        SendPacket(batched);
-
-        FirstUpdateSent?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
     }
-        
+    
+    private void KickForFailedChecksum() => _ = _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} failed the checksum check and has been kicked.");
+    
     private LapCompletedOutgoing CreateLapCompletedPacket(byte sessionId, uint lapTime, int cuts)
     {
         // TODO: double check and rewrite this

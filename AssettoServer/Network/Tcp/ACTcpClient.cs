@@ -121,9 +121,9 @@ public class ACTcpClient : IClient
     /// <summary>
     /// Fires when a client has completed a lap
     /// </summary>
-    public event EventHandler<ACTcpClient, LapCompletedEventArgs>? LapCompleted; 
+    public event EventHandler<ACTcpClient, LapCompletedEventArgs>? LapCompleted;
 
-    public class ACTcpClientLogEventEnricher : ILogEventEnricher
+    private class ACTcpClientLogEventEnricher : ILogEventEnricher
     {
         private readonly ACTcpClient _client;
 
@@ -543,7 +543,7 @@ public class ACTcpClient : IClient
             CarChecksum = fullChecksum.AsSpan(fullChecksum.Length - MD5.HashSizeInBytes).ToArray();
             passedChecksum = !_checksumManager.CarChecksums.TryGetValue(EntryCar.Model, out var modelChecksums)
                              || modelChecksums.Count == 0
-                             || modelChecksums.Any(c => CarChecksum.AsSpan().SequenceEqual(c));
+                             || modelChecksums.Any(c => CarChecksum.AsSpan().SequenceEqual(c.Value));
             
             for (int i = 0; i < allChecksums.Count; i++)
             {
@@ -863,7 +863,7 @@ public class ACTcpClient : IClient
             {
                 _ = Task.Run(async () =>
                 {
-                    await Task.Delay(40_000);
+                    await Task.Delay(TimeSpan.FromSeconds(_configuration.Extra.PlayerChecksumTimeoutSeconds));
                     if (ChecksumStatus != ChecksumStatus.Succeeded && IsConnected)
                     {
                         await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} did not send the requested checksums.");

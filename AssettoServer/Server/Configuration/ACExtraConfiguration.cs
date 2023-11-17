@@ -71,6 +71,8 @@ public partial class ACExtraConfiguration : ObservableObject
     public bool EnableCustomUpdate { get; set; } = false;
     [YamlMember(Description = "Maximum time a player can spend on the loading screen before being disconnected")]
     public int PlayerLoadingTimeoutMinutes { get; set; } = 10;
+    [YamlMember(Description = "Maximum time the server will wait for a checksum response before disconnecting the player")]
+    public int PlayerChecksumTimeoutSeconds { get; set; } = 40;
     [YamlMember(Description = "Send logs to a Loki instance, e.g. Grafana Cloud", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public LokiSettings? LokiSettings { get; init; }
     [YamlMember(Description = "Port to control the server using Source RCON protocol. 0 to disable.")]

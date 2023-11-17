@@ -13,6 +13,13 @@ namespace AssettoServer.Server;
 public delegate void EventHandler<TSender, TArgs>(TSender sender, TArgs args) where TArgs : EventArgs;
 public delegate void EventHandlerIn<TSender, TArg>(TSender sender, in TArg args) where TArg : struct;
 
+public class WelcomeMessageSentEventArgs : EventArgs
+{
+    public required string WelcomeMessage { get; init; }
+    public required string ExtraOptions { get; init; }
+    public required string EncodedWelcomeMessage { get; init; }
+}
+
 public class WelcomeMessageSendingEventArgs : EventArgs
 {
     public required StringBuilder Builder { get; init; }

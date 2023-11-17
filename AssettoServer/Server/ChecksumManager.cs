@@ -11,7 +11,7 @@ namespace AssettoServer.Server;
 public class ChecksumManager
 {
     public IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; } = null!;
-    public IReadOnlyDictionary<string, List<byte[]>> CarChecksums { get; private set; } = null!;
+    public IReadOnlyDictionary<string, Dictionary<string, byte[]>> CarChecksums { get; private set; } = null!;
     public IReadOnlyDictionary<string, byte[]> AdditionalCarChecksums { get; private set; } = null!;
 
     private readonly ACServerConfiguration _configuration;
@@ -54,7 +54,7 @@ public class ChecksumManager
     public List<KeyValuePair<string, byte[]>> GetChecksumsForHandshake(string car)
     {
         return TrackChecksums
-            .Concat(AdditionalCarChecksums.Where(c => c.Key.StartsWith($"content/cars/{car}")))
+            .Concat(AdditionalCarChecksums.Where(c => c.Key.StartsWith($"content/cars/{car}/")))
             .ToList();
     }
 
@@ -84,7 +84,7 @@ public class ChecksumManager
 
     private void CalculateCarChecksums(IEnumerable<string> cars, bool allowAlternatives)
     {
-        var carDataChecksums = new Dictionary<string, List<byte[]>>();
+        var carDataChecksums = new Dictionary<string, Dictionary<string, byte[]>>();
         var additionalChecksums = new Dictionary<string, byte[]>();
 
         foreach (string car in cars)
@@ -93,23 +93,24 @@ public class ChecksumManager
 
             AddChecksum(additionalChecksums, $"{carFolder}/collider.kn5");
             
-            var checksums = new List<byte[]>();
+            var checksums = new Dictionary<string, byte[]>();
             if (allowAlternatives && Directory.Exists(carFolder))
             {
                 foreach (string file in Directory.EnumerateFiles(carFolder, "data*.acd"))
                 {
                     if (TryCreateChecksum(file, out byte[]? checksum))
                     {
-                        checksums.Add(checksum);
+                        checksums.Add(file, checksum);
                         Log.Debug("Added checksum for {Path}", file);
                     }
                 }
             }
             else
             {
-                if (TryCreateChecksum(Path.Join(carFolder, "data.acd"), out byte[]? checksum))
+                var acdPath = Path.Join(carFolder, "data.acd");
+                if (TryCreateChecksum(acdPath, out byte[]? checksum))
                 {
-                    checksums.Add(checksum);
+                    checksums.Add(acdPath, checksum);
                     Log.Debug("Added checksum for {Path}", car);
                 }
             }

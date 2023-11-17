@@ -15,6 +15,8 @@ public class CSPServerExtraOptions
     public event EventHandler<ACTcpClient, WelcomeMessageSendingEventArgs>? WelcomeMessageSending;
     public event EventHandler<ACTcpClient, CSPServerExtraOptionsSendingEventArgs>? CSPServerExtraOptionsSending;
 
+    public event EventHandler<ACTcpClient, WelcomeMessageSentEventArgs>? WelcomeMessageSent; 
+
     public string WelcomeMessage { get; set; }
     public string ExtraOptions { get; set; }
 
@@ -67,6 +69,12 @@ public class CSPServerExtraOptions
             client.Logger.Warning("Welcome message is too long for {Name} ({SessionId}), their game will crash. Consider setting a minimum CSP version of 0.1.77 (1937)", client.Name, client.SessionId);
         }
         
+        WelcomeMessageSent?.Invoke(client, new WelcomeMessageSentEventArgs
+        {
+            ExtraOptions = extraOptions,
+            WelcomeMessage = welcomeMessage,
+            EncodedWelcomeMessage = encodedWelcomeMessage
+        });
         return encodedWelcomeMessage;
     }
 }

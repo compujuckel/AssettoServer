@@ -119,9 +119,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AssettoServer.Hub.Contracts\AssettoServer.Hub.Contracts.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
         <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj">
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>

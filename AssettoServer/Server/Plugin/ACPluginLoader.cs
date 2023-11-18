@@ -1,16 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Loader;
 using AssettoServer.Server.Configuration;
 using McMaster.NETCore.Plugins;
 using Serilog;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace AssettoServer.Server.Plugin;
 
 public class ACPluginLoader
 {
-    public Dictionary<string, PluginLoader> AvailablePlugins { get; } = new();
-    public List<Plugin> LoadedPlugins { get; } = new();
+    public Dictionary<string, AvailablePlugin> AvailablePlugins { get; } = new();
+    public List<LoadedPlugin> LoadedPlugins { get; } = new();
 
     public ACPluginLoader(bool loadFromWorkdir)
     {
@@ -41,23 +43,52 @@ public class ACPluginLoader
             {
                 Log.Verbose("Found plugin {PluginName}, {PluginPath}", dirName, pluginDll);
 
-                var loader = PluginLoader.CreateFromAssemblyFile(
-                    pluginDll,
-                    config => config.PreferSharedTypes = true);
-                AvailablePlugins.Add(dirName, loader);
+                var loader = PluginLoader.CreateFromAssemblyFile(pluginDll, config => { config.PreferSharedTypes = true; });
+
+                PluginConfiguration config;
+                var configPath = Path.Combine(dir, "configuration.json");
+                if (File.Exists(configPath))
+                {
+                    using var stream = File.OpenRead(configPath);
+                    config = JsonSerializer.Deserialize<PluginConfiguration>(stream)!;
+                }
+                else
+                {
+                    config = new PluginConfiguration();
+                }
+                
+                AvailablePlugins.Add(dirName, new AvailablePlugin(config, loader, dir));
             }
         }
     }
 
-    public void LoadPlugin(string name)
+    public void LoadPlugins(List<string> plugins)
     {
-        if (!AvailablePlugins.TryGetValue(name, out var loader))
+        foreach (var pluginName in plugins)
+        {
+            if (!AvailablePlugins.TryGetValue(pluginName, out var plugin))
+            {
+                throw new ConfigurationException($"No plugin found with name {pluginName}");
+            }
+            
+            plugin.LoadExportedAssemblies();
+        }
+
+        foreach (var pluginName in plugins)
+        {
+            LoadPlugin(pluginName);
+        }
+    }
+
+    private void LoadPlugin(string name)
+    {
+        if (!AvailablePlugins.TryGetValue(name, out var plugin))
         {
             throw new ConfigurationException($"No plugin found with name {name}");
         }
         
-        var assembly = loader.LoadDefaultAssembly();
-
+        var assembly = plugin.Load();
+        
         foreach (var type in assembly.GetTypes())
         {
             if (typeof(AssettoServerModule).IsAssignableFrom(type) && !type.IsAbstract)
@@ -80,7 +111,7 @@ public class ACPluginLoader
                     }
                 }
 
-                LoadedPlugins.Add(new Plugin(name, assembly, instance, configType, validatorType));
+                LoadedPlugins.Add(new LoadedPlugin(name, assembly, instance, configType, validatorType));
             }
         }
         

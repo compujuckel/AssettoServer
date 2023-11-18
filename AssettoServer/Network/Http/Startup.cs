@@ -142,11 +142,8 @@ public class Startup
         });
         
         var mvcBuilder = services.AddControllers();
-            
-        foreach (string pluginName in _configuration.Extra.EnablePlugins)
-        {
-            _loader.LoadPlugin(pluginName);
-        }
+        
+        _loader.LoadPlugins(_configuration.Extra.EnablePlugins);
             
         foreach (var plugin in _loader.LoadedPlugins)
         {

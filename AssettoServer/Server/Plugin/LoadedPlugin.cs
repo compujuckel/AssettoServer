@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace AssettoServer.Server.Plugin;
 
-public class Plugin
+public class LoadedPlugin
 {
     public string Name { get; }
     public Assembly Assembly { get; }
@@ -11,7 +11,7 @@ public class Plugin
     public Type? ConfigurationType { get; }
     public Type? ValidatorType { get; }
 
-    public Plugin(string name, Assembly assembly, AssettoServerModule instance, Type? configurationType, Type? validatorType)
+    public LoadedPlugin(string name, Assembly assembly, AssettoServerModule instance, Type? configurationType, Type? validatorType)
     {
         Name = name;
         Assembly = assembly;

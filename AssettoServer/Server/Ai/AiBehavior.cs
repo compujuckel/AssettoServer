@@ -51,7 +51,8 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
         if (_configuration.Extra.AiParams.Debug)
         {
-            serverScriptProvider.AddScriptFromResource("AssettoServer.Server.Ai.ai_debug.lua", "ai_debug.lua");
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Ai.ai_debug.lua")!;
+            serverScriptProvider.AddScript(stream, "ai_debug.lua");
         }
 
         _updateDurationTimer = Metrics.CreateSummary("assettoserver_aibehavior_update", "AiBehavior.Update Duration", MetricDefaults.DefaultQuantiles);

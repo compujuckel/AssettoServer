@@ -22,8 +22,8 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Enable Steam ticket validation. Requires CSP 0.1.75+ and a recent version of Content Manager")]
     public bool UseSteamAuth { get; init; } = false;
     [YamlMember(Description = "List of DLC App IDs that are required to join. Steam auth must be enabled. Possible values: https://steamdb.info/app/244210/dlc/")]
-    public List<int> ValidateDlcOwnership { get; init; } = new();
-    [YamlMember(Description = "Enable protection against cheats/hacks. 0 = No protection. 1 = Block all public cheats as of 2023-07-08 (ClientSecurityPlugin and CSP 0.1.80+ required)")]
+    public List<int> ValidateDlcOwnership { get; init; } = [];
+    [YamlMember(Description = "Enable protection against cheats/hacks. 0 = No protection. 1 = Block all public cheats as of 2023-11-18 (ClientSecurityPlugin and CSP 0.2.0+ required)")]
     public int MandatoryClientSecurityLevel { get; init; }
     [YamlMember(Description = "Enable AFK autokick")]
     public bool EnableAntiAfk { get; set; } = true;
@@ -58,7 +58,7 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Override the country shown in CM. Please do not use this unless the autodetected country is wrong", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public List<string>? GeoParamsCountryOverride { get; init; } = null;
     [YamlMember(Description = "List of plugins to enable")]
-    public List<string> EnablePlugins { get; init; } = new();
+    public List<string> EnablePlugins { get; init; } = [];
     [YamlMember(Description = "Ignore some common configuration errors. More info: https://assettoserver.org/docs/common-configuration-errors")]
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
@@ -107,7 +107,7 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Allow a user group to execute specific admin commands")]
     public List<UserGroupCommandPermissions>? UserGroupCommandPermissions { get; init; }
     
-    public AiParams AiParams { get; init; } = new AiParams();
+    public AiParams AiParams { get; init; } = new();
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
     [YamlIgnore] public string Path { get; private set; } = null!;
@@ -313,8 +313,7 @@ public partial class AiParams : ObservableObject
     public Dictionary<int, LaneCountSpecificOverrides> LaneCountSpecificOverrides { get; set; } = new();
 
     [YamlMember(Description = "Override some settings for specific car models")]
-    public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = new()
-    {
+    public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = [
         new CarSpecificOverrides
         {
             Model = "my_car_model",
@@ -340,7 +339,7 @@ public partial class AiParams : ObservableObject
             MinSpawnProtectionTimeSeconds = 30,
             MaxSpawnProtectionTimeSeconds = 60
         }
-    };
+    ];
 
     [YamlIgnore] public float PlayerRadiusSquared => PlayerRadiusMeters * PlayerRadiusMeters;
     [YamlIgnore] public float PlayerAfkTimeoutMilliseconds => PlayerAfkTimeoutSeconds * 1000;

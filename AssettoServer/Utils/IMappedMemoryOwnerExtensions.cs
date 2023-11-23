@@ -6,6 +6,7 @@ namespace AssettoServer.Utils;
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public static class IMappedMemoryOwnerExtensions
 {
+    [SuppressMessage("ReSharper", "NotAccessedField.Local")]
     private static byte _dummy;
     
     public static void Prefault(this IMappedMemoryOwner self)

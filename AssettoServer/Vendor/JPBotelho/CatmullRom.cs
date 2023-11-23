@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 // From https://github.com/JPBotelho/Catmull-Rom-Splines, Unity dependencies removed
 
+// ReSharper disable once CheckNamespace
 namespace JPBotelho
 {
     /*  

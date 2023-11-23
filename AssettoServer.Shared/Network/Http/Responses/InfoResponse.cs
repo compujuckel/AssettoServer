@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace AssettoServer.Shared.Network.Http.Responses;
 
@@ -49,6 +50,7 @@ public class InfoResponse
     [JsonPropertyName("timestamp")]
     public long Timestamp { get; set; }
     [JsonPropertyName("tport")]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public ushort TPort { get; set; }
     [JsonPropertyName("track")]
     public string? Track { get; set; }

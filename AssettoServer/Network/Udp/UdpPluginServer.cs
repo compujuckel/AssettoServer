@@ -120,7 +120,7 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
 
         SendPacket(new Version{ ProtocolVersion = RequiredProtocolVersion });
         SendSessionInfo(-1, true);
-        _sessionManager.SessionChanged += (manager, args) =>
+        _sessionManager.SessionChanged += (_, args) =>
         {
             SendSessionInfo((short)args.NextSession.Configuration.Id, true);
         };

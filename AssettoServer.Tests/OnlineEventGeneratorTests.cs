@@ -1,4 +1,5 @@
 ﻿using AssettoServer.Network.ClientMessages;
+// ReSharper disable InconsistentNaming
 
 namespace AssettoServer.Tests;
 

@@ -19,10 +19,9 @@ public class LuaOutputFormatter : TextOutputFormatter
     {
         var serializer = new JsonSerializer();
         await using var sw = context.WriterFactory(context.HttpContext.Response.Body, selectedEncoding);
-        using var jlw = new JsonLuaWriter(sw) {
-            CloseOutput = false,
-            Formatting = Formatting.None
-        };
+        using var jlw = new JsonLuaWriter(sw);
+        jlw.CloseOutput = false;
+        jlw.Formatting = Formatting.None;
 
         serializer.Serialize(jlw, context.Object);
         await sw.FlushAsync();

@@ -2,7 +2,4 @@
 
 namespace AssettoServer.Server.Plugin;
 
-public interface IAssettoServerAutostart : IHostedService
-{
-    
-}
+public interface IAssettoServerAutostart : IHostedService;

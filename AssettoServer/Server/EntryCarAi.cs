@@ -35,7 +35,7 @@ public partial class EntryCar
     public float AiCorneringSpeedFactor { get; set; }
     public float AiCorneringBrakeDistanceFactor { get; set; }
     public float AiCorneringBrakeForceFactor { get; set; }
-    public float AiSplineHeightOffsetMeters { get; set; } = 0;
+    public float AiSplineHeightOffsetMeters { get; set; }
     public int? AiMaxOverbooking { get; set; }
     public int AiMinSpawnProtectionTimeMilliseconds { get; set; }
     public int AiMaxSpawnProtectionTimeMilliseconds { get; set; }

@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;

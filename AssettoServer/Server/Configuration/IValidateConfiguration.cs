@@ -2,7 +2,4 @@
 
 namespace AssettoServer.Server.Configuration;
 
-public interface IValidateConfiguration<T> where T : IValidator
-{
-    
-}
+public interface IValidateConfiguration<T> where T : IValidator;

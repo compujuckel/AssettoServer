@@ -21,6 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj" />
       <ProjectReference Include="..\AssettoServer\AssettoServer.csproj" />
     </ItemGroup>
 

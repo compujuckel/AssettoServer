@@ -7,6 +7,4 @@ namespace AssettoServer.Network.Http;
 [JsonSerializable(typeof(InfoResponse))]
 [JsonSerializable(typeof(DetailResponse))]
 [JsonSerializable(typeof(EntryListResponse))]
-internal partial class JsonSourceGenerationContext : JsonSerializerContext
-{
-}
+internal partial class JsonSourceGenerationContext : JsonSerializerContext;

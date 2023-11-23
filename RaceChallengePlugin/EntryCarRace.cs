@@ -116,7 +116,7 @@ public class EntryCarRace
                         car.Client?.SendPacket(new ChatMessage
                             { SessionId = 255, Message = $"{_entryCar.Client?.Name} has challenged you to a race. Flash your hazard lights or send /accept within 10 seconds to accept." });
 
-                    _ = Task.Delay(10000).ContinueWith(t =>
+                    _ = Task.Delay(10000).ContinueWith(_ =>
                     {
                         if (!currentRace.HasStarted)
                         {

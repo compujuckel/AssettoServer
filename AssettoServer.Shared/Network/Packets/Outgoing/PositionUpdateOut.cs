@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 
 namespace AssettoServer.Shared.Network.Packets.Outgoing;
 
@@ -17,6 +18,7 @@ public enum CarStatusFlags
     WiperLevel3 = WiperLevel1 | WiperLevel2
 }
 
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 public readonly struct PositionUpdateOut : IOutgoingNetworkPacket
 {
     public readonly byte SessionId;

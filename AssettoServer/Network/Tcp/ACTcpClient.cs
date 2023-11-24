@@ -60,7 +60,7 @@ public class ACTcpClient : IClient
 
     internal SocketAddress? UdpEndpoint { get; private set; }
     internal bool SupportsCSPCustomUpdate { get; private set; }
-    internal int? CSPVersion { get; private set; }
+    public int? CSPVersion { get; private set; }
     internal string ApiKey { get; }
 
     private static ThreadLocal<byte[]> UdpSendBuffer { get; } = new(() => GC.AllocateArray<byte>(1500, true));

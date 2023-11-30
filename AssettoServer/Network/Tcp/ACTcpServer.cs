@@ -24,7 +24,7 @@ public class ACTcpServer : CriticalBackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Log.Information("Starting TCP server on port {TcpPort}", _configuration.Server.TcpPort);
-        var listener = new TcpListener(IPAddress.Any, _configuration.Server.TcpPort);
+        using var listener = new TcpListener(IPAddress.Any, _configuration.Server.TcpPort);
         listener.Start();
 
         while (!stoppingToken.IsCancellationRequested)

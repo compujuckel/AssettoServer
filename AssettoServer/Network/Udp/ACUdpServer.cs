@@ -60,6 +60,7 @@ public class ACUdpServer : CriticalBackgroundService
             _socket.IOControl(-1744830452 /* SIO_UDP_CONNRESET */, new byte[] { 0, 0, 0, 0 }, null);
         }
 
+        _socket.ReceiveTimeout = 1000;
         _socket.Bind(new IPEndPoint(IPAddress.Any, _port));
         await Task.Factory.StartNew(() => ReceiveLoop(stoppingToken), TaskCreationOptions.LongRunning);
     }
@@ -76,11 +77,14 @@ public class ACUdpServer : CriticalBackgroundService
                 var bytesRead = _socket.ReceiveFrom(buffer, SocketFlags.None, address);
                 OnReceived(address, buffer, bytesRead);
             }
+            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut) { }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in UDP receive loop");
             }
         }
+
+        _socket.Dispose();
     }
 
     public void Send(SocketAddress address, byte[] buffer, int offset, int size)

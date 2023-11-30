@@ -87,7 +87,7 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
     private async Task ObstacleDetectionAsync(CancellationToken stoppingToken)
     {
-        var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
 
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
@@ -326,7 +326,7 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
     private async Task UpdateAsync(CancellationToken stoppingToken)
     {
-        var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_configuration.Extra.AiParams.AiBehaviorUpdateIntervalMilliseconds));
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_configuration.Extra.AiParams.AiBehaviorUpdateIntervalMilliseconds));
 
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {

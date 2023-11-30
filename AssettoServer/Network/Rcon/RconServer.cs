@@ -24,7 +24,7 @@ public class RconServer : CriticalBackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Log.Information("Starting RCON server on port {TcpPort}", _configuration.Extra.RconPort);
-        var listener = new TcpListener(IPAddress.Any, _configuration.Extra.RconPort);
+        using var listener = new TcpListener(IPAddress.Any, _configuration.Extra.RconPort);
         listener.Start();
 
         while (!stoppingToken.IsCancellationRequested)

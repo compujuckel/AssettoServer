@@ -61,11 +61,14 @@ public class ACServerConfiguration
         {
             BaseFolder = Path.GetDirectoryName(serverCfgPath)!;
         }
-
+        
+        Log.Debug("Loading server_cfg.ini from {Path}", serverCfgPath);
         Server = ServerConfiguration.FromFile(serverCfgPath);
+        
+        Log.Debug("Loading entry_list.ini from {Path}", entryListPath);
         EntryList = EntryList.FromFile(entryListPath);
+        
         ServerVersion = ThisAssembly.AssemblyInformationalVersion;
-
         FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : Server.Track + "-" + Server.TrackConfig;
         CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
 
@@ -117,7 +120,9 @@ public class ACServerConfiguration
     }
 
     private void LoadExtraConfig() {
-        string extraCfgPath = Path.Join(BaseFolder, "extra_cfg.yml");
+        var extraCfgPath = Path.Join(BaseFolder, "extra_cfg.yml");
+        Log.Debug("Loading extra_cfg.yml from {Path}", extraCfgPath);
+        
         if (!File.Exists(extraCfgPath))
         {
             var cfg = new ACExtraConfiguration();

@@ -12,7 +12,7 @@ using Supercluster.KDTree;
 
 namespace AssettoServer.Server.Ai.Splines;
 
-public class AiSpline
+public class AiSpline : IDisposable
 {
     public const int SupportedVersion = 1;
     
@@ -93,5 +93,13 @@ public class AiSpline
     {
         var lanes = GetLanes(pointId);
         return lanes[Random.Shared.Next(lanes.Length)];
+    }
+
+    public void Dispose()
+    {
+        _treeNodesOwner.Dispose();
+        _treePointsOwner.Dispose();
+        _fileAccessor.Dispose();
+        _file.Dispose();
     }
 }

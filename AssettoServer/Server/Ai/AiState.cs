@@ -70,8 +70,8 @@ public class AiState
     private readonly AiSpline _spline;
     private readonly JunctionEvaluator _junctionEvaluator;
 
-    private static readonly List<Color> CarColors = new()
-    {
+    private static readonly List<Color> CarColors =
+    [
         Color.FromArgb(13, 17, 22),
         Color.FromArgb(19, 24, 31),
         Color.FromArgb(28, 29, 33),
@@ -89,8 +89,8 @@ public class AiState
         Color.FromArgb(28, 53, 81),
         Color.FromArgb(37, 58, 167),
         Color.FromArgb(21, 92, 45),
-        Color.FromArgb(18, 46, 43),
-    };
+        Color.FromArgb(18, 46, 43)
+    ];
 
     public AiState(EntryCar entryCar, SessionManager sessionManager, WeatherManager weatherManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, AiSpline spline)
     {

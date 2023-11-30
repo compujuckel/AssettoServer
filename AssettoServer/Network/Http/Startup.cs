@@ -81,7 +81,7 @@ public class Startup
         builder.RegisterType<OpenSlotFilterChain>().AsSelf().SingleInstance();
         builder.RegisterType<WhitelistSlotFilter>().As<IOpenSlotFilter>();
         builder.RegisterType<GuidSlotFilter>().As<IOpenSlotFilter>();
-        builder.RegisterType<SignalHandler>().AsSelf().SingleInstance().AutoActivate();
+        builder.RegisterType<SignalHandler>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<UpnpService>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         builder.RegisterType<ConfigurationSerializer>().AsSelf();
         builder.RegisterType<ACClientAuthentication>().AsSelf().SingleInstance().AutoActivate();

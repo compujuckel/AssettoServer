@@ -5,54 +5,59 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using Autofac.Core;
 using IniParser.Exceptions;
 using Microsoft.AspNetCore.Connections;
 using YamlDotNet.Core;
 
 namespace AssettoServer;
 
-public static class ExceptionHelper
+internal static class ExceptionHelper
 {
-    public const string HorizontalSeparator = "══════════════════════════════════════════════════════════════════════════════════════════════════════";
+    private const string HorizontalSeparator = "══════════════════════════════════════════════════════════════════════════════════════════════════════";
 
-    public const string GeneralInformation = """
-AssettoServer has failed to start. Here is what to try next:
-- Read the above error message carefully
-- Read the documentation: https://assettoserver.org/
-- Ask for help in the official AssettoServer Discord: https://discord.gg/uXEXRcSkyz
+    private const string GeneralInformation = """
+                                              AssettoServer has failed to start. Here is what to try next:
+                                              - Read the above error message carefully
+                                              - Read the documentation: https://assettoserver.org/
+                                              - Ask for help in the official AssettoServer Discord: https://discord.gg/uXEXRcSkyz
 
-Please make sure that you downloaded AssettoServer from the official website.
-Security of the files cannot be guaranteed if you downloaded it from a random YouTube video
-or another Discord server.
-""";
+                                              Please make sure that you downloaded AssettoServer from the official website.
+                                              Security of the files cannot be guaranteed if you downloaded it from a random YouTube video
+                                              or another Discord server.
+                                              """;
 
     public static void PrintExceptionHelp(Exception ex, bool isContentManager)
     {
         string? helpLink = null;
 
-        var inner = ex;
-        while (inner.InnerException != null)
+        while (ex is DependencyResolutionException && ex.InnerException != null)
         {
-            inner = inner.InnerException;
+            ex = ex.InnerException;
         }
         
         Console.WriteLine();
-        if (ex is YamlException yamlException)
+        switch (ex)
         {
-            WrapText(YamlExceptionHelp(yamlException), isContentManager);
-        }
-        else if (ex is ParsingException iniException)
-        {
-            WrapText(IniExceptionHelp(iniException), isContentManager);
-        }
-        else if (ex is IOException { InnerException: AddressInUseException } or SocketException { ErrorCode: 10048 })
-        {
-            WrapText(AddressInUseExceptionHelp(), isContentManager);
-        }
-        else if (inner is ConfigurationException configurationException)
-        {
-            WrapText(configurationException.Message, isContentManager);
-            helpLink = configurationException.HelpLink;
+            case YamlException yamlException:
+                WrapText(YamlExceptionHelp(yamlException), isContentManager);
+                break;
+            case ParsingException when ex.InnerException is FileNotFoundException fnfException:
+                WrapText(fnfException.Message, isContentManager);
+                break;
+            case ParsingException iniException:
+                WrapText(IniExceptionHelp(iniException), isContentManager);
+                break;
+            case IOException { InnerException: AddressInUseException } or SocketException { ErrorCode: 10048 }:
+                WrapText(AddressInUseExceptionHelp(), isContentManager);
+                break;
+            case ConfigurationException configurationException:
+                WrapText(configurationException.Message, isContentManager);
+                helpLink = configurationException.HelpLink;
+                break;
+            default:
+                WrapText(ex.Message, isContentManager);
+                break;
         }
 
         Console.WriteLine(HorizontalSeparator);
@@ -119,6 +124,7 @@ or another Discord server.
         return $"""
 YAML error. Check your extra_cfg.yml around line {ex.Start.Line}.
 When copying plugin configuration, make sure to copy EVERYTHING, including the "---".
+{ex.Message}
 """;
     }
 
@@ -126,6 +132,7 @@ When copying plugin configuration, make sure to copy EVERYTHING, including the "
     {
         return $"""
 INI error. Check your server_cfg.ini or entry_list.ini around line {ex.LineNumber}.
+{ex.Message}
 """;
     }
 

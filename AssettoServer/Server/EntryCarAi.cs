@@ -75,7 +75,7 @@ public partial class EntryCar
         TyreDiameterMeters = _configuration.Extra.AiParams.TyreDiameterMeters;
         AiMinSpawnProtectionTimeMilliseconds = _configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds;
         AiMaxSpawnProtectionTimeMilliseconds = _configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds;
-        AiMinCollisionStopTimeMilliseconds = _configuration.Extra.AiParams.MaxCollisionStopTimeMilliseconds;
+        AiMinCollisionStopTimeMilliseconds = _configuration.Extra.AiParams.MinCollisionStopTimeMilliseconds;
         AiMaxCollisionStopTimeMilliseconds = _configuration.Extra.AiParams.MaxCollisionStopTimeMilliseconds;
 
         foreach (var carOverrides in _configuration.Extra.AiParams.CarSpecificOverrides)

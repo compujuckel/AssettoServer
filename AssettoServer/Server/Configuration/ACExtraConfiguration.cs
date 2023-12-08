@@ -272,6 +272,8 @@ public partial class AiParams : ObservableObject
     public float LaneWidthMeters { get; init; } = 3.0f;
     [YamlMember(Description = "Enable two way traffic. This will allow AI cars to spawn in lanes with the opposite direction of travel to the player.")]
     public bool TwoWayTraffic { get; set; } = false;
+    [YamlMember(Description = "Enable traffic spawning if the player is driving the wrong way. Only takes effect when TwoWayTraffic is set to false.")]
+    public bool WrongWayTraffic { get; set; } = true;
     
     [ObservableProperty]
     [property: YamlMember(Description = "AI cornering speed factor. Lower = AI cars will drive slower around corners.")]

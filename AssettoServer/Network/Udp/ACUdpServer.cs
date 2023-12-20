@@ -54,12 +54,7 @@ public class ACUdpServer : CriticalBackgroundService
     {
         Log.Information("Starting UDP server on port {Port}", _port);
 
-        // https://stackoverflow.com/questions/5199026/c-sharp-async-udp-listener-socketexception
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            _socket.IOControl(-1744830452 /* SIO_UDP_CONNRESET */, new byte[] { 0, 0, 0, 0 }, null);
-        }
-
+        _socket.DisableUdpIcmpExceptions();       
         _socket.ReceiveTimeout = 1000;
         _socket.Bind(new IPEndPoint(IPAddress.Any, _port));
         await Task.Factory.StartNew(() => ReceiveLoop(stoppingToken), TaskCreationOptions.LongRunning);

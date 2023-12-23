@@ -94,3 +94,13 @@ public class LapCompletedEventArgs : EventArgs
         Packet = packet;
     }
 }
+
+public class CarListResponseSendingEventArgs : EventArgs
+{
+    public CarListResponse Packet { get; }
+    
+    public CarListResponseSendingEventArgs(CarListResponse packet)
+    {
+        Packet = packet;
+    }
+}

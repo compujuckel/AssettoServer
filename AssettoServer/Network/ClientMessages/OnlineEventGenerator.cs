@@ -267,7 +267,7 @@ internal static class OnlineEventGenerator
                 var elementType = field.Type.GetElementType()!;
                 var rosType = typeof(ReadOnlySpan<>).MakeGenericType(elementType);
                 var opImplicit = rosType.GetMethod("op_Implicit", 
-                    BindingFlags.Public | BindingFlags.Static, new[] { field.Type })!;
+                    BindingFlags.Public | BindingFlags.Static, [field.Type])!;
                 emitter.Call(opImplicit);
                 emitter.LoadConstant(field.Array.Value);
                 emitter.LoadConstant(i < message.Fields.Count - 1); // padding

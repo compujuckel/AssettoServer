@@ -64,6 +64,7 @@
         <PackageReference Include="protobuf-net.Grpc" Version="1.1.1" />
         <PackageReference Include="protobuf-net.Grpc.ClientFactory" Version="1.1.1" />
         <PackageReference Include="Qmmands" Version="5.0.2" />
+        <PackageReference Include="Scriban" Version="5.9.1" />
         <PackageReference Include="Serilog" Version="3.1.1" />
         <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
         <PackageReference Include="Serilog.Enrichers.Environment" Version="2.3.0" />
@@ -136,5 +137,11 @@
         <EmbeddedResource Include="Assets\logo_42.png" />
         <None Remove="Assets\srp-logo-new.png" />
         <EmbeddedResource Include="Assets\srp-logo-new.png" />
+        <None Remove="Assets\crash_report.md.tpl" />
+        <EmbeddedResource Include="Assets\crash_report.md.tpl" />
+        <None Remove="Assets\server_cfg.ini" />
+        <EmbeddedResource Include="Assets\server_cfg.ini" />
+        <None Remove="Assets\entry_list.ini" />
+        <EmbeddedResource Include="Assets\entry_list.ini" />
     </ItemGroup>
 </Project>

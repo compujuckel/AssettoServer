@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using AssettoServer.Shared.Model;
@@ -43,31 +44,31 @@ public class ACServerConfiguration
      *
      * When "entryListPath" is set, it takes precedence and entry_list.ini will be loaded from the specified path.
      */
-    public ACServerConfiguration(string preset, string serverCfgPath, string entryListPath, bool loadPluginsFromWorkdir)
+    public ACServerConfiguration(string preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir)
     {
-        BaseFolder = string.IsNullOrEmpty(preset) ? "cfg" : Path.Join("presets", preset);
+        BaseFolder = locations.BaseFolder;
         LoadPluginsFromWorkdir = loadPluginsFromWorkdir;
+        
+        Log.Debug("Loading server_cfg.ini from {Path}", locations.ServerCfgPath);
+        if (!File.Exists(locations.ServerCfgPath))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(locations.ServerCfgPath)!);
+            using var serverCfg = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Assets.server_cfg.ini")!;
+            using var outFile = File.Create(locations.ServerCfgPath);
+            serverCfg.CopyTo(outFile);
+        }
+        Server = ServerConfiguration.FromFile(locations.ServerCfgPath);
 
-        if (string.IsNullOrEmpty(entryListPath))
+        Log.Debug("Loading entry_list.ini from {Path}", locations.EntryListPath);
+        if (!File.Exists(locations.EntryListPath))
         {
-            entryListPath = Path.Join(BaseFolder, "entry_list.ini");
+            Directory.CreateDirectory(Path.GetDirectoryName(locations.EntryListPath)!);
+            using var entryList = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Assets.entry_list.ini")!;
+            using var outFile = File.Create(locations.EntryListPath);
+            entryList.CopyTo(outFile);
         }
+        EntryList = EntryList.FromFile(locations.EntryListPath);
 
-        if (string.IsNullOrEmpty(serverCfgPath))
-        {
-            serverCfgPath = Path.Join(BaseFolder, "server_cfg.ini");
-        }
-        else
-        {
-            BaseFolder = Path.GetDirectoryName(serverCfgPath)!;
-        }
-        
-        Log.Debug("Loading server_cfg.ini from {Path}", serverCfgPath);
-        Server = ServerConfiguration.FromFile(serverCfgPath);
-        
-        Log.Debug("Loading entry_list.ini from {Path}", entryListPath);
-        EntryList = EntryList.FromFile(entryListPath);
-        
         ServerVersion = ThisAssembly.AssemblyInformationalVersion;
         FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : Server.Track + "-" + Server.TrackConfig;
         CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
@@ -81,11 +82,10 @@ public class ACServerConfiguration
         {
             Log.Warning("Welcome message not found at {Path}", Path.GetFullPath(welcomeMessagePath));
         }
-
-        string cspExtraOptionsPath = Path.Join(BaseFolder, "csp_extra_options.ini"); 
-        if (File.Exists(cspExtraOptionsPath))
+        
+        if (File.Exists(locations.CSPExtraOptionsPath))
         {
-            CSPExtraOptions = File.ReadAllText(cspExtraOptionsPath);
+            CSPExtraOptions = File.ReadAllText(locations.CSPExtraOptionsPath);
         }
 
         var sessions = new List<SessionConfiguration>();
@@ -113,23 +113,48 @@ public class ACServerConfiguration
 
         Sessions = sessions;
 
-        LoadExtraConfig();
+        if (Server.MaxClients == 0)
+        {
+            Server.MaxClients = EntryList.Cars.Count;
+        }
+
+        LoadExtraConfig(locations.ExtraCfgPath);
+        
+        if (Extra is { EnableAi: true, AiParams.AutoAssignTrafficCars: true })
+        {
+            foreach (var entry in EntryList.Cars)
+            {
+                if (entry.Model.Contains("traffic"))
+                {
+                    entry.AiMode = AiMode.Fixed;
+                }
+            }
+        }
+
+        if (Extra.AiParams.AiPerPlayerTargetCount == 0)
+        {
+            Extra.AiParams.AiPerPlayerTargetCount = EntryList.Cars.Count(c => c.AiMode != AiMode.None);
+        }
+
+        if (Extra.AiParams.MaxAiTargetCount == 0)
+        {
+            Extra.AiParams.MaxAiTargetCount = EntryList.Cars.Count(c => c.AiMode == AiMode.None) * Extra.AiParams.AiPerPlayerTargetCount;
+        }
 
         var validator = new ACServerConfigurationValidator();
         validator.ValidateAndThrow(this);
     }
 
-    private void LoadExtraConfig() {
-        var extraCfgPath = Path.Join(BaseFolder, "extra_cfg.yml");
-        Log.Debug("Loading extra_cfg.yml from {Path}", extraCfgPath);
+    private void LoadExtraConfig(string path) {
+        Log.Debug("Loading extra_cfg.yml from {Path}", path);
         
-        if (!File.Exists(extraCfgPath))
+        if (!File.Exists(path))
         {
             var cfg = new ACExtraConfiguration();
-            cfg.ToFile(extraCfgPath);
+            cfg.ToFile(path);
         }
         
-        Extra = ACExtraConfiguration.FromFile(extraCfgPath);
+        Extra = ACExtraConfiguration.FromFile(path);
 
         if (Regex.IsMatch(Server.Name, @"x:\w+$"))
         {

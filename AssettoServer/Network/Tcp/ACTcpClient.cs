@@ -343,7 +343,9 @@ public class ACTcpClient : IClient
                         SendPacket(new UnsupportedProtocolResponse());
                     else if (await _blacklist.IsBlacklistedAsync(handshakeRequest.Guid))
                         SendPacket(new BlacklistedResponse());
-                    else if (_configuration.Server.Password?.Length > 0 && handshakeRequest.Password != _configuration.Server.Password && handshakeRequest.Password != _configuration.Server.AdminPassword)
+                    else if (_configuration.Server.Password?.Length > 0
+                             && handshakeRequest.Password != _configuration.Server.Password
+                             && !_configuration.Server.CheckAdminPassword(handshakeRequest.Password))
                         SendPacket(new WrongPasswordResponse());
                     else if (!_sessionManager.CurrentSession.Configuration.IsOpen)
                         SendPacket(new SessionClosedResponse());
@@ -372,7 +374,7 @@ public class ACTcpClient : IClient
                         // Gracefully despawn AI cars
                         EntryCar.SetAiOverbooking(0);
 
-                        if (handshakeRequest.Password == _configuration.Server.AdminPassword)
+                        if (_configuration.Server.CheckAdminPassword(handshakeRequest.Password))
                             IsAdministrator = true;
 
                         Logger.Information("{ClientName} ({ClientSteamId}, {SessionId} ({CarModel}-{CarSkin})) has connected", 

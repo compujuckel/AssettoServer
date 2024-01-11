@@ -12,7 +12,7 @@ public class ServerConfiguration
     [IniField("SERVER", "NAME")] public string Name { get; set; } = "AssettoServer";
     [IniField("SERVER", "PASSWORD")] public string? Password { get; set; }
     [IniField("SERVER", "ADMIN_PASSWORD")] public string? AdminPassword { get; set; }
-    [IniField("SERVER", "MAX_CLIENTS")] public int MaxClients { get; init; }
+    [IniField("SERVER", "MAX_CLIENTS")] public int MaxClients { get; internal set; }
     [IniField("SERVER", "UDP_PORT")] public ushort UdpPort { get; init; } = 9600;
     [IniField("SERVER", "TCP_PORT")] public ushort TcpPort { get; init; } = 9600;
     [IniField("SERVER", "HTTP_PORT")] public ushort HttpPort { get; init; } = 8081;
@@ -21,8 +21,6 @@ public class ServerConfiguration
     [IniField("SERVER", "CONFIG_TRACK")] public string TrackConfig { get; init; } = "";
     [IniField("SERVER", "SUN_ANGLE")] public float SunAngle { get; init; }
     [IniField("SERVER", "LOOP_MODE")] public bool Loop { get; init; }
-    [IniField("SERVER", "MAX_BALLAST_KG")] public int MaxBallastKg { get; init; }
-    [IniField("SERVER", "QUALIFY_MAX_WAIT_PERC")] public int QualifyMaxWaitPercentage { get; init; }
     [IniField("SERVER", "TC_ALLOWED")] public byte TractionControlAllowed { get; init; }
     [IniField("SERVER", "ABS_ALLOWED")] public byte ABSAllowed { get; init; }
     [IniField("SERVER", "ALLOWED_TYRES_OUT")] public short AllowedTyresOutCount { get; init; }
@@ -60,5 +58,10 @@ public class ServerConfiguration
         var parser = new FileIniDataParser();
         IniData data = parser.ReadFile(path);
         return data.DeserializeObject<ServerConfiguration>();
+    }
+
+    public bool CheckAdminPassword(string password)
+    {
+        return !string.IsNullOrWhiteSpace(AdminPassword) && AdminPassword == password;
     }
 }

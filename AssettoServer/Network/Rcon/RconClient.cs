@@ -106,7 +106,7 @@ public class RconClient
                 {
                     AuthPacket authPacket = reader.ReadPacket<AuthPacket>();
 
-                    if (authPacket.RconPassword == _configuration.Server.AdminPassword)
+                    if (_configuration.Server.CheckAdminPassword(authPacket.RconPassword))
                     {
                         Log.Debug("Accepted RCON connection from {IpEndpoint}", _client.Client.RemoteEndPoint?.ToString());
                         _isAuthenticated = true;

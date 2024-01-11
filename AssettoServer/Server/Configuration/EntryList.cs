@@ -22,7 +22,7 @@ public class EntryList
         [IniField("DRIVERNAME")] public string? DriverName { get; init; }
         [IniField("TEAM")] public string? Team { get; init; }
         [IniField("GUID")] public string Guid { get; init; } = "";
-        [IniField("AI")] public AiMode AiMode { get; init; } = AiMode.None;
+        [IniField("AI")] public AiMode AiMode { get; internal set; } = AiMode.None;
     }
     
     public static EntryList FromFile(string path)

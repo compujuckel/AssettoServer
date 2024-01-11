@@ -46,7 +46,6 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
 
         RuleFor(cfg => cfg.Server).ChildRules(server =>
         {
-            server.RuleFor(s => s.AdminPassword).NotEmpty().MinimumLength(8);
             server.RuleFor(s => s.Track).NotEmpty();
             server.RuleFor(s => s.TrackConfig).NotNull();
             server.RuleFor(s => s.FuelConsumptionRate).GreaterThanOrEqualTo(0);

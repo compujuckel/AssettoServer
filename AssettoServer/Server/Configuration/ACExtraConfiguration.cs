@@ -63,7 +63,7 @@ public partial class ACExtraConfiguration : ObservableObject
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
     public bool EnableClientMessages { get; init; } = false;
-    [YamlMember(Description = "Enable CSP UDP client messages feature. Required for VR head/hand syncing. Requires CSP 0.1.80+")]
+    [YamlMember(Description = "Enable CSP UDP client messages feature. Required for VR head/hand syncing. Requires CSP 0.2.0+")]
     public bool EnableUdpClientMessages { get; init; } = false;
     [YamlMember(Description = "Log unknown CSP Lua client messages / online events")]
     public bool DebugClientMessages { get; set; } = false;
@@ -206,6 +206,8 @@ public class LokiSettings
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public partial class AiParams : ObservableObject
 {
+    [YamlMember(Description = "Automatically assign traffic cars based on the car folder name")]
+    public bool AutoAssignTrafficCars { get; init; } = true;
     [YamlMember(Description = "Radius around a player in which AI cars won't despawn")]
     public float PlayerRadiusMeters { get; set; } = 200.0f;
     [YamlMember(Description = "Offset the player radius in direction of the velocity of the player so AI cars will despawn earlier behind a player")]
@@ -252,12 +254,12 @@ public partial class AiParams : ObservableObject
     private float _defaultAcceleration = 2.5f;
     
     [ObservableProperty]
-    [property: YamlMember(Description = "Maximum AI car target count for AI slot overbooking. This is not an absolute maximum and might be slightly higher")]
-    private int _maxAiTargetCount = 300;
+    [property: YamlMember(Description = "Maximum AI car target count for AI slot overbooking. This is not an absolute maximum and might be slightly higher (0 = auto/best)", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    private int _maxAiTargetCount;
     
     [ObservableProperty]
-    [property: YamlMember(Description = "Number of AI cars per player the server will try to keep")]
-    private int _aiPerPlayerTargetCount = 10;
+    [property: YamlMember(Description = "Number of AI cars per player the server will try to keep (0 = auto/best)", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    private int _aiPerPlayerTargetCount;
     
     [YamlMember(Description = "Soft player limit, the server will stop accepting new players when this many players are reached. Use this to ensure a minimum amount of AI cars. 0 to disable.")]
     public int MaxPlayerCount { get; set; } = 0;
@@ -293,7 +295,7 @@ public partial class AiParams : ObservableObject
     public int IgnoreObstaclesAfterSeconds { get; set; } = 10;
     
     [ObservableProperty]
-    [property: YamlMember(Description = "Apply scale to some traffic density related settings. Increasing this DOES NOT magically increase your traffic density, it is dependent on your other settings. Values higher than 1 not recommended.")]
+    [property: YamlMember(Description = "Apply scale to some traffic density related settings. Increasing this DOES NOT magically increase your traffic density, it is dependent on your other settings. Values higher than 1 not recommended.", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     private float _trafficDensity = 1.0f;
     
     [YamlMember(Description = "Dynamic (hourly) traffic density. List must have exactly 24 entries in the format [0.2, 0.5, 1, 0.7, ...]")]
@@ -304,7 +306,7 @@ public partial class AiParams : ObservableObject
     private float _tyreDiameterMeters = 0.65f;
     
     [YamlMember(Description = "Apply some smoothing to AI spline camber")]
-    public bool SmoothCamber { get; init; } = false;
+    public bool SmoothCamber { get; init; } = true;
     [YamlMember(Description = "Show debug overlay for AI cars")]
     public bool Debug { get; set; } = false;
     [YamlMember(Description = "Update interval for AI spawn point finder")]

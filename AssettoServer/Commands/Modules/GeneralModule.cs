@@ -42,7 +42,7 @@ public class GeneralModule : ACModuleBase
     [Command("admin"), RequireConnectedPlayer]
     public void AdminAsync(string password)
     {
-        if (password == _configuration.Server.AdminPassword)
+        if (_configuration.Server.CheckAdminPassword(password))
         {
             Client!.IsAdministrator = true;
             Reply("You are now Admin for this server");

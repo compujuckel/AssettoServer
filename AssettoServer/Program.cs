@@ -108,16 +108,17 @@ internal static class Program
         catch (Exception ex)
         {
             Log.Fatal(ex, "Error starting server");
+            string? crashReportPath = null;
             try
             {
-                CrashReportHelper.GenerateCrashReport(configLocations, ex);
+                crashReportPath = CrashReportHelper.GenerateCrashReport(configLocations, ex);
             }
             catch (Exception ex2)
             {
                 Log.Error(ex2, "Error writing crash report");
             }
             await Log.CloseAndFlushAsync();
-            ExceptionHelper.PrintExceptionHelp(ex, IsContentManager);
+            ExceptionHelper.PrintExceptionHelp(ex, IsContentManager, crashReportPath);
         }
     }
 

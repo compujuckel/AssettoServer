@@ -18,7 +18,7 @@ public static partial class CrashReportHelper
         public required string Content { get; init; }
     }
     
-    public static void GenerateCrashReport(ConfigurationLocations locations, Exception exception)
+    public static string GenerateCrashReport(ConfigurationLocations locations, Exception exception)
     {
         Template template;
         using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Assets.crash_report.md.tpl")!)
@@ -63,8 +63,10 @@ public static partial class CrashReportHelper
                 } 
             }
         });
-        
-        File.WriteAllText(Path.Join("crash", filename), result);
+
+        var path = Path.Join("crash", filename);
+        File.WriteAllText(path, result);
+        return Path.GetFullPath(path);
     }
 
     [GeneratedRegex(@"((?:password|key|token|url)\s*[=:][ \t]*)(.*)$", RegexOptions.Multiline | RegexOptions.IgnoreCase)]

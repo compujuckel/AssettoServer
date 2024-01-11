@@ -27,7 +27,7 @@ internal static class ExceptionHelper
                                               or another Discord server.
                                               """;
 
-    public static void PrintExceptionHelp(Exception ex, bool isContentManager)
+    public static void PrintExceptionHelp(Exception ex, bool isContentManager, string? crashReportPath)
     {
         string? helpLink = null;
 
@@ -72,6 +72,10 @@ internal static class ExceptionHelper
             {
                 Console.WriteLine("Press I to get more info on this error");
             }
+            if (crashReportPath != null)
+            {
+                Console.WriteLine("Press C to show the crash report");
+            }
             Console.WriteLine("Press W to go to the AssettoServer website");
             Console.WriteLine("Press D to join the official Discord server");
             Console.WriteLine("Press any other key to exit");
@@ -90,6 +94,17 @@ internal static class ExceptionHelper
                 else if (key.Key == ConsoleKey.W)
                 {
                     OpenURL("https://assettoserver.org/");
+                }
+                else if (crashReportPath != null && key.Key == ConsoleKey.C)
+                {
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        Process.Start("explorer.exe", $"/select, \"{crashReportPath}\"");
+                    }
+                    else
+                    {
+                        OpenURL(crashReportPath);
+                    }
                 }
             }
 

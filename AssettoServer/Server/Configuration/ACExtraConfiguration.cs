@@ -86,9 +86,9 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Enable the AC UDP plugin interface compatible with Kunos acServer plugins")]
     public bool EnableLegacyPluginInterface { get; init; } = false;
     [YamlMember(Description = "Automatically configure port forwards using UPnP or NAT-PMP. Empty = Enable on Windows when lobby registration is enabled. true = Always enable, detailed error log. false = Always disable")]
-    public bool? EnableUPnP { get; init; } = false;
-    [YamlMember(Description = "URL of custom loading screen image. Requires CSP 0.1.80+ and a recent version of Content Manager")]
-    public string? LoadingImageUrl { get; set; }
+    public bool? EnableUPnP { get; init; }
+    [YamlMember(Description = "List of URLs for custom loading screen images. A random image will be picked from this list. Requires CSP 0.2.0+ and a recent version of Content Manager")]
+    public List<string>? LoadingImageUrls { get; set; }
     [YamlMember(Description = "Name and path of file-based user groups")]
     public Dictionary<string, string> UserGroups { get; init; } = new()
     {

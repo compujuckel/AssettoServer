@@ -145,7 +145,9 @@ public class HttpController : ControllerBase
             Timestamp = 0,
             TPort = _configuration.Server.TcpPort,
             Track = _cache.Track,
-            LoadingImageUrl = _configuration.Extra.LoadingImageUrl,
+            LoadingImageUrl = _configuration.Extra.LoadingImageUrls is { Count: > 0 }
+                ? _configuration.Extra.LoadingImageUrls[Random.Shared.Next(0, _configuration.Extra.LoadingImageUrls.Count)]
+                : null,
             Players = new DetailResponsePlayerList
             {
                 Cars = _entryCarManager.EntryCars.Select(ec => new DetailResponseCar
@@ -169,7 +171,9 @@ public class HttpController : ControllerBase
             WrappedPort = _configuration.Server.HttpPort,
             AmbientTemperature = _weatherManager.CurrentWeather.TemperatureAmbient,
             RoadTemperature = _weatherManager.CurrentWeather.TemperatureRoad,
-            CurrentWeatherId = _weatherManager.CurrentWeather.Type.WeatherFxType == WeatherFxType.None ? _weatherManager.CurrentWeather.Type.Graphics : _weatherManager.CurrentWeather.Type.WeatherFxType.ToString(),
+            CurrentWeatherId = _weatherManager.CurrentWeather.Type.WeatherFxType == WeatherFxType.None
+                ? _weatherManager.CurrentWeather.Type.Graphics
+                : _weatherManager.CurrentWeather.Type.WeatherFxType.ToString(),
             WindSpeed = (int)_weatherManager.CurrentWeather.WindSpeed,
             WindDirection = _weatherManager.CurrentWeather.WindDirection,
             Description = _configuration.Extra.ServerDescription,

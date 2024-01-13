@@ -6,11 +6,14 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using AssettoServer.Server.Configuration.Extra;
 using AssettoServer.Server.Configuration.Kunos;
+using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Http.Responses;
 using AssettoServer.Utils;
+using Autofac;
 using FluentValidation;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Serilog;
 using YamlDotNet.Serialization;
 
@@ -23,9 +26,9 @@ public class ACServerConfiguration
     public List<SessionConfiguration> Sessions { get; }
     [YamlIgnore] public string FullTrackName { get; }
     [YamlIgnore] public CSPTrackOptions CSPTrackOptions { get; }
-    [YamlIgnore] public string WelcomeMessage { get; } = "";
+    [YamlIgnore] public string WelcomeMessage { get; }
     public ACExtraConfiguration Extra { get; private set; } = new();
-    [YamlIgnore] public CMContentConfiguration? ContentConfiguration { get; private set; }
+    [YamlIgnore] public CMContentConfiguration? ContentConfiguration { get; }
     public string ServerVersion { get; }
     [YamlIgnore] public string? CSPExtraOptions { get; }
     [YamlIgnore] public string BaseFolder { get; }
@@ -50,46 +53,86 @@ public class ACServerConfiguration
     {
         BaseFolder = locations.BaseFolder;
         LoadPluginsFromWorkdir = loadPluginsFromWorkdir;
-        
-        Log.Debug("Loading server_cfg.ini from {Path}", locations.ServerCfgPath);
-        if (!File.Exists(locations.ServerCfgPath))
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(locations.ServerCfgPath)!);
-            using var serverCfg = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Assets.server_cfg.ini")!;
-            using var outFile = File.Create(locations.ServerCfgPath);
-            serverCfg.CopyTo(outFile);
-        }
-        Server = ServerConfiguration.FromFile(locations.ServerCfgPath);
-
-        Log.Debug("Loading entry_list.ini from {Path}", locations.EntryListPath);
-        if (!File.Exists(locations.EntryListPath))
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(locations.EntryListPath)!);
-            using var entryList = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Assets.entry_list.ini")!;
-            using var outFile = File.Create(locations.EntryListPath);
-            entryList.CopyTo(outFile);
-        }
-        EntryList = EntryList.FromFile(locations.EntryListPath);
-
+        Server = LoadServerConfiguration(locations.ServerCfgPath);
+        EntryList = LoadEntryList(locations.EntryListPath);
+        WelcomeMessage = LoadWelcomeMessage(preset);
+        CSPExtraOptions = LoadCspExtraOptions(locations.CSPExtraOptionsPath);
+        ContentConfiguration = LoadContentConfiguration(Path.Join(BaseFolder, "cm_content/content.json"));
         ServerVersion = ThisAssembly.AssemblyInformationalVersion;
         FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : Server.Track + "-" + Server.TrackConfig;
         CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
+        Sessions = PrepareSessions();
 
-        string welcomeMessagePath = string.IsNullOrEmpty(preset) ? Server.WelcomeMessagePath : Path.Join(BaseFolder, Server.WelcomeMessagePath);
+        var extraCfgSchemaPath = ConfigurationSchemaGenerator.WriteExtraCfgSchema();
+        LoadExtraConfig(locations.ExtraCfgPath, extraCfgSchemaPath);
+        ACExtraConfiguration.WriteReferenceConfig(extraCfgSchemaPath);
+        
+        ApplyConfigurationFixes();
+
+        var validator = new ACServerConfigurationValidator();
+        validator.ValidateAndThrow(this);
+    }
+
+    private ServerConfiguration LoadServerConfiguration(string path)
+    {
+        Log.Debug("Loading server_cfg.ini from {Path}", path);
+        if (!File.Exists(path))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            using var serverCfg = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Assets.server_cfg.ini")!;
+            using var outFile = File.Create(path);
+            serverCfg.CopyTo(outFile);
+        }
+        return ServerConfiguration.FromFile(path);
+    }
+
+    private EntryList LoadEntryList(string path)
+    {
+        Log.Debug("Loading entry_list.ini from {Path}", path);
+        if (!File.Exists(path))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            using var entryList = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Assets.entry_list.ini")!;
+            using var outFile = File.Create(path);
+            entryList.CopyTo(outFile);
+        }
+        return EntryList.FromFile(path);
+    }
+
+    private string LoadWelcomeMessage(string preset)
+    {
+        var welcomeMessage = "";
+        var welcomeMessagePath = string.IsNullOrEmpty(preset) ? Server.WelcomeMessagePath : Path.Join(BaseFolder, Server.WelcomeMessagePath);
         if (File.Exists(welcomeMessagePath))
         {
-            WelcomeMessage = File.ReadAllText(welcomeMessagePath);
+            welcomeMessage = File.ReadAllText(welcomeMessagePath);
         }
         else if(!string.IsNullOrEmpty(welcomeMessagePath))
         {
             Log.Warning("Welcome message not found at {Path}", Path.GetFullPath(welcomeMessagePath));
         }
-        
-        if (File.Exists(locations.CSPExtraOptionsPath))
+
+        return welcomeMessage;
+    }
+
+    private static string? LoadCspExtraOptions(string path)
+    {
+        return File.Exists(path) ? File.ReadAllText(path) : null;
+    }
+
+    private static CMContentConfiguration? LoadContentConfiguration(string path)
+    {
+        CMContentConfiguration? contentConfiguration = null;
+        if (File.Exists(path))
         {
-            CSPExtraOptions = File.ReadAllText(locations.CSPExtraOptionsPath);
+            contentConfiguration = JsonConvert.DeserializeObject<CMContentConfiguration>(File.ReadAllText(path));
         }
 
+        return contentConfiguration;
+    }
+
+    private List<SessionConfiguration> PrepareSessions()
+    {
         var sessions = new List<SessionConfiguration>();
 
         if (Server.Practice != null)
@@ -113,16 +156,15 @@ public class ACServerConfiguration
             sessions.Add(Server.Race);
         }
 
-        Sessions = sessions;
+        return sessions;
+    }
 
+    private void ApplyConfigurationFixes()
+    {
         if (Server.MaxClients == 0)
         {
             Server.MaxClients = EntryList.Cars.Count;
         }
-
-        LoadExtraConfig(locations.ExtraCfgPath);
-        WriteReferenceExtraConfig(Path.Join(locations.BaseFolder, "extra_cfg.reference.yml"));
-        ACExtraConfiguration.WriteSchema(Path.Join(locations.BaseFolder, "schema.json"));
         
         if (Extra is { EnableAi: true, AiParams.AutoAssignTrafficCars: true })
         {
@@ -144,40 +186,52 @@ public class ACServerConfiguration
         {
             Extra.AiParams.MaxAiTargetCount = EntryList.Cars.Count(c => c.AiMode == AiMode.None) * Extra.AiParams.AiPerPlayerTargetCount;
         }
-
-        var validator = new ACServerConfigurationValidator();
-        validator.ValidateAndThrow(this);
     }
 
-    private void WriteReferenceExtraConfig(string path)
+    internal void LoadPluginConfiguration(ACPluginLoader loader, ContainerBuilder builder)
     {
-        FileInfo? info = null;
-        if (File.Exists(path))
+        foreach (var plugin in loader.LoadedPlugins)
         {
-            info = new FileInfo(path);
-            info.IsReadOnly = false;
+            if (plugin.ConfigurationType == null) continue;
+
+            var schemaPath = ConfigurationSchemaGenerator.WritePluginConfigurationSchema(plugin.ConfigurationType);
+            var configPath = Path.Join(BaseFolder, PluginConfigurationTypeToFilename(plugin.ConfigurationType.Name));
+            if (File.Exists(configPath))
+            {
+                var deserializer = new DeserializerBuilder().Build();
+                using var file = File.OpenText(configPath);
+                var configObj = deserializer.Deserialize(file, plugin.ConfigurationType)!;
+                
+                // TODO validation and better error handling
+                
+                builder.RegisterInstance(configObj).AsSelf();
+            }
+            else
+            {
+                var serializer = new SerializerBuilder().Build();
+                using var file = File.CreateText(configPath);
+                ConfigurationSchemaGenerator.WriteModeLine(file, BaseFolder, schemaPath);
+                var configObj = Activator.CreateInstance(plugin.ConfigurationType)!;
+                serializer.Serialize(file, configObj, plugin.ConfigurationType);
+            }
         }
-
-        using (var writer = File.CreateText(path))
-        {
-            writer.WriteLine($"# AssettoServer {ThisAssembly.AssemblyInformationalVersion} Reference Configuration");
-            writer.WriteLine("# This file serves as an overview of all possible options with their default values.");
-            writer.WriteLine("# It is NOT read by the server - edit extra_cfg.yml instead!");
-            writer.WriteLine();
-
-            ACExtraConfiguration.ReferenceConfiguration.ToStream(writer, true);
-        }
-
-        info ??= new FileInfo(path);
-        info.IsReadOnly = true;
     }
 
-    private void LoadExtraConfig(string path) {
+    public static string PluginConfigurationTypeToFilename(string type, string ending = "yml")
+    {
+        var strat = new SnakeCaseNamingStrategy();
+        type = type.Replace("Configuration", "Cfg");
+        return $"{strat.GetPropertyName(type, false)}.{ending}";
+    }
+
+    private void LoadExtraConfig(string path, string schemaPath) {
         Log.Debug("Loading extra_cfg.yml from {Path}", path);
         
         if (!File.Exists(path))
         {
-            new ACExtraConfiguration().ToFile(path);
+            using var file = File.CreateText(path);
+            ConfigurationSchemaGenerator.WriteModeLine(file, BaseFolder, schemaPath);
+            new ACExtraConfiguration().ToStream(file);
         }
         
         Extra = ACExtraConfiguration.FromFile(path);
@@ -193,15 +247,6 @@ public class ACServerConfiguration
             else
             {
                 throw new ConfigurationException(errorMsg) { HelpLink = "https://assettoserver.org/docs/common-configuration-errors#wrong-server-details" };
-            }
-        }
-
-        if (Extra.EnableServerDetails)
-        {
-            string cmContentPath = Path.Join(BaseFolder, "cm_content/content.json");
-            if (File.Exists(cmContentPath))
-            {
-                ContentConfiguration = JsonConvert.DeserializeObject<CMContentConfiguration>(File.ReadAllText(cmContentPath));
             }
         }
     }

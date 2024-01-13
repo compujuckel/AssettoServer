@@ -1,19 +1,11 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
-using System.Reflection;
-using System.Text.Json;
-using AssettoServer.Server.Plugin;
-using Autofac;
 using CommunityToolkit.Mvvm.ComponentModel;
-using FluentValidation;
 using JetBrains.Annotations;
-using NJsonSchema.Generation;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NodeTypeResolvers;
 using YamlDotNet.Serialization.ObjectGraphVisitors;
 
 #pragma warning disable CS0657
@@ -114,7 +106,6 @@ public partial class ACExtraConfiguration : ObservableObject
     public AiParams AiParams { get; init; } = new();
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
-    [YamlIgnore] public string Path { get; private set; } = null!;
 
     public void ToFile(string path, bool full = false)
     {
@@ -131,24 +122,6 @@ public partial class ACExtraConfiguration : ObservableObject
         }
         builder.Build().Serialize(writer, this);
     }
-
-    public static void WriteSchema(string path)
-    {
-        var settings = new SystemTextJsonSchemaGeneratorSettings
-        {
-            FlattenInheritanceHierarchy = true,
-            SerializerOptions = new JsonSerializerOptions
-            {
-                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
-            },
-        };
-
-        var generator = new ConfigurationJsonSchemaGenerator(settings);
-        settings.SchemaProcessors.Add(generator);
-
-        var schema = generator.Generate(typeof(ACExtraConfiguration));
-        File.WriteAllText(path, schema.ToJson());
-    }
         
     public static ACExtraConfiguration FromFile(string path)
     {
@@ -162,59 +135,43 @@ public partial class ACExtraConfiguration : ObservableObject
 
         var extraCfg = deserializer.Deserialize<ACExtraConfiguration>(yamlParser);
 
-        extraCfg.Path = path;
+        if (yamlParser.Accept<DocumentStart>(out _))
+        {
+            throw new ConfigurationException(
+                "Plugins are no longer configured via extra_cfg.yml. Please remove your plugin configuration from extra_cfg.yml and transfer it to the plugin-specific config files in your config folder.");
+        }
+        
         return extraCfg;
     }
-
-    internal void LoadPluginConfig(ACPluginLoader loader, ContainerBuilder builder)
+    
+    public static void WriteReferenceConfig(string schemaPath)
     {
-        using var stream = File.OpenText(Path);
-
-        var yamlParser = new Parser(stream);
-        yamlParser.Consume<StreamStart>();
-        yamlParser.Accept<DocumentStart>(out _);
-        yamlParser.Accept<DocumentStart>(out _);
+        const string baseFolder = "cfg";
+        var path = Path.Join(baseFolder, "extra_cfg.reference.yml");
         
-        var deserializerBuilder = new DeserializerBuilder().WithoutNodeTypeResolver(typeof(PreventUnknownTagsNodeTypeResolver));
-        foreach (var plugin in loader.LoadedPlugins)
+        FileInfo? info = null;
+        if (File.Exists(path))
         {
-            if (plugin.ConfigurationType != null)
-            {
-                deserializerBuilder.WithTagMapping("!" + plugin.ConfigurationType.Name, plugin.ConfigurationType);
-            }
+            info = new FileInfo(path);
+            info.IsReadOnly = false;
         }
 
-        var deserializer = deserializerBuilder.Build();
-
-        while (yamlParser.Accept<DocumentStart>(out _))
+        using (var writer = File.CreateText(path))
         {
-            var pluginConfig = deserializer.Deserialize(yamlParser)!;
+            ConfigurationSchemaGenerator.WriteModeLine(writer, baseFolder, schemaPath);
+            writer.WriteLine($"# AssettoServer {ThisAssembly.AssemblyInformationalVersion} Reference Configuration");
+            writer.WriteLine("# This file serves as an overview of all possible options with their default values.");
+            writer.WriteLine("# It is NOT read by the server - edit extra_cfg.yml instead!");
+            writer.WriteLine();
 
-            foreach (var plugin in loader.LoadedPlugins)
-            {
-                if (plugin.ConfigurationType == pluginConfig.GetType() && plugin.ValidatorType != null)
-                {
-                    var validator = Activator.CreateInstance(plugin.ValidatorType)!;
-                    var method = typeof(DefaultValidatorExtensions).GetMethod("ValidateAndThrow")!;
-                    var generic = method.MakeGenericMethod(pluginConfig.GetType());
-                    try
-                    {
-                        generic.Invoke(null, new[] { validator, pluginConfig });
-                    }
-                    catch (TargetInvocationException ex)
-                    {
-                        throw ex.InnerException ?? ex;
-                    }
-
-                    break;
-                }
-            }
-            
-            builder.RegisterInstance(pluginConfig).AsSelf();
+            ReferenceConfiguration.ToStream(writer, true);
         }
+
+        info ??= new FileInfo(path);
+        info.IsReadOnly = true;
     }
 
-    public static readonly ACExtraConfiguration ReferenceConfiguration = new ACExtraConfiguration()
+    public static readonly ACExtraConfiguration ReferenceConfiguration = new()
     {
         LokiSettings = new LokiSettings
         {
@@ -222,8 +179,7 @@ public partial class ACExtraConfiguration : ObservableObject
             Login = "username",
             Password = "password"
         },
-        UserGroupCommandPermissions = new List<UserGroupCommandPermissions>()
-        {
+        UserGroupCommandPermissions = [
             new()
             {
                 UserGroup = "weather",
@@ -233,7 +189,7 @@ public partial class ACExtraConfiguration : ObservableObject
                     "setrain"
                 ]
             }  
-        },
+        ],
         AiParams = new AiParams
         {
             CarSpecificOverrides = [

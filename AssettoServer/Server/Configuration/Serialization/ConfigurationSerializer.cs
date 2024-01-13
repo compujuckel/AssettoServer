@@ -5,7 +5,7 @@ using System.Reflection;
 using AssettoServer.Utils;
 using YamlDotNet.Serialization;
 
-namespace AssettoServer.Server.Configuration;
+namespace AssettoServer.Server.Configuration.Serialization;
 
 public class ConfigurationSerializer
 { 

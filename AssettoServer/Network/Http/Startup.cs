@@ -13,6 +13,7 @@ using AssettoServer.Server.Ai;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Configuration.Serialization;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Plugin;

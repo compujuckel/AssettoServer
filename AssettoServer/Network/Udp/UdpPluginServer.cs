@@ -7,6 +7,7 @@ using AssettoServer.Commands;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Configuration.Kunos;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Network.Packets;

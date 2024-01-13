@@ -154,7 +154,7 @@ internal static class OnlineEventGenerator
             PacketType = GenerateKey(structure)
         };
 
-        if (ACServer.IsDebugBuild)
+        if (Program.IsDebugBuild)
         {
             Log.Debug("Parsed client message for {Class}, Type {Type:X}, Structure {Structure}",
                 messageType.Name, ret.PacketType, ret.Structure);

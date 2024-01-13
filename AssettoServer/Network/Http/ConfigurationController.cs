@@ -1,6 +1,7 @@
 ﻿using System;
 using AssettoServer.Network.Http.Authentication;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Configuration.Serialization;
 using AssettoServer.Shared.Network.Http.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

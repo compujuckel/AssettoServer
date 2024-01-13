@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace AssettoServer.Server.Configuration;
+namespace AssettoServer.Server.Configuration.Serialization;
 
 public class ConfigurationObject
 {

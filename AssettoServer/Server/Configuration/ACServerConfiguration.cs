@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using AssettoServer.Server.Configuration.Extra;
+using AssettoServer.Server.Configuration.Kunos;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Http.Responses;
 using AssettoServer.Utils;
@@ -119,6 +121,8 @@ public class ACServerConfiguration
         }
 
         LoadExtraConfig(locations.ExtraCfgPath);
+        WriteReferenceExtraConfig(Path.Join(locations.BaseFolder, "extra_cfg.reference.yml"));
+        ACExtraConfiguration.WriteSchema(Path.Join(locations.BaseFolder, "schema.json"));
         
         if (Extra is { EnableAi: true, AiParams.AutoAssignTrafficCars: true })
         {
@@ -145,13 +149,35 @@ public class ACServerConfiguration
         validator.ValidateAndThrow(this);
     }
 
+    private void WriteReferenceExtraConfig(string path)
+    {
+        FileInfo? info = null;
+        if (File.Exists(path))
+        {
+            info = new FileInfo(path);
+            info.IsReadOnly = false;
+        }
+
+        using (var writer = File.CreateText(path))
+        {
+            writer.WriteLine($"# AssettoServer {ThisAssembly.AssemblyInformationalVersion} Reference Configuration");
+            writer.WriteLine("# This file serves as an overview of all possible options with their default values.");
+            writer.WriteLine("# It is NOT read by the server - edit extra_cfg.yml instead!");
+            writer.WriteLine();
+
+            ACExtraConfiguration.ReferenceConfiguration.ToStream(writer, true);
+        }
+
+        info ??= new FileInfo(path);
+        info.IsReadOnly = true;
+    }
+
     private void LoadExtraConfig(string path) {
         Log.Debug("Loading extra_cfg.yml from {Path}", path);
         
         if (!File.Exists(path))
         {
-            var cfg = new ACExtraConfiguration();
-            cfg.ToFile(path);
+            new ACExtraConfiguration().ToFile(path);
         }
         
         Extra = ACExtraConfiguration.FromFile(path);

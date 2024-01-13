@@ -80,7 +80,7 @@ internal static class ExceptionHelper
             Console.WriteLine("Press D to join the official Discord server");
             Console.WriteLine("Press any other key to exit");
 
-            if (!ACServer.IsDebugBuild)
+            if (!Program.IsDebugBuild)
             {
                 var key = Console.ReadKey();
                 if (key.Key == ConsoleKey.D)
@@ -97,14 +97,7 @@ internal static class ExceptionHelper
                 }
                 else if (crashReportPath != null && key.Key == ConsoleKey.C)
                 {
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    {
-                        Process.Start("explorer.exe", $"/select, \"{crashReportPath}\"");
-                    }
-                    else
-                    {
-                        OpenURL(crashReportPath);
-                    }
+                    Process.Start("explorer.exe", $"/select, \"{crashReportPath}\"");
                 }
             }
 

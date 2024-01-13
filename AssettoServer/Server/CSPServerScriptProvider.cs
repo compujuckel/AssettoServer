@@ -47,7 +47,7 @@ public class CSPServerScriptProvider
         var data = new IniData();
         var scriptSection = data[$"SCRIPT_{10 + Scripts.Count}-{debugFilename}"];
 
-        if (ACServer.IsDebugBuild && !string.IsNullOrEmpty(debugFilename))
+        if (Program.IsDebugBuild && !string.IsNullOrEmpty(debugFilename))
         {
             Log.Warning("Loading Lua script {File} locally, don't forget to sync changes for release", debugFilename);
             scriptSection["SCRIPT"] = debugFilename;

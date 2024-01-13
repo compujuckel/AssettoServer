@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Configuration.Kunos;
 using NodaTime;
 using Serilog;
 

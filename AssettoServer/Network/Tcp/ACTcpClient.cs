@@ -14,6 +14,7 @@ using AssettoServer.Network.Udp;
 using AssettoServer.Server;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Configuration.Extra;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Model;

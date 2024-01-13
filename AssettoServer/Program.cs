@@ -20,6 +20,12 @@ namespace AssettoServer;
 
 internal static class Program
 {
+#if DEBUG
+    public static readonly bool IsDebugBuild = true;
+#else
+    public static readonly bool IsDebugBuild = false;
+#endif
+    
     [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     private class Options
     {

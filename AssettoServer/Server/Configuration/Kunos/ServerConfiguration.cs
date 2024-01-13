@@ -4,7 +4,7 @@ using IniParser;
 using IniParser.Model;
 using JetBrains.Annotations;
 
-namespace AssettoServer.Server.Configuration;
+namespace AssettoServer.Server.Configuration.Kunos;
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class ServerConfiguration

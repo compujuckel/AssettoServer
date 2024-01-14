@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text.Json;
 using AssettoServer.Server.Configuration.Extra;
+using AssettoServer.Server.Plugin;
 using Namotion.Reflection;
 using NJsonSchema;
 using NJsonSchema.Generation;
@@ -20,9 +22,10 @@ internal class ConfigurationSchemaGenerator : JsonSchemaGenerator, ISchemaProces
     {
     }
 
-    public static string WritePluginConfigurationSchema(Type type)
+    public static string WritePluginConfigurationSchema(LoadedPlugin plugin)
     {
-        return WriteSchema(type, ACServerConfiguration.PluginConfigurationTypeToFilename(type.Name, "schema.json"));
+        if (!plugin.HasConfiguration) throw new InvalidOperationException("Plugin has no configuration");
+        return WriteSchema(plugin.ConfigurationType, plugin.SchemaFileName);
     }
 
     public static string WriteExtraCfgSchema() => WriteSchema(typeof(ACExtraConfiguration), "extra_cfg.schema.json");

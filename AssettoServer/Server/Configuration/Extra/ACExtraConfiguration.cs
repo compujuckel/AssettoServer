@@ -106,6 +106,7 @@ public partial class ACExtraConfiguration : ObservableObject
     public AiParams AiParams { get; init; } = new();
 
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
+    [YamlIgnore] internal bool ContainsObsoletePluginConfiguration { get; private set; }
 
     public void ToFile(string path, bool full = false)
     {
@@ -137,8 +138,7 @@ public partial class ACExtraConfiguration : ObservableObject
 
         if (yamlParser.Accept<DocumentStart>(out _))
         {
-            throw new ConfigurationException(
-                "Plugins are no longer configured via extra_cfg.yml. Please remove your plugin configuration from extra_cfg.yml and transfer it to the plugin-specific config files in your config folder.");
+            extraCfg.ContainsObsoletePluginConfiguration = true;
         }
         
         return extraCfg;

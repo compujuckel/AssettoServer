@@ -1,22 +1,18 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace AssettoServer.Server.Plugin;
 
 public class LoadedPlugin
 {
-    public string Name { get; }
-    public Assembly Assembly { get; }
-    public AssettoServerModule Instance { get; }
-    public Type? ConfigurationType { get; }
-    public Type? ValidatorType { get; }
-
-    public LoadedPlugin(string name, Assembly assembly, AssettoServerModule instance, Type? configurationType, Type? validatorType)
-    {
-        Name = name;
-        Assembly = assembly;
-        Instance = instance;
-        ConfigurationType = configurationType;
-        ValidatorType = validatorType;
-    }
+    public required string Name { get; init; }
+    public required Assembly Assembly { get; init; }
+    public required AssettoServerModule Instance { get; init; }
+    [MemberNotNullWhen(true, nameof(ConfigurationFileName), nameof(SchemaFileName), nameof(ConfigurationType))]
+    public bool HasConfiguration => ConfigurationType != null;
+    public Type? ConfigurationType { get; init; }
+    public Type? ValidatorType { get; init; }
+    public string? ConfigurationFileName { get; init; }
+    public string? SchemaFileName { get; init; }
 }

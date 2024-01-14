@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using AssettoServer.Server.Configuration;
 using McMaster.NETCore.Plugins;
+using Newtonsoft.Json.Serialization;
 using Serilog;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -11,7 +12,7 @@ namespace AssettoServer.Server.Plugin;
 public class ACPluginLoader
 {
     public Dictionary<string, AvailablePlugin> AvailablePlugins { get; } = new();
-    public List<LoadedPlugin> LoadedPlugins { get; } = new();
+    public List<LoadedPlugin> LoadedPlugins { get; } = [];
 
     public ACPluginLoader(bool loadFromWorkdir)
     {
@@ -32,12 +33,12 @@ public class ACPluginLoader
         ScanDirectory(pluginsDir);
     }
 
-    public void ScanDirectory(string path)
+    private void ScanDirectory(string path)
     {
         foreach (string dir in Directory.GetDirectories(path))
         {
             string dirName = Path.GetFileName(dir);
-            string pluginDll = Path.Combine(dir, dirName + ".dll");
+            string pluginDll = Path.Combine(dir, $"{dirName}.dll");
             if (File.Exists(pluginDll) && !AvailablePlugins.ContainsKey(dirName))
             {
                 Log.Verbose("Found plugin {PluginName}, {PluginPath}", dirName, pluginDll);
@@ -61,7 +62,7 @@ public class ACPluginLoader
         }
     }
 
-    public void LoadPlugins(List<string> plugins)
+    internal void LoadPlugins(List<string> plugins)
     {
         foreach (var pluginName in plugins)
         {
@@ -110,10 +111,26 @@ public class ACPluginLoader
                     }
                 }
 
-                LoadedPlugins.Add(new LoadedPlugin(name, assembly, instance, configType, validatorType));
+                LoadedPlugins.Add(new LoadedPlugin
+                {
+                    Name = name,
+                    Assembly = assembly,
+                    Instance = instance,
+                    ConfigurationType = configType,
+                    ValidatorType = validatorType,
+                    ConfigurationFileName = configType != null ? ConfigurationTypeToFilename(configType.Name) : null,
+                    SchemaFileName = configType != null ? ConfigurationTypeToFilename(configType.Name, "schema.json") : null
+                });
             }
         }
         
         Log.Information("Loaded plugin {PluginName}", name);
+    }
+
+    private static string ConfigurationTypeToFilename(string type, string ending = "yml")
+    {
+        var strat = new SnakeCaseNamingStrategy();
+        type = type.Replace("Configuration", "Cfg");
+        return $"plugin_{strat.GetPropertyName(type, false)}.{ending}";
     }
 }

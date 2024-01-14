@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -25,6 +26,17 @@ public static partial class CrashReportHelper
         using (var streamReader = new StreamReader(stream))
         {
             template = Template.Parse(streamReader.ReadToEnd());
+        }
+
+        var pluginConfigFiles = new List<Attachment>();
+        foreach (var file in Directory.EnumerateFiles(locations.BaseFolder, "plugin_*.yml"))
+        {
+            pluginConfigFiles.Add(new Attachment
+            {
+                Name = Path.GetFileName(file),
+                Type = "yml",
+                Content = RedactFile(File.ReadAllText(file))
+            });
         }
         
         Directory.CreateDirectory("crash");
@@ -60,8 +72,8 @@ public static partial class CrashReportHelper
                     Name = "entry_list.ini",
                     Type = "ini",
                     Content = RedactFile(File.ReadAllText(locations.EntryListPath))
-                } 
-            }
+                }
+            }.Concat(pluginConfigFiles)
         });
 
         var path = Path.Join("crash", filename);

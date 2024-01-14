@@ -13,7 +13,6 @@ using AssettoServer.Utils;
 using Autofac;
 using FluentValidation;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Serilog;
 using YamlDotNet.Serialization;
 
@@ -34,6 +33,7 @@ public class ACServerConfiguration
     [YamlIgnore] public string BaseFolder { get; }
     [YamlIgnore] public bool LoadPluginsFromWorkdir { get; }
     [YamlIgnore] public int RandomSeed { get; } = Random.Shared.Next();
+    [YamlIgnore] public string? Preset { get; }
     
     /*
      * Search paths are like this:
@@ -51,15 +51,16 @@ public class ACServerConfiguration
      */
     public ACServerConfiguration(string preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir)
     {
+        Preset = preset;
         BaseFolder = locations.BaseFolder;
         LoadPluginsFromWorkdir = loadPluginsFromWorkdir;
         Server = LoadServerConfiguration(locations.ServerCfgPath);
         EntryList = LoadEntryList(locations.EntryListPath);
-        WelcomeMessage = LoadWelcomeMessage(preset);
+        WelcomeMessage = LoadWelcomeMessage();
         CSPExtraOptions = LoadCspExtraOptions(locations.CSPExtraOptionsPath);
         ContentConfiguration = LoadContentConfiguration(Path.Join(BaseFolder, "cm_content/content.json"));
         ServerVersion = ThisAssembly.AssemblyInformationalVersion;
-        FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : Server.Track + "-" + Server.TrackConfig;
+        FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : $"{Server.Track}-{Server.TrackConfig}";
         CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
         Sessions = PrepareSessions();
 
@@ -99,10 +100,10 @@ public class ACServerConfiguration
         return EntryList.FromFile(path);
     }
 
-    private string LoadWelcomeMessage(string preset)
+    private string LoadWelcomeMessage()
     {
         var welcomeMessage = "";
-        var welcomeMessagePath = string.IsNullOrEmpty(preset) ? Server.WelcomeMessagePath : Path.Join(BaseFolder, Server.WelcomeMessagePath);
+        var welcomeMessagePath = string.IsNullOrEmpty(Preset) ? Server.WelcomeMessagePath : Path.Join(BaseFolder, Server.WelcomeMessagePath);
         if (File.Exists(welcomeMessagePath))
         {
             welcomeMessage = File.ReadAllText(welcomeMessagePath);
@@ -194,8 +195,8 @@ public class ACServerConfiguration
         {
             if (plugin.ConfigurationType == null) continue;
 
-            var schemaPath = ConfigurationSchemaGenerator.WritePluginConfigurationSchema(plugin.ConfigurationType);
-            var configPath = Path.Join(BaseFolder, PluginConfigurationTypeToFilename(plugin.ConfigurationType.Name));
+            var schemaPath = ConfigurationSchemaGenerator.WritePluginConfigurationSchema(plugin);
+            var configPath = Path.Join(BaseFolder, plugin.ConfigurationFileName);
             if (File.Exists(configPath))
             {
                 var deserializer = new DeserializerBuilder().Build();
@@ -215,13 +216,13 @@ public class ACServerConfiguration
                 serializer.Serialize(file, configObj, plugin.ConfigurationType);
             }
         }
-    }
 
-    public static string PluginConfigurationTypeToFilename(string type, string ending = "yml")
-    {
-        var strat = new SnakeCaseNamingStrategy();
-        type = type.Replace("Configuration", "Cfg");
-        return $"{strat.GetPropertyName(type, false)}.{ending}";
+        // Throw exception only after default plugin configs have been written
+        if (Extra.ContainsObsoletePluginConfiguration)
+        {
+            throw new ConfigurationException(
+                "Plugins are no longer configured via extra_cfg.yml. Please remove your plugin configuration from extra_cfg.yml and transfer it to the plugin-specific config files in your config folder.");
+        }
     }
 
     private void LoadExtraConfig(string path, string schemaPath) {

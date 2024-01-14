@@ -82,7 +82,9 @@ internal class ConfigurationSchemaGenerator : JsonSchemaGenerator, ISchemaProces
         {
             var declaringObj = Activator.CreateInstance(info.MemberInfo.DeclaringType!)!;
             var defaultValue = info.GetValue(declaringObj);
-            schema.Default = defaultValue;
+            schema.Default = typeDescription.IsEnum
+                ? info.PropertyType.Type.GetEnumName(defaultValue!)
+                : defaultValue;
         }
         
         base.ApplyDataAnnotations(schema, typeDescription);

@@ -180,7 +180,7 @@ public partial class ACExtraConfiguration : ObservableObject
             Password = "password"
         },
         UserGroupCommandPermissions = [
-            new()
+            new UserGroupCommandPermissions
             {
                 UserGroup = "weather",
                 Commands = [

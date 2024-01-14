@@ -202,9 +202,8 @@ public class ACServerConfiguration
                 var deserializer = new DeserializerBuilder().Build();
                 using var file = File.OpenText(configPath);
                 var configObj = deserializer.Deserialize(file, plugin.ConfigurationType)!;
-                
-                // TODO validation and better error handling
-                
+
+                ValidatePluginConfiguration(plugin, configObj);
                 builder.RegisterInstance(configObj).AsSelf();
             }
             else
@@ -222,6 +221,23 @@ public class ACServerConfiguration
         {
             throw new ConfigurationException(
                 "Plugins are no longer configured via extra_cfg.yml. Please remove your plugin configuration from extra_cfg.yml and transfer it to the plugin-specific config files in your config folder.");
+        }
+    }
+
+    private static void ValidatePluginConfiguration(LoadedPlugin plugin, object configuration)
+    {
+        if (plugin.ValidatorType == null) return;
+        
+        var validator = Activator.CreateInstance(plugin.ValidatorType)!;
+        var method = typeof(DefaultValidatorExtensions).GetMethod(nameof(DefaultValidatorExtensions.ValidateAndThrow))!;
+        var generic = method.MakeGenericMethod(configuration.GetType());
+        try
+        {
+            generic.Invoke(null, [validator, configuration]);
+        }
+        catch (TargetInvocationException ex)
+        {
+            throw ex.InnerException ?? ex;
         }
     }
 

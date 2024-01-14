@@ -8,12 +8,17 @@ namespace RandomWeatherPlugin;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class RandomWeatherConfiguration : IValidateConfiguration<RandomWeatherConfigurationValidator>
 {
+    [YamlMember(Description = "Weights for random weather selection, setting a weight to 0 blacklists a weather, default weight is 1")]
     public Dictionary<WeatherFxType, float> WeatherWeights { get; init; } = new();
 
+    [YamlMember(Description = "Minimum duration until next weather change")]
     public int MinWeatherDurationMinutes { get; set; } = 5;
+    [YamlMember(Description = "Maximum duration until next weather change")]
     public int MaxWeatherDurationMinutes { get; set; } = 30;
 
+    [YamlMember(Description = "Minimum weather transition duration")]
     public int MinTransitionDurationSeconds { get; set; } = 120;
+    [YamlMember(Description = "Maximum weather transition duration")]
     public int MaxTransitionDurationSeconds { get; set; } = 600;
 
     [YamlIgnore] public int MinWeatherDurationMilliseconds => MinWeatherDurationMinutes * 60_000;

@@ -99,7 +99,7 @@ public class Discord
     {
         if (args.Message.StartsWith("\t\t\t\t$CSP0:")
             || string.IsNullOrWhiteSpace(args.Message)
-            || _configuration.ChatIgnoreGuids.Contains(sender.Guid)) 
+            || _configuration.ChatIgnoreGuids?.Contains(sender.Guid) == true) 
             return;
         
         string username;

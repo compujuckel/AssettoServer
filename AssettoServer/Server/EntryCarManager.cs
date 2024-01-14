@@ -129,7 +129,7 @@ public class EntryCarManager
                 client.EntryCar.Client = null;
                 client.IsConnected = false;
 
-                if (client.ChecksumStatus != ChecksumStatus.Succeeded)
+                if (client.ChecksumStatus == ChecksumStatus.Succeeded)
                     BroadcastPacket(new CarDisconnected { SessionId = client.SessionId });
 
                 client.EntryCar.Reset();

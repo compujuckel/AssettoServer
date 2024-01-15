@@ -27,10 +27,6 @@ public partial class ACExtraConfiguration : ObservableObject
     public int MaxAfkTimeMinutes { get; set; } = 10;
     [YamlMember(Description = "Players might try to get around the AFK kick by doing inputs once in a while without actually driving. Set this to MinimumSpeed to autokick players idling")]
     public AfkKickBehavior AfkKickBehavior { get; set; } = AfkKickBehavior.PlayerInput;
-    [YamlMember(Description = "Maximum ping before autokick")]
-    public int MaxPing { get; set; } = 500;
-    [YamlMember(Description = "Maximum ping duration before autokick")]
-    public int MaxPingSeconds { get; set; } = 10;
     [YamlMember(Description = "Force headlights on for all cars")]
     public bool ForceLights { get; set; }
     [YamlMember(Description = "Distance for network optimizations. Players outside of this range will send less updates to reduce network traffic")]
@@ -54,7 +50,7 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Override the country shown in CM. Please do not use this unless the autodetected country is wrong", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public List<string>? GeoParamsCountryOverride { get; init; } = null;
     [YamlMember(Description = "List of plugins to enable")]
-    public List<string> EnablePlugins { get; init; } = [];
+    public List<string>? EnablePlugins { get; init; }
     [YamlMember(Description = "Ignore some common configuration errors. More info: https://assettoserver.org/docs/common-configuration-errors")]
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]

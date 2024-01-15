@@ -96,6 +96,29 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
                     var oldFlags = instance.CurrentFlags;
                     instance.UpdateSplinePoint();
 
+                    if (_configuration.HighPingKick.Enabled)
+                    {
+                        if (instance.EntryCar.Ping > _configuration.HighPingKick.MaximumPingMilliseconds)
+                        {
+                            instance.HighPingSeconds++;
+                            
+                            if (instance.HighPingSeconds > _configuration.HighPingKick.DurationSeconds)
+                            {
+                                _ = _entryCarManager.KickAsync(client, "high ping");
+                            }
+                            else if (!instance.HasSentHighPingWarning && instance.HighPingSeconds > _configuration.HighPingKick.DurationSeconds / 2)
+                            {
+                                instance.HasSentHighPingWarning = true;
+                                client.SendPacket(new ChatMessage { SessionId = 255, Message = "You have a high ping, please fix your network connection or you will be kicked." });
+                            }
+                        }
+                        else
+                        {
+                            instance.HighPingSeconds = 0;
+                            instance.HasSentHighPingWarning = false;
+                        }
+                    }
+
                     if (_configuration.NoLightsKick.Enabled)
                     {
                         if (_weatherManager.CurrentSunPosition!.Value.Altitude < NauticalTwilight

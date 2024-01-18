@@ -12,7 +12,7 @@
         <PublishDir Condition="'$(RuntimeIdentifier)' == 'win-x64'">..\out-win-x64\plugins\$(MSBuildProjectName)\</PublishDir>
         <PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
         <RootNamespace>CyclePresetPlugin</RootNamespace>
-        <Authors>nvrlift</Authors>
+        <Authors>thisguyStan</Authors>
     </PropertyGroup>
 
     <ItemGroup>

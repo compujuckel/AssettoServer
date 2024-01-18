@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 out-linux-*
 out-win-*
+
+# Jetbrains IDEs
+.idea/

@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServer.Shared", "Ass
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServer.Tests", "AssettoServer.Tests\AssettoServer.Tests.csproj", "{DA97DFBB-EA56-468C-BEDE-7CBEB360DD0E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyclePresetPlugin", "CyclePresetPlugin\CyclePresetPlugin.csproj", "{458FEEA8-D472-4FA9-8E50-63F04F05180A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +101,10 @@ Global
 		{DA97DFBB-EA56-468C-BEDE-7CBEB360DD0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA97DFBB-EA56-468C-BEDE-7CBEB360DD0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA97DFBB-EA56-468C-BEDE-7CBEB360DD0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{458FEEA8-D472-4FA9-8E50-63F04F05180A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{458FEEA8-D472-4FA9-8E50-63F04F05180A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{458FEEA8-D472-4FA9-8E50-63F04F05180A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{458FEEA8-D472-4FA9-8E50-63F04F05180A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

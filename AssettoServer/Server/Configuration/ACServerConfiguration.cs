@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using AssettoServer.Server.Configuration.Extra;
 using AssettoServer.Server.Configuration.Kunos;
 using AssettoServer.Server.Plugin;
@@ -34,6 +35,8 @@ public class ACServerConfiguration
     [YamlIgnore] public bool LoadPluginsFromWorkdir { get; }
     [YamlIgnore] public int RandomSeed { get; } = Random.Shared.Next();
     [YamlIgnore] public string? Preset { get; }
+    [YamlIgnore] public Func<string, string> RestartCallBack { get; }
+    
     
     /*
      * Search paths are like this:
@@ -49,9 +52,10 @@ public class ACServerConfiguration
      *
      * When "entryListPath" is set, it takes precedence and entry_list.ini will be loaded from the specified path.
      */
-    public ACServerConfiguration(string preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir)
+    public ACServerConfiguration(string preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir, Func<string, string> restartCallback)
     {
         Preset = preset;
+        RestartCallBack = restartCallback;
         BaseFolder = locations.BaseFolder;
         LoadPluginsFromWorkdir = loadPluginsFromWorkdir;
         Server = LoadServerConfiguration(locations.ServerCfgPath);

@@ -131,7 +131,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         {
             _adminTrack = new PresetData(_presetManager.CurrentPreset.Type, next)
             {
-                TransitionDuration = _configuration.TransitionDurationMilliseconds,
+                TransitionDuration = _configuration.TransitionDurationSeconds,
             };
             _adminTrackChange = true;
         }
@@ -149,7 +149,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
 
         _adminTrack = new PresetData(_presetManager.CurrentPreset.Type, next)
         {
-            TransitionDuration = _configuration.TransitionDurationMilliseconds,
+            TransitionDuration = _configuration.TransitionDurationSeconds,
         };
         _adminTrackChange = true;
     }
@@ -330,7 +330,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
 
             _presetManager.SetTrack(new PresetData(last.Type, winner.Track)
             {
-                TransitionDuration = _configuration.TransitionDurationMilliseconds,
+                TransitionDuration = _configuration.TransitionDurationSeconds,
             });
         }
         _voteStarted = false;

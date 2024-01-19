@@ -27,9 +27,6 @@ public class PresetImplementation
     {
         // Notify about restart
         Log.Information($"Restarting server");
-        _restartImplementation.InitiateRestart(preset.UpcomingType!.PresetFolder);
-        
-        // _checksumManager.Initialize();
-        // _sessionManager.NextSession();
+        _restartImplementation.InitiateRestart(preset.UpcomingType!.PresetFolder, (ushort) preset.TransitionDuration);
     }
 }

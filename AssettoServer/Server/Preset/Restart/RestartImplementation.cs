@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.IO.Pipes;
 using System.Text;
+using System.Threading;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using Serilog;
@@ -25,7 +26,7 @@ public class RestartImplementation
         _entryCarManager = entryCarManager;
     }
 
-    public void InitiateRestart(string presetPath, ushort time = 10)
+    public void InitiateRestart(string presetPath, ushort time)
     {
         if (_acServerConfiguration.Extra.EnableClientMessages)
         {
@@ -43,6 +44,8 @@ public class RestartImplementation
         var preset = new DirectoryInfo(presetPath).Name;
         
         // Restart the server
+        var sleep = (time - 1) * 1000;
+        Thread.Sleep(sleep);
         _acServerConfiguration.RestartCallBack(preset);
     }
 }

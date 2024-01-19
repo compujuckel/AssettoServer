@@ -128,7 +128,20 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
                             else if (!instance.HasSentNoLightWarning && instance.NoLightSeconds > _configuration.NoLightsPenalty.DurationSeconds / 2)
                             {
                                 instance.HasSentNoLightWarning = true;
-                                client.SendPacket(new ChatMessage { SessionId = 255, Message = "It is currently night, please turn on your lights or you will be kicked." });
+                                client.SendPacket(
+                                    instance.BlockingRoadPitCount < _configuration.BlockingRoadPenalty.PitsBeforeKick
+                                        ? new ChatMessage
+                                        {
+                                            SessionId = 255,
+                                            Message =
+                                                "It is currently night, please turn on your lights or you will be teleported to pits."
+                                        }
+                                        : new ChatMessage
+                                        {
+                                            SessionId = 255,
+                                            Message =
+                                                "It is currently night, please turn on your lights or you will be kicked."
+                                        });
                             }
                         }
                         else
@@ -164,7 +177,20 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
                             else if (!instance.HasSentWrongWayWarning && instance.WrongWaySeconds > _configuration.WrongWayPenalty.DurationSeconds / 2)
                             {
                                 instance.HasSentWrongWayWarning = true;
-                                client.SendPacket(new ChatMessage { SessionId = 255, Message = "You are driving the wrong way! Turn around or you will be kicked." });
+                                client.SendPacket(
+                                    instance.BlockingRoadPitCount < _configuration.BlockingRoadPenalty.PitsBeforeKick
+                                        ? new ChatMessage
+                                        {
+                                            SessionId = 255,
+                                            Message =
+                                                "You are driving the wrong way! Turn around or you will be teleported to pits."
+                                        }
+                                        : new ChatMessage
+                                        {
+                                            SessionId = 255,
+                                            Message =
+                                                "You are driving the wrong way! Turn around or you will be kicked."
+                                        });
                             }
                         }
                         else
@@ -198,7 +224,20 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
                             else if (!instance.HasSentBlockingRoadWarning && instance.BlockingRoadSeconds > _configuration.BlockingRoadPenalty.DurationSeconds / 2)
                             {
                                 instance.HasSentBlockingRoadWarning = true;
-                                client.SendPacket(new ChatMessage { SessionId = 255, Message = "You are blocking the road! Please move or teleport to pits, or you will be kicked." });
+                                client.SendPacket(
+                                    instance.BlockingRoadPitCount < _configuration.BlockingRoadPenalty.PitsBeforeKick
+                                        ? new ChatMessage
+                                        {
+                                            SessionId = 255,
+                                            Message =
+                                                "You are blocking the road! Please move or you will be teleported to pits."
+                                        }
+                                        : new ChatMessage
+                                        {
+                                            SessionId = 255,
+                                            Message =
+                                                "You are blocking the road! Please move or teleport to pits, or you will be kicked."
+                                        });
                             }
                         }
                         else

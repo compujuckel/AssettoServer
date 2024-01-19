@@ -7,11 +7,11 @@ namespace AutoModerationPlugin;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class AutoModerationConfiguration : IValidateConfiguration<AutoModerationConfigurationValidator>
 {
-    [YamlMember(Description = "Kick players driving the wrong way. AI has to enabled for this to work")]
+    [YamlMember(Description = "Penalise players driving the wrong way. AI has to enabled for this to work")]
     public WrongWayPenaltyConfiguration WrongWayPenalty { get; init; } = new();
-    [YamlMember(Description = "Kick players driving without lights during the night")]
+    [YamlMember(Description = "Penalise players driving without lights during the night")]
     public NoLightsPenaltyConfiguration NoLightsPenalty { get; init; } = new();
-    [YamlMember(Description = "Kick players blocking the road. AI has to be enabled for this to work")]
+    [YamlMember(Description = "Penalise players blocking the road. AI has to be enabled for this to work")]
     public BlockingRoadPenaltyConfiguration BlockingRoadPenalty { get; init; } = new();
 }
 
@@ -25,7 +25,7 @@ public class WrongWayPenaltyConfiguration
     [YamlMember(Description = "Players driving slower than this speed will not be kicked")]
     public int MinimumSpeedKph { get; set; } = 20;
     [YamlMember(Description = "The amount of times a player will be send to pits before being kicked")]
-    public int PitsBeforeKick { get; set; } = 3;
+    public int PitsBeforeKick { get; set; } = 2;
 
     [YamlIgnore] public float MinimumSpeedMs => MinimumSpeedKph / 3.6f;
 }
@@ -42,7 +42,7 @@ public class NoLightsPenaltyConfiguration
     [YamlMember(Description = "Players driving slower than this speed will not be kicked")]
     public int MinimumSpeedKph { get; set; } = 20;
     [YamlMember(Description = "The amount of times a player will be send to pits before being kicked")]
-    public int PitsBeforeKick { get; set; } = 3;
+    public int PitsBeforeKick { get; set; } = 2;
     
     [YamlIgnore] public float MinimumSpeedMs => MinimumSpeedKph / 3.6f;
 }
@@ -57,7 +57,7 @@ public class BlockingRoadPenaltyConfiguration
     [YamlMember(Description = "Players driving faster than this speed will not be kicked")]
     public int MaximumSpeedKph { get; set; } = 5;
     [YamlMember(Description = "The amount of times a player will be send to pits before being kicked")]
-    public int PitsBeforeKick { get; set; } = 3;
+    public int PitsBeforeKick { get; set; } = 2;
     
     [YamlIgnore] public float MaximumSpeedMs => MaximumSpeedKph / 3.6f;
 }

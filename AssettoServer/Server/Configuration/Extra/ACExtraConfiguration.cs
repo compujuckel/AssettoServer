@@ -43,7 +43,7 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Link server time to real map time. For correct timezones there must be an entry for the map here: https://github.com/ac-custom-shaders-patch/acc-extension-config/blob/master/config/data_track_params.ini")]
     public bool EnableRealTime { get; set; } = false;
     [YamlMember(Description = "Enable new CSP weather handling. Allows rain and smooth weather transitions. Requires CSP 0.1.76+")]
-    public bool EnableWeatherFx { get; init; } = false;
+    public bool EnableWeatherFx { get; init; } = true;
     [YamlMember(Description = "Lock server date to real date. This stops server time \"running away\" when using a high time multiplier, so that in-game sunrise/sunset times are based on the current date")]
     public bool LockServerDate { get; set; } = true;
     [YamlMember(Description = "Reduce track grip when the track is wet. This is much worse than proper CSP rain physics but allows you to run clients with public/Patreon CSP at the same time")]
@@ -57,13 +57,13 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Ignore some common configuration errors. More info: https://assettoserver.org/docs/common-configuration-errors")]
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
-    public bool EnableClientMessages { get; init; } = false;
+    public bool EnableClientMessages { get; init; } = true;
     [YamlMember(Description = "Enable CSP UDP client messages feature. Required for VR head/hand syncing. Requires CSP 0.2.0+")]
     public bool EnableUdpClientMessages { get; init; } = false;
     [YamlMember(Description = "Log unknown CSP Lua client messages / online events", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool DebugClientMessages { get; set; } = false;
     [YamlMember(Description = "Enable CSP custom position updates. This is an improved version of batched position updates, reducing network traffic even further. CSP 0.1.77+ required")]
-    public bool EnableCustomUpdate { get; set; } = false;
+    public bool EnableCustomUpdate { get; set; } = true;
     [YamlMember(Description = "Maximum time a player can spend on the loading screen before being disconnected")]
     public int PlayerLoadingTimeoutMinutes { get; set; } = 10;
     [YamlMember(Description = "Maximum time the server will wait for a checksum response before disconnecting the player")]

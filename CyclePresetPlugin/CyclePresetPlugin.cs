@@ -25,13 +25,11 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
     private bool _votingOpen = false;
     
     private readonly List<PresetType> _adminPresets;
-    private PresetData? _adminPreset = null;
-    private bool _adminChange = false;
     
-    private bool _manualChange = false;
     private bool _voteStarted = false;
     private int _extendVotingSeconds = 0;
     private short _finishVote = 0;
+    private CancellationToken _cancellationToken = default;
 
     private class PresetChoice
     {
@@ -75,16 +73,25 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        List<Task> tasks = new()
+        _cancellationToken = stoppingToken;
+        while (!stoppingToken.IsCancellationRequested)
         {
-            Task.Run(() => ExecuteAdminAsync(stoppingToken), stoppingToken),
-            Task.Run(() => ExecuteManualVotingAsync(stoppingToken), stoppingToken),
-        };
-
-        if (_configuration.VoteEnabled)
-            tasks.Add(Task.Run(() => ExecuteVotingAsync(stoppingToken), stoppingToken));
-
-        await Task.WhenAll(tasks).WaitAsync(stoppingToken);
+            await Task.Delay(_configuration.CycleIntervalMilliseconds - _configuration.VotingDurationMilliseconds,
+                stoppingToken);
+            try
+            {
+                Log.Information("Starting preset vote");
+                if (_configuration.VoteEnabled)
+                    await VotingAsync(stoppingToken);
+            }
+            catch (TaskCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error during voting preset update");
+            }
+        }
     }
 
     internal void ListAllPresets(BaseCommandContext context)
@@ -124,11 +131,11 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         }
         else
         {
-            _adminPreset = new PresetData(_presetManager.CurrentPreset.Type, next)
+            context.Reply($"Switching to preset: {next.Name}");
+            AdminPreset(new PresetData(_presetManager.CurrentPreset.Type, next)
             {
                 TransitionDuration = _configuration.TransitionDurationSeconds,
-            };
-            _adminChange = true;
+            });
         }
     }
     
@@ -141,13 +148,11 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         {
             next = _adminPresets[Random.Shared.Next(_adminPresets.Count)];
         } while (last.Type!.Equals(next));
-
-        _adminPreset = new PresetData(_presetManager.CurrentPreset.Type, next)
+        context.Reply($"Switching to random preset: {next.Name}");
+        AdminPreset(new PresetData(_presetManager.CurrentPreset.Type, next)
         {
             TransitionDuration = _configuration.TransitionDurationSeconds,
-        };
-        _adminChange = true;
-        context.Reply("Switching to random preset (if it's not the current one)");
+        });
     }
 
     internal void CountVote(ChatCommandContext context, int choice)
@@ -186,7 +191,19 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
             context.Reply("Vote already ongoing.");
             return;
         }
-        _manualChange = true;
+        
+        try
+        {
+            Log.Information("Starting preset vote");
+            VotingAsync(_cancellationToken, true).GetAwaiter().GetResult();
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during voting preset update");
+        }
     }
     
     internal void FinishVote(BaseCommandContext context)
@@ -255,7 +272,6 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
 
         _availablePresets.Clear();
         _alreadyVoted.Clear();
-        _manualChange = false;
 
         // Don't start votes if there is not available presets for voting
         var presetsLeft = new List<PresetType>(_votePresets);
@@ -319,9 +335,9 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
             _entryCarManager.BroadcastPacket(new ChatMessage
             {
                 SessionId = 255, 
-                Message = $"Track will change in {(_configuration.TransitionDurationSeconds < 60 ? 
-                    $"{_configuration.TransitionDurationSeconds} second(s)" :
-                    $"{(int)Math.Ceiling(_configuration.TransitionDurationSeconds / 60.0)} minute(s)")}."
+                Message = $"Track will change in {(_configuration.DelayTransitionDurationSeconds < 60 ? 
+                    $"{_configuration.DelayTransitionDurationSeconds} second(s)" :
+                    $"{(int)Math.Ceiling(_configuration.DelayTransitionDurationSeconds / 60.0)} minute(s)")}."
             });
 
             // Delay the preset switch by configured time delay
@@ -335,96 +351,30 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         _voteStarted = false;
     }
     
-    private async Task ExecuteAdminAsync(CancellationToken stoppingToken)
+    private void AdminPreset(PresetData preset)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            try
+            if (preset.Type!.Equals(preset.UpcomingType!)) return;
+            Log.Information("Next preset: {Preset}", preset.UpcomingType!.Name);
+            _entryCarManager.BroadcastPacket(new ChatMessage
+                { SessionId = 255, Message = $"Next track: {preset.UpcomingType!.Name}" });
+            _entryCarManager.BroadcastPacket(new ChatMessage
             {
-                if (_adminChange)
-                {
-                    if (_adminPreset != null && !_adminPreset.Type!.Equals(_adminPreset.UpcomingType!))
-                    {
-                        Log.Information("Next preset: {Preset}", _adminPreset!.UpcomingType!.Name);
-                        _entryCarManager.BroadcastPacket(new ChatMessage
-                            { SessionId = 255, Message = $"Next track: {_adminPreset!.UpcomingType!.Name}" });
-                        _entryCarManager.BroadcastPacket(new ChatMessage
-                        {
-                            SessionId = 255, 
-                            Message = $"Track will change in {(_configuration.TransitionDurationSeconds < 60 ? 
-                                $"{_configuration.TransitionDurationSeconds} second(s)" :
-                                $"{(int)Math.Ceiling(_configuration.TransitionDurationSeconds / 60.0)} minute(s)")}."
-                        });
+                SessionId = 255, 
+                Message = $"Track will change in {(_configuration.DelayTransitionDurationSeconds < 60 ? 
+                    $"{_configuration.DelayTransitionDurationSeconds} second(s)" :
+                    $"{(int)Math.Ceiling(_configuration.DelayTransitionDurationSeconds / 60.0)} minute(s)")}."
+            });
 
-                        // Delay the preset switch by configured time delay
-                        await Task.Delay(_configuration.DelayTransitionDurationMilliseconds, stoppingToken);
+            // Delay the preset switch by configured time delay
+            Thread.Sleep(_configuration.DelayTransitionDurationMilliseconds);
 
-                        _adminChange = false;
-                        _presetManager.SetPreset(_adminPreset);
-                        _adminPreset = null;
-                    }
-                }
-            }
-            catch (TaskCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error during admin preset update");
-            }
-            finally
-            {
-                await Task.Delay(1000, stoppingToken);
-            }
+            _presetManager.SetPreset(preset);
         }
-    }
-    
-    private async Task ExecuteManualVotingAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
+        catch (Exception ex)
         {
-            try
-            {
-                if (_manualChange)
-                {
-                    
-                    Log.Information("Starting preset vote");
-                    await VotingAsync(stoppingToken, true);
-                }
-            }
-            catch (TaskCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error during voting preset update");
-            }
-            finally
-            {
-                await Task.Delay(1000, stoppingToken);
-            }
-        }
-    }
-    
-    private async Task ExecuteVotingAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            await Task.Delay(_configuration.CycleIntervalMilliseconds - _configuration.VotingDurationMilliseconds,
-                stoppingToken);
-            try
-            {
-                Log.Information("Starting preset vote");
-                await VotingAsync(stoppingToken);
-            }
-            catch (TaskCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error during voting preset update");
-            }
-            finally { }
+            Log.Error(ex, "Error during admin preset update");
         }
     }
 }

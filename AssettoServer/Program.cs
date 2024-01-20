@@ -18,7 +18,7 @@ using Parser = CommandLine.Parser;
 
 namespace AssettoServer;
 
-internal static class Program
+public static class Program
 {
 #if DEBUG
     public static readonly bool IsDebugBuild = true;

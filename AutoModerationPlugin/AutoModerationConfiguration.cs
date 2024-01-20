@@ -7,12 +7,25 @@ namespace AutoModerationPlugin;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class AutoModerationConfiguration : IValidateConfiguration<AutoModerationConfigurationValidator>
 {
+    [YamlMember(Description = "Kick players with a high ping")]
+    public HighPingKickConfiguration HighPingKick { get; init; } = new();
     [YamlMember(Description = "Kick players driving the wrong way. AI has to enabled for this to work")]
     public WrongWayKickConfiguration WrongWayKick { get; init; } = new();
     [YamlMember(Description = "Kick players driving without lights during the night")]
     public NoLightsKickConfiguration NoLightsKick { get; init; } = new();
     [YamlMember(Description = "Kick players blocking the road. AI has to be enabled for this to work")]
     public BlockingRoadKickConfiguration BlockingRoadKick { get; init; } = new();
+}
+
+[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
+public class HighPingKickConfiguration
+{
+    [YamlMember(Description = "Set to true to enable")]
+    public bool Enabled = false;
+    [YamlMember(Description = "Time after the player gets kicked. A warning will be sent in chat after half this time")]
+    public int DurationSeconds = 20;
+    [YamlMember(Description = "Players having a lower ping will not be kicked")]
+    public int MaximumPingMilliseconds = 500;
 }
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]

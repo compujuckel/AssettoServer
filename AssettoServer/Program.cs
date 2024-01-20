@@ -1,11 +1,6 @@
 ﻿using AssettoServer.Server.Configuration;
 using System;
 using System.Diagnostics;
-using System.IO;
-using System.IO.Pipes;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,7 +29,7 @@ internal static class Program
     [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     private class Options
     {
-        [Option('p', "preset", Required = false, SetName = "AssettoServer", HelpText = "Specify a configuration preset manually")]
+        [Option('p', "preset", Required = false, SetName = "AssettoServer", HelpText = "Configuration preset")]
         public string Preset { get; set; } = "";
 
         [Option('c', Required = false, SetName = "Content Manager compatibility", HelpText = "Path to server configuration")]
@@ -45,13 +40,19 @@ internal static class Program
 
         [Option("plugins-from-workdir", Required = false, HelpText = "Additionally load plugins from working directory")]
         public bool LoadPluginsFromWorkdir { get; set; } = false;
+    }
 
-        [Option('r',"use-random-preset", Required = false, HelpText = "Use a random available configuration preset")]
-        public bool UseRandomPreset { get; set; } = false;
+    private class StartOptions
+    {
+        public string? Preset { get; init; }
+        public string? ServerCfgPath { get; init; }
+        public string? EntryListPath { get; init; }
     }
 
     public static bool IsContentManager;
-        
+    private static bool _loadPluginsFromWorkdir;
+    private static TaskCompletionSource<StartOptions> _restartTask = new();
+    
     internal static async Task Main(string[] args)
     {
         SetupFluentValidation();
@@ -61,16 +62,11 @@ internal static class Program
         var options = Parser.Default.ParseArguments<Options>(args).Value;
         if (options == null) return;
 
+        _loadPluginsFromWorkdir = options.LoadPluginsFromWorkdir;
+
         if (IsContentManager)
         {
             Console.OutputEncoding = Encoding.UTF8;
-        }
-
-        var presets = ListPresets();
-        if (options.UseRandomPreset)
-        {
-            if (presets.Length >= 1)
-                options.Preset = presets[Random.Shared.Next(presets.Length)];
         }
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
@@ -82,46 +78,54 @@ internal static class Program
         {
             Log.Debug("Server was started through Content Manager");
         }
-        
-        Log.Information($"Presets found: {presets.Length}");
-        await HandleServerAsync(options, presets);
-    }
 
-    private static async Task HandleServerAsync(Options options, string[] presets, CancellationToken token = default)
-    {
-        CancellationTokenSource tokenSource = new();
-        string preset = options.Preset;
-        Func<string, string> restartCallback = (p) =>
+        var startOptions = new StartOptions
         {
-            tokenSource.Cancel();
-            preset = p;
-            return p;
+            Preset = options.Preset,
+            ServerCfgPath = options.ServerCfgPath,
+            EntryListPath = options.EntryListPath
         };
         
-        while (!token.IsCancellationRequested) {
-            tokenSource = new CancellationTokenSource();
-            Task server = Task.Run(() => RunServerAsync(preset, options.ServerCfgPath, options.EntryListPath, restartCallback, options.LoadPluginsFromWorkdir, tokenSource.Token));
-            await server.WaitAsync(new CancellationToken());
+        while (true)
+        {
+            _restartTask = new TaskCompletionSource<StartOptions>();
+            using var cts = new CancellationTokenSource();
+            var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, cts.Token);
+            var finishedTask = await Task.WhenAny(serverTask, _restartTask.Task);
 
-            if (!presets.Contains(preset)) break;
-            
-            Log.Information($"Server restarting with preset: {preset}");
+            if (finishedTask == _restartTask.Task)
+            {
+                await cts.CancelAsync();
+                await serverTask;
+
+                startOptions = _restartTask.Task.Result;
+            }
+            else break;
         }
     }
 
+    public static void RestartServer(string? preset, string? serverCfgPath = null, string? entryListPath = null)
+    {
+        Log.Information("Initiated in-process server restart");
+        _restartTask.SetResult(new StartOptions
+        {
+            Preset = preset,
+            ServerCfgPath = serverCfgPath,
+            EntryListPath = entryListPath
+        });
+    }
+
     private static async Task RunServerAsync(
-        string preset,
-        string serverCfgPath,
-        string entryListPath,
-        Func<string, string> restartCallback,
-        bool loadPluginsFromWorkdir = false,
+        string? preset,
+        string? serverCfgPath,
+        string? entryListPath,
         CancellationToken token = default)
     {
         var configLocations = ConfigurationLocations.FromOptions(preset, serverCfgPath, entryListPath);
         
         try
         {
-            var config = new ACServerConfiguration(preset, configLocations, loadPluginsFromWorkdir, restartCallback);
+            var config = new ACServerConfiguration(preset, configLocations, _loadPluginsFromWorkdir);
 
             if (config.Extra.LokiSettings != null
                 && !string.IsNullOrEmpty(config.Extra.LokiSettings.Url)
@@ -149,18 +153,7 @@ internal static class Program
                 })
                 .Build();
             
-            // host.RunAsync(token);  // includes shutdown
-            var server = new Thread(host.RunAsync(token).GetAwaiter().GetResult);
-            await Task.Run(async () =>
-            {
-                server.Start();
-                while (server.IsAlive)
-                {
-                    await Task.Delay(500);
-                }
-
-                // server.Join();
-            });
+            await host.RunAsync(token);
         }
         catch (Exception ex)
         {
@@ -229,27 +222,5 @@ internal static class Program
         {
             // ignored
         }
-    }
-
-    private static string PipeName()
-    {
-        using Aes crypto = Aes.Create();
-        crypto.GenerateKey();
-        return "presetPipe." + Convert.ToBase64String(crypto.Key);
-    }
-
-    private static string[] ListPresets()
-    {
-        string presetsPath = Path.Join(AppContext.BaseDirectory, "presets");
-        if (Path.Exists(presetsPath))
-        {
-            var directories = Directory.GetDirectories(presetsPath);
-            if (directories.Length >= 1)
-            {
-                return directories.Select(Path.GetFileName)!.ToArray<string>();
-            }
-        }
-
-        return [];
     }
 }

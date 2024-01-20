@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using AssettoServer.Server.Configuration.Extra;
 using AssettoServer.Server.Configuration.Kunos;
 using AssettoServer.Server.Plugin;
@@ -35,8 +34,6 @@ public class ACServerConfiguration
     [YamlIgnore] public bool LoadPluginsFromWorkdir { get; }
     [YamlIgnore] public int RandomSeed { get; } = Random.Shared.Next();
     [YamlIgnore] public string? Preset { get; }
-    [YamlIgnore] public Func<string, string> RestartCallBack { get; }
-    
     
     /*
      * Search paths are like this:
@@ -52,10 +49,9 @@ public class ACServerConfiguration
      *
      * When "entryListPath" is set, it takes precedence and entry_list.ini will be loaded from the specified path.
      */
-    public ACServerConfiguration(string preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir, Func<string, string> restartCallback)
+    public ACServerConfiguration(string? preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir)
     {
         Preset = preset;
-        RestartCallBack = restartCallback;
         BaseFolder = locations.BaseFolder;
         LoadPluginsFromWorkdir = loadPluginsFromWorkdir;
         Server = LoadServerConfiguration(locations.ServerCfgPath);
@@ -64,13 +60,28 @@ public class ACServerConfiguration
         CSPExtraOptions = LoadCspExtraOptions(locations.CSPExtraOptionsPath);
         ContentConfiguration = LoadContentConfiguration(Path.Join(BaseFolder, "cm_content/content.json"));
         ServerVersion = ThisAssembly.AssemblyInformationalVersion;
-        FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : $"{Server.Track}-{Server.TrackConfig}";
-        CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
         Sessions = PrepareSessions();
 
         var extraCfgSchemaPath = ConfigurationSchemaGenerator.WriteExtraCfgSchema();
         LoadExtraConfig(locations.ExtraCfgPath, extraCfgSchemaPath);
         ACExtraConfiguration.WriteReferenceConfig(extraCfgSchemaPath);
+        
+        var parsedTrackOptions = CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
+        if (Extra.MinimumCSPVersion.HasValue)
+        {
+            CSPTrackOptions = new CSPTrackOptions
+            {
+                Track = parsedTrackOptions.Track,
+                Flags = parsedTrackOptions.Flags,
+                MinimumCSPVersion = Extra.MinimumCSPVersion
+            };
+            Server.Track = CSPTrackOptions.ToString();
+        }
+        else
+        {
+            CSPTrackOptions = parsedTrackOptions;
+        }
+        FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : $"{Server.Track}-{Server.TrackConfig}";
         
         ApplyConfigurationFixes();
 

@@ -10,7 +10,7 @@ public class ConfigurationLocations
     public required string ExtraCfgPath { get; init; }
     public required string CSPExtraOptionsPath { get; init; }
 
-    public static ConfigurationLocations FromOptions(string preset, string serverCfgPath, string entryListPath)
+    public static ConfigurationLocations FromOptions(string? preset, string? serverCfgPath, string? entryListPath)
     {
         var baseFolder = string.IsNullOrEmpty(preset) ? "cfg" : Path.Join("presets", preset);
 

@@ -49,7 +49,7 @@ public class ACServerConfiguration
      *
      * When "entryListPath" is set, it takes precedence and entry_list.ini will be loaded from the specified path.
      */
-    public ACServerConfiguration(string preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir)
+    public ACServerConfiguration(string? preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir)
     {
         Preset = preset;
         BaseFolder = locations.BaseFolder;

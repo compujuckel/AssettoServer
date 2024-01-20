@@ -12,6 +12,8 @@ public partial class CSPTrackOptions
     [GeneratedRegex(@"^csp\/(\d+)\/\.\.(?:\/(\w+)\/\.\.)?\/(.+)$")]
     private static partial Regex TrackOptionsRegex();
 
+    private const int FlagsOffset = 65; // 'A'
+
     public static CSPTrackOptions Parse(string track)
     {
         var match = TrackOptionsRegex().Match(track);
@@ -20,8 +22,7 @@ public partial class CSPTrackOptions
             var flags = TrackOptionsFlags.None;
             if (match.Groups[2].Success)
             {
-                const int offset = 65; // A
-                flags = (TrackOptionsFlags)match.Groups[2].Value[0] - offset;
+                flags = (TrackOptionsFlags)match.Groups[2].Value[0] - FlagsOffset;
             }
             
             return new CSPTrackOptions
@@ -36,6 +37,20 @@ public partial class CSPTrackOptions
         {
             Track = track
         };
+    }
+
+    public override string ToString()
+    {
+        if (!MinimumCSPVersion.HasValue)
+        {
+            return Track;
+        }
+
+        var flags = Flags != TrackOptionsFlags.None
+            ? $"/{(char)(Flags + FlagsOffset)}/.."
+            : "";
+
+        return $"csp/{MinimumCSPVersion.Value}/..{flags}/{Track}";
     }
 }
 

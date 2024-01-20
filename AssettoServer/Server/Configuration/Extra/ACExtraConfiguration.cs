@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using AssettoServer.Utils;
 using CommunityToolkit.Mvvm.ComponentModel;
 using JetBrains.Annotations;
 using YamlDotNet.Core;
@@ -15,6 +16,8 @@ namespace AssettoServer.Server.Configuration.Extra;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public partial class ACExtraConfiguration : ObservableObject
 {
+    [YamlMember(Description = "Override minimum CSP version required to join this server. Leave this empty to not require CSP.")]
+    public uint? MinimumCSPVersion { get; init; } = CSPVersion.V0_1_77;
     [YamlMember(Description = "Enable Steam ticket validation. Requires CSP 0.1.75+ and a recent version of Content Manager")]
     public bool UseSteamAuth { get; init; } = false;
     [YamlMember(Description = "List of DLC App IDs that are required to join. Steam auth must be enabled. Possible values: https://steamdb.info/app/244210/dlc/")]

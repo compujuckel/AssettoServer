@@ -60,13 +60,28 @@ public class ACServerConfiguration
         CSPExtraOptions = LoadCspExtraOptions(locations.CSPExtraOptionsPath);
         ContentConfiguration = LoadContentConfiguration(Path.Join(BaseFolder, "cm_content/content.json"));
         ServerVersion = ThisAssembly.AssemblyInformationalVersion;
-        FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : $"{Server.Track}-{Server.TrackConfig}";
-        CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
         Sessions = PrepareSessions();
 
         var extraCfgSchemaPath = ConfigurationSchemaGenerator.WriteExtraCfgSchema();
         LoadExtraConfig(locations.ExtraCfgPath, extraCfgSchemaPath);
         ACExtraConfiguration.WriteReferenceConfig(extraCfgSchemaPath);
+        
+        var parsedTrackOptions = CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
+        if (Extra.MinimumCSPVersion.HasValue)
+        {
+            CSPTrackOptions = new CSPTrackOptions
+            {
+                Track = parsedTrackOptions.Track,
+                Flags = parsedTrackOptions.Flags,
+                MinimumCSPVersion = Extra.MinimumCSPVersion
+            };
+            Server.Track = CSPTrackOptions.ToString();
+        }
+        else
+        {
+            CSPTrackOptions = parsedTrackOptions;
+        }
+        FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : $"{Server.Track}-{Server.TrackConfig}";
         
         ApplyConfigurationFixes();
 

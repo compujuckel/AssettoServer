@@ -8,9 +8,17 @@ namespace CyclePresetPlugin.Preset;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class PresetConfiguration
 {
-    public required string Name { get; set; }
-    public RandomTrackPresetEntry? RandomTrack { get; set; }
-    public VotingTrackPresetEntry? VotingTrack { get; set; }
+
+    [YamlMember(Description = "The name that is displayed when a vote is going on or the preset is changing")]
+    public string Name { get; set; } = "<Please change me>";
+
+    [YamlMember(Description = "Preset specific settings for randomization")]
+    public RandomPresetEntry Random { get; set; } = new();
+
+    [YamlMember(Description = "Preset specific settings for voting")]
+    public VotingPresetEntry Voting { get; set; } = new();
+    
+    
     [YamlIgnore] public string PresetFolder { get; set; } = "";
     [YamlIgnore] public string Path { get; set; } = "";
     
@@ -22,7 +30,7 @@ public class PresetConfiguration
         {
             Name = Name,
             PresetFolder = PresetFolder,
-            Weight = RandomTrack?.Weight ?? 1.0f,
+            Weight = Random?.Weight ?? 1.0f,
         };
     }
     
@@ -38,7 +46,7 @@ public class PresetConfiguration
         yamlParser.Consume<StreamStart>();
         yamlParser.Accept<DocumentStart>(out _);
 
-        var cfg = deserializer.Deserialize<PresetConfiguration>(yamlParser);
+        var cfg = deserializer.Deserialize<CyclePresetConfiguration>(yamlParser).Meta;
 
         cfg.Path = path;
         cfg.PresetFolder = System.IO.Path.GetDirectoryName(path)!;
@@ -48,15 +56,19 @@ public class PresetConfiguration
 }
 
 [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
-public class RandomTrackPresetEntry
+public class RandomPresetEntry
 {
+    [YamlMember(Description = "Is this preset part of the random selection")]
     public bool Enabled { get; set; } = false;
+    
+    [YamlMember(Description = "Weights for random preset selection, setting a weight to 0 blacklists a preset, default weight is 1")]
     public float Weight { get; set; } = 1.0f;
 }
 
 [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
-public class VotingTrackPresetEntry
+public class VotingPresetEntry
 {
+    [YamlMember(Description = "Is this preset part of the voting")]
     public bool Enabled { get; set; } = false;
 }
 

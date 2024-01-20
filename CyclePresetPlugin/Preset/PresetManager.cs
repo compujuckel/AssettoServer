@@ -1,3 +1,7 @@
+using AssettoServer;
+using AssettoServer.Server;
+using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -6,24 +10,29 @@ namespace CyclePresetPlugin.Preset;
 
 public class PresetManager : CriticalBackgroundService
 {
-    private readonly PresetImplementation _presetImplementation;
+    private readonly ACServerConfiguration _acServerConfiguration;
+    private readonly EntryCarManager _entryCarManager;
     private bool _presetChangeRequested = false;
+    
+    private const string RestartKickReason = "SERVER RESTART FOR TRACK CHANGE (won't take long)";
 
-    public PresetManager(PresetImplementation presetImplementation,
+    public PresetManager(ACServerConfiguration acServerConfiguration, 
+        EntryCarManager entryCarManager,
         IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
-        _presetImplementation = presetImplementation;
+        _acServerConfiguration = acServerConfiguration;
+        _entryCarManager = entryCarManager;
     }
 
     public PresetData CurrentPreset { get; private set; } = null!;
 
-    public void SetTrack(PresetData preset)
+    public void SetPreset(PresetData preset)
     {
         CurrentPreset = preset;
         _presetChangeRequested = true;
         
         if (!CurrentPreset.IsInit)
-            UpdateTrack();
+            UpdatePreset();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -33,11 +42,11 @@ public class PresetManager : CriticalBackgroundService
             try
             {
                 if (_presetChangeRequested)
-                    UpdateTrack();
+                    UpdatePreset();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error in track service update");
+                Log.Error(ex, "Error in preset service update");
             }
             finally
             {
@@ -46,15 +55,35 @@ public class PresetManager : CriticalBackgroundService
         }
     }
 
-    private void UpdateTrack()
+    private void UpdatePreset()
     {
         if (CurrentPreset.UpcomingType != null && !CurrentPreset.Type!.Equals(CurrentPreset.UpcomingType!))
         {
-            Log.Information("Track change to \'{Name}\' initiated", CurrentPreset.UpcomingType!.Name);
-            _presetImplementation.ChangeTrack(CurrentPreset);
-
-            CurrentPreset.Type = CurrentPreset.UpcomingType;
-            CurrentPreset.UpcomingType = null;
+            Log.Information("Preset change to \'{Name}\' initiated", CurrentPreset.UpcomingType!.Name);
+            
+            // Notify about restart
+            Log.Information("Restarting server");
+    
+            if (_acServerConfiguration.Extra.EnableClientMessages)
+            {
+                // Reconnect clients
+                Log.Information("Reconnecting all clients for preset change");
+                _entryCarManager.BroadcastPacket(new ReconnectClientPacket { Time = (ushort) CurrentPreset.TransitionDuration });
+            }
+            else
+            {
+                Log.Information("Kicking all clients for preset change, server restart");
+                _entryCarManager.BroadcastPacket(new CSPKickBanMessageOverride { Message = RestartKickReason });
+                _entryCarManager.BroadcastPacket(new KickCar { SessionId = 255, Reason = KickReason.Kicked });
+            }
+        
+            var preset = new DirectoryInfo(CurrentPreset.UpcomingType!.PresetFolder).Name;
+        
+            // Restart the server
+            var sleep = (CurrentPreset.TransitionDuration - 1) * 1000;
+            Thread.Sleep(sleep);
+        
+            Program.RestartServer(preset);
         }
     }
 }

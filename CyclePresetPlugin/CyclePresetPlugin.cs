@@ -1,4 +1,6 @@
 ﻿using System.Reflection;
+using AssettoServer.Commands;
+using AssettoServer.Commands.Contexts;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
@@ -23,17 +25,17 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
     private bool _votingOpen = false;
     
     private readonly List<PresetType> _adminPresets;
-    private PresetData? _adminTrack = null;
-    private bool _adminTrackChange = false;
+    private PresetData? _adminPreset = null;
+    private bool _adminChange = false;
     
-    private bool _manualTrackChange = false;
+    private bool _manualChange = false;
     private bool _voteStarted = false;
     private int _extendVotingSeconds = 0;
     private short _finishVote = 0;
 
     private class PresetChoice
     {
-        public PresetType? Track { get; init; }
+        public PresetType? Preset { get; init; }
         public int Votes { get; set; }
     }
 
@@ -53,7 +55,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         _votePresets = presetConfigurationManager.VotingPresetTypes;
         _adminPresets = presetConfigurationManager.AllPresetTypes;
         
-        _presetManager.SetTrack(new PresetData(presetConfigurationManager.CurrentConfiguration.ToPresetType(), null)
+        _presetManager.SetPreset(new PresetData(presetConfigurationManager.CurrentConfiguration.ToPresetType(), null)
         {
             IsInit = true,
             TransitionDuration = 0
@@ -85,35 +87,30 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         await Task.WhenAll(tasks).WaitAsync(stoppingToken);
     }
 
-    internal void ListAllPresets(ACTcpClient client)
+    internal void ListAllPresets(BaseCommandContext context)
     {
-        client.SendPacket(new ChatMessage { SessionId = 255, Message = "List of all presets:" });
+        context.Reply("List of all presets:");
         for (int i = 0; i < _adminPresets.Count; i++)
         {
-            var track = _adminPresets[i];
-            client.SendPacket(new ChatMessage { SessionId = 255, Message = $" /presetuse {i} - {track.Name}" });
+            var pt = _adminPresets[i];
+            context.Reply($" /presetuse {i} - {pt.Name}");
         }
     }
 
-    internal void GetTrack(ACTcpClient client)
+    internal void GetPreset(BaseCommandContext context)
     {
         Log.Information("Current preset: {Name} - {PresetFolder}", _presetManager.CurrentPreset.Type!.Name, _presetManager.CurrentPreset.Type!.PresetFolder);
-        client.SendPacket(new ChatMessage
-        {
-            SessionId = 255,
-            Message =
-                $"Current preset: {_presetManager.CurrentPreset.Type!.Name} - {_presetManager.CurrentPreset.Type!.PresetFolder}"
-        });
+        context.Reply($"Current preset: {_presetManager.CurrentPreset.Type!.Name} - {_presetManager.CurrentPreset.Type!.PresetFolder}");
     }
 
-    internal void SetPreset(ACTcpClient client, int choice)
+    internal void SetPreset(BaseCommandContext context, int choice)
     {
         var last = _presetManager.CurrentPreset;
 
         if (choice < 0 && choice >= _adminPresets.Count)
         {
             Log.Information("Invalid preset choice");
-            client.SendPacket(new ChatMessage { SessionId = 255, Message = "Invalid preset choice." });
+            context.Reply("Invalid preset choice.");
 
             return;
         }
@@ -123,20 +120,19 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         if (last.Type!.Equals(next))
         {
             Log.Information("No change made, admin tried setting the current preset");
-            client.SendPacket(new ChatMessage
-                { SessionId = 255, Message = $"No change made, you tried setting the current preset." });
+            context.Reply("No change made, you tried setting the current preset.");
         }
         else
         {
-            _adminTrack = new PresetData(_presetManager.CurrentPreset.Type, next)
+            _adminPreset = new PresetData(_presetManager.CurrentPreset.Type, next)
             {
                 TransitionDuration = _configuration.TransitionDurationSeconds,
             };
-            _adminTrackChange = true;
+            _adminChange = true;
         }
     }
     
-    internal void RandomTrack(ACTcpClient client)
+    internal void RandomPreset(BaseCommandContext context)
     {
         var last = _presetManager.CurrentPreset;
 
@@ -146,66 +142,69 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
             next = _adminPresets[Random.Shared.Next(_adminPresets.Count)];
         } while (last.Type!.Equals(next));
 
-        _adminTrack = new PresetData(_presetManager.CurrentPreset.Type, next)
+        _adminPreset = new PresetData(_presetManager.CurrentPreset.Type, next)
         {
             TransitionDuration = _configuration.TransitionDurationSeconds,
         };
-        _adminTrackChange = true;
+        _adminChange = true;
+        context.Reply("Switching to random preset (if it's not the current one)");
     }
 
-    internal void CountVote(ACTcpClient client, int choice)
+    internal void CountVote(ChatCommandContext context, int choice)
     {
         if (!_votingOpen)
         {
-            client.SendPacket(new ChatMessage { SessionId = 255, Message = "There is no ongoing track vote." });
+            context.Reply("There is no ongoing track vote.");
             return;
         }
 
         if (choice >= _availablePresets.Count || choice < 0)
         {
-            client.SendPacket(new ChatMessage { SessionId = 255, Message = "Invalid choice." });
+            context.Reply("Invalid choice.");
             return;
         }
-
-        if (_alreadyVoted.Contains(client))
+        
+        if (_alreadyVoted.Contains(context.Client))
         {
-            client.SendPacket(new ChatMessage { SessionId = 255, Message = "You voted already." });
+            context.Reply("You voted already.");
             return;
         }
 
-        _alreadyVoted.Add(client);
+        _alreadyVoted.Add(context.Client);
 
-        var votedTrack = _availablePresets[choice];
-        votedTrack.Votes++;
+        var votedPreset = _availablePresets[choice];
+        votedPreset.Votes++;
 
-        client.SendPacket(new ChatMessage
-            { SessionId = 255, Message = $"Your vote for {votedTrack.Track!.Name} has been counted." });
+        context.Reply($"Your vote for {votedPreset.Preset!.Name} has been counted.");
     }
 
-    internal void StartVote(ACTcpClient client)
+    internal void StartVote(BaseCommandContext context)
     {
 
         if (_voteStarted)
         {
-            client.SendPacket(new ChatMessage { SessionId = 255, Message = "Vote already ongoing." });
+            context.Reply("Vote already ongoing.");
             return;
         }
-        _manualTrackChange = true;
+        _manualChange = true;
     }
     
-    internal void FinishVote(ACTcpClient client)
+    internal void FinishVote(BaseCommandContext context)
     {
         _finishVote = 1;
+        context.Reply("Finishing vote.");
     }
     
-    internal void CancelVote(ACTcpClient client)
+    internal void CancelVote(BaseCommandContext context)
     {
         _finishVote = -1;
+        context.Reply("Canceling vote.");
     }
     
-    internal void ExtendVote(ACTcpClient client, int seconds)
+    internal void ExtendVote(BaseCommandContext context, int seconds)
     {
         _extendVotingSeconds += seconds;
+        context.Reply($"Extending vote for {seconds} more seconds.");
     }
 
     private async Task<bool> WaitVoting(CancellationToken stoppingToken)
@@ -235,7 +234,8 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
                 }
             }
         }
-        catch (OperationCanceledException ex) { }
+        catch (OperationCanceledException ex) { 
+            Log.Error(ex, "Error while waiting for preset votes");}
         finally
         {
             _votingOpen = false;
@@ -255,12 +255,12 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
 
         _availablePresets.Clear();
         _alreadyVoted.Clear();
-        _manualTrackChange = false;
+        _manualChange = false;
 
-        // Don't start votes if there is not available tracks for voting
-        var tracksLeft = new List<PresetType>(_votePresets);
-        tracksLeft.RemoveAll(t => t.Equals(last.Type!));
-        if (tracksLeft.Count <= 1)
+        // Don't start votes if there is not available presets for voting
+        var presetsLeft = new List<PresetType>(_votePresets);
+        presetsLeft.RemoveAll(t => t.Equals(last.Type!));
+        if (presetsLeft.Count <= 1)
         {
             Log.Warning("Not enough presets to start vote");
             return;
@@ -272,7 +272,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         // Add "Stay on current track"
         if (_configuration.IncludeStayOnTrackVote)
         {
-            _availablePresets.Add(new PresetChoice { Track = last.Type, Votes = 0 });
+            _availablePresets.Add(new PresetChoice { Preset = last.Type, Votes = 0 });
             if (_configuration.VoteEnabled || manualVote)
                 _entryCarManager.BroadcastPacket(new ChatMessage
                     { SessionId = 255, Message = $" /vt 0 - Stay on current track." });
@@ -281,15 +281,15 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         }
         for (int i = _availablePresets.Count; i < _configuration.VoteChoices; i++)
         {
-            if (tracksLeft.Count < 1)
+            if (presetsLeft.Count < 1)
                 break;
-            var nextTrack = tracksLeft[Random.Shared.Next(tracksLeft.Count)];
-            _availablePresets.Add(new PresetChoice { Track = nextTrack, Votes = 0 });
-            tracksLeft.Remove(nextTrack);
+            var nextPreset = presetsLeft[Random.Shared.Next(presetsLeft.Count)];
+            _availablePresets.Add(new PresetChoice { Preset = nextPreset, Votes = 0 });
+            presetsLeft.Remove(nextPreset);
 
             if (_configuration.VoteEnabled || manualVote)
                 _entryCarManager.BroadcastPacket(new ChatMessage
-                    { SessionId = 255, Message = $" /vt {i} - {nextTrack.Name}" });
+                    { SessionId = 255, Message = $" /vt {i} - {nextPreset.Name}" });
         }
 
         // Wait for the vote to finish
@@ -300,11 +300,11 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         }
 
         int maxVotes = _availablePresets.Max(w => w.Votes);
-        List<PresetChoice> tracks = _availablePresets.Where(w => w.Votes == maxVotes).ToList();
+        List<PresetChoice> presets = _availablePresets.Where(w => w.Votes == maxVotes).ToList();
 
-        var winner = tracks[Random.Shared.Next(tracks.Count)];
+        var winner = presets[Random.Shared.Next(presets.Count)];
 
-        if (last.Type!.Equals(winner.Track!) || (maxVotes == 0 && !_configuration.ChangeTrackWithoutVotes))
+        if (last.Type!.Equals(winner.Preset!) || (maxVotes == 0 && !_configuration.ChangePresetWithoutVotes))
         {
             _entryCarManager.BroadcastPacket(new ChatMessage
             {
@@ -315,7 +315,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         else
         {
             _entryCarManager.BroadcastPacket(new ChatMessage
-                { SessionId = 255, Message = $"Track vote ended. Next track: {winner.Track!.Name} - {winner.Votes} votes" });
+                { SessionId = 255, Message = $"Track vote ended. Next track: {winner.Preset!.Name} - {winner.Votes} votes" });
             _entryCarManager.BroadcastPacket(new ChatMessage
             {
                 SessionId = 255, 
@@ -324,10 +324,10 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
                     $"{(int)Math.Ceiling(_configuration.TransitionDurationSeconds / 60.0)} minute(s)")}."
             });
 
-            // Delay the track switch by configured time delay
-            await Task.Delay(_configuration.TransitionDurationMilliseconds, stoppingToken);
+            // Delay the preset switch by configured time delay
+            await Task.Delay(_configuration.DelayTransitionDurationMilliseconds, stoppingToken);
 
-            _presetManager.SetTrack(new PresetData(last.Type, winner.Track)
+            _presetManager.SetPreset(new PresetData(last.Type, winner.Preset)
             {
                 TransitionDuration = _configuration.TransitionDurationSeconds,
             });
@@ -341,13 +341,13 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         {
             try
             {
-                if (_adminTrackChange)
+                if (_adminChange)
                 {
-                    if (_adminTrack != null && !_adminTrack.Type!.Equals(_adminTrack.UpcomingType!))
+                    if (_adminPreset != null && !_adminPreset.Type!.Equals(_adminPreset.UpcomingType!))
                     {
-                        Log.Information("Next track: {Track}", _adminTrack!.UpcomingType!.Name);
+                        Log.Information("Next preset: {Preset}", _adminPreset!.UpcomingType!.Name);
                         _entryCarManager.BroadcastPacket(new ChatMessage
-                            { SessionId = 255, Message = $"Next track: {_adminTrack!.UpcomingType!.Name}" });
+                            { SessionId = 255, Message = $"Next track: {_adminPreset!.UpcomingType!.Name}" });
                         _entryCarManager.BroadcastPacket(new ChatMessage
                         {
                             SessionId = 255, 
@@ -356,12 +356,12 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
                                 $"{(int)Math.Ceiling(_configuration.TransitionDurationSeconds / 60.0)} minute(s)")}."
                         });
 
-                        // Delay the track switch by configured time delay
-                        await Task.Delay(_configuration.TransitionDurationMilliseconds, stoppingToken);
+                        // Delay the preset switch by configured time delay
+                        await Task.Delay(_configuration.DelayTransitionDurationMilliseconds, stoppingToken);
 
-                        _adminTrackChange = false;
-                        _presetManager.SetTrack(_adminTrack);
-                        _adminTrack = null;
+                        _adminChange = false;
+                        _presetManager.SetPreset(_adminPreset);
+                        _adminPreset = null;
                     }
                 }
             }
@@ -385,10 +385,10 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         {
             try
             {
-                if (_manualTrackChange)
+                if (_manualChange)
                 {
                     
-                    Log.Information("Starting track vote");
+                    Log.Information("Starting preset vote");
                     await VotingAsync(stoppingToken, true);
                 }
             }
@@ -397,7 +397,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error during voting track update");
+                Log.Error(ex, "Error during voting preset update");
             }
             finally
             {
@@ -414,7 +414,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
                 stoppingToken);
             try
             {
-                Log.Information("Starting track vote");
+                Log.Information("Starting preset vote");
                 await VotingAsync(stoppingToken);
             }
             catch (TaskCanceledException)
@@ -422,7 +422,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error during voting track update");
+                Log.Error(ex, "Error during voting preset update");
             }
             finally { }
         }

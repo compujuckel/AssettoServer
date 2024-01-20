@@ -14,18 +14,19 @@ public class PresetConfigurationManager
 
     public PresetConfigurationManager(ACServerConfiguration acServerConfiguration)
     {
-        CurrentConfiguration = PresetConfiguration.FromFile(Path.Join(acServerConfiguration.BaseFolder, "preset_cfg.yml"));
+        CurrentConfiguration = PresetConfiguration.FromFile(Path.Join(acServerConfiguration.BaseFolder, "plugin_cycle_preset_cfg.yml"));
 
         var configs = new List<PresetConfiguration>();
         var directories = Directory.GetDirectories("presets");
         foreach (var dir in directories)
         {
-            configs.Add(PresetConfiguration.FromFile(Path.Join(dir, "preset_cfg.yml")));
+            // formerly preset_cfg.yml
+            configs.Add(PresetConfiguration.FromFile(Path.Join(dir, "plugin_cycle_preset_cfg.yml")));
         }
 
         AllConfigurations = configs;
-        RandomConfigurations = configs.Where(c => c.RandomTrack!.Enabled).ToList();
-        VotingConfigurations = configs.Where(c => c.VotingTrack!.Enabled).ToList();
+        RandomConfigurations = configs.Where(c => c.Random!.Enabled).ToList();
+        VotingConfigurations = configs.Where(c => c.Voting!.Enabled).ToList();
 
         var types = new List<PresetType>();
         foreach (var conf in AllConfigurations)
@@ -34,7 +35,7 @@ public class PresetConfigurationManager
         }
 
         AllPresetTypes = types;
-        RandomPresetTypes = configs.Where(c => c.RandomTrack!.Enabled).Select(x => x.ToPresetType()).ToList();
-        VotingPresetTypes = configs.Where(c => c.VotingTrack!.Enabled).Select(x => x.ToPresetType()).ToList();
+        RandomPresetTypes = configs.Where(c => c.Random!.Enabled).Select(x => x.ToPresetType()).ToList();
+        VotingPresetTypes = configs.Where(c => c.Voting!.Enabled).Select(x => x.ToPresetType()).ToList();
     }
 }

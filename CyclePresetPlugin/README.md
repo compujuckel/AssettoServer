@@ -1,6 +1,6 @@
 ﻿# CyclePresetPlugin
 
-Plugin to let players vote for a server track at a specified interval.
+Plugin to let players vote for a preset/track at a specified interval.
 
 ## Commands
 Most commands have multiple alias
@@ -26,7 +26,7 @@ Server will ask users to vote for new map as per configured timeframe.
 - `/presetget`
 - `/presets`
 
-#### Change track
+#### Change track / preset
 Exact usage is shown by track list
 - `/presetset`
 - `/presetchange`
@@ -45,7 +45,7 @@ Exact usage is shown by track list
 - `/presetcancelvote`
 - `/presetvotecancel`
 
-#### Change to random track
+#### Change to random track / preset
 - `/presetrandom`
 
 ## Configuration
@@ -62,9 +62,7 @@ Works best with `EnableClientMessages: true`.
 Example configuration (write to `plugin_cycle_preset_cfg.yml`)
 
 ```yaml
----
-!CyclePresetConfiguration
-# Reconnect clients instead of kicking when restart is initiated.
+# Reconnect clients instead of kicking when restart is initiated. 
 # Please disable reconnect with varying entry lists in the presets
 ReconnectEnabled: true
 # Enable Voting
@@ -72,18 +70,32 @@ VoteEnabled: true
 # Number of choices players can choose from at each voting interval
 VoteChoices: 3
 # Will track change randomly if no vote has been counted
-ChangeTrackWithoutVotes: true
+ChangePresetWithoutVotes: false
 # Whether the current preset/track should be part of the next vote.
 IncludeStayOnTrackVote: true
-# How long the vote stays open
-# Minimum 30, Default 300
-VotingDurationSeconds: 300
-# How often a cycle/vote takes place
-# Minimum 5, Default 90
+# How often a cycle/vote takes place. Minimum 5, Default 90
 CycleIntervalMinutes: 90
-# How long it takes to change the preset/track after warning about it 
-# Minimum 1, Default 5
-TransitionDurationMinutes: 10
+# How long the vote stays open. Minimum 30, Default 300
+VotingDurationSeconds: 300
+# How long it takes to change the preset/track after notifying. Minimum 1, Default 5
+TransitionDurationSeconds: 5
+# How long it takes before notifying. Minimum 0, Default 10
+DelayTransitionDurationSeconds: 10
+# Preset specific settings 
+# The cfg/ directory is always ignored for the presets pool.
+Meta:
+    # The name that is displayed when a vote is going on or the preset is changing
+    Name: Shutoko noises
+    # Preset specific settings for randomization
+    Random:
+        # Is this preset part of the random selection
+        Enabled: false
+        # Weights for random preset selection, setting a weight to 0 blacklists a preset, default weight is 1
+        Weight: 1
+    # Preset specific settings for voting
+    Voting:
+        # Is this preset part of the voting
+        Enabled: true
 ```
 
 ### Presets
@@ -95,25 +107,11 @@ Create copies of the `cfg` folder within the `presets` folder.
 Rename the copies of the `cfg` folder to something that represents the preset you are creating.
 Something like `Shutoko_low_bhp` or `LA_Canyon_hypercars`... You get the Idea.
 
-Within each of those folders you now have to change the `server_cfg.ini` to feature the correct `TRACK` and `TRACK_LAYOUT`.
-You can also just use the `cfg` folder of newly created presets from ContentManager.
-Add the following file to each `presets` folder and change the values accordingly: `preset_cfg.yml`
-Add this file into `cfg` as well.
-
-Example preset configuration (write to `preset_cfg.yml`)
-```yaml  
-# The name of the Track; You will see this when voting
-Name: Shutoko Cut Up
-# Settings for Plugin features.
-# Set Enabled to false, to exclude the Preset from Plugin Track lists
-RandomTrack:
-  Weight: 1.0
-  Enabled: false
-VotingTrack:
-  Enabled: true
-```
+Within each of those folders you now have to change the `server_cfg.ini` to feature the correct `TRACK` and `TRACK_LAYOUT`.<br>
+You can also just use the `cfg` folder of newly created presets from ContentManager.<br>
+Don't forget to add the `extra_cfg.yml` and other plugin config files to each `presets` folder and change the values accordingly.
 
 ### Credits
 - Code - @thisguyStan
 - Lua Help - @tuttertep
-- Reconnect Image - discord@Bethuel
+- Reconnect Image - discord@bethuel

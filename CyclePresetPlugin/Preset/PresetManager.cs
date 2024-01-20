@@ -50,7 +50,7 @@ public class PresetManager : CriticalBackgroundService
     {
         if (CurrentPreset.UpcomingType != null && !CurrentPreset.Type!.Equals(CurrentPreset.UpcomingType!))
         {
-            Log.Information($"Track change to '{CurrentPreset.UpcomingType!.Name}' initiated");
+            Log.Information("Track change to \'{Name}\' initiated", CurrentPreset.UpcomingType!.Name);
             _presetImplementation.ChangeTrack(CurrentPreset);
 
             CurrentPreset.Type = CurrentPreset.UpcomingType;

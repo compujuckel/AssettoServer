@@ -414,7 +414,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
                 stoppingToken);
             try
             {
-                Log.Information($"Starting track vote.");
+                Log.Information("Starting track vote");
                 await VotingAsync(stoppingToken);
             }
             catch (TaskCanceledException)

@@ -1,6 +1,8 @@
 ﻿using AssettoServer.Server.Configuration;
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,6 +42,9 @@ public static class Program
 
         [Option("plugins-from-workdir", Required = false, HelpText = "Additionally load plugins from working directory")]
         public bool LoadPluginsFromWorkdir { get; set; } = false;
+        
+        [Option('r',"use-random-preset", Required = false, HelpText = "Use a random available configuration preset")]
+        public bool UseRandomPreset { get; set; } = false;
     }
 
     private class StartOptions
@@ -67,6 +72,13 @@ public static class Program
         if (IsContentManager)
         {
             Console.OutputEncoding = Encoding.UTF8;
+        }
+        
+        var presets = ListPresets();
+        if (options.UseRandomPreset)
+        {
+            if (presets.Length >= 1)
+                options.Preset = presets[Random.Shared.Next(presets.Length)];
         }
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
@@ -222,5 +234,20 @@ public static class Program
         {
             // ignored
         }
+    }
+    
+    private static string[] ListPresets()
+    {
+        string presetsPath = Path.Join(AppContext.BaseDirectory, "presets");
+        if (Path.Exists(presetsPath))
+        {
+            var directories = Directory.GetDirectories(presetsPath);
+            if (directories.Length >= 1)
+            {
+                return directories.Select(Path.GetFileName)!.ToArray<string>();
+            }
+        }
+
+        return [];
     }
 }

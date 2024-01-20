@@ -67,7 +67,7 @@ public partial class AiParams : ObservableObject
     [YamlMember(Description = "Soft player limit, the server will stop accepting new players when this many players are reached. Use this to ensure a minimum amount of AI cars. 0 to disable.")]
     public int MaxPlayerCount { get; set; } = 0;
     [YamlMember(Description = "Hide AI car nametags and make them invisible on the minimap. Broken on CSP versions < 0.1.78")]
-    public bool HideAiCars { get; set; } = false;
+    public bool HideAiCars { get; set; } = true;
     
     [ObservableProperty]
     [property: YamlMember(Description = "AI spline height offset. Use this if the AI spline is too close to the ground")]

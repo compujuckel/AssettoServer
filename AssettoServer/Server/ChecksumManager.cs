@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -61,23 +62,29 @@ public class ChecksumManager
     private void CalculateTrackChecksums(string track, string trackConfig)
     {
         var dict = new Dictionary<string, byte[]>();
+        var surfaceFix = _configuration.CSPTrackOptions.MinimumCSPVersion.HasValue;
         
         AddChecksum(dict, "system/data/surfaces.ini");
 
-        string trackPath = $"content/tracks/{track}";
+        var realTrackPath = $"content/tracks/{track}";
+        var virtualTrackPath = realTrackPath;
+        if (!Directory.Exists(realTrackPath))
+        {
+            realTrackPath = $"content/tracks/{_configuration.CSPTrackOptions.Track}";
+        }
 
         if (string.IsNullOrEmpty(trackConfig))
         {
-            AddChecksum(dict, $"{trackPath}/data/surfaces.ini");
-            AddChecksum(dict, $"{trackPath}/models.ini");
+            AddChecksumVirtualPath(dict, realTrackPath, virtualTrackPath, "data/surfaces.ini", surfaceFix);
+            AddChecksumVirtualPath(dict, realTrackPath, virtualTrackPath, "models.ini");
         }
         else
         {
-            AddChecksum(dict, $"{trackPath}/{trackConfig}/data/surfaces.ini");
-            AddChecksum(dict, $"{trackPath}/models_{trackConfig}.ini");
+            AddChecksumVirtualPath(dict, realTrackPath, virtualTrackPath, $"{trackConfig}/data/surfaces.ini", surfaceFix);
+            AddChecksumVirtualPath(dict, realTrackPath, virtualTrackPath, $"models_{trackConfig}.ini", surfaceFix);
         }
         
-        ChecksumDirectory(dict, trackPath);
+        ChecksumDirectory(dict, realTrackPath, virtualTrackPath);
 
         TrackChecksums = dict;
     }
@@ -122,12 +129,27 @@ public class ChecksumManager
         AdditionalCarChecksums = additionalChecksums;
     }
 
-    private static bool TryCreateChecksum(string filePath, [MaybeNullWhen(false)] out byte[] checksum)
+    private static bool TryCreateChecksum(string filePath, [MaybeNullWhen(false)] out byte[] checksum, bool surfaceFix = false)
     {
         if (File.Exists(filePath))
         {
-            using var fileStream = File.OpenRead(filePath);
-            checksum = MD5.HashData(fileStream);
+            if (surfaceFix)
+            {
+                var bytes = File.ReadAllBytes(filePath);
+                var firstSurface = MemoryExtensions.IndexOf(bytes, "SURFACE_0"u8);
+                if (firstSurface > 0)
+                {
+                    "CSP"u8.CopyTo(bytes.AsSpan(firstSurface, 3));
+                }
+
+                checksum = MD5.HashData(bytes);
+            }
+            else
+            {
+                using var fileStream = File.OpenRead(filePath);
+                checksum = MD5.HashData(fileStream);
+            }
+
             return true;
         }
 
@@ -135,27 +157,34 @@ public class ChecksumManager
         return false;
     }
 
-    private static void AddChecksum(Dictionary<string, byte[]> dict, string filePath, string? name = null)
+    private static void AddChecksumVirtualPath(Dictionary<string, byte[]> dict, string path, string virtualPath, string file, bool surfaceFix = false) 
+        => AddChecksum(dict, $"{path}/{file}", $"{virtualPath}/{file}", surfaceFix); 
+
+    private static void AddChecksum(Dictionary<string, byte[]> dict, string filePath, string? name = null, bool surfaceFix = false)
     {
-        if (TryCreateChecksum(filePath, out byte[]? checksum))
+        if (TryCreateChecksum(filePath, out byte[]? checksum, surfaceFix))
         {
             dict.Add(name ?? filePath, checksum);
             Log.Debug("Added checksum for {Path}", name ?? filePath);
         }
     }
     
-    private static void ChecksumDirectory(Dictionary<string, byte[]> dict, string directory)
+    private static void ChecksumDirectory(Dictionary<string, byte[]> dict, string path, string? virtualPath = null)
     {
-        if (!Directory.Exists(directory))
+        if (!Directory.Exists(path))
             return;
-        
-        string[] allFiles = Directory.GetFiles(directory);
-        foreach (string file in allFiles)
-        {
-            string name = Path.GetFileName(file);
 
+        virtualPath ??= path;
+        
+        foreach (var file in Directory.GetFiles(path))
+        {
+            var name = Path.GetFileName(file);
+            var virtualName = $"{virtualPath}/{name.Replace("\\", "/")}";
+            
             if (name == "surfaces.ini" || name.EndsWith(".kn5"))
-                AddChecksum(dict, file, file.Replace("\\", "/"));
+            {
+                AddChecksum(dict, file, virtualName);
+            }
         }
     }
 }

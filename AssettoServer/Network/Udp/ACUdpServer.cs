@@ -93,12 +93,6 @@ public class ACUdpServer : CriticalBackgroundService
 
     private void OnReceived(SocketAddress address, byte[] buffer, int size)
     {
-        // moved to separate method because it always allocated a closure
-        void HighPingKickAsync(EntryCar car)
-        {
-            _ = Task.Run(() => _entryCarManager.KickAsync(car.Client, $"high ping ({car.Ping}ms)"));
-        }
-        
         try
         {
             var packetReader = new PacketReader(null, buffer.AsMemory()[..size]);
@@ -163,14 +157,6 @@ public class ACUdpServer : CriticalBackgroundService
                     car.Ping = (ushort)(currentTime - packetReader.Read<int>());
                     car.TimeOffset = (int)currentTime - ((car.Ping / 2) + packetReader.Read<int>());
                     car.LastPongTime = currentTime;
-
-                    if (car.Ping > _configuration.Extra.MaxPing)
-                    {
-                        car.HighPingSeconds++;
-                        if (car.HighPingSeconds > _configuration.Extra.MaxPingSeconds)
-                            HighPingKickAsync(car);
-                    }
-                    else car.HighPingSeconds = 0;
                 }
                 else if (_configuration.Extra.EnableUdpClientMessages && packetId == ACServerProtocol.Extended)
                 {

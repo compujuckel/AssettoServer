@@ -145,13 +145,16 @@ public class Startup
         });
         
         var mvcBuilder = services.AddControllers();
-        
-        _loader.LoadPlugins(_configuration.Extra.EnablePlugins);
-            
-        foreach (var plugin in _loader.LoadedPlugins)
+
+        if (_configuration.Extra.EnablePlugins != null)
         {
-            plugin.Instance.ConfigureServices(services);
-            mvcBuilder.AddApplicationPart(plugin.Assembly);
+            _loader.LoadPlugins(_configuration.Extra.EnablePlugins);
+            
+            foreach (var plugin in _loader.LoadedPlugins)
+            {
+                plugin.Instance.ConfigureServices(services);
+                mvcBuilder.AddApplicationPart(plugin.Assembly);
+            }
         }
     }
 

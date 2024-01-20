@@ -1,8 +1,8 @@
 ﻿using AssettoServer.Server.Configuration;
 using Autofac;
-using AssettoServer.Server.Preset.Restart;
+using CyclePresetPlugin.Preset.Restart;
 
-namespace AssettoServer.Server.Preset;
+namespace CyclePresetPlugin.Preset;
 
 public class PresetModule : Module
 {

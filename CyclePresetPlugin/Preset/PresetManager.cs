@@ -1,11 +1,8 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-namespace AssettoServer.Server.Preset;
+namespace CyclePresetPlugin.Preset;
 
 public class PresetManager : CriticalBackgroundService
 {

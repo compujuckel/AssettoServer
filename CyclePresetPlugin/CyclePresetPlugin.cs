@@ -5,7 +5,7 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Services;
-using AssettoServer.Server.Preset;
+using CyclePresetPlugin.Preset;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 

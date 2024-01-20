@@ -1,6 +1,4 @@
-using Serilog;
-
-namespace AssettoServer.Server.Preset;
+namespace CyclePresetPlugin.Preset;
 
 public class PresetType
 {

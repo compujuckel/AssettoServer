@@ -1,9 +1,9 @@
 ﻿using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Preset.Restart;
+using CyclePresetPlugin.Preset.Restart;
 using Serilog;
 
-namespace AssettoServer.Server.Preset;
+namespace CyclePresetPlugin.Preset;
 
 public class PresetImplementation
 {

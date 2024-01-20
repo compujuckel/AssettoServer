@@ -1,10 +1,9 @@
-using System.IO;
 using JetBrains.Annotations;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
-namespace AssettoServer.Server.Preset;
+namespace CyclePresetPlugin.Preset;
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class PresetConfiguration

@@ -1,13 +1,9 @@
-using System;
-using System.IO;
-using System.IO.Pipes;
-using System.Text;
-using System.Threading;
+using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using Serilog;
 
-namespace AssettoServer.Server.Preset.Restart;
+namespace CyclePresetPlugin.Preset.Restart;
 
 public class RestartImplementation
 {

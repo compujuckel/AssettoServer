@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using JetBrains.Annotations;
 
-namespace AssettoServer.Server.Preset;
+namespace CyclePresetPlugin.Preset;
 
 [UsedImplicitly]
 public class PresetConfigurationValidator : AbstractValidator<PresetConfiguration>

@@ -1,9 +1,6 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using AssettoServer.Server.Configuration;
+﻿using AssettoServer.Server.Configuration;
 
-namespace AssettoServer.Server.Preset;
+namespace CyclePresetPlugin.Preset;
 
 public class PresetConfigurationManager
 {

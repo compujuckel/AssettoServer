@@ -8,5 +8,10 @@ public class PresetConfigurationValidator : AbstractValidator<PresetConfiguratio
 {
     public PresetConfigurationValidator()
     {
+        RuleFor(cfg => cfg.RandomTrack).ChildRules(randomTrack =>
+        {
+            randomTrack.RuleFor(c => c!.Weight).GreaterThanOrEqualTo(0f);
+        });
+        
     }
 }

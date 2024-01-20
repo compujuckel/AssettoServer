@@ -1,32 +1,48 @@
-﻿using AssettoServer.Server;
+﻿using AssettoServer;
+using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using CyclePresetPlugin.Preset.Restart;
+using AssettoServer.Shared.Network.Packets.Outgoing;
 using Serilog;
 
 namespace CyclePresetPlugin.Preset;
 
 public class PresetImplementation
 {
-    private readonly RestartImplementation _restartImplementation;
     private readonly ACServerConfiguration _acServerConfiguration;
-    private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
-    private readonly ChecksumManager _checksumManager;
+    
+    private const string RestartKickReason = "SERVER RESTART FOR TRACK CHANGE (won't take long)";
 
-    public PresetImplementation(SessionManager sessionManager,
-        ACServerConfiguration acServerConfiguration, EntryCarManager entryCarManager, ChecksumManager checksumManager, RestartImplementation restartImplementation)
+    public PresetImplementation(ACServerConfiguration acServerConfiguration, EntryCarManager entryCarManager)
     {
         _acServerConfiguration = acServerConfiguration;
         _entryCarManager = entryCarManager;
-        _checksumManager = checksumManager;
-        _restartImplementation = restartImplementation;
-        _sessionManager = sessionManager;
     }
 
-    public void ChangeTrack(PresetData preset)
+    public void ChangeTrack(PresetData presetData)
     {
         // Notify about restart
-        Log.Information($"Restarting server");
-        _restartImplementation.InitiateRestart(preset.UpcomingType!.PresetFolder, (ushort) preset.TransitionDuration);
+        Log.Information("Restarting server");
+    
+        if (_acServerConfiguration.Extra.EnableClientMessages)
+        {
+            // Reconnect clients
+            Log.Information("Reconnecting all clients for preset change");
+            _entryCarManager.BroadcastPacket(new ReconnectClientPacket { Time = (ushort) presetData.TransitionDuration });
+        }
+        else
+        {
+            Log.Information("Kicking all clients for track change server restart");
+            _entryCarManager.BroadcastPacket(new CSPKickBanMessageOverride { Message = RestartKickReason });
+            _entryCarManager.BroadcastPacket(new KickCar { SessionId = 255, Reason = KickReason.Kicked });
+        }
+        
+        var preset = new DirectoryInfo(presetData.UpcomingType!.PresetFolder).Name;
+        
+        // Restart the server
+        var sleep = (presetData.TransitionDuration - 1) * 1000;
+        Thread.Sleep(sleep);
+        
+        Program.RestartServer(preset);
     }
 }

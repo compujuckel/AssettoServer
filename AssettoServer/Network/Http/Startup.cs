@@ -17,7 +17,6 @@ using AssettoServer.Server.Configuration.Serialization;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Plugin;
-using AssettoServer.Server.Preset;
 using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.UserGroup;
 using AssettoServer.Server.Weather;
@@ -48,7 +47,6 @@ public class Startup
     {
         builder.RegisterInstance(_configuration);
         builder.RegisterInstance(_loader);
-        builder.RegisterModule(new PresetModule(_configuration));
         builder.RegisterModule(new WeatherModule(_configuration));
         builder.RegisterModule(new AiModule(_configuration));
         builder.RegisterType<HttpClient>().AsSelf();

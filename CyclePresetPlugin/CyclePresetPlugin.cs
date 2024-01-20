@@ -97,8 +97,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
 
     internal void GetTrack(ACTcpClient client)
     {
-        Log.Information(
-            $"Current preset: {_presetManager.CurrentPreset.Type!.Name} - {_presetManager.CurrentPreset.Type!.PresetFolder}");
+        Log.Information("Current preset: {Name} - {PresetFolder}", _presetManager.CurrentPreset.Type!.Name, _presetManager.CurrentPreset.Type!.PresetFolder);
         client.SendPacket(new ChatMessage
         {
             SessionId = 255,
@@ -113,7 +112,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
 
         if (choice < 0 && choice >= _adminPresets.Count)
         {
-            Log.Information($"Invalid preset choice.");
+            Log.Information("Invalid preset choice");
             client.SendPacket(new ChatMessage { SessionId = 255, Message = "Invalid preset choice." });
 
             return;
@@ -123,7 +122,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
 
         if (last.Type!.Equals(next))
         {
-            Log.Information($"No change made, admin tried setting the current preset.");
+            Log.Information("No change made, admin tried setting the current preset");
             client.SendPacket(new ChatMessage
                 { SessionId = 255, Message = $"No change made, you tried setting the current preset." });
         }
@@ -263,7 +262,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         tracksLeft.RemoveAll(t => t.Equals(last.Type!));
         if (tracksLeft.Count <= 1)
         {
-            Log.Warning($"Not enough presets to start vote.");
+            Log.Warning("Not enough presets to start vote");
             return;
         }
 
@@ -346,7 +345,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
                 {
                     if (_adminTrack != null && !_adminTrack.Type!.Equals(_adminTrack.UpcomingType!))
                     {
-                        Log.Information($"Next track: {_adminTrack!.UpcomingType!.Name}");
+                        Log.Information("Next track: {Track}", _adminTrack!.UpcomingType!.Name);
                         _entryCarManager.BroadcastPacket(new ChatMessage
                             { SessionId = 255, Message = $"Next track: {_adminTrack!.UpcomingType!.Name}" });
                         _entryCarManager.BroadcastPacket(new ChatMessage
@@ -389,7 +388,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
                 if (_manualTrackChange)
                 {
                     
-                    Log.Information($"Starting track vote.");
+                    Log.Information("Starting track vote");
                     await VotingAsync(stoppingToken, true);
                 }
             }

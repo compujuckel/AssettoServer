@@ -1,6 +1,6 @@
 using AssettoServer.Network.ClientMessages;
 
-namespace CyclePresetPlugin.Preset.Restart;
+namespace CyclePresetPlugin.Preset;
 
 [OnlineEvent(Key = "reconnectClient")]
 public class ReconnectClientPacket : OnlineEvent<ReconnectClientPacket>

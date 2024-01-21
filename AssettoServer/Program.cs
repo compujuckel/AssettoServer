@@ -74,12 +74,13 @@ public static class Program
             Console.OutputEncoding = Encoding.UTF8;
         }
         
-        var presetsPath = Path.Join(AppContext.BaseDirectory, "presets");
-        var presets = Path.Exists(presetsPath) ? 
-            Directory.EnumerateDirectories("presets").Select(Path.GetFileName).OfType<string>().ToArray() : [];
-        
         if (options.UseRandomPreset)
         {
+        
+            var presetsPath = Path.Join(AppContext.BaseDirectory, "presets");
+            var presets = Path.Exists(presetsPath) ? 
+                Directory.EnumerateDirectories("presets").Select(Path.GetFileName).OfType<string>().ToArray() : [];
+            
             if (presets.Length > 0)
                 options.Preset = presets[Random.Shared.Next(presets.Length)];
             else 

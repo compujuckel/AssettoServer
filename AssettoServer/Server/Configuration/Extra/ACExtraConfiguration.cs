@@ -107,19 +107,15 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
     [YamlIgnore] internal bool ContainsObsoletePluginConfiguration { get; private set; }
 
-    public void ToFile(string path, bool full = false)
+    public void ToFile(string path)
     {
         using var writer = File.CreateText(path);
-        ToStream(writer, full);
+        ToStream(writer);
     }
 
-    public void ToStream(StreamWriter writer, bool full = false)
+    public void ToStream(StreamWriter writer)
     {
         var builder = new SerializerBuilder();
-        if (full)
-        {
-            builder.WithoutEmissionPhaseObjectGraphVisitor<DefaultValuesObjectGraphVisitor>();
-        }
         builder.Build().Serialize(writer, this);
     }
         
@@ -141,33 +137,6 @@ public partial class ACExtraConfiguration : ObservableObject
         }
         
         return extraCfg;
-    }
-    
-    public static void WriteReferenceConfig(string schemaPath)
-    {
-        const string baseFolder = "cfg";
-        var path = Path.Join(baseFolder, "extra_cfg.reference.yml");
-        
-        FileInfo? info = null;
-        if (File.Exists(path))
-        {
-            info = new FileInfo(path);
-            info.IsReadOnly = false;
-        }
-
-        using (var writer = File.CreateText(path))
-        {
-            ConfigurationSchemaGenerator.WriteModeLine(writer, baseFolder, schemaPath);
-            writer.WriteLine($"# AssettoServer {ThisAssembly.AssemblyInformationalVersion} Reference Configuration");
-            writer.WriteLine("# This file serves as an overview of all possible options with their default values.");
-            writer.WriteLine("# It is NOT read by the server - edit extra_cfg.yml instead!");
-            writer.WriteLine();
-
-            ReferenceConfiguration.ToStream(writer, true);
-        }
-
-        info ??= new FileInfo(path);
-        info.IsReadOnly = true;
     }
 
     public static readonly ACExtraConfiguration ReferenceConfiguration = new()

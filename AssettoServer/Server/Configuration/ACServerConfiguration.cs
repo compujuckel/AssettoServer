@@ -64,7 +64,10 @@ public class ACServerConfiguration
 
         var extraCfgSchemaPath = ConfigurationSchemaGenerator.WriteExtraCfgSchema();
         LoadExtraConfig(locations.ExtraCfgPath, extraCfgSchemaPath);
-        ACExtraConfiguration.WriteReferenceConfig(extraCfgSchemaPath);
+        ReferenceConfigurationHelper.WriteReferenceConfiguration("extra_cfg.reference.yml",
+            extraCfgSchemaPath, 
+            ACExtraConfiguration.ReferenceConfiguration, 
+            $"AssettoServer {ThisAssembly.AssemblyInformationalVersion}");
         
         var parsedTrackOptions = CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
         if (Extra.MinimumCSPVersion.HasValue)
@@ -208,9 +211,11 @@ public class ACServerConfiguration
     {
         foreach (var plugin in loader.LoadedPlugins)
         {
-            if (plugin.ConfigurationType == null) continue;
+            if (!plugin.HasConfiguration) continue;
 
             var schemaPath = ConfigurationSchemaGenerator.WritePluginConfigurationSchema(plugin);
+            ReferenceConfigurationHelper.WriteReferenceConfiguration(plugin.ReferenceConfigurationFileName, schemaPath, plugin.ReferenceConfiguration, plugin.Name);
+            
             var configPath = Path.Join(BaseFolder, plugin.ConfigurationFileName);
             if (File.Exists(configPath))
             {

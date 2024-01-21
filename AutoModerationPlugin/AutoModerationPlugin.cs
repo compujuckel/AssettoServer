@@ -100,17 +100,17 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
                     var oldFlags = instance.CurrentFlags;
                     instance.UpdateSplinePoint();
 
-                    if (_configuration.HighPingKick.Enabled)
+                    if (_configuration.HighPingPenalty.Enabled)
                     {
-                        if (instance.EntryCar.Ping > _configuration.HighPingKick.MaximumPingMilliseconds)
+                        if (instance.EntryCar.Ping > _configuration.HighPingPenalty.MaximumPingMilliseconds)
                         {
                             instance.HighPingSeconds++;
                             
-                            if (instance.HighPingSeconds > _configuration.HighPingKick.DurationSeconds)
+                            if (instance.HighPingSeconds > _configuration.HighPingPenalty.DurationSeconds)
                             {
                                 _ = _entryCarManager.KickAsync(client, "high ping");
                             }
-                            else if (!instance.HasSentHighPingWarning && instance.HighPingSeconds > _configuration.HighPingKick.DurationSeconds / 2)
+                            else if (!instance.HasSentHighPingWarning && instance.HighPingSeconds > _configuration.HighPingPenalty.DurationSeconds / 2)
                             {
                                 instance.HasSentHighPingWarning = true;
                                 client.SendPacket(new ChatMessage { SessionId = 255, Message = "You have a high ping, please fix your network connection or you will be kicked." });
@@ -151,20 +151,14 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
                             else if (!instance.HasSentNoLightWarning && instance.NoLightSeconds > _configuration.NoLightsPenalty.DurationSeconds / 2)
                             {
                                 instance.HasSentNoLightWarning = true;
-                                client.SendPacket(
-                                    instance.BlockingRoadPitCount < _configuration.BlockingRoadPenalty.PitsBeforeKick
-                                        ? new ChatMessage
-                                        {
-                                            SessionId = 255,
-                                            Message =
-                                                "It is currently night, please turn on your lights or you will be teleported to pits."
-                                        }
-                                        : new ChatMessage
-                                        {
-                                            SessionId = 255,
-                                            Message =
-                                                "It is currently night, please turn on your lights or you will be kicked."
-                                        });
+                                var message = instance.NoLightsPitCount < _configuration.NoLightsPenalty.PitsBeforeKick
+                                    ? "It is currently night, please turn on your lights or you will be teleported to pits."
+                                    : "It is currently night, please turn on your lights or you will be kicked.";
+                                client.SendPacket(new ChatMessage
+                                {
+                                    SessionId = 255,
+                                    Message = message
+                                });
                             }
                         }
                         else
@@ -200,20 +194,14 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
                             else if (!instance.HasSentWrongWayWarning && instance.WrongWaySeconds > _configuration.WrongWayPenalty.DurationSeconds / 2)
                             {
                                 instance.HasSentWrongWayWarning = true;
-                                client.SendPacket(
-                                    instance.BlockingRoadPitCount < _configuration.BlockingRoadPenalty.PitsBeforeKick
-                                        ? new ChatMessage
-                                        {
-                                            SessionId = 255,
-                                            Message =
-                                                "You are driving the wrong way! Turn around or you will be teleported to pits."
-                                        }
-                                        : new ChatMessage
-                                        {
-                                            SessionId = 255,
-                                            Message =
-                                                "You are driving the wrong way! Turn around or you will be kicked."
-                                        });
+                                var message = instance.WrongWayPitCount < _configuration.WrongWayPenalty.PitsBeforeKick
+                                    ? "You are driving the wrong way! Turn around or you will be teleported to pits."
+                                    : "You are driving the wrong way! Turn around or you will be kicked.";
+                                client.SendPacket(new ChatMessage
+                                {
+                                    SessionId = 255,
+                                    Message = message
+                                });
                             }
                         }
                         else
@@ -247,19 +235,13 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
                             else if (!instance.HasSentBlockingRoadWarning && instance.BlockingRoadSeconds > _configuration.BlockingRoadPenalty.DurationSeconds / 2)
                             {
                                 instance.HasSentBlockingRoadWarning = true;
-                                client.SendPacket(
-                                    instance.BlockingRoadPitCount < _configuration.BlockingRoadPenalty.PitsBeforeKick
-                                        ? new ChatMessage
+                                var message = instance.BlockingRoadPitCount < _configuration.BlockingRoadPenalty.PitsBeforeKick
+                                    ? "You are blocking the road! Please move or you will be teleported to pits."
+                                    : "You are blocking the road! Please move or teleport to pits, or you will be kicked.";
+                                client.SendPacket(new ChatMessage
                                         {
                                             SessionId = 255,
-                                            Message =
-                                                "You are blocking the road! Please move or you will be teleported to pits."
-                                        }
-                                        : new ChatMessage
-                                        {
-                                            SessionId = 255,
-                                            Message =
-                                                "You are blocking the road! Please move or teleport to pits, or you will be kicked."
+                                            Message = message
                                         });
                             }
                         }

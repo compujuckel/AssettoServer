@@ -8,7 +8,7 @@ namespace AutoModerationPlugin;
 public class AutoModerationConfiguration : IValidateConfiguration<AutoModerationConfigurationValidator>
 {
     [YamlMember(Description = "Kick players with a high ping")]
-    public HighPingKickConfiguration HighPingKick { get; init; } = new();
+    public HighPingPenaltyConfiguration HighPingPenalty { get; init; } = new();
     [YamlMember(Description = "Penalise players driving the wrong way. AI has to enabled for this to work")]
     public WrongWayPenaltyConfiguration WrongWayPenalty { get; init; } = new();
     [YamlMember(Description = "Penalise players driving without lights during the night")]
@@ -18,7 +18,7 @@ public class AutoModerationConfiguration : IValidateConfiguration<AutoModeration
 }
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
-public class HighPingKickConfiguration
+public class HighPingPenaltyConfiguration
 {
     [YamlMember(Description = "Set to true to enable")]
     public bool Enabled = false;

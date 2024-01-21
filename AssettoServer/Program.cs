@@ -74,11 +74,17 @@ public static class Program
             Console.OutputEncoding = Encoding.UTF8;
         }
         
-        var presets = ListPresets();
+        var presetsPath = Path.Join(AppContext.BaseDirectory, "presets");
+        var presets = Path.Exists(presetsPath) ? 
+            Directory.EnumerateDirectories("presets").Select(Path.GetFileName).OfType<string>().ToArray() : [];
+        
         if (options.UseRandomPreset)
         {
-            if (presets.Length >= 1)
+            if (presets.Length > 0)
                 options.Preset = presets[Random.Shared.Next(presets.Length)];
+            else 
+                Log.Warning("Presets directory does not exist or contain any preset");
+                
         }
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
@@ -234,20 +240,5 @@ public static class Program
         {
             // ignored
         }
-    }
-    
-    private static string[] ListPresets()
-    {
-        string presetsPath = Path.Join(AppContext.BaseDirectory, "presets");
-        if (Path.Exists(presetsPath))
-        {
-            var directories = Directory.GetDirectories(presetsPath);
-            if (directories.Length >= 1)
-            {
-                return directories.Select(Path.GetFileName)!.ToArray<string>();
-            }
-        }
-
-        return [];
     }
 }

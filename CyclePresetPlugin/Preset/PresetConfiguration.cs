@@ -36,17 +36,9 @@ public class PresetConfiguration
     
     public static PresetConfiguration FromFile(string path)
     {
-        using var stream = File.OpenText(path);
-
-        var deserializer = new DeserializerBuilder()
-            .IgnoreUnmatchedProperties()
-            .Build();
-
-        var yamlParser = new Parser(stream);
-        yamlParser.Consume<StreamStart>();
-        yamlParser.Accept<DocumentStart>(out _);
-
-        var cfg = deserializer.Deserialize<CyclePresetConfiguration>(yamlParser).Meta;
+        using var reader = File.OpenText(path);
+        var deserializer = new DeserializerBuilder().Build();
+        var cfg = deserializer.Deserialize<CyclePresetConfiguration>(reader).Meta;
 
         cfg.Path = path;
         cfg.PresetFolder = System.IO.Path.GetDirectoryName(path)!;

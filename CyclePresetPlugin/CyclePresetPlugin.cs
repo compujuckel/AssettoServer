@@ -132,7 +132,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         else
         {
             context.Reply($"Switching to preset: {next.Name}");
-            AdminPreset(new PresetData(_presetManager.CurrentPreset.Type, next)
+            _ = AdminPreset(new PresetData(_presetManager.CurrentPreset.Type, next)
             {
                 TransitionDuration = _configuration.TransitionDurationSeconds,
             });
@@ -149,7 +149,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
             next = _adminPresets[Random.Shared.Next(_adminPresets.Count)];
         } while (last.Type!.Equals(next));
         context.Reply($"Switching to random preset: {next.Name}");
-        AdminPreset(new PresetData(_presetManager.CurrentPreset.Type, next)
+        _ = AdminPreset(new PresetData(_presetManager.CurrentPreset.Type, next)
         {
             TransitionDuration = _configuration.TransitionDurationSeconds,
         });
@@ -195,7 +195,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         try
         {
             Log.Information("Starting preset vote");
-            VotingAsync(_cancellationToken, true).GetAwaiter().GetResult();
+            _ = VotingAsync(_cancellationToken, true);
         }
         catch (TaskCanceledException)
         {
@@ -351,7 +351,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         _voteStarted = false;
     }
     
-    private void AdminPreset(PresetData preset)
+    private async Task AdminPreset(PresetData preset)
     {
         try
         {
@@ -368,7 +368,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
             });
 
             // Delay the preset switch by configured time delay
-            Thread.Sleep(_configuration.DelayTransitionDurationMilliseconds);
+            await Task.Delay(_configuration.DelayTransitionDurationMilliseconds);
 
             _presetManager.SetPreset(preset);
         }

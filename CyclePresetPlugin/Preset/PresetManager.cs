@@ -32,7 +32,7 @@ public class PresetManager : CriticalBackgroundService
         _presetChangeRequested = true;
         
         if (!CurrentPreset.IsInit)
-            UpdatePreset();
+            _ = UpdatePreset();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -42,7 +42,7 @@ public class PresetManager : CriticalBackgroundService
             try
             {
                 if (_presetChangeRequested)
-                    UpdatePreset();
+                    await UpdatePreset();
             }
             catch (Exception ex)
             {
@@ -55,7 +55,7 @@ public class PresetManager : CriticalBackgroundService
         }
     }
 
-    private void UpdatePreset()
+    private async Task UpdatePreset()
     {
         if (CurrentPreset.UpcomingType != null && !CurrentPreset.Type!.Equals(CurrentPreset.UpcomingType!))
         {
@@ -81,7 +81,7 @@ public class PresetManager : CriticalBackgroundService
         
             // Restart the server
             var sleep = (CurrentPreset.TransitionDuration - 1) * 1000;
-            Thread.Sleep(sleep);
+            await Task.Delay(sleep);
         
             Program.RestartServer(preset);
         }

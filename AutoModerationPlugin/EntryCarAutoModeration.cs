@@ -16,12 +16,15 @@ public class EntryCarAutoModeration
 
     public int NoLightSeconds { get; set; }
     public bool HasSentNoLightWarning { get; set; }
+    public int NoLightsPitCount { get; set; }
 
     public int WrongWaySeconds { get; set; }
     public bool HasSentWrongWayWarning { get; set; }
+    public int WrongWayPitCount { get; set; }
     
     public int BlockingRoadSeconds { get; set; }
     public bool HasSentBlockingRoadWarning { get; set; }
+    public int BlockingRoadPitCount { get; set; }
     
     public Flags CurrentFlags { get; set; }
 

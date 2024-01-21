@@ -135,7 +135,7 @@ public class SessionManager
         SetSession(CurrentSessionIndex);
     }
 
-    internal void SendCurrentSession(ACTcpClient? target = null)
+    public void SendCurrentSession(ACTcpClient? target = null)
     {
         var packet = new CurrentSessionUpdate
         {

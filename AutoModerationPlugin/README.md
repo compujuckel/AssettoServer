@@ -25,10 +25,14 @@ Example configuration (add to bottom of `extra_cfg.yml`)
 NoLightsKick:
   # Set to false to disable
   Enabled: true
+  # Time in which no warning or signs will be sent
+  IgnoreSeconds: 2
   # Time after the player gets kicked. A warning will be sent in chat after half this time
   DurationSeconds: 60
   # Players driving slower than this speed will not be kicked
   MinimumSpeedKph: 20
+  # The amount of times a player will be send to pits before being kicked
+  PitsBeforeKick: 3
 # Kick players driving the wrong way. AI has to enabled for this to work
 WrongWayKick:
   # Set to false to disable
@@ -37,6 +41,8 @@ WrongWayKick:
   DurationSeconds: 20
   # Players driving slower than this speed will not be kicked
   MinimumSpeedKph: 20
+  # The amount of times a player will be send to pits before being kicked
+  PitsBeforeKick: 3
 # Kick players blocking the road. AI has to be enabled for this to work
 BlockingRoadKick:
   # Set to false to disable
@@ -45,4 +51,6 @@ BlockingRoadKick:
   DurationSeconds: 30
   # Players driving faster than this speed will not be kicked
   MaximumSpeedKph: 5
+  # The amount of times a player will be send to pits before being kicked
+  PitsBeforeKick: 3
 ```

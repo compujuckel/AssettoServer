@@ -364,3 +364,5 @@ FodyWeavers.xsd
 
 out-linux-*
 out-win-*
+
+.idea/

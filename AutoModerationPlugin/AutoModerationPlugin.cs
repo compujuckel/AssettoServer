@@ -100,7 +100,6 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
                     var oldFlags = instance.CurrentFlags;
                     instance.UpdateSplinePoint();
 
-                    if (_configuration.NoLightsPenalty.Enabled)
                     if (_configuration.HighPingKick.Enabled)
                     {
                         if (instance.EntryCar.Ping > _configuration.HighPingKick.MaximumPingMilliseconds)
@@ -124,7 +123,7 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
                         }
                     }
 
-                    if (_configuration.NoLightsKick.Enabled)
+                    if (_configuration.NoLightsPenalty.Enabled)
                     {
                         if (_weatherManager.CurrentSunPosition!.Value.Altitude < NauticalTwilight
                             && (instance.EntryCar.Status.StatusFlag & CarStatusFlags.LightsOn) == 0

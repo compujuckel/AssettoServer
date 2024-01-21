@@ -23,7 +23,6 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public CarStatus Status { get; private set; } = new CarStatus();
 
     public bool ForceLights { get; internal set; }
-    public int HighPingSeconds { get; internal set; }
 
     public long LastActiveTime { get; internal set; }
     public bool HasSentAfkWarning { get; internal set; }
@@ -121,7 +120,6 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         HasUpdateToSend = false;
         TimeOffset = 0;
         LastRemoteTimestamp = 0;
-        HighPingSeconds = 0;
         LastPingTime = 0;
         Ping = 0;
         ForceLights = false;

@@ -10,6 +10,9 @@ public class EntryCarAutoModeration
 
     public int CurrentSplinePointId { get; private set; } = -1;
     public float CurrentSplinePointDistanceSquared { get; private set; }
+    
+    public int HighPingSeconds { get; set; }
+    public bool HasSentHighPingWarning { get; set; }
 
     public int NoLightSeconds { get; set; }
     public bool HasSentNoLightWarning { get; set; }
@@ -36,6 +39,8 @@ public class EntryCarAutoModeration
 
     private void OnResetInvoked(EntryCar sender, EventArgs args)
     {
+        HighPingSeconds = 0;
+        HasSentHighPingWarning = false;
         NoLightSeconds = 0;
         HasSentNoLightWarning = false;
         WrongWaySeconds = 0;

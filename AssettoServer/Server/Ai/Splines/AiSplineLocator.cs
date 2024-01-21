@@ -23,6 +23,23 @@ public class AiSplineLocator
 
     public AiSpline Locate()
     {
+        try
+        {
+            return LocateInternal(_configuration.Server.Track);
+        }
+        catch (Exception)
+        {
+            if (_configuration.CSPTrackOptions.MinimumCSPVersion.HasValue)
+            {
+                return LocateInternal(_configuration.CSPTrackOptions.Track);
+            }
+
+            throw;
+        }
+    }
+
+    private AiSpline LocateInternal(string track)
+    {
         string contentPath = "content";
         const string contentPathCMWorkaround = "content~tmp";
         // CM renames the content folder to content~tmp when enabling the "Disable integrity verification" checkbox. We still need to load an AI spline from there, even when checksums are disabled
@@ -31,7 +48,7 @@ public class AiSplineLocator
             contentPath = contentPathCMWorkaround;
         }
 
-        string mapAiBasePath = Path.Join(contentPath, $"tracks/{_configuration.Server.Track}/ai/");
+        string mapAiBasePath = Path.Join(contentPath, $"tracks/{track}/ai/");
         var cacheKey = GenerateCacheKey(mapAiBasePath);
         Directory.CreateDirectory("cache");
         var cachePath = Path.Join("cache", $"{cacheKey}.aic{AiSpline.SupportedVersion}");

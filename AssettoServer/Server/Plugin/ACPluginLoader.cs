@@ -119,7 +119,9 @@ public class ACPluginLoader
                     ConfigurationType = configType,
                     ValidatorType = validatorType,
                     ConfigurationFileName = configType != null ? ConfigurationTypeToFilename(configType.Name) : null,
-                    SchemaFileName = configType != null ? ConfigurationTypeToFilename(configType.Name, "schema.json") : null
+                    SchemaFileName = configType != null ? ConfigurationTypeToFilename(configType.Name, "schema.json") : null,
+                    ReferenceConfigurationFileName = configType != null ? ConfigurationTypeToFilename(configType.Name, "reference.yml") : null,
+                    ReferenceConfiguration = instance.ReferenceConfiguration
                 });
             }
         }

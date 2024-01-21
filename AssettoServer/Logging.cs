@@ -13,12 +13,12 @@ internal static class Logging
         Log.Logger = BaseLoggerConfiguration(logPrefix, isContentManager).CreateLogger();
     }
 
-    internal static void CreateLokiLogger(string logPrefix, bool isContentManager, string preset, LokiSettings lokiSettings)
+    internal static void CreateLokiLogger(string logPrefix, bool isContentManager, string? preset, LokiSettings lokiSettings)
     {
         Log.Logger = BaseLoggerConfiguration(logPrefix, isContentManager)
             .Enrich.FromLogContext()
             .Enrich.WithMachineName()
-            .Enrich.WithProperty("Preset", preset)
+            .Enrich.WithProperty("Preset", preset ?? "")
             .WriteTo.GrafanaLoki(lokiSettings.Url!,
                 credentials: new LokiCredentials
                 {

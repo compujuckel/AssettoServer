@@ -3,8 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Utils;
 using Autofac.Core;
 using IniParser.Exceptions;
 using Microsoft.AspNetCore.Connections;
@@ -85,15 +85,15 @@ internal static class ExceptionHelper
                 var key = Console.ReadKey();
                 if (key.Key == ConsoleKey.D)
                 {
-                    OpenURL("https://discord.gg/uXEXRcSkyz");
+                    ProcessHelper.OpenURL("https://discord.gg/uXEXRcSkyz");
                 }
                 else if (helpLink != null && key.Key == ConsoleKey.I)
                 {
-                    OpenURL(helpLink);
+                    ProcessHelper.OpenURL(helpLink);
                 }
                 else if (key.Key == ConsoleKey.W)
                 {
-                    OpenURL("https://assettoserver.org/");
+                    ProcessHelper.OpenURL("https://assettoserver.org/");
                 }
                 else if (crashReportPath != null && key.Key == ConsoleKey.C)
                 {
@@ -151,11 +151,5 @@ There is already a server running on the same ports.
 When hosting through Content Manager, make sure that server presets using the same ports are stopped.
 You can also check in Task Manager if another AssettoServer.exe process is running and stop it there. 
 """;
-    }
-
-    private static void OpenURL(string url)
-    {
-        url = url.Replace("&", "^&");
-        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 }

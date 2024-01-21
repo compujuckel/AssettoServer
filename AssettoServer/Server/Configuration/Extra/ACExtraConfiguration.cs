@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using AssettoServer.Utils;
 using CommunityToolkit.Mvvm.ComponentModel;
 using JetBrains.Annotations;
 using YamlDotNet.Core;
@@ -15,6 +16,8 @@ namespace AssettoServer.Server.Configuration.Extra;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public partial class ACExtraConfiguration : ObservableObject
 {
+    [YamlMember(Description = "Override minimum CSP version required to join this server. Leave this empty to not require CSP.")]
+    public uint? MinimumCSPVersion { get; init; } = CSPVersion.V0_1_77;
     [YamlMember(Description = "Enable Steam ticket validation. Requires CSP 0.1.75+ and a recent version of Content Manager")]
     public bool UseSteamAuth { get; init; } = false;
     [YamlMember(Description = "List of DLC App IDs that are required to join. Steam auth must be enabled. Possible values: https://steamdb.info/app/244210/dlc/")]
@@ -27,10 +30,6 @@ public partial class ACExtraConfiguration : ObservableObject
     public int MaxAfkTimeMinutes { get; set; } = 10;
     [YamlMember(Description = "Players might try to get around the AFK kick by doing inputs once in a while without actually driving. Set this to MinimumSpeed to autokick players idling")]
     public AfkKickBehavior AfkKickBehavior { get; set; } = AfkKickBehavior.PlayerInput;
-    [YamlMember(Description = "Maximum ping before autokick")]
-    public int MaxPing { get; set; } = 500;
-    [YamlMember(Description = "Maximum ping duration before autokick")]
-    public int MaxPingSeconds { get; set; } = 10;
     [YamlMember(Description = "Force headlights on for all cars")]
     public bool ForceLights { get; set; }
     [YamlMember(Description = "Distance for network optimizations. Players outside of this range will send less updates to reduce network traffic")]
@@ -44,7 +43,7 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Link server time to real map time. For correct timezones there must be an entry for the map here: https://github.com/ac-custom-shaders-patch/acc-extension-config/blob/master/config/data_track_params.ini")]
     public bool EnableRealTime { get; set; } = false;
     [YamlMember(Description = "Enable new CSP weather handling. Allows rain and smooth weather transitions. Requires CSP 0.1.76+")]
-    public bool EnableWeatherFx { get; init; } = false;
+    public bool EnableWeatherFx { get; init; } = true;
     [YamlMember(Description = "Lock server date to real date. This stops server time \"running away\" when using a high time multiplier, so that in-game sunrise/sunset times are based on the current date")]
     public bool LockServerDate { get; set; } = true;
     [YamlMember(Description = "Reduce track grip when the track is wet. This is much worse than proper CSP rain physics but allows you to run clients with public/Patreon CSP at the same time")]
@@ -54,17 +53,17 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Override the country shown in CM. Please do not use this unless the autodetected country is wrong", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public List<string>? GeoParamsCountryOverride { get; init; } = null;
     [YamlMember(Description = "List of plugins to enable")]
-    public List<string> EnablePlugins { get; init; } = [];
+    public List<string>? EnablePlugins { get; init; }
     [YamlMember(Description = "Ignore some common configuration errors. More info: https://assettoserver.org/docs/common-configuration-errors")]
     public IgnoreConfigurationErrors IgnoreConfigurationErrors { get; init; } = new();
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
-    public bool EnableClientMessages { get; init; } = false;
+    public bool EnableClientMessages { get; init; } = true;
     [YamlMember(Description = "Enable CSP UDP client messages feature. Required for VR head/hand syncing. Requires CSP 0.2.0+")]
     public bool EnableUdpClientMessages { get; init; } = false;
     [YamlMember(Description = "Log unknown CSP Lua client messages / online events", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool DebugClientMessages { get; set; } = false;
     [YamlMember(Description = "Enable CSP custom position updates. This is an improved version of batched position updates, reducing network traffic even further. CSP 0.1.77+ required")]
-    public bool EnableCustomUpdate { get; set; } = false;
+    public bool EnableCustomUpdate { get; set; } = true;
     [YamlMember(Description = "Maximum time a player can spend on the loading screen before being disconnected")]
     public int PlayerLoadingTimeoutMinutes { get; set; } = 10;
     [YamlMember(Description = "Maximum time the server will wait for a checksum response before disconnecting the player")]
@@ -108,19 +107,15 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
     [YamlIgnore] internal bool ContainsObsoletePluginConfiguration { get; private set; }
 
-    public void ToFile(string path, bool full = false)
+    public void ToFile(string path)
     {
         using var writer = File.CreateText(path);
-        ToStream(writer, full);
+        ToStream(writer);
     }
 
-    public void ToStream(StreamWriter writer, bool full = false)
+    public void ToStream(StreamWriter writer)
     {
         var builder = new SerializerBuilder();
-        if (full)
-        {
-            builder.WithoutEmissionPhaseObjectGraphVisitor<DefaultValuesObjectGraphVisitor>();
-        }
         builder.Build().Serialize(writer, this);
     }
         
@@ -142,33 +137,6 @@ public partial class ACExtraConfiguration : ObservableObject
         }
         
         return extraCfg;
-    }
-    
-    public static void WriteReferenceConfig(string schemaPath)
-    {
-        const string baseFolder = "cfg";
-        var path = Path.Join(baseFolder, "extra_cfg.reference.yml");
-        
-        FileInfo? info = null;
-        if (File.Exists(path))
-        {
-            info = new FileInfo(path);
-            info.IsReadOnly = false;
-        }
-
-        using (var writer = File.CreateText(path))
-        {
-            ConfigurationSchemaGenerator.WriteModeLine(writer, baseFolder, schemaPath);
-            writer.WriteLine($"# AssettoServer {ThisAssembly.AssemblyInformationalVersion} Reference Configuration");
-            writer.WriteLine("# This file serves as an overview of all possible options with their default values.");
-            writer.WriteLine("# It is NOT read by the server - edit extra_cfg.yml instead!");
-            writer.WriteLine();
-
-            ReferenceConfiguration.ToStream(writer, true);
-        }
-
-        info ??= new FileInfo(path);
-        info.IsReadOnly = true;
     }
 
     public static readonly ACExtraConfiguration ReferenceConfiguration = new()

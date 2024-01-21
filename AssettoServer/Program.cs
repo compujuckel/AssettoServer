@@ -18,7 +18,7 @@ using Parser = CommandLine.Parser;
 
 namespace AssettoServer;
 
-internal static class Program
+public static class Program
 {
 #if DEBUG
     public static readonly bool IsDebugBuild = true;
@@ -42,8 +42,17 @@ internal static class Program
         public bool LoadPluginsFromWorkdir { get; set; } = false;
     }
 
+    private class StartOptions
+    {
+        public string? Preset { get; init; }
+        public string? ServerCfgPath { get; init; }
+        public string? EntryListPath { get; init; }
+    }
+
     public static bool IsContentManager;
-        
+    private static bool _loadPluginsFromWorkdir;
+    private static TaskCompletionSource<StartOptions> _restartTask = new();
+    
     internal static async Task Main(string[] args)
     {
         SetupFluentValidation();
@@ -52,6 +61,8 @@ internal static class Program
         
         var options = Parser.Default.ParseArguments<Options>(args).Value;
         if (options == null) return;
+
+        _loadPluginsFromWorkdir = options.LoadPluginsFromWorkdir;
 
         if (IsContentManager)
         {
@@ -67,21 +78,54 @@ internal static class Program
         {
             Log.Debug("Server was started through Content Manager");
         }
-        await RunServerAsync(options.Preset, options.ServerCfgPath, options.EntryListPath, options.LoadPluginsFromWorkdir);
+
+        var startOptions = new StartOptions
+        {
+            Preset = options.Preset,
+            ServerCfgPath = options.ServerCfgPath,
+            EntryListPath = options.EntryListPath
+        };
+        
+        while (true)
+        {
+            _restartTask = new TaskCompletionSource<StartOptions>();
+            using var cts = new CancellationTokenSource();
+            var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, cts.Token);
+            var finishedTask = await Task.WhenAny(serverTask, _restartTask.Task);
+
+            if (finishedTask == _restartTask.Task)
+            {
+                await cts.CancelAsync();
+                await serverTask;
+
+                startOptions = _restartTask.Task.Result;
+            }
+            else break;
+        }
+    }
+
+    public static void RestartServer(string? preset, string? serverCfgPath = null, string? entryListPath = null)
+    {
+        Log.Information("Initiated in-process server restart");
+        _restartTask.SetResult(new StartOptions
+        {
+            Preset = preset,
+            ServerCfgPath = serverCfgPath,
+            EntryListPath = entryListPath
+        });
     }
 
     private static async Task RunServerAsync(
-        string preset,
-        string serverCfgPath,
-        string entryListPath,
-        bool loadPluginsFromWorkdir = false,
+        string? preset,
+        string? serverCfgPath,
+        string? entryListPath,
         CancellationToken token = default)
     {
         var configLocations = ConfigurationLocations.FromOptions(preset, serverCfgPath, entryListPath);
         
         try
         {
-            var config = new ACServerConfiguration(preset, configLocations, loadPluginsFromWorkdir);
+            var config = new ACServerConfiguration(preset, configLocations, _loadPluginsFromWorkdir);
 
             if (config.Extra.LokiSettings != null
                 && !string.IsNullOrEmpty(config.Extra.LokiSettings.Url)

@@ -293,15 +293,7 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
     
     private void TeleportToPits(ACTcpClient player, string reason)
     {
-        var packet = new CurrentSessionUpdate
-        {
-            CurrentSession = _sessionManager.CurrentSession.Configuration,
-            Grid = _sessionManager.CurrentSession.Grid,
-            TrackGrip = _weatherManager.CurrentWeather.TrackGrip
-        };
-        player.SendPacket(packet);
-        
-        // _sessionManager.SendCurrentSession(player);
+        _sessionManager.SendCurrentSession(player);
         player.SendPacket(new ChatMessage { SessionId = 255, Message = $"You have been teleported to the pits with the reason: {reason}" });
     }
 

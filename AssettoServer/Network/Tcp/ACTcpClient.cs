@@ -832,7 +832,10 @@ public class ACTcpClient : IClient
                 batched.Packets.Add(new MandatoryPitUpdate { MandatoryPit = car.Status.MandatoryPit, SessionId = car.SessionId });
                 if (car != EntryCar)
                     batched.Packets.Add(new TyreCompoundUpdate { SessionId = car.SessionId, CompoundName = car.Status.CurrentTyreCompound });
-
+            
+                // Either in here or in the if above
+                batched.Packets.Add(new BallastUpdate { SessionId = car.SessionId, BallastKg = car.Ballast, Restrictor = car.Restrictor });
+                
                 if (_configuration.Extra.AiParams.HideAiCars)
                 {
                     batched.Packets.Add(new CSPCarVisibilityUpdate

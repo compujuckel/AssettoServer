@@ -12,16 +12,17 @@ public class PresetConfigurationManager
     public List<PresetType> RandomPresetTypes { get; }
     public List<PresetType> VotingPresetTypes { get; }
 
-    public PresetConfigurationManager(ACServerConfiguration acServerConfiguration)
+    public PresetConfigurationManager(CyclePresetConfiguration cyclePresetConfiguration)
     {
-        CurrentConfiguration = PresetConfiguration.FromFile(Path.Join(acServerConfiguration.BaseFolder, "plugin_cycle_preset_cfg.yml"));
+        CurrentConfiguration = cyclePresetConfiguration.Meta;
 
         var configs = new List<PresetConfiguration>();
         var directories = Directory.GetDirectories("presets");
         foreach (var dir in directories)
         {
-            // formerly preset_cfg.yml
-            configs.Add(PresetConfiguration.FromFile(Path.Join(dir, "plugin_cycle_preset_cfg.yml")));
+            var path = Path.Join(dir, "plugin_cycle_preset_cfg.yml");
+            if(File.Exists(path))
+                configs.Add(PresetConfiguration.FromFile(path));
         }
 
         AllConfigurations = configs;

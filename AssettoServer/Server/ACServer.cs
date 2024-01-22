@@ -201,7 +201,6 @@ public class ACServer : CriticalBackgroundService
                         var fromClient = fromCar.Client;
                         if (fromClient != null && fromClient.HasSentFirstUpdate && (_sessionManager.ServerTimeMilliseconds - fromCar.LastPingTime) > 1000)
                         {
-                            fromCar.CheckAfk();
                             fromCar.LastPingTime = _sessionManager.ServerTimeMilliseconds;
                             fromClient.SendPacketUdp(new PingUpdate((uint)fromCar.LastPingTime, fromCar.Ping));
 

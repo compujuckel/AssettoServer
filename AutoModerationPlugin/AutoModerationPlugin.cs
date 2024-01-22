@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
@@ -53,6 +54,16 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
             using var streamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("AutoModerationPlugin.lua.automoderation.lua")!);
             scriptProvider.AddScript(streamReader.ReadToEnd(), "automoderation.lua");
         }
+
+        if (_configuration.AfkPenalty is { Enabled: true, Behavior: AfkPenaltyBehavior.MinimumSpeed })
+        {
+            _entryCarManager.ClientConnected += (sender, _) => sender.FirstUpdateSent += OnFirstUpdateSent;
+        }
+    }
+
+    private void OnFirstUpdateSent(ACTcpClient sender, EventArgs args)
+    {
+        _instances[sender.SessionId].SetActive();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

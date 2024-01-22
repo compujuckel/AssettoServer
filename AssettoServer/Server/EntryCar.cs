@@ -25,7 +25,6 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public bool ForceLights { get; internal set; }
 
     public long LastActiveTime { get; internal set; }
-    public bool HasSentAfkWarning { get; internal set; }
     public bool HasUpdateToSend { get; internal set; }
     public int TimeOffset { get; internal set; }
     public byte SessionId { get; }
@@ -116,7 +115,6 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         IsSpectator = false;
         SpectatorMode = 0;
         LastActiveTime = 0;
-        HasSentAfkWarning = false;
         HasUpdateToSend = false;
         TimeOffset = 0;
         LastRemoteTimestamp = 0;
@@ -127,25 +125,9 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         TargetCar = null;
     }
 
-    internal void CheckAfk()
-    {
-        if (!_configuration.Extra.EnableAntiAfk || Client?.IsAdministrator == true || !Client?.HasSentFirstUpdate == true)
-            return;
-
-        long timeAfk = _sessionManager.ServerTimeMilliseconds - LastActiveTime;
-        if (timeAfk > _configuration.Extra.MaxAfkTimeMilliseconds)
-            _ = Task.Run(() => _entryCarManager.KickAsync(Client,  "being AFK"));
-        else if (!HasSentAfkWarning && _configuration.Extra.MaxAfkTimeMilliseconds - timeAfk < 60000)
-        {
-            HasSentAfkWarning = true;
-            Client?.SendPacket(new ChatMessage { SessionId = 255, Message = "You will be kicked in 1 minute for being AFK." });
-        }
-    }
-
     internal void SetActive()
     {
         LastActiveTime = _sessionManager.ServerTimeMilliseconds;
-        HasSentAfkWarning = false;
     }
 
     internal void UpdatePosition(in PositionUpdateIn positionUpdate)
@@ -160,17 +142,17 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         }
 
         PositionUpdateReceived?.Invoke(this, in positionUpdate);
-            
+        
         HasUpdateToSend = true;
         LastRemoteTimestamp = positionUpdate.LastRemoteTimestamp;
-
-        const float afkMinSpeed = 20 / 3.6f;
-        if ((positionUpdate.StatusFlag != Status.StatusFlag || positionUpdate.Gas != Status.Gas || positionUpdate.SteerAngle != Status.SteerAngle)
-            && (_configuration.Extra.AfkKickBehavior != AfkKickBehavior.MinimumSpeed || positionUpdate.Velocity.LengthSquared() > afkMinSpeed * afkMinSpeed))
+        
+        if (positionUpdate.StatusFlag != Status.StatusFlag
+            || positionUpdate.Gas != Status.Gas
+            || positionUpdate.SteerAngle != Status.SteerAngle)
         {
             SetActive();
         }
-            
+        
         if (Status.Velocity.Y < -75 && _sessionManager.ServerTimeMilliseconds - LastFallCheckTime > 1000)
         {
             LastFallCheckTime = _sessionManager.ServerTimeMilliseconds;

@@ -8,6 +8,10 @@ public class AutoModerationConfigurationValidator : AbstractValidator<AutoModera
 {
     public AutoModerationConfigurationValidator()
     {
+        RuleFor(cfg => cfg.AfkPenalty).NotNull().ChildRules(ap =>
+        {
+            ap.RuleFor(a => a.DurationMinutes).GreaterThanOrEqualTo(1);
+        });
         RuleFor(cfg => cfg.HighPingPenalty).NotNull().ChildRules(hpp =>
         {
             hpp.RuleFor(h => h.DurationSeconds).GreaterThanOrEqualTo(0);

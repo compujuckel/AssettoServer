@@ -7,6 +7,8 @@ namespace AutoModerationPlugin;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class AutoModerationConfiguration : IValidateConfiguration<AutoModerationConfigurationValidator>
 {
+    [YamlMember(Description = "Kick players that are AFK")]
+    public AfkPenaltyConfiguration AfkPenalty { get; init; } = new();
     [YamlMember(Description = "Kick players with a high ping")]
     public HighPingPenaltyConfiguration HighPingPenalty { get; init; } = new();
     [YamlMember(Description = "Penalise players driving the wrong way. AI has to enabled for this to work")]
@@ -18,14 +20,33 @@ public class AutoModerationConfiguration : IValidateConfiguration<AutoModeration
 }
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
+public class AfkPenaltyConfiguration
+{
+    [YamlMember(Description = "Set to true to enable")]
+    public bool Enabled { get; set; } = true;
+    [YamlMember(Description = "Time after the player gets kicked. A warning will be sent in chat one minute before this time")]
+    public int DurationMinutes { get; set; } = 10;
+    [YamlMember(Description = "Set this to MinimumSpeed to not reset the AFK timer on chat messages / controller inputs and require players to actually drive")]
+    public AfkPenaltyBehavior Behavior { get; init; } = AfkPenaltyBehavior.PlayerInput;
+
+    [YamlIgnore] public int DurationMilliseconds => DurationMinutes * 60_000;
+}
+
+public enum AfkPenaltyBehavior
+{
+    PlayerInput,
+    MinimumSpeed
+}
+
+[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class HighPingPenaltyConfiguration
 {
     [YamlMember(Description = "Set to true to enable")]
-    public bool Enabled = false;
+    public bool Enabled { get; set; }= true;
     [YamlMember(Description = "Time after the player gets kicked. A warning will be sent in chat after half this time")]
-    public int DurationSeconds = 20;
+    public int DurationSeconds { get; set; } = 20;
     [YamlMember(Description = "Players having a lower ping will not be kicked")]
-    public int MaximumPingMilliseconds = 500;
+    public int MaximumPingMilliseconds { get; set; } = 500;
 }
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]

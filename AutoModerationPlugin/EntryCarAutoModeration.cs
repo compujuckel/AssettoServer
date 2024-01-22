@@ -4,6 +4,7 @@ using AssettoServer.Server;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AutoModerationPlugin.Packets;
@@ -15,6 +16,12 @@ public class EntryCarAutoModeration
     private int CurrentSplinePointId { get; set; } = -1;
     private float CurrentSplinePointDistanceSquared { get; set; }
 
+    private bool HasSentAfkWarning { get; set; }
+    private long LastMovementTime { get; set; }
+    private long LastActiveTime => _configuration.AfkPenalty.Behavior == AfkPenaltyBehavior.PlayerInput
+        ? _entryCar.LastActiveTime
+        : LastMovementTime;
+    
     private int HighPingSeconds { get; set; }
     private bool HasSentHighPingWarning { get; set; }
 
@@ -56,13 +63,32 @@ public class EntryCarAutoModeration
         _weatherManager = weatherManager;
         _sessionManager = sessionManager;
         _serverConfiguration = serverConfiguration;
-        _entryCar.ResetInvoked += OnResetInvoked;
         _aiSpline = aiSpline;
+        _entryCar.ResetInvoked += OnResetInvoked;
+        if (_configuration.AfkPenalty is { Enabled: true, Behavior: AfkPenaltyBehavior.MinimumSpeed })
+        {
+            _entryCar.PositionUpdateReceived += OnPositionUpdateReceived;
+        }
+        
         _laneRadiusSquared = MathF.Pow(_serverConfiguration.Extra.AiParams.LaneWidthMeters / 2.0f * 1.25f, 2);
+    }
+
+    private void OnPositionUpdateReceived(EntryCar sender, in PositionUpdateIn positionUpdate)
+    {
+        const float afkMinSpeed = 20 / 3.6f;
+        const float afkMinSpeedSquared = afkMinSpeed * afkMinSpeed;
+
+        if (positionUpdate.Velocity.LengthSquared() > afkMinSpeedSquared)
+        {
+            SetActive();
+        }
     }
 
     private void OnResetInvoked(EntryCar sender, EventArgs args)
     {
+        HasSentAfkWarning = false;
+        SetActive();
+        
         HighPingSeconds = 0;
         HasSentHighPingWarning = false;
         
@@ -90,6 +116,7 @@ public class EntryCarAutoModeration
         var oldFlags = CurrentFlags;
         
         UpdateSplinePoint();
+        UpdateAfkPenalty(client);
         UpdateHighPingPenalty(client);
         UpdateNoLightsPenalty(client);
         UpdateWrongWayPenalty(client);
@@ -98,6 +125,29 @@ public class EntryCarAutoModeration
         if (_serverConfiguration.Extra.EnableClientMessages && oldFlags != CurrentFlags)
         {
             client.SendPacket(new AutoModerationFlags { Flags = CurrentFlags });
+        }
+    }
+
+    private void UpdateAfkPenalty(ACTcpClient client)
+    {
+        if (!_configuration.AfkPenalty.Enabled) return;
+
+        var afkTime = _sessionManager.ServerTimeMilliseconds - LastActiveTime;
+        if (afkTime > _configuration.AfkPenalty.DurationMilliseconds - 30_000)
+        {
+            if (!HasSentAfkWarning)
+            {
+                HasSentAfkWarning = true;
+                client.SendPacket(new ChatMessage { SessionId = 255, Message = "You will be kicked in 1 minute for being AFK." });
+            }
+            else if (afkTime > _configuration.AfkPenalty.DurationMilliseconds)
+            {
+                _ = _entryCarManager.KickAsync(client, "being AFK");
+            }
+        }
+        else
+        {
+            HasSentAfkWarning = false;
         }
     }
 
@@ -140,7 +190,7 @@ public class EntryCarAutoModeration
                 CurrentFlags |= Flags.NoLights;
             }
             NoLightSeconds++;
-                            
+            
             if (NoLightSeconds > _configuration.NoLightsPenalty.DurationSeconds)
             {
                 if (NoLightsPitCount < _configuration.NoLightsPenalty.PitsBeforeKick)
@@ -180,7 +230,7 @@ public class EntryCarAutoModeration
             && Vector3.Dot(_aiSpline.Operations.GetForwardVector(CurrentSplinePointId), _entryCar.Status.Velocity) < 0)
         {
             CurrentFlags |= Flags.WrongWay;
-                            
+            
             WrongWaySeconds++;
             if (WrongWaySeconds > _configuration.WrongWayPenalty.DurationSeconds)
             {
@@ -219,7 +269,7 @@ public class EntryCarAutoModeration
             && _entryCar.Status.Velocity.LengthSquared() < _configuration.BlockingRoadPenalty.MaximumSpeedMs * _configuration.BlockingRoadPenalty.MaximumSpeedMs)
         {
             CurrentFlags |= Flags.NoParking;
-                            
+            
             BlockingRoadSeconds++;
             if (BlockingRoadSeconds > _configuration.BlockingRoadPenalty.DurationSeconds)
             {
@@ -248,6 +298,11 @@ public class EntryCarAutoModeration
             BlockingRoadSeconds = 0;
             HasSentBlockingRoadWarning = false;
         }
+    }
+
+    public void SetActive()
+    {
+        LastMovementTime = _sessionManager.ServerTimeMilliseconds;
     }
 
     private void UpdateSplinePoint()

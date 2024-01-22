@@ -33,7 +33,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServer.Shared", "Ass
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServer.Tests", "AssettoServer.Tests\AssettoServer.Tests.csproj", "{DA97DFBB-EA56-468C-BEDE-7CBEB360DD0E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyclePresetPlugin", "CyclePresetPlugin\CyclePresetPlugin.csproj", "{458FEEA8-D472-4FA9-8E50-63F04F05180A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VotingPresetPlugin", "VotingPresetPlugin\VotingPresetPlugin.csproj", "{458FEEA8-D472-4FA9-8E50-63F04F05180A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

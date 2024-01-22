@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using AssettoServer.Commands;
 using AssettoServer.Commands.Contexts;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
@@ -7,17 +6,17 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Services;
-using CyclePresetPlugin.Preset;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using VotingPresetPlugin.Preset;
 
-namespace CyclePresetPlugin;
+namespace VotingPresetPlugin;
 
-public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutostart
 {
     private readonly EntryCarManager _entryCarManager;
     private readonly PresetManager _presetManager;
-    private readonly CyclePresetConfiguration _configuration;
+    private readonly VotingPresetConfiguration _configuration;
     
     private readonly List<PresetType> _votePresets;
     private readonly List<ACTcpClient> _alreadyVoted = new();
@@ -37,7 +36,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         public int Votes { get; set; }
     }
 
-    public CyclePresetPlugin(CyclePresetConfiguration configuration,
+    public VotingPresetPlugin(VotingPresetConfiguration configuration,
         PresetConfigurationManager presetConfigurationManager, 
         ACServerConfiguration acServerConfiguration,
         EntryCarManager entryCarManager,
@@ -63,7 +62,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         if (acServerConfiguration.Extra.EnableClientMessages)
         {
             using var streamReader = new StreamReader(Assembly.GetExecutingAssembly()
-                .GetManifestResourceStream("CyclePresetPlugin.lua.reconnectclient.lua")!);
+                .GetManifestResourceStream("VotingPresetPlugin.lua.reconnectclient.lua")!);
             var reconnectScript = streamReader.ReadToEnd();
             scriptProvider.AddScript(reconnectScript, "reconnectclient.lua");
         }
@@ -76,7 +75,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
         _cancellationToken = stoppingToken;
         while (!stoppingToken.IsCancellationRequested)
         {
-            await Task.Delay(_configuration.CycleIntervalMilliseconds - _configuration.VotingDurationMilliseconds,
+            await Task.Delay(_configuration.VotingIntervalMilliseconds - _configuration.VotingDurationMilliseconds,
                 stoppingToken);
             try
             {
@@ -325,7 +324,7 @@ public class CyclePresetPlugin : CriticalBackgroundService, IAssettoServerAutost
             _entryCarManager.BroadcastPacket(new ChatMessage
             {
                 SessionId = 255,
-                Message = $"Track vote ended. Staying on track for {_configuration.CycleIntervalMinutes} more minutes."
+                Message = $"Track vote ended. Staying on track for {_configuration.VotingIntervalMinutes} more minutes."
             });
         }
         else

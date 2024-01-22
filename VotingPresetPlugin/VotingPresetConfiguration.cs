@@ -1,12 +1,12 @@
 ﻿using AssettoServer.Server.Configuration;
-using CyclePresetPlugin.Preset;
 using JetBrains.Annotations;
+using VotingPresetPlugin.Preset;
 using YamlDotNet.Serialization;
 
-namespace CyclePresetPlugin;
+namespace VotingPresetPlugin;
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
-public class CyclePresetConfiguration : IValidateConfiguration<CyclePresetConfigurationValidator>
+public class VotingPresetConfiguration : IValidateConfiguration<VotingPresetConfigurationValidator>
 {
     // General settings
     [YamlMember(Description = "Reconnect clients instead of kicking when restart is initiated. \nPlease disable reconnect with varying entry lists in the presets")]
@@ -19,7 +19,7 @@ public class CyclePresetConfiguration : IValidateConfiguration<CyclePresetConfig
     [YamlMember(Description = "Number of choices players can choose from at each voting interval")]
     public int VoteChoices { get; init; } = 3;
     
-    [YamlMember(Description = "Will preset/track change randomly if no vote has been counted")]
+    [YamlMember(Description = "Will preset/track change randomly with equal odds if no vote has been counted")]
     public bool ChangePresetWithoutVotes { get; init; } = false;
     
     [YamlMember(Description = "Whether the current preset/track should be part of the next vote.")]
@@ -27,7 +27,7 @@ public class CyclePresetConfiguration : IValidateConfiguration<CyclePresetConfig
     
     // Cycle numbers :)
     [YamlMember(Description = "How often a cycle/vote takes place. Minimum 5, Default 90")]
-    public int CycleIntervalMinutes { get; init; } = 90;
+    public int VotingIntervalMinutes { get; init; } = 90;
     
     [YamlMember(Description = "How long the vote stays open. Minimum 10, Default 300")]
     public int VotingDurationSeconds { get; init; } = 300;
@@ -43,7 +43,7 @@ public class CyclePresetConfiguration : IValidateConfiguration<CyclePresetConfig
     public PresetConfiguration Meta { get; init; } = new();
     
 
-    [YamlIgnore] public int CycleIntervalMilliseconds => CycleIntervalMinutes * 60_000;
+    [YamlIgnore] public int VotingIntervalMilliseconds => VotingIntervalMinutes * 60_000;
     [YamlIgnore] public int VotingDurationMilliseconds => VotingDurationSeconds * 1000;
     [YamlIgnore] public int TransitionDurationMilliseconds => TransitionDurationSeconds * 1000;
     [YamlIgnore] public int DelayTransitionDurationMilliseconds => DelayTransitionDurationSeconds * 1000;

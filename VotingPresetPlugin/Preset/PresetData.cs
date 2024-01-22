@@ -1,4 +1,4 @@
-﻿namespace CyclePresetPlugin.Preset;
+﻿namespace VotingPresetPlugin.Preset;
 
 public class PresetData
 {

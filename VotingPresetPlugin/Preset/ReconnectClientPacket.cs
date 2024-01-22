@@ -1,6 +1,6 @@
 using AssettoServer.Network.ClientMessages;
 
-namespace CyclePresetPlugin.Preset;
+namespace VotingPresetPlugin.Preset;
 
 [OnlineEvent(Key = "reconnectClient")]
 public class ReconnectClientPacket : OnlineEvent<ReconnectClientPacket>

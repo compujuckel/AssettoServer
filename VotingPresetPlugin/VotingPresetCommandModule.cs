@@ -3,68 +3,68 @@ using AssettoServer.Commands.Attributes;
 using AssettoServer.Commands.Contexts;
 using Qmmands;
 
-namespace CyclePresetPlugin;
+namespace VotingPresetPlugin;
 
-public class CyclePresetCommandModule : ACModuleBase
+public class VotingPresetCommandModule : ACModuleBase
 {
-    private readonly CyclePresetPlugin _cyclePreset;
+    private readonly VotingPresetPlugin _votingPreset;
 
-    public CyclePresetCommandModule(CyclePresetPlugin cyclePreset)
+    public VotingPresetCommandModule(VotingPresetPlugin votingPreset)
     {
-        _cyclePreset = cyclePreset;
+        _votingPreset = votingPreset;
     }
 
     [Command("votetrack", "vt", "votepreset", "vp", "presetvote", "pv"), RequireConnectedPlayer]
     public void VotePreset(int choice)
     {
-        _cyclePreset.CountVote((ChatCommandContext)Context, choice);
+        _votingPreset.CountVote((ChatCommandContext)Context, choice);
     }
 
     [Command("presetshow", "currentpreset", "currentrack"), RequireConnectedPlayer]
     public void GetCurrentPreset()
     {
-        _cyclePreset.GetPreset(Context);
+        _votingPreset.GetPreset(Context);
     }
 
     [Command("presetlist", "presetget", "presets"), RequireAdmin]
     public void AdminPresetList()
     {
-        _cyclePreset.ListAllPresets(Context);
+        _votingPreset.ListAllPresets(Context);
     }
 
     [Command("presetstartvote", "presetvotestart"), RequireAdmin]
     public void AdminPresetVoteStart()
     {
-        _cyclePreset.StartVote(Context);
+        _votingPreset.StartVote(Context);
     }
 
     [Command("presetfinishvote", "presetvotefinish"), RequireAdmin]
     public void AdminPresetVoteFinish()
     {
-        _cyclePreset.FinishVote(Context);
+        _votingPreset.FinishVote(Context);
     }
 
     [Command("presetcancelvote", "presetvotecancel"), RequireAdmin]
     public void AdminPresetVoteCancel()
     {
-        _cyclePreset.CancelVote(Context);
+        _votingPreset.CancelVote(Context);
     }
 
     [Command("presetextendvote", "presetvoteextend"), RequireAdmin]
     public void AdminPresetVoteExtend(int seconds)
     {
-        _cyclePreset.ExtendVote(Context, seconds);
+        _votingPreset.ExtendVote(Context, seconds);
     }
 
     [Command("presetset", "presetchange", "presetuse", "presetupdate"), RequireAdmin]
     public void AdminPresetSet(int choice)
     {
-        _cyclePreset.SetPreset(Context, choice);
+        _votingPreset.SetPreset(Context, choice);
     }
 
     [Command("presetrandom"), RequireAdmin]
     public void AdminPresetRandom()
     {
-        _cyclePreset.RandomPreset(Context);
+        _votingPreset.RandomPreset(Context);
     }
 }

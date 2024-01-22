@@ -1,16 +1,16 @@
 ﻿using AssettoServer.Server.Plugin;
 using Autofac;
-using CyclePresetPlugin.Preset;
+using VotingPresetPlugin.Preset;
 
-namespace CyclePresetPlugin;
+namespace VotingPresetPlugin;
 
-public class CyclePresetModule : AssettoServerModule<CyclePresetConfiguration>
+public class VotingPresetModule : AssettoServerModule<VotingPresetConfiguration>
 {
     protected override void Load(ContainerBuilder builder)
     {
         builder.RegisterType<PresetConfigurationManager>().AsSelf().SingleInstance();
         builder.RegisterType<PresetManager>().AsSelf().SingleInstance();
         
-        builder.RegisterType<CyclePresetPlugin>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
+        builder.RegisterType<VotingPresetPlugin>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
     }
 }

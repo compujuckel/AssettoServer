@@ -1,4 +1,4 @@
-﻿# CyclePresetPlugin
+﻿# VotingPresetPlugin
 
 Plugin to let players vote for a preset/track at a specified interval.
 
@@ -45,7 +45,7 @@ Exact usage is shown by track list
 - `/presetcancelvote`
 - `/presetvotecancel`
 
-#### Change to random track / preset
+#### Change to random track / preset with equal odds
 - `/presetrandom`
 
 ## Configuration
@@ -54,12 +54,12 @@ Enable the plugin in `extra_cfg.yml`
 
 ```yaml
 EnablePlugins:
-- CyclePresetPlugin
+- VotingPresetPlugin
 ```
 
 Works best with `EnableClientMessages: true`.
 
-Example configuration (write to `plugin_cycle_preset_cfg.yml`)
+Example configuration (write to `plugin_voting_preset_cfg.yml`)
 
 ```yaml
 # Reconnect clients instead of kicking when restart is initiated. 
@@ -73,8 +73,8 @@ VoteChoices: 3
 ChangePresetWithoutVotes: false
 # Whether the current preset/track should be part of the next vote.
 IncludeStayOnTrackVote: true
-# How often a cycle/vote takes place. Minimum 5, Default 90
-CycleIntervalMinutes: 90
+# How often a vote takes place. Minimum 5, Default 90
+VotingIntervalMinutes: 90
 # How long the vote stays open. Minimum 30, Default 300
 VotingDurationSeconds: 300
 # How long it takes to change the preset/track after notifying. Minimum 1, Default 5
@@ -86,13 +86,7 @@ DelayTransitionDurationSeconds: 10
 Meta:
     # The name that is displayed when a vote is going on or the preset is changing
     Name: Shutoko noises
-    # Preset specific settings for randomization
-    Random:
-        # Is this preset part of the random selection
-        Enabled: false
-        # Weights for random preset selection, setting a weight to 0 blacklists a preset, default weight is 1
-        Weight: 1
-    # Preset specific settings for voting
+     # Preset specific settings for voting
     Voting:
         # Is this preset part of the voting
         Enabled: true

@@ -6,7 +6,7 @@ using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-namespace CyclePresetPlugin.Preset;
+namespace VotingPresetPlugin.Preset;
 
 public class PresetManager : CriticalBackgroundService
 {

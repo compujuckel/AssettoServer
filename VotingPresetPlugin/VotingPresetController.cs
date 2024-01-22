@@ -1,11 +1,11 @@
 ﻿using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CyclePresetPlugin;
+namespace VotingPresetPlugin;
 
 [ApiController]
-[Route("cyclepreset")]
-public class CyclePresetController : ControllerBase
+[Route("votingpreset")]
+public class VotingPresetController : ControllerBase
 {
     private static readonly string FlagsBasePath = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Content");
     

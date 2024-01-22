@@ -133,7 +133,7 @@ public class EntryCarAutoModeration
         if (!_configuration.AfkPenalty.Enabled) return;
 
         var afkTime = _sessionManager.ServerTimeMilliseconds - LastActiveTime;
-        if (afkTime > _configuration.AfkPenalty.DurationMilliseconds - 30_000)
+        if (afkTime > _configuration.AfkPenalty.DurationMilliseconds - 60_000)
         {
             if (!HasSentAfkWarning)
             {

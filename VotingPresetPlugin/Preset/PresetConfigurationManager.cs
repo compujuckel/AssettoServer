@@ -58,18 +58,13 @@ public class PresetConfigurationManager
         Log.Information("Number of presets loaded: {PresetCount}", configs.Count);
     }
 
-    private string HashEntryList(string path)
+    private ulong HashEntryList(string path)
     {
         var hash = new XxHash64();
         
         string entryListPath = Path.Join(path, "entry_list.ini");
-        if (File.Exists(entryListPath))
-        {
-            using var stream = File.OpenRead(entryListPath);
-            hash.Append(stream);
-            return Convert.ToHexString(hash.GetCurrentHash());
-        }
-
-        return "-1";
+        using var stream = File.OpenRead(entryListPath);
+        hash.Append(stream);
+        return hash.GetCurrentHashAsUInt64();
     }
 }

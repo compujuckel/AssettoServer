@@ -72,6 +72,8 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
             {
                 car.RuleFor(c => c.Model).NotNull();
                 car.RuleFor(c => c.Guid).NotNull();
+                car.RuleFor(c => c.Restrictor).InclusiveBetween(0, 400);
+                car.RuleFor(c => c.Ballast).GreaterThanOrEqualTo(0);
             });
         });
     }

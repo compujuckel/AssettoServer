@@ -29,17 +29,19 @@ public class PresetConfigurationManager
         foreach (var dir in directories)
         {
             var pluginCfgPath = Path.Join(dir, "plugin_voting_preset_cfg.yml");
-            var entryListPath = Path.Join(dir, "entry_list.ini");
             
             if (!File.Exists(pluginCfgPath)) continue;
-            if (!File.Exists(entryListPath))
-            {
-                Log.Error("EntryList not found for preset: {Preset}", dir);
-                continue;
-            }
-
+            
             if (!votingPresetConfiguration.SkipEntryListCheck)
             {
+                var entryListPath = Path.Join(dir, "entry_list.ini");
+                
+                if (!File.Exists(entryListPath))
+                {
+                    Log.Error("EntryList not found for preset: {Preset}", dir);
+                    continue;
+                }
+
                 var compareEntryList = EntryList.FromFile(entryListPath);
                 if (JsonSerializer.Serialize(compareEntryList) != baseEntryList)
                 {

@@ -1,0 +1,71 @@
+﻿using System.IO.Hashing;
+using AssettoServer.Server.Configuration;
+using Serilog;
+
+namespace VotingPresetPlugin.Preset;
+
+public class PresetConfigurationManager
+{
+    public PresetConfiguration CurrentConfiguration { get; }
+    
+    public List<PresetConfiguration> AllConfigurations { get; }
+    public List<PresetConfiguration> VotingConfigurations { get; }
+    public List<PresetType> AllPresetTypes { get; }
+    public List<PresetType> VotingPresetTypes { get; }
+
+    public PresetConfigurationManager(VotingPresetConfiguration votingPresetConfiguration, ACServerConfiguration acServerConfiguration)
+    {
+        CurrentConfiguration = votingPresetConfiguration.Meta;
+        CurrentConfiguration.PresetFolder = acServerConfiguration.BaseFolder;
+
+        var configs = new List<PresetConfiguration>();
+        var directories = Directory.GetDirectories("presets");
+        
+        var baseEntryListHash = HashEntryList(acServerConfiguration.BaseFolder);
+        var warnEntryLists = false;
+        foreach (var dir in directories)
+        {
+            var pluginCfgPath = Path.Join(dir, "plugin_voting_preset_cfg.yml");
+            
+            if (!File.Exists(pluginCfgPath)) continue;
+            
+            if (!votingPresetConfiguration.SkipEntryListCheck)
+            {
+                if (!File.Exists(Path.Join(dir, "entry_list.ini")))
+                {
+                    Log.Error("Preset {Preset} skipped, EntryList is missing", dir);
+                    continue;
+                }
+
+                if (HashEntryList(dir) != baseEntryListHash)
+                {
+                    Log.Warning("Preset {Preset} skipped, EntryList does not match", dir);
+                    warnEntryLists = true;
+                    continue;
+                }
+            }
+            if (warnEntryLists)
+                Log.Warning("Mismatching EntryLists can cause issues with reconnecting");
+
+            configs.Add(PresetConfiguration.FromFile(pluginCfgPath));
+        }
+
+        AllConfigurations = configs;
+        VotingConfigurations = configs.Where(c => c.VotingEnabled).ToList();
+
+        AllPresetTypes = AllConfigurations.Select(x => x.ToPresetType()).ToList();
+        VotingPresetTypes = VotingConfigurations.Select(x => x.ToPresetType()).ToList();
+        
+        Log.Information("Number of presets loaded: {PresetCount}", configs.Count);
+    }
+
+    private ulong HashEntryList(string path)
+    {
+        var hash = new XxHash64();
+        
+        string entryListPath = Path.Join(path, "entry_list.ini");
+        using var stream = File.OpenRead(entryListPath);
+        hash.Append(stream);
+        return hash.GetCurrentHashAsUInt64();
+    }
+}

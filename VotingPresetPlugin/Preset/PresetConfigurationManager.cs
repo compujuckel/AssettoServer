@@ -1,4 +1,5 @@
-﻿using System.ServiceModel.Channels;
+﻿using System.Runtime.InteropServices.Marshalling;
+using System.ServiceModel.Channels;
 using System.Text.Json;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Configuration.Kunos;
@@ -25,7 +26,7 @@ public class PresetConfigurationManager
         
         // don't ask, it's just for comparison ok
         var baseEntryList = JsonSerializer.Serialize(acServerConfiguration.EntryList);
-            
+        var warnEntryLists = false;
         foreach (var dir in directories)
         {
             var pluginCfgPath = Path.Join(dir, "plugin_voting_preset_cfg.yml");
@@ -38,17 +39,20 @@ public class PresetConfigurationManager
                 
                 if (!File.Exists(entryListPath))
                 {
-                    Log.Error("EntryList not found for preset: {Preset}", dir);
+                    Log.Error("Preset {Preset} skipped, EntryList is missing", dir);
                     continue;
                 }
 
                 var compareEntryList = EntryList.FromFile(entryListPath);
                 if (JsonSerializer.Serialize(compareEntryList) != baseEntryList)
                 {
-                    Log.Error("EntryList does not match in preset: {Preset}", dir);
+                    Log.Warning("Preset {Preset} skipped, EntryList does not match", dir);
+                    warnEntryLists = true;
                     continue;
                 }
             }
+            if (warnEntryLists)
+                Log.Warning("Mismatching EntryLists can cause issues with reconnecting");
 
             configs.Add(PresetConfiguration.FromFile(pluginCfgPath));
         }

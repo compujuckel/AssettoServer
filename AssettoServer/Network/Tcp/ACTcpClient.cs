@@ -594,6 +594,8 @@ public class ACTcpClient : IClient
 
         ChatMessage chatMessage = reader.ReadPacket<ChatMessage>();
         chatMessage.SessionId = SessionId;
+
+        if (string.IsNullOrWhiteSpace(chatMessage.Message)) return;
             
         Logger.Information("CHAT: {ClientName} ({SessionId}): {ChatMessage}", Name, SessionId, chatMessage.Message);
 

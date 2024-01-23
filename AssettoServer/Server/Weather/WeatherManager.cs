@@ -45,7 +45,7 @@ public class WeatherManager : CriticalBackgroundService
     }
 
     public TrackParams.TrackParams? TrackParams { get; private set; }
-    public WeatherData CurrentWeather { get; private set; } = null!;
+    public WeatherData CurrentWeather { get; private set; } = new(new WeatherType(), new WeatherType());
 
     private ZonedDateTime _currentDateTime;
     public ZonedDateTime CurrentDateTime
@@ -60,9 +60,9 @@ public class WeatherManager : CriticalBackgroundService
 
     public SunPosition? CurrentSunPosition { get; private set; }
 
-    public void SetTime(float time)
+    public void SetTime(int time)
     {
-        CurrentDateTime = CurrentDateTime.Date.AtStartOfDayInZone(CurrentDateTime.Zone).PlusSeconds((long)time);
+        CurrentDateTime = CurrentDateTime.Date.AtStartOfDayInZone(CurrentDateTime.Zone).PlusSeconds(time);
         UpdateSunPosition();
     }
     
@@ -92,6 +92,56 @@ public class WeatherManager : CriticalBackgroundService
         {
             CurrentSunPosition = SunCalc.GetSunPosition(CurrentDateTime.ToDateTimeUtc(), TrackParams.Latitude, TrackParams.Longitude);
         }
+    }
+    
+    public bool SetWeatherConfiguration(int id)
+    {
+        if (id < 0 || id >= _configuration.Server.Weathers.Count)
+            return false;
+            
+        var weatherConfiguration = _configuration.Server.Weathers[id];
+
+        var startDate = weatherConfiguration.WeatherFxParams.StartDate.HasValue
+            ? Instant.FromUnixTimeSeconds(weatherConfiguration.WeatherFxParams.StartDate.Value)
+            : SystemClock.Instance.GetCurrentInstant();
+
+        var startTime = weatherConfiguration.WeatherFxParams.StartTime.HasValue
+            ? LocalTime.FromSecondsSinceMidnight(weatherConfiguration.WeatherFxParams.StartTime.Value)
+            : CurrentDateTime.TimeOfDay;
+        
+        CurrentDateTime = startTime.On(startDate.InUtc().Date).InZoneLeniently(CurrentDateTime.Zone);
+        if (weatherConfiguration.WeatherFxParams.TimeMultiplier.HasValue)
+        {
+            _configuration.Server.TimeOfDayMultiplier = (float)weatherConfiguration.WeatherFxParams.TimeMultiplier.Value;
+        }
+
+        var weatherType = _weatherTypeProvider.GetWeatherType(weatherConfiguration.WeatherFxParams.Type);
+
+        float ambient = GetFloatWithVariation(weatherConfiguration.BaseTemperatureAmbient, weatherConfiguration.VariationAmbient);
+            
+        SetWeather(new WeatherData(weatherType, weatherType)
+        {
+            TemperatureAmbient = ambient,
+            TemperatureRoad = GetFloatWithVariation(ambient + weatherConfiguration.BaseTemperatureRoad, weatherConfiguration.VariationRoad),
+            WindSpeed = GetRandomFloatInRange(weatherConfiguration.WindBaseSpeedMin, weatherConfiguration.WindBaseSpeedMax),
+            WindDirection = (int) Math.Round(GetFloatWithVariation(weatherConfiguration.WindBaseDirection, weatherConfiguration.WindVariationDirection)),
+            RainIntensity = weatherType.RainIntensity,
+            RainWater = weatherType.RainWater,
+            RainWetness = weatherType.RainWetness,
+            TrackGrip = _configuration.Server.DynamicTrack.BaseGrip
+        });
+
+        return true;
+    }
+
+    private float GetFloatWithVariation(float baseValue, float variation)
+    {
+        return GetRandomFloatInRange(baseValue - variation / 2, baseValue + variation / 2);
+    }
+
+    private float GetRandomFloatInRange(float min, float max)
+    {
+        return (float) (Random.Shared.NextDouble() * (max - min) + min);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -135,6 +185,9 @@ public class WeatherManager : CriticalBackgroundService
             .GetCurrentDate()
             .AtStartOfDayInZone(timeZone)
             .PlusSeconds((long)WeatherUtils.SecondsFromSunAngle(_configuration.Server.SunAngle));
+        
+        if (!SetWeatherConfiguration(Random.Shared.Next(_configuration.Server.Weathers.Count)))
+            throw new InvalidOperationException("Could not set initial weather configuration");
 
         await LoopAsync(stoppingToken);
     }

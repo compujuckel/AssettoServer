@@ -26,7 +26,6 @@ public class WeatherModule : Module
 
         builder.RegisterType<RainHelper>().AsSelf();
         builder.RegisterType<DefaultWeatherTypeProvider>().As<IWeatherTypeProvider>().SingleInstance();
-        builder.RegisterType<DefaultWeatherProvider>().AsSelf().SingleInstance().AutoActivate();
-        builder.RegisterType<WeatherManager>().AsSelf().SingleInstance();
+        builder.RegisterType<WeatherManager>().AsSelf().SingleInstance(); // Not registered as IHostedService, this is hardcoded to start first
     }
 }

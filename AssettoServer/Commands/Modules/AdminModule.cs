@@ -23,17 +23,20 @@ public class AdminModule : ACModuleBase
 {
     private readonly IWeatherImplementation _weatherImplementation;
     private readonly WeatherManager _weatherManager;
-    private readonly DefaultWeatherProvider _weatherProvider;
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly IWhitelistService _whitelist;
 
-    public AdminModule(IWeatherImplementation weatherImplementation, WeatherManager weatherManager, DefaultWeatherProvider weatherProvider, ACServerConfiguration configuration, SessionManager sessionManager, EntryCarManager entryCarManager, IWhitelistService whitelist)
+    public AdminModule(IWeatherImplementation weatherImplementation,
+        WeatherManager weatherManager,
+        ACServerConfiguration configuration,
+        SessionManager sessionManager,
+        EntryCarManager entryCarManager,
+        IWhitelistService whitelist)
     {
         _weatherImplementation = weatherImplementation;
         _weatherManager = weatherManager;
-        _weatherProvider = weatherProvider;
         _configuration = configuration;
         _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
@@ -103,7 +106,7 @@ public class AdminModule : ACModuleBase
     [Command("setweather")]
     public void SetWeather(int weatherId)
     {
-        if (_weatherProvider.SetWeatherConfiguration(weatherId))
+        if (_weatherManager.SetWeatherConfiguration(weatherId))
         {
             Reply("Weather configuration has been set.");
         }

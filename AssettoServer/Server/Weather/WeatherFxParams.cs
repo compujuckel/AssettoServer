@@ -44,31 +44,27 @@ public class WeatherFxParams
         int? startTime = null;
         double? timeMultiplier = null;
 
-        foreach (string pair in pairs)
+        foreach (var pair in pairs)
         {
-            string[] kv = pair.Split("=");
+            var kv = pair.Split("=");
 
-            if (kv.Length == 2)
+            if (kv.Length != 2) continue;
+            
+            if (kv[0] == "type")
             {
-                if (kv[0] == "type")
-                {
-                    Enum.TryParse(kv[1], out type);
-                }
-
-                if (kv[0] == "start")
-                {
-                    startDate = long.Parse(kv[1]);
-                }
-
-                if (kv[0] == "time")
-                {
-                    startTime = int.Parse(kv[1]);
-                }
-
-                if (kv[0] == "mult")
-                {
-                    timeMultiplier = double.Parse(kv[1]);
-                }
+                type = Enum.Parse<WeatherFxType>(kv[1]);
+            }
+            else if (kv[0] == "start")
+            {
+                startDate = long.Parse(kv[1]);
+            }
+            else if (kv[0] == "time")
+            {
+                startTime = int.Parse(kv[1]);
+            }
+            else if (kv[0] == "mult")
+            {
+                timeMultiplier = double.Parse(kv[1]);
             }
         }
 

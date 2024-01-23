@@ -76,8 +76,8 @@ public class Startup
         builder.RegisterType<GeoParamsManager>().AsSelf().SingleInstance();
         builder.RegisterType<ChecksumManager>().AsSelf().SingleInstance();
         builder.RegisterType<CSPServerExtraOptions>().AsSelf().SingleInstance();
-        builder.RegisterType<ACTcpServer>().AsSelf().SingleInstance();
-        builder.RegisterType<ACUdpServer>().AsSelf().SingleInstance();
+        builder.RegisterType<ACTcpServer>().AsSelf().SingleInstance(); // Not registered as IHostedService, this is hardcoded to start first
+        builder.RegisterType<ACUdpServer>().AsSelf().SingleInstance(); // Not registered as IHostedService, this is hardcoded to start first
         builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<OpenSlotFilterChain>().AsSelf().SingleInstance();
         builder.RegisterType<WhitelistSlotFilter>().As<IOpenSlotFilter>();

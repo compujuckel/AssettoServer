@@ -16,6 +16,7 @@ public class PresetConfigurationManager
     public PresetConfigurationManager(VotingPresetConfiguration votingPresetConfiguration, ACServerConfiguration acServerConfiguration)
     {
         CurrentConfiguration = votingPresetConfiguration.Meta;
+        CurrentConfiguration.PresetFolder = acServerConfiguration.BaseFolder;
 
         var configs = new List<PresetConfiguration>();
         var directories = Directory.GetDirectories("presets");

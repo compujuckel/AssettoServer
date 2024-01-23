@@ -25,6 +25,9 @@ public class VotingPresetConfiguration : IValidateConfiguration<VotingPresetConf
     [YamlMember(Description = "Whether the current preset/track should be part of the next vote.")]
     public bool IncludeStayOnTrackVote { get; init; } = true;
     
+    [YamlMember(Description = "Whether to skip the comparison of the starting entry list to the presets entry lists.")]
+    public bool SkipEntryListCheck { get; init; } = false;
+    
     // Cycle numbers :)
     [YamlMember(Description = "How often a cycle/vote takes place. Minimum 5, Default 90")]
     public int VotingIntervalMinutes { get; init; } = 90;

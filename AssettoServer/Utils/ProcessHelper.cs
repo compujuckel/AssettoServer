@@ -9,4 +9,9 @@ public static class ProcessHelper
         url = url.Replace("&", "^&");
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
+
+    public static void ShowInExplorer(string path)
+    {
+        Process.Start("explorer.exe", $"/select, \"{path}\"");
+    }
 }

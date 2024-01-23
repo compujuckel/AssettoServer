@@ -30,23 +30,33 @@ internal static class ExceptionHelper
     public static void PrintExceptionHelp(Exception ex, bool isContentManager, string? crashReportPath)
     {
         string? helpLink = null;
+        string? configPath = null;
 
         while (ex is DependencyResolutionException && ex.InnerException != null)
         {
             ex = ex.InnerException;
+        }
+
+        if (ex is ConfigurationParsingException cfgEx)
+        {
+            configPath = cfgEx.Path;
+            if (ex.InnerException != null)
+            {
+                ex = ex.InnerException;
+            }
         }
         
         Console.WriteLine();
         switch (ex)
         {
             case YamlException yamlException:
-                WrapText(YamlExceptionHelp(yamlException), isContentManager);
+                WrapText(YamlExceptionHelp(yamlException, configPath), isContentManager);
                 break;
             case ParsingException when ex.InnerException is FileNotFoundException fnfException:
                 WrapText(fnfException.Message, isContentManager);
                 break;
             case ParsingException iniException:
-                WrapText(IniExceptionHelp(iniException), isContentManager);
+                WrapText(IniExceptionHelp(iniException, configPath), isContentManager);
                 break;
             case IOException { InnerException: AddressInUseException } or SocketException { ErrorCode: 10048 }:
                 WrapText(AddressInUseExceptionHelp(), isContentManager);
@@ -71,6 +81,11 @@ internal static class ExceptionHelper
             if (helpLink != null)
             {
                 Console.WriteLine("Press I to get more info on this error");
+            }
+
+            if (configPath != null)
+            {
+                Console.WriteLine("Press F to show the faulty configuration file");
             }
             if (crashReportPath != null)
             {
@@ -97,7 +112,11 @@ internal static class ExceptionHelper
                 }
                 else if (crashReportPath != null && key.Key == ConsoleKey.C)
                 {
-                    Process.Start("explorer.exe", $"/select, \"{crashReportPath}\"");
+                    ProcessHelper.ShowInExplorer(crashReportPath);
+                }
+                else if (configPath != null && key.Key == ConsoleKey.F)
+                {
+                    ProcessHelper.ShowInExplorer(configPath);
                 }
             }
 
@@ -127,19 +146,18 @@ internal static class ExceptionHelper
         Console.ForegroundColor = old;
     }
 
-    private static string YamlExceptionHelp(YamlException ex)
+    private static string YamlExceptionHelp(YamlException ex, string? path = null)
     {
         return $"""
-YAML error. Check your extra_cfg.yml around line {ex.Start.Line}.
-When copying plugin configuration, make sure to copy EVERYTHING, including the "---".
+YAML error in {path ?? "unknown file"} around line {ex.Start.Line}.
 {ex.Message}
 """;
     }
 
-    private static string IniExceptionHelp(ParsingException ex)
+    private static string IniExceptionHelp(ParsingException ex, string? path = null)
     {
         return $"""
-INI error. Check your server_cfg.ini or entry_list.ini around line {ex.LineNumber}.
+INI error in {path ?? "unknown file"} around line {ex.LineNumber}.
 {ex.Message}
 """;
     }

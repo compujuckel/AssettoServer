@@ -24,12 +24,6 @@ public partial class ACExtraConfiguration : ObservableObject
     public List<int> ValidateDlcOwnership { get; init; } = [];
     [YamlMember(Description = "Enable protection against cheats/hacks. 0 = No protection. 1 = Block all public cheats as of 2023-11-18 (ClientSecurityPlugin and CSP 0.2.0+ required)")]
     public int MandatoryClientSecurityLevel { get; init; }
-    [YamlMember(Description = "Enable AFK autokick")]
-    public bool EnableAntiAfk { get; set; } = true;
-    [YamlMember(Description = "Maximum allowed AFK time before kick")]
-    public int MaxAfkTimeMinutes { get; set; } = 10;
-    [YamlMember(Description = "Players might try to get around the AFK kick by doing inputs once in a while without actually driving. Set this to MinimumSpeed to autokick players idling")]
-    public AfkKickBehavior AfkKickBehavior { get; set; } = AfkKickBehavior.PlayerInput;
     [YamlMember(Description = "Force headlights on for all cars")]
     public bool ForceLights { get; set; }
     [YamlMember(Description = "Distance for network optimizations. Players outside of this range will send less updates to reduce network traffic")]
@@ -103,23 +97,18 @@ public partial class ACExtraConfiguration : ObservableObject
     public List<UserGroupCommandPermissions>? UserGroupCommandPermissions { get; init; }
     
     public AiParams AiParams { get; init; } = new();
-
-    [YamlIgnore] public int MaxAfkTimeMilliseconds => MaxAfkTimeMinutes * 60_000;
+    
     [YamlIgnore] internal bool ContainsObsoletePluginConfiguration { get; private set; }
 
-    public void ToFile(string path, bool full = false)
+    public void ToFile(string path)
     {
         using var writer = File.CreateText(path);
-        ToStream(writer, full);
+        ToStream(writer);
     }
 
-    public void ToStream(StreamWriter writer, bool full = false)
+    public void ToStream(StreamWriter writer)
     {
         var builder = new SerializerBuilder();
-        if (full)
-        {
-            builder.WithoutEmissionPhaseObjectGraphVisitor<DefaultValuesObjectGraphVisitor>();
-        }
         builder.Build().Serialize(writer, this);
     }
         
@@ -141,33 +130,6 @@ public partial class ACExtraConfiguration : ObservableObject
         }
         
         return extraCfg;
-    }
-    
-    public static void WriteReferenceConfig(string schemaPath)
-    {
-        const string baseFolder = "cfg";
-        var path = Path.Join(baseFolder, "extra_cfg.reference.yml");
-        
-        FileInfo? info = null;
-        if (File.Exists(path))
-        {
-            info = new FileInfo(path);
-            info.IsReadOnly = false;
-        }
-
-        using (var writer = File.CreateText(path))
-        {
-            ConfigurationSchemaGenerator.WriteModeLine(writer, baseFolder, schemaPath);
-            writer.WriteLine($"# AssettoServer {ThisAssembly.AssemblyInformationalVersion} Reference Configuration");
-            writer.WriteLine("# This file serves as an overview of all possible options with their default values.");
-            writer.WriteLine("# It is NOT read by the server - edit extra_cfg.yml instead!");
-            writer.WriteLine();
-
-            ReferenceConfiguration.ToStream(writer, true);
-        }
-
-        info ??= new FileInfo(path);
-        info.IsReadOnly = true;
     }
 
     public static readonly ACExtraConfiguration ReferenceConfiguration = new()

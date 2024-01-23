@@ -590,11 +590,7 @@ public class ACTcpClient : IClient
         if (currentTime - LastChatTime < 1000)
             return;
         LastChatTime = currentTime;
-
-        if (_configuration.Extra.AfkKickBehavior == AfkKickBehavior.PlayerInput)
-        {
-            EntryCar.SetActive();
-        }
+        EntryCar.SetActive();
 
         ChatMessage chatMessage = reader.ReadPacket<ChatMessage>();
         chatMessage.SessionId = SessionId;

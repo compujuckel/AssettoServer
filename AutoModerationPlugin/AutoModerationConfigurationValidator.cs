@@ -8,20 +8,33 @@ public class AutoModerationConfigurationValidator : AbstractValidator<AutoModera
 {
     public AutoModerationConfigurationValidator()
     {
-        RuleFor(cfg => cfg.WrongWayKick).NotNull().ChildRules(wwk =>
+        RuleFor(cfg => cfg.AfkPenalty).NotNull().ChildRules(ap =>
         {
-            wwk.RuleFor(w => w.DurationSeconds).GreaterThanOrEqualTo(0);
-            wwk.RuleFor(w => w.MinimumSpeedKph).GreaterThanOrEqualTo(0);
+            ap.RuleFor(a => a.DurationMinutes).GreaterThanOrEqualTo(1);
         });
-        RuleFor(cfg => cfg.NoLightsKick).NotNull().ChildRules(nlk =>
+        RuleFor(cfg => cfg.HighPingPenalty).NotNull().ChildRules(hpp =>
         {
-            nlk.RuleFor(n => n.DurationSeconds).GreaterThanOrEqualTo(0);
-            nlk.RuleFor(n => n.MinimumSpeedKph).GreaterThanOrEqualTo(0);
+            hpp.RuleFor(h => h.DurationSeconds).GreaterThanOrEqualTo(0);
+            hpp.RuleFor(h => h.MaximumPingMilliseconds).GreaterThanOrEqualTo(0);
         });
-        RuleFor(cfg => cfg.BlockingRoadKick).NotNull().ChildRules(brk =>
+        RuleFor(cfg => cfg.WrongWayPenalty).NotNull().ChildRules(wwp =>
         {
-            brk.RuleFor(b => b.DurationSeconds).GreaterThanOrEqualTo(0);
-            brk.RuleFor(b => b.MaximumSpeedKph).GreaterThanOrEqualTo(0);
+            wwp.RuleFor(w => w.DurationSeconds).GreaterThanOrEqualTo(0);
+            wwp.RuleFor(w => w.MinimumSpeedKph).GreaterThanOrEqualTo(0);
+            wwp.RuleFor(w => w.PitsBeforeKick).GreaterThanOrEqualTo(0);
+        });
+        RuleFor(cfg => cfg.NoLightsPenalty).NotNull().ChildRules(nlp =>
+        {
+            nlp.RuleFor(n => n.DurationSeconds).GreaterThanOrEqualTo(0);
+            nlp.RuleFor(n => n.MinimumSpeedKph).GreaterThanOrEqualTo(0);
+            nlp.RuleFor(n => n.PitsBeforeKick).GreaterThanOrEqualTo(0);
+            nlp.RuleFor(n => n.IgnoreSeconds).GreaterThanOrEqualTo(0);
+        });
+        RuleFor(cfg => cfg.BlockingRoadPenalty).NotNull().ChildRules(brp =>
+        {
+            brp.RuleFor(b => b.DurationSeconds).GreaterThanOrEqualTo(0);
+            brp.RuleFor(b => b.MaximumSpeedKph).GreaterThanOrEqualTo(0);
+            brp.RuleFor(b => b.PitsBeforeKick).GreaterThanOrEqualTo(0);
         });
     }
 }

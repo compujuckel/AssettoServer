@@ -64,10 +64,14 @@ public class ACServerConfiguration
 
         var extraCfgSchemaPath = ConfigurationSchemaGenerator.WriteExtraCfgSchema();
         LoadExtraConfig(locations.ExtraCfgPath, extraCfgSchemaPath);
-        ACExtraConfiguration.WriteReferenceConfig(extraCfgSchemaPath);
+        ReferenceConfigurationHelper.WriteReferenceConfiguration("extra_cfg.reference.yml",
+            extraCfgSchemaPath, 
+            ACExtraConfiguration.ReferenceConfiguration, 
+            $"AssettoServer {ThisAssembly.AssemblyInformationalVersion}");
         
         var parsedTrackOptions = CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
-        if (Extra.MinimumCSPVersion.HasValue)
+        if (Extra.MinimumCSPVersion.HasValue
+            && (!CSPTrackOptions.MinimumCSPVersion.HasValue || Extra.MinimumCSPVersion.Value > CSPTrackOptions.MinimumCSPVersion.Value))
         {
             CSPTrackOptions = new CSPTrackOptions
             {
@@ -92,27 +96,45 @@ public class ACServerConfiguration
     private ServerConfiguration LoadServerConfiguration(string path)
     {
         Log.Debug("Loading server_cfg.ini from {Path}", path);
-        if (!File.Exists(path))
+        try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            using var serverCfg = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Assets.server_cfg.ini")!;
-            using var outFile = File.Create(path);
-            serverCfg.CopyTo(outFile);
+            if (!File.Exists(path))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                using var serverCfg = Assembly.GetExecutingAssembly()
+                    .GetManifestResourceStream("AssettoServer.Assets.server_cfg.ini")!;
+                using var outFile = File.Create(path);
+                serverCfg.CopyTo(outFile);
+            }
+
+            return ServerConfiguration.FromFile(path);
         }
-        return ServerConfiguration.FromFile(path);
+        catch (Exception ex)
+        {
+            throw new ConfigurationParsingException(path, ex);
+        }
     }
 
     private EntryList LoadEntryList(string path)
     {
         Log.Debug("Loading entry_list.ini from {Path}", path);
-        if (!File.Exists(path))
+        try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            using var entryList = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Assets.entry_list.ini")!;
-            using var outFile = File.Create(path);
-            entryList.CopyTo(outFile);
+            if (!File.Exists(path))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                using var entryList = Assembly.GetExecutingAssembly()
+                    .GetManifestResourceStream("AssettoServer.Assets.entry_list.ini")!;
+                using var outFile = File.Create(path);
+                entryList.CopyTo(outFile);
+            }
+
+            return EntryList.FromFile(path);
         }
-        return EntryList.FromFile(path);
+        catch (Exception ex)
+        {
+            throw new ConfigurationParsingException(path, ex);
+        }
     }
 
     private string LoadWelcomeMessage()
@@ -208,26 +230,36 @@ public class ACServerConfiguration
     {
         foreach (var plugin in loader.LoadedPlugins)
         {
-            if (plugin.ConfigurationType == null) continue;
+            if (!plugin.HasConfiguration) continue;
 
-            var schemaPath = ConfigurationSchemaGenerator.WritePluginConfigurationSchema(plugin);
             var configPath = Path.Join(BaseFolder, plugin.ConfigurationFileName);
-            if (File.Exists(configPath))
+            try
             {
-                var deserializer = new DeserializerBuilder().Build();
-                using var file = File.OpenText(configPath);
-                var configObj = deserializer.Deserialize(file, plugin.ConfigurationType)!;
+                var schemaPath = ConfigurationSchemaGenerator.WritePluginConfigurationSchema(plugin);
+                ReferenceConfigurationHelper.WriteReferenceConfiguration(plugin.ReferenceConfigurationFileName,
+                    schemaPath, plugin.ReferenceConfiguration, plugin.Name);
+                
+                if (File.Exists(configPath))
+                {
+                    var deserializer = new DeserializerBuilder().Build();
+                    using var file = File.OpenText(configPath);
+                    var configObj = deserializer.Deserialize(file, plugin.ConfigurationType)!;
 
-                ValidatePluginConfiguration(plugin, configObj);
-                builder.RegisterInstance(configObj).AsSelf();
+                    ValidatePluginConfiguration(plugin, configObj);
+                    builder.RegisterInstance(configObj).AsSelf();
+                }
+                else
+                {
+                    var serializer = new SerializerBuilder().Build();
+                    using var file = File.CreateText(configPath);
+                    ConfigurationSchemaGenerator.WriteModeLine(file, BaseFolder, schemaPath);
+                    var configObj = Activator.CreateInstance(plugin.ConfigurationType)!;
+                    serializer.Serialize(file, configObj, plugin.ConfigurationType);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                var serializer = new SerializerBuilder().Build();
-                using var file = File.CreateText(configPath);
-                ConfigurationSchemaGenerator.WriteModeLine(file, BaseFolder, schemaPath);
-                var configObj = Activator.CreateInstance(plugin.ConfigurationType)!;
-                serializer.Serialize(file, configObj, plugin.ConfigurationType);
+                throw new ConfigurationParsingException(configPath, ex);
             }
         }
 
@@ -258,17 +290,24 @@ public class ACServerConfiguration
 
     private void LoadExtraConfig(string path, string schemaPath) {
         Log.Debug("Loading extra_cfg.yml from {Path}", path);
-        
-        if (!File.Exists(path))
-        {
-            using var file = File.CreateText(path);
-            ConfigurationSchemaGenerator.WriteModeLine(file, BaseFolder, schemaPath);
-            new ACExtraConfiguration().ToStream(file);
-        }
-        
-        Extra = ACExtraConfiguration.FromFile(path);
 
-        if (Regex.IsMatch(Server.Name, @"x:\w+$"))
+        try
+        {
+            if (!File.Exists(path))
+            {
+                using var file = File.CreateText(path);
+                ConfigurationSchemaGenerator.WriteModeLine(file, BaseFolder, schemaPath);
+                new ACExtraConfiguration().ToStream(file);
+            }
+
+            Extra = ACExtraConfiguration.FromFile(path);
+        }
+        catch (Exception ex)
+        {
+            throw new ConfigurationParsingException(path, ex);
+        }
+
+        if (Regex.IsMatch(Server.Name, @"x:\w+$")) // TODO remove
         {
             const string errorMsg =
                 "Server details are configured via ID in server name. This interferes with native AssettoServer server details. More info: https://assettoserver.org/docs/common-configuration-errors#wrong-server-details";

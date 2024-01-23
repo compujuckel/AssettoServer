@@ -89,6 +89,11 @@ internal static class OnlineEventGenerator
         return reordered;
     }
 
+    private static bool IsArrayLikeType(Type type)
+    {
+        return type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Memory<>) || type.GetGenericTypeDefinition() == typeof(ArraySegment<>));
+    }
+
     internal static OnlineEventInfo ParseClientMessage(Type messageType)
     {
         var mainAttr = messageType.GetCustomAttribute<OnlineEventAttribute>();
@@ -102,7 +107,7 @@ internal static class OnlineEventGenerator
             if (attr == null) continue;
 
             var type = field.FieldType;
-            if ((type.IsArray || type == typeof(string)) && attr.Size <= 0)
+            if ((type.IsArray || IsArrayLikeType(type) || type == typeof(string)) && attr.Size <= 0)
             {
                 throw new InvalidOperationException($"No size specified for client message field {messageType.Name}.{field.Name}");
             }
@@ -110,6 +115,10 @@ internal static class OnlineEventGenerator
             if (type.IsArray)
             {
                 type = type.GetElementType()!;
+            }
+            else if (IsArrayLikeType(type))
+            {
+                type = type.GetGenericArguments()[0];
             }
             else if (type == typeof(string))
             {
@@ -166,19 +175,15 @@ internal static class OnlineEventGenerator
     internal static OnlineEvent<TMessage>.FromReaderDelegate GenerateReaderMethod<TMessage>(OnlineEventInfo message)
         where TMessage : OnlineEvent<TMessage>, new()
     {
-        var emitter = Emit<OnlineEvent<TMessage>.FromReaderDelegate>.NewDynamicMethod($"{nameof(TMessage)}.FromReader");
+        var emitter = Emit<OnlineEvent<TMessage>.FromReaderDelegate>.NewDynamicMethod($"{typeof(TMessage).Name}.FromReader");
         var readMethod = typeof(PacketReader).GetMethod(nameof(PacketReader.Read))!;
 
         foreach (var field in message.Fields)
         {
             emitter.LoadArgument(0);
             emitter.LoadArgumentAddress(1);
-            
-            if (field.Type.IsValueType)
-            {
-                emitter.Call(readMethod.MakeGenericMethod(field.Type));
-            }
-            else if (field.Type == typeof(string) && field.Array.HasValue)
+
+            if (field.Type == typeof(string) && field.Array.HasValue)
             {
                 var encoding = typeof(Encoding).GetProperty(nameof(Encoding.UTF8), 
                     BindingFlags.Public | BindingFlags.Static)!.GetMethod;
@@ -186,15 +191,28 @@ internal static class OnlineEventGenerator
                 emitter.LoadConstant(field.Array.Value);
                 emitter.Call(typeof(PacketReader).GetMethod(nameof(PacketReader.ReadStringFixed))!);
             }
-            else if (field.Type.IsArray && field.Array.HasValue)
+            else if (field.Array.HasValue && (field.Type.IsArray || IsArrayLikeType(field.Type)))
             {
+                var elementType = field.Type.IsArray ? field.Type.GetElementType()! : field.Type.GetGenericArguments()[0];
+                
                 emitter.LoadConstant(field.Array.Value);
-                emitter.Call(typeof(PacketReader).GetMethod(nameof(PacketReader.ReadArrayFixed))!.MakeGenericMethod(field.Type.GetElementType()!));
-                var spanType = typeof(Span<>).MakeGenericType(field.Type.GetElementType()!);
+                emitter.Call(typeof(PacketReader).GetMethod(nameof(PacketReader.ReadArrayFixed))!.MakeGenericMethod(elementType));
+                var spanType = typeof(Span<>).MakeGenericType(elementType);
                 using var loc = emitter.DeclareLocal(spanType);
                 emitter.StoreLocal(loc);
                 emitter.LoadLocalAddress(loc);
                 emitter.Call(spanType.GetMethod("ToArray"));
+
+                if (IsArrayLikeType(field.Type))
+                {
+                    var opImplicit = field.Type.GetMethod("op_Implicit", 
+                        BindingFlags.Public | BindingFlags.Static, [elementType.MakeArrayType()])!;
+                    emitter.Call(opImplicit);
+                }
+            }
+            else if (field.Type.IsValueType)
+            {
+                emitter.Call(readMethod.MakeGenericMethod(field.Type));
             }
             else
             {
@@ -247,14 +265,10 @@ internal static class OnlineEventGenerator
             
             emitter.LoadArgument(1);
             emitter.LoadArgument(0);
-            emitter.LoadField(field.Field);
-
-            if (field.Type.IsValueType)
+            
+            if (field.Array.HasValue && field.Type == typeof(string))
             {
-                emitter.Call(writeMethod.MakeGenericMethod(field.Type));
-            }
-            else if (field.Type == typeof(string) && field.Array.HasValue)
-            {
+                emitter.LoadField(field.Field);
                 var encoding = typeof(Encoding).GetProperty(nameof(Encoding.UTF8),
                     BindingFlags.Public | BindingFlags.Static)!.GetMethod;
                 emitter.Call(encoding);
@@ -262,16 +276,45 @@ internal static class OnlineEventGenerator
                 emitter.LoadConstant(i < message.Fields.Count - 1); // padding
                 emitter.Call(typeof(PacketWriter).GetMethod(nameof(PacketWriter.WriteStringFixed))!);
             }
-            else if (field.Type.IsArray && field.Array.HasValue)
+            else if (field.Array.HasValue && field.Type.IsArray)
             {
+                emitter.LoadField(field.Field);
                 var elementType = field.Type.GetElementType()!;
                 var rosType = typeof(ReadOnlySpan<>).MakeGenericType(elementType);
-                var opImplicit = rosType.GetMethod("op_Implicit", 
-                    BindingFlags.Public | BindingFlags.Static, [field.Type])!;
+                var opImplicit = rosType.GetMethod("op_Implicit", BindingFlags.Public | BindingFlags.Static, [field.Type])!;
                 emitter.Call(opImplicit);
                 emitter.LoadConstant(field.Array.Value);
                 emitter.LoadConstant(i < message.Fields.Count - 1); // padding
                 emitter.Call(typeof(PacketWriter).GetMethod(nameof(PacketWriter.WriteArrayFixed))!.MakeGenericMethod(elementType));
+            }
+            else if (field.Array.HasValue && field.Type.IsGenericType && field.Type.GetGenericTypeDefinition() == typeof(ArraySegment<>))
+            {
+                emitter.LoadField(field.Field);
+                var elementType = field.Type.GetGenericArguments()[0];
+                var rosType = typeof(ReadOnlySpan<>).MakeGenericType(elementType);
+                var opImplicit = rosType.GetMethod("op_Implicit", BindingFlags.Public | BindingFlags.Static, [field.Type])!;
+                emitter.Call(opImplicit);
+                emitter.LoadConstant(field.Array.Value);
+                emitter.LoadConstant(i < message.Fields.Count - 1); // padding
+                emitter.Call(typeof(PacketWriter).GetMethod(nameof(PacketWriter.WriteArrayFixed))!.MakeGenericMethod(elementType));
+            }
+            else if (field.Array.HasValue && field.Type.IsGenericType && field.Type.GetGenericTypeDefinition() == typeof(Memory<>))
+            {
+                emitter.LoadFieldAddress(field.Field);
+                var elementType = field.Type.GetGenericArguments()[0];
+                var getSpan = field.Type.GetMethod("get_Span");
+                emitter.Call(getSpan);
+                var spanType = typeof(Span<>).MakeGenericType(elementType);
+                var opImplicit = spanType.GetMethod("op_Implicit", BindingFlags.Public | BindingFlags.Static, [spanType])!;
+                emitter.Call(opImplicit);
+                emitter.LoadConstant(field.Array.Value);
+                emitter.LoadConstant(i < message.Fields.Count - 1); // padding
+                emitter.Call(typeof(PacketWriter).GetMethod(nameof(PacketWriter.WriteArrayFixed))!.MakeGenericMethod(elementType));
+            }
+            else if (field.Type.IsValueType)
+            {
+                emitter.LoadField(field.Field);
+                emitter.Call(writeMethod.MakeGenericMethod(field.Type));
             }
             else
             {

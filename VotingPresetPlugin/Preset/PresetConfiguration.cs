@@ -10,8 +10,8 @@ public class PresetConfiguration
     [YamlMember(Description = "The name that is displayed when a vote is going on or the preset is changing")]
     public string Name { get; set; } = "<Please change me>";
 
-    [YamlMember(Description = "Preset specific settings for voting")]
-    public VotingPresetEntry Voting { get; set; } = new();
+    [YamlMember(Description = "Is this preset part of the voting, Admins can still change to this track.")]
+    public bool VotingEnabled { get; set; } = true;
     
     
     [YamlIgnore] public string PresetFolder { get; set; } = "";
@@ -37,11 +37,3 @@ public class PresetConfiguration
         return cfg;
     }
 }
-
-[UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
-public class VotingPresetEntry
-{
-    [YamlMember(Description = "Is this preset part of the voting")]
-    public bool Enabled { get; set; } = false;
-}
-

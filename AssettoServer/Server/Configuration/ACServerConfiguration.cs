@@ -18,7 +18,7 @@ using YamlDotNet.Serialization;
 
 namespace AssettoServer.Server.Configuration;
 
-public class ACServerConfiguration
+public partial class ACServerConfiguration
 {
     public ServerConfiguration Server { get; }
     public EntryList EntryList { get; }
@@ -28,6 +28,7 @@ public class ACServerConfiguration
     [YamlIgnore] public string WelcomeMessage { get; }
     public ACExtraConfiguration Extra { get; private set; } = new();
     [YamlIgnore] public CMContentConfiguration? ContentConfiguration { get; }
+    [YamlIgnore] private CMWrapperParams? WrapperParams { get; }
     public string ServerVersion { get; }
     [YamlIgnore] public string? CSPExtraOptions { get; }
     [YamlIgnore] public string BaseFolder { get; }
@@ -59,6 +60,7 @@ public class ACServerConfiguration
         WelcomeMessage = LoadWelcomeMessage();
         CSPExtraOptions = LoadCspExtraOptions(locations.CSPExtraOptionsPath);
         ContentConfiguration = LoadContentConfiguration(Path.Join(BaseFolder, "cm_content/content.json"));
+        WrapperParams = LoadCMWrapperParams(Path.Join(BaseFolder, "cm_wrapper_params.json"));
         ServerVersion = ThisAssembly.AssemblyInformationalVersion;
         Sessions = PrepareSessions();
 
@@ -169,6 +171,17 @@ public class ACServerConfiguration
         return contentConfiguration;
     }
 
+    private static CMWrapperParams? LoadCMWrapperParams(string path)
+    {
+        CMWrapperParams? wrapperParams = null;
+        if (File.Exists(path))
+        {
+            wrapperParams = JsonConvert.DeserializeObject<CMWrapperParams>(File.ReadAllText(path));
+        }
+
+        return wrapperParams;
+    }
+
     private List<SessionConfiguration> PrepareSessions()
     {
         var sessions = new List<SessionConfiguration>();
@@ -223,6 +236,18 @@ public class ACServerConfiguration
         if (Extra.AiParams.MaxAiTargetCount == 0)
         {
             Extra.AiParams.MaxAiTargetCount = EntryList.Cars.Count(c => c.AiMode == AiMode.None) * Extra.AiParams.AiPerPlayerTargetCount;
+        }
+        
+        var filteredServerName = ServerDetailsIdRegex().Replace(Server.Name, "");
+        if (filteredServerName != Server.Name)
+        {
+            Extra.EnableServerDetails = true;
+            Server.Name = filteredServerName;
+
+            if (!string.IsNullOrEmpty(WrapperParams?.Description) && string.IsNullOrEmpty(Extra.ServerDescription))
+            {
+                Extra.ServerDescription = WrapperParams.Description;
+            }
         }
     }
 
@@ -306,20 +331,6 @@ public class ACServerConfiguration
         {
             throw new ConfigurationParsingException(path, ex);
         }
-
-        if (Regex.IsMatch(Server.Name, @"x:\w+$")) // TODO remove
-        {
-            const string errorMsg =
-                "Server details are configured via ID in server name. This interferes with native AssettoServer server details. More info: https://assettoserver.org/docs/common-configuration-errors#wrong-server-details";
-            if (Extra.IgnoreConfigurationErrors.WrongServerDetails)
-            {
-                Log.Warning(errorMsg);
-            }
-            else
-            {
-                throw new ConfigurationException(errorMsg) { HelpLink = "https://assettoserver.org/docs/common-configuration-errors#wrong-server-details" };
-            }
-        }
     }
 
     private (PropertyInfo? Property, object Parent) GetNestedProperty(string key)
@@ -360,4 +371,7 @@ public class ACServerConfiguration
 
         return ret;
     }
+
+    [GeneratedRegex(@"\s*x:\w+$")]
+    private static partial Regex ServerDetailsIdRegex();
 }

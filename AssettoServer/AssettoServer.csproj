@@ -9,9 +9,7 @@
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <DebugType>embedded</DebugType>
         <Nullable>enable</Nullable>
-        <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-x64'">..\out-linux-x64\</PublishDir>
-        <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">..\out-linux-arm64\</PublishDir>
-        <PublishDir Condition="'$(RuntimeIdentifier)' == 'win-x64'">..\out-win-x64\</PublishDir>
+        <PublishDir>..\out-$(RuntimeIdentifier)\</PublishDir>
         <NoWarn>ERP022,EPC12</NoWarn>
         <Platforms>AnyCPU</Platforms>
         <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>

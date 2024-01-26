@@ -174,5 +174,10 @@ public class Startup
             endpoints.MapMetrics();
             endpoints.MapControllers();
         });
+        
+        foreach (var plugin in _loader.LoadedPlugins)
+        {
+            plugin.Instance.Configure(app, env);
+        }
     }
 }

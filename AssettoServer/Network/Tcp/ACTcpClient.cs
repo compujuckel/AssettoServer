@@ -638,13 +638,19 @@ public class ACTcpClient : IClient
         {
             SendPacket(new P2PUpdate
             {
-                Active = false,
+                Active = EntryCar.Status.P2PActive,
                 P2PCount = EntryCar.Status.P2PCount,
                 SessionId = SessionId
             });
         }
         else
         {
+            if (!_configuration.Extra.EnableUnlimitedP2P && EntryCar.Status.P2PCount > 0)
+                EntryCar.Status.P2PCount--;
+
+            if (EntryCar.Status.P2PCount == 0)
+                EntryCar.Status.P2PActive = false;
+            
             _entryCarManager.BroadcastPacket(new P2PUpdate
             {
                 Active = EntryCar.Status.P2PActive,

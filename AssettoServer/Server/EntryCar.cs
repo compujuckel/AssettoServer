@@ -121,7 +121,11 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         LastPingTime = 0;
         Ping = 0;
         ForceLights = false;
-        Status = new CarStatus();
+        Status = new CarStatus
+        {
+            P2PCount = (short)(_configuration.Extra.EnableUnlimitedP2P ? 99 : 15),
+            P2PActive = true
+        };
         TargetCar = null;
     }
 

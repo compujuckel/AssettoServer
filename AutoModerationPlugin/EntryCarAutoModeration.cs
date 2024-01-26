@@ -133,7 +133,7 @@ public class EntryCarAutoModeration
         if (!_configuration.AfkPenalty.Enabled) return;
         
         if (_configuration.AfkPenalty.IgnoreWithOpenSlots
-            && _entryCarManager.EntryCars.Any(e => e.Model == _entryCar.Model && e.Client != null)) return;
+            && _entryCarManager.EntryCars.Any(e => e.Model == _entryCar.Model && e.Client == null)) return;
 
         var afkTime = _sessionManager.ServerTimeMilliseconds - LastActiveTime;
         if (afkTime > _configuration.AfkPenalty.DurationMilliseconds - 60_000)

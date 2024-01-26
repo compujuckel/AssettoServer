@@ -12,7 +12,9 @@ using Autofac.Extensions.DependencyInjection;
 using CommandLine;
 using FluentValidation;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Prometheus;
 using Serilog;
@@ -166,7 +168,18 @@ public static class Program
                 .ConfigureAppConfiguration(builder => { builder.Sources.Clear(); })
                 .ConfigureWebHostDefaults(webHostBuilder =>
                 {
-                    webHostBuilder.ConfigureKestrel(serverOptions => serverOptions.AllowSynchronousIO = true)
+                    webHostBuilder.ConfigureKestrel(serverOptions =>
+                        {
+                            serverOptions.AllowSynchronousIO = true;
+                            serverOptions.ConfigureEndpointDefaults(lo =>
+                            {
+                                var middlewares = lo.ApplicationServices.GetServices<Func<ConnectionDelegate, ConnectionDelegate>>();
+                                foreach (var middleware in middlewares)
+                                {
+                                    lo.Use(middleware);
+                                }
+                            });
+                        })
                         .UseStartup(_ => new Startup(config))
                         .UseUrls($"http://0.0.0.0:{config.Server.HttpPort}");
                 })

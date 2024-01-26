@@ -17,7 +17,7 @@ public class AiSpline : IDisposable
     public const int SupportedVersion = 1;
     
     private readonly MemoryMappedFile _file;
-    private readonly IMappedMemoryOwner _fileAccessor;
+    private readonly IMappedMemory _fileAccessor;
     private readonly Pointer<SplinePoint> _pointsPointer;
     private readonly Pointer<SplineJunction> _junctionsPointer;
     private readonly IMemoryOwner<Vector3> _treePointsOwner;

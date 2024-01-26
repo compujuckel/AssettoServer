@@ -7,10 +7,13 @@
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <SelfContained>false</SelfContained>
         <DebugType>embedded</DebugType>
-	    <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-x64'">..\out-linux-x64\plugins\$(MSBuildProjectName)\</PublishDir>
-	    <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">..\out-linux-arm64\plugins\$(MSBuildProjectName)\</PublishDir>
-	    <PublishDir Condition="'$(RuntimeIdentifier)' == 'win-x64'">..\out-win-x64\plugins\$(MSBuildProjectName)\</PublishDir>
+        <PublishDir>..\out-$(RuntimeIdentifier)\plugins\$(MSBuildProjectName)\</PublishDir>
         <PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <OutputPath>..\AssettoServer\bin\$(Configuration)\$(TargetFramework)\win-x64\plugins\$(MSBuildProjectName)</OutputPath>
     </PropertyGroup>
 
     <ItemGroup>

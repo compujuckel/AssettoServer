@@ -24,6 +24,8 @@ public class AfkPenaltyConfiguration
 {
     [YamlMember(Description = "Set to true to enable")]
     public bool Enabled { get; set; } = true;
+    [YamlMember(Description = "Don't kick if at least one open slot of the same car model is available")]
+    public bool IgnoreWithOpenSlots { get; set; } = true;
     [YamlMember(Description = "Time after the player gets kicked. A warning will be sent in chat one minute before this time")]
     public int DurationMinutes { get; set; } = 10;
     [YamlMember(Description = "Set this to MinimumSpeed to not reset the AFK timer on chat messages / controller inputs and require players to actually drive")]

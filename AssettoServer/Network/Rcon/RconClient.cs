@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using AssettoServer.Commands;
+using AssettoServer.Commands.Contexts;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Shared.Network.Packets.Outgoing;
@@ -22,16 +23,18 @@ public class RconClient
     private readonly Channel<IOutgoingNetworkPacket> _outgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(256);
     private readonly Memory<byte> _tcpSendBuffer = new byte[4096];
     private readonly CancellationTokenSource _disconnectTokenSource = new ();
+    private readonly Func<RconClient, int, RconCommandContext> _rconContextFactory;
 
     private bool _isAuthenticated = false;
     private bool _isDisconnectRequested = false;
 
     private Task SendLoopTask { get; set; } = null!;
     
-    public RconClient(ACServerConfiguration configuration, TcpClient client, ChatService chatService)
+    public RconClient(ACServerConfiguration configuration, TcpClient client, ChatService chatService, Func<RconClient, int, RconCommandContext> rconContextFactory)
     {
         _client = client;
         _chatService = chatService;
+        _rconContextFactory = rconContextFactory;
         _configuration = configuration;
         _stream = client.GetStream();
     }
@@ -122,13 +125,14 @@ public class RconClient
                 }
                 else if (_isAuthenticated)
                 {
-                    switch (type)
+                    if (type == RconProtocolIn.ExecCommand)
                     {
-                        case RconProtocolIn.ExecCommand:
-                            var packet = reader.ReadPacket<ExecCommandPacket>();
-                            Log.Debug("RCON ({IpEndpoint}): {Command}", _client.Client.RemoteEndPoint?.ToString(), packet.Command);
-                            await _chatService.ProcessCommandAsync(this, requestId, packet.Command);
-                            break;
+                        var packet = reader.ReadPacket<ExecCommandPacket>();
+                        Log.Debug("RCON ({IpEndpoint}): {Command}", _client.Client.RemoteEndPoint?.ToString(),
+                            packet.Command);
+                        var context = _rconContextFactory(this, requestId);
+                        await _chatService.ProcessCommandAsync(context, packet.Command);
+                        context.SendRconResponse();
                     }
                 }
             }

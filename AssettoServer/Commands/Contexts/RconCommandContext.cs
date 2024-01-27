@@ -16,6 +16,8 @@ public class RconCommandContext(
     public int RconRequestId { get; } = rconRequestId;
     public StringBuilder RconResponseBuilder { get; } = new();
 
+    public override bool IsAdministrator => true;
+
     public override void Reply(string message)
     {
         RconResponseBuilder.AppendLine(message);

@@ -13,6 +13,8 @@ public class ChatCommandContext(
 {
     public ACTcpClient Client { get; } = client;
 
+    public override bool IsAdministrator => Client.IsAdministrator;
+
     public override void Reply(string message)
     {
         Client.SendPacket(new ChatMessage { SessionId = 255, Message = message });

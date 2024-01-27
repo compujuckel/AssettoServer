@@ -28,6 +28,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Prometheus;
+using Qmmands;
 
 namespace AssettoServer.Network.Http;
 
@@ -88,6 +89,7 @@ public class Startup
         builder.RegisterType<ACClientAuthentication>().AsSelf().SingleInstance().AutoActivate();
         builder.RegisterType<HttpInfoCache>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         builder.RegisterType<DefaultCMContentProvider>().As<ICMContentProvider>().SingleInstance();
+        builder.RegisterType<CommandService>().AsSelf().SingleInstance();
 
         if (_configuration.Extra.EnableLegacyPluginInterface)
         {

@@ -13,8 +13,7 @@ public class RequireAdminAttribute : CheckAttribute
     {
         switch (context)
         {
-            case RconCommandContext:
-            case ChatCommandContext { Client.IsAdministrator: true }:
+            case BaseCommandContext { IsAdministrator: true }:
                 return CheckResult.Successful;
             case ChatCommandContext chatContext:
             {
@@ -33,11 +32,10 @@ public class RequireAdminAttribute : CheckAttribute
                         }
                     }
                 }
-
-                return CheckResult.Failed("You are not an administrator.");
+                goto default;
             }
             default:
-                return CheckResult.Failed("Invalid command context.");
+                return CheckResult.Failed("You are not an administrator.");
         }
     }
 }

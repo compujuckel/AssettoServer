@@ -17,25 +17,24 @@ public class ChatService
 {
     private readonly EntryCarManager _entryCarManager;
     private readonly Func<ACTcpClient, ChatCommandContext> _chatContextFactory;
-    private readonly Func<RconClient, int, RconCommandContext> _rconContextFactory;
-    private readonly CommandService _commandService = new(new CommandServiceConfiguration
-    {
-        DefaultRunMode = RunMode.Parallel
-    });
+    private readonly CommandService _commandService;
 
     public event EventHandler<ACTcpClient, ChatEventArgs>? MessageReceived;
 
-    public ChatService(ACPluginLoader loader, Func<ACTcpClient, ChatCommandContext> chatContextFactory, ACClientTypeParser acClientTypeParser, EntryCarManager entryCarManager, Func<RconClient, int, RconCommandContext> rconContextFactory)
+    public ChatService(ACPluginLoader loader,
+        Func<ACTcpClient, ChatCommandContext> chatContextFactory,
+        ACClientTypeParser acClientTypeParser,
+        EntryCarManager entryCarManager,
+        CommandService commandService)
     {
         _chatContextFactory = chatContextFactory;
         _entryCarManager = entryCarManager;
-        _rconContextFactory = rconContextFactory;
+        _commandService = commandService;
         _entryCarManager.ClientConnected += OnClientConnected;
 
         _commandService.AddModules(Assembly.GetEntryAssembly());
         _commandService.AddTypeParser(acClientTypeParser);
         _commandService.CommandExecutionFailed += OnCommandExecutionFailed;
-        _commandService.CommandExecuted += OnCommandExecuted;
 
         foreach (var plugin in loader.LoadedPlugins)
         { 
@@ -48,42 +47,17 @@ public class ChatService
         sender.ChatMessageReceived += OnChatMessageReceived;
     }
 
-    private static ValueTask OnCommandExecuted(object? sender, CommandExecutedEventArgs args)
-    {
-        if (args.Context is RconCommandContext context)
-        {
-            context.SendRconResponse();
-        }
-
-        return ValueTask.CompletedTask;
-    }
-
     private async Task ProcessCommandAsync(ACTcpClient client, ChatMessage message)
-    {
-        var context = _chatContextFactory(client);
-        var result = await _commandService.ExecuteAsync(message.Message, context);
+        => await ProcessCommandAsync(_chatContextFactory(client), message.Message);
 
-        if (result is ChecksFailedResult checksFailedResult)
-            context.Reply(checksFailedResult.FailedChecks[0].Result.FailureReason);
-        else if (result is FailedResult failedResult)
-            context.Reply(failedResult.FailureReason);
-    }
-
-    public async Task ProcessCommandAsync(RconClient client, int requestId, string command)
+    public async Task ProcessCommandAsync(BaseCommandContext context, string command)
     {
-        var context = _rconContextFactory(client, requestId);
         var result = await _commandService.ExecuteAsync(command, context);
 
         if (result is ChecksFailedResult checksFailedResult)
-        {
             context.Reply(checksFailedResult.FailedChecks[0].Result.FailureReason);
-            context.SendRconResponse();
-        }
         else if (result is FailedResult failedResult)
-        {
             context.Reply(failedResult.FailureReason);
-            context.SendRconResponse();
-        }
     }
 
     private ValueTask OnCommandExecutionFailed(object? sender, CommandExecutionFailedEventArgs e)

@@ -221,4 +221,12 @@ public class AdminModule : ACModuleBase
     {
         Broadcast("CONSOLE: " + message);
     }
+    
+#if DEBUG
+    [Command("exception")]
+    public void ThrowException()
+    {
+        throw new Exception("test");
+    }
+#endif
 }

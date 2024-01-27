@@ -7,7 +7,6 @@ public class CarStatus
 {
     public DamageZoneLevel DamageZoneLevel { get; set; }
     public short P2PCount { get; set; }
-    public bool P2PActive { get; set; }
     public bool MandatoryPit { get; set; }
     public string? CurrentTyreCompound { get; set; }
 

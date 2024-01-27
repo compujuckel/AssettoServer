@@ -632,22 +632,23 @@ public class ACTcpClient : IClient
 
     private void OnP2PUpdate(PacketReader reader)
     {
-        // ReSharper disable once InconsistentNaming
-        P2PUpdateRequest p2pUpdateRequest = reader.ReadPacket<P2PUpdateRequest>();
-        if (p2pUpdateRequest.P2PCount == -1)
+        var push2Pass = reader.ReadPacket<P2PUpdateRequest>();
+        if (push2Pass.P2PCount == -1)
         {
             SendPacket(new P2PUpdate
             {
-                Active = false,
                 P2PCount = EntryCar.Status.P2PCount,
                 SessionId = SessionId
             });
         }
         else
         {
+            if (!_configuration.Extra.EnableUnlimitedP2P && EntryCar.Status.P2PCount > 0)
+                EntryCar.Status.P2PCount--;
+            
             _entryCarManager.BroadcastPacket(new P2PUpdate
             {
-                Active = EntryCar.Status.P2PActive,
+                Active = push2Pass.Active,
                 P2PCount = EntryCar.Status.P2PCount,
                 SessionId = SessionId
             });
@@ -835,7 +836,7 @@ public class ACTcpClient : IClient
                 if (car != EntryCar)
                     batched.Packets.Add(new TyreCompoundUpdate { SessionId = car.SessionId, CompoundName = car.Status.CurrentTyreCompound });
             
-                // Either in here or in the if above
+                batched.Packets.Add(new P2PUpdate { SessionId = car.SessionId, P2PCount = car.Status.P2PCount });
                 batched.Packets.Add(new BallastUpdate { SessionId = car.SessionId, BallastKg = car.Ballast, Restrictor = car.Restrictor });
                 
                 if (_configuration.Extra.AiParams.HideAiCars)

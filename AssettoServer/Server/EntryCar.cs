@@ -124,7 +124,6 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         Status = new CarStatus
         {
             P2PCount = (short)(_configuration.Extra.EnableUnlimitedP2P ? 99 : 15),
-            P2PActive = true
         };
         TargetCar = null;
     }

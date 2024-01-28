@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
+using AssettoServer.Network.ClientMessages;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
@@ -280,5 +281,24 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     {
         var targetPosition = target.TargetCar != null ? target.TargetCar.Status.Position : target.Status.Position;
         return Vector3.DistanceSquared(Status.Position, targetPosition) < range * range;
+    }
+
+    public bool TryResetPosition()
+    {
+        if (_spline == null) return false;
+
+        var (splinePointId, _) = _spline.WorldToSpline(Status.Position);
+
+        var splinePoint = _spline.Points[splinePointId];
+        
+        var closestSplinePoint = _spline.Operations.GetForwardVector(splinePointId);
+        var nextSplinePoint = _spline.Operations.GetForwardVector(splinePoint.NextId);
+        
+        Client!.SendPacket(new ResetCarPacket
+        {
+            Closest = closestSplinePoint,
+            Next = nextSplinePoint
+        });
+        return true;
     }
 }

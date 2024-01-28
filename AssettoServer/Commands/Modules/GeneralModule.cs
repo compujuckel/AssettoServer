@@ -61,4 +61,11 @@ public class GeneralModule : ACModuleBase
             Reply(line);
         }
     }
+    
+    [Command("resetcar"), RequireConnectedPlayer]
+    public void ResetCarAsync()
+    {
+        if (!Client!.EntryCar.TryResetPosition())
+            Reply("Couldn't reset position");
+    }
 }

@@ -63,6 +63,20 @@ local apiKeyEvent = ac.OnlineEvent({
     authHeaders["X-Api-Key"] = message.key
 end)
 
+local resetCarEvent = ac.OnlineEvent({
+    ac.StructItem.key("AS_ResetCar"),
+    closest = ac.StructItem.vec3(),
+    next = ac.StructItem.vec3()
+}, function (sender, message)
+    if sender ~= nil then return end
+    ac.debug("reset_car_closest", message.closest)
+    ac.debug("reset_car_next", message.next)
+
+    -- can't access this even tho lua sdk says it's fine
+    physics.setCarPosition(0, message.closest, message.next)
+    -- physics.setCarVelocity(0, vec3(0, 0, 0)) -- possibly set the vector to message.closest
+end)
+
 apiKeyEvent({ key = "" })
 
 local logoSize = vec2(68, 42)

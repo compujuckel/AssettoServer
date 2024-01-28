@@ -65,17 +65,34 @@ end)
 
 local teleportCarEvent = ac.OnlineEvent({
     ac.StructItem.key("AS_TeleportCar"),
-    closest = ac.StructItem.vec3(),
+    position = ac.StructItem.vec3(),
     direction = ac.StructItem.vec3(),
     velocity = ac.StructItem.vec3()
 }, function (sender, message)
     if sender ~= nil then return end
-    ac.debug("teleport_car_closest", message.closest)
+    ac.debug("teleport_car_position", message.position)
     ac.debug("teleport_car_direction", message.direction)
     ac.debug("teleport_car_velocity", message.velocity)
     
-    physics.setCarPosition(0, message.closest, message.direction)
+    physics.setCarPosition(0, message.position, message.direction)
     physics.setCarVelocity(0, message.velocity)
+end)
+
+local collisionUpdateEvent = ac.OnlineEvent({
+    ac.StructItem.key("AS_CollisionUpdate"),
+    enabled = ac.StructItem.boolean()
+}, function (sender, message)
+    ac.debug("collision_update_index", sender.index)
+    ac.debug("collision_update_enabled", message.enabled)
+
+    physics.disableCarCollisions(0, not message.enabled)
+    if sender.index == 0 then
+        for i, c in ac.iterateCars.ordered() do
+            physics.disableCarCollisions(i, not message.enabled)
+        end
+    else
+        physics.disableCarCollisions(sender.index, not message.enabled)
+    end
 end)
 
 apiKeyEvent({ key = "" })

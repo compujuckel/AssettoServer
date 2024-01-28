@@ -7,6 +7,6 @@ public class ResetCarPacket : OnlineEvent<ResetCarPacket>
 {
     [OnlineEventField(Name = "closest")]
     public Vector3 Closest;
-    [OnlineEventField(Name = "next")]
-    public Vector3 Next;
+    [OnlineEventField(Name = "direction")]
+    public Vector3 Direction;
 }

@@ -14,6 +14,8 @@ public class DiscordConfiguration
     public string? ChatUrl { get; init; }
     [YamlMember(Description = "Set this to true if the Discord username of the bot should be the AC server name")]
     public bool ChatMessageIncludeServerName { get; init; } = false;
+    [YamlMember(Description = "Set this to true if the audit message should include the Steam ID")]
+    public bool ChatMessageIncludeSteamID { get; init; } = false;
     [YamlMember(Description = "Optional list of SteamIDs whose chat messages should not be forwarded to Discord")]
     public List<ulong>? ChatIgnoreGuids { get; init; } = [];
 }

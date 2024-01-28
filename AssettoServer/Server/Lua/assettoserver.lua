@@ -63,17 +63,19 @@ local apiKeyEvent = ac.OnlineEvent({
     authHeaders["X-Api-Key"] = message.key
 end)
 
-local resetCarEvent = ac.OnlineEvent({
-    ac.StructItem.key("AS_ResetCar"),
+local teleportCarEvent = ac.OnlineEvent({
+    ac.StructItem.key("AS_TeleportCar"),
     closest = ac.StructItem.vec3(),
-    direction = ac.StructItem.vec3()
+    direction = ac.StructItem.vec3(),
+    velocity = ac.StructItem.vec3()
 }, function (sender, message)
     if sender ~= nil then return end
-    ac.debug("reset_car_closest", message.closest)
-    ac.debug("reset_car_direction", message.direction)
-
-    -- requires tp flag set on model/skin
+    ac.debug("teleport_car_closest", message.closest)
+    ac.debug("teleport_car_direction", message.direction)
+    ac.debug("teleport_car_velocity", message.velocity)
+    
     physics.setCarPosition(0, message.closest, message.direction)
+    physics.setCarVelocity(0, message.velocity)
 end)
 
 apiKeyEvent({ key = "" })

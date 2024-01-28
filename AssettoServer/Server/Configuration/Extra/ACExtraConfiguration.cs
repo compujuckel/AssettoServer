@@ -26,7 +26,8 @@ public partial class ACExtraConfiguration : ObservableObject
     public int MandatoryClientSecurityLevel { get; init; }
     [YamlMember(Description = "Force headlights on for all cars")]
     public bool ForceLights { get; set; }
-
+    [YamlMember(Description = "Enable usage of /resetcar to teleport the player to the closest spline point")]
+    public bool EnableCarReset { get; set; } = false;
     [YamlMember(Description = "Enable unlimited usage of Push-to-Pass")]
     public bool EnableUnlimitedP2P { get; set; } = true;
     [YamlMember(Description = "Distance for network optimizations. Players outside of this range will send less updates to reduce network traffic")]

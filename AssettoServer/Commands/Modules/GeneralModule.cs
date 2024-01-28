@@ -65,7 +65,13 @@ public class GeneralModule : ACModuleBase
     [Command("resetcar"), RequireConnectedPlayer]
     public void ResetCarAsync()
     {
-        if (!Client!.EntryCar.TryResetPosition())
-            Reply("Couldn't reset position");
+        if (_configuration.Extra.EnableCarReset)
+        {
+            if (!Client!.EntryCar.TryResetPosition())
+                Reply("Couldn't reset position");
+        }
+        else
+            Reply("Reset is not enabled on this server");
+                
     }
 }

@@ -294,10 +294,13 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         var closestSplinePoint = splinePoint.Position;
         var direction = - _spline.Operations.GetForwardVector(splinePoint.NextId);
         
-        Client!.SendPacket(new ResetCarPacket
+        var velocity = new Vector3(0, 0, 0); // This could maybe be exchanged for AI velocity
+        
+        Client!.SendPacket(new TeleportCarPacket
         {
             Closest = closestSplinePoint,
-            Direction = direction
+            Direction = direction,
+            Velocity = velocity
         });
         return true;
     }

@@ -146,7 +146,6 @@ public class WeatherManager : CriticalBackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await _trackParamsProvider.InitializeAsync();
         TrackParams = _trackParamsProvider.GetParamsForTrack(_configuration.Server.Track);
 
         DateTimeZone? timeZone;

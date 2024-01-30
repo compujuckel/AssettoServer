@@ -104,16 +104,30 @@ public class Discord
         
         string username;
         string content;
-
+        
         if (_configuration.ChatMessageIncludeServerName)
         {
             username = _serverNameSanitized;
-            content = $"**{sender.Name}:** {DiscordUtils.Sanitize(args.Message)}";
+            if (_configuration.ChatMessageIncludeSteamID)
+            {
+                content = $"**{sender.Name} ({sender.Guid}):** {DiscordUtils.Sanitize(args.Message)}";
+            }
+            else
+            {
+                content = $"**{sender.Name}:** {DiscordUtils.Sanitize(args.Message)}";
+            }
         }
         else
         {
-            username = DiscordUtils.SanitizeUsername(sender.Name) ?? throw new InvalidOperationException("ACTcpClient has no name set");
             content = DiscordUtils.Sanitize(args.Message);
+            if (_configuration.ChatMessageIncludeSteamID)
+            {
+                username = DiscordUtils.SanitizeUsername($"{sender.Name} ({sender.Guid})") ?? throw new InvalidOperationException("ACTcpClient has no name set");
+            }
+            else
+            {
+                username = DiscordUtils.SanitizeUsername(sender.Name) ?? throw new InvalidOperationException("ACTcpClient has no name set");
+            }
         }
 
         DiscordMessage msg = new DiscordMessage

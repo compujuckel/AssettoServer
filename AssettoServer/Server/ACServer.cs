@@ -10,6 +10,7 @@ using AssettoServer.Network.Udp;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather;
 using AssettoServer.Server.Whitelist;
 using AssettoServer.Shared.Model;
@@ -32,6 +33,7 @@ public class ACServer : CriticalBackgroundService
     private readonly ChecksumManager _checksumManager;
     private readonly List<IHostedService> _autostartServices;
     private readonly IHostApplicationLifetime _applicationLifetime;
+    private readonly ITrackParamsProvider _trackParamsProvider;
 
     /// <summary>
     /// Fires on each server tick in the main loop. Don't do resource intensive / long running stuff in here!
@@ -46,6 +48,7 @@ public class ACServer : CriticalBackgroundService
         EntryCarManager entryCarManager,
         WeatherManager weatherManager,
         GeoParamsManager geoParamsManager,
+        ITrackParamsProvider trackParamsProvider,
         ChecksumManager checksumManager,
         ACTcpServer tcpServer,
         ACUdpServer udpServer,
@@ -63,6 +66,7 @@ public class ACServer : CriticalBackgroundService
         _geoParamsManager = geoParamsManager;
         _checksumManager = checksumManager;
         _applicationLifetime = applicationLifetime;
+        _trackParamsProvider = trackParamsProvider;
 
         _autostartServices = new List<IHostedService> { weatherManager, tcpServer, udpServer };
         _autostartServices.AddRange(autostartServices);
@@ -137,6 +141,7 @@ public class ACServer : CriticalBackgroundService
         _entryCarManager.Initialize();
         _checksumManager.Initialize();
         _sessionManager.Initialize();
+        await _trackParamsProvider.InitializeAsync();
         await _geoParamsManager.InitializeAsync();
 
         foreach (var service in _autostartServices)

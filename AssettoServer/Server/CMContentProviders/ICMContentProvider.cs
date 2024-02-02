@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using AssettoServer.Shared.Network.Http.Responses;
 
 namespace AssettoServer.Server.CMContentProviders;

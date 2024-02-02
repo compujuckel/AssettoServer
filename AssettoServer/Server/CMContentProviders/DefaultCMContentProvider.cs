@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Network.Http.Responses;
-using Serilog;
 
 namespace AssettoServer.Server.CMContentProviders;
 
@@ -34,8 +31,6 @@ public class DefaultCMContentProvider : ICMContentProvider
     public void Initialize()
     {
         if (_configuration.ContentConfiguration == null) return;
-        
-        Log.Information("Preparing Content for CM Integration, this could take a moment");
 
         if (_configuration.ContentConfiguration.Track != null)
         {
@@ -50,8 +45,6 @@ public class DefaultCMContentProvider : ICMContentProvider
                 PrepareCarDownload(car.Key);
             }
         }
-        
-        Log.Information("Content preparation finished");
     }
 
     private void PrepareCarDownload(string carId)

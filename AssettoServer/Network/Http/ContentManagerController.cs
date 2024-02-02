@@ -1,16 +1,6 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using AssettoServer.Server;
-using AssettoServer.Server.Admin;
+﻿using System.IO;
 using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.GeoParams;
-using AssettoServer.Server.OpenSlotFilters;
-using AssettoServer.Server.Weather;
-using AssettoServer.Shared.Network.Http.Responses;
-using AssettoServer.Shared.Weather;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 

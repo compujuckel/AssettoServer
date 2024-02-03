@@ -23,7 +23,7 @@ public class ContentManagerController : ControllerBase
     public IActionResult GetCarZip(string carId)
     {
         if (_contentProvider.TryGetZipPath("cars",carId, out var car)) 
-            return CreateFileDownload(car!);
+            return CreateFileDownload(car);
         
         return NotFound();
     }
@@ -33,7 +33,7 @@ public class ContentManagerController : ControllerBase
     public IActionResult GetSkinZip(string carId, string skinId)
     {
         if (_contentProvider.TryGetZipPath("skins",$"{carId}/{skinId}", out var skin)) 
-            return CreateFileDownload(skin!);
+            return CreateFileDownload(skin);
         
         return NotFound();
     }
@@ -43,7 +43,7 @@ public class ContentManagerController : ControllerBase
     public IActionResult GetTrackZip(string trackId)
     {
         if (_contentProvider.TryGetZipPath("tracks",trackId, out var track)) 
-            return CreateFileDownload(track!);
+            return CreateFileDownload(track);
         
         return NotFound();
     }

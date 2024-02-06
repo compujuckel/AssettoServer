@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AssettoServer.Commands.Contexts;
 using AssettoServer.Commands.TypeParsers;
@@ -80,7 +82,22 @@ public class ChatService
 
             if (!outArgs.Cancel)
             {
-                _entryCarManager.BroadcastPacket(args.ChatMessage);
+                foreach (var car in _entryCarManager.EntryCars)
+                {
+                    if (car.Client is { HasSentFirstUpdate: true } && car.Client != sender)
+                    {
+                        if (car.Client?.CSPVersion < 2544)
+                        {
+                            var oldVersionMessage = args.ChatMessage;
+                            oldVersionMessage.Message = Regex.Replace(oldVersionMessage.Message, @"(\p{Cs}){2}", "(emote)");
+                            car.Client?.SendPacket(oldVersionMessage);
+                        }
+                        else
+                        {
+                            car.Client?.SendPacket(args.ChatMessage);
+                        }
+                    }
+                }
             }
         }
         else

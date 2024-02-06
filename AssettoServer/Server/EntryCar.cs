@@ -38,7 +38,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public string Model { get; }
     public string Skin { get; }
     public int SpectatorMode { get; internal set; }
-    public int Ballast { get; internal set; }
+    public float Ballast { get; internal set; }
     public int Restrictor { get; internal set; }
     public List<ulong> AllowedGuids { get; internal set; } = new();
         

@@ -24,17 +24,21 @@ public class TimeDilationPlugin : CriticalBackgroundService, IAssettoServerAutos
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!_weatherManager.CurrentSunPosition.HasValue)
-        {
-            Log.Error("TimeDilationPlugin cannot get current sun position, aborting");
-            return;
-        }
 
         if (_configuration.Mode == TimeDilationMode.Time)
+        {
             await TimeBasedTimeDilation(stoppingToken);
+        }
         else
+        {
+            if (!_weatherManager.CurrentSunPosition.HasValue)
+            {
+                Log.Error("TimeDilationPlugin cannot get current sun position, aborting");
+                return;
+            }
+            
             await SunPositionTimeDilation(stoppingToken);
-
+        }
     }
 
     private async Task SunPositionTimeDilation(CancellationToken stoppingToken)

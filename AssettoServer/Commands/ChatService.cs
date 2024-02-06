@@ -87,16 +87,9 @@ public class ChatService
                 
                 foreach (var car in _entryCarManager.EntryCars)
                 {
-                    if (car.Client is { HasSentFirstUpdate: true } && car.Client != sender)
+                    if (car.Client is { HasSentFirstUpdate: true })
                     {
-                        if (car.Client?.CSPVersion < 2544)
-                        {
-                            car.Client?.SendPacket(oldVersionMessage);
-                        }
-                        else
-                        {
-                            car.Client?.SendPacket(args.ChatMessage);
-                        }
+                        car.Client?.SendPacket(car.Client?.CSPVersion < 2544 ? oldVersionMessage : args.ChatMessage);
                     }
                 }
             }

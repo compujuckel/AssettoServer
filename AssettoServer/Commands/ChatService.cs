@@ -82,14 +82,15 @@ public class ChatService
 
             if (!outArgs.Cancel)
             {
+                var oldVersionMessage = args.ChatMessage;
+                oldVersionMessage.Message = Regex.Replace(oldVersionMessage.Message, @"(\p{Cs}){2}", "(emote)");
+                
                 foreach (var car in _entryCarManager.EntryCars)
                 {
                     if (car.Client is { HasSentFirstUpdate: true } && car.Client != sender)
                     {
                         if (car.Client?.CSPVersion < 2544)
                         {
-                            var oldVersionMessage = args.ChatMessage;
-                            oldVersionMessage.Message = Regex.Replace(oldVersionMessage.Message, @"(\p{Cs}){2}", "(emote)");
                             car.Client?.SendPacket(oldVersionMessage);
                         }
                         else

@@ -9,16 +9,13 @@ namespace AssettoServer.Network.Http;
 [ApiController]
 public class ContentManagerController : ControllerBase
 {
-    private readonly ACServerConfiguration _configuration;
     private readonly ICMContentProvider _contentProvider;
 
-    public ContentManagerController(ACServerConfiguration configuration, ICMContentProvider contentProvider)
+    public ContentManagerController(ICMContentProvider contentProvider)
     {
-        _configuration = configuration;
         _contentProvider = contentProvider;
     }
 
-    [EnableCors("ServerQueryPolicy")]
     [HttpGet("/content/car/{carId}")]
     public IActionResult GetCarZip(string carId)
     {
@@ -28,7 +25,6 @@ public class ContentManagerController : ControllerBase
         return NotFound();
     }
 
-    [EnableCors("ServerQueryPolicy")]
     [HttpGet("/content/skin/{carId}/{skinId}")]
     public IActionResult GetSkinZip(string carId, string skinId)
     {
@@ -38,7 +34,6 @@ public class ContentManagerController : ControllerBase
         return NotFound();
     }
 
-    [EnableCors("ServerQueryPolicy")]
     [HttpGet("/content/track/{trackId}")]
     public IActionResult GetTrackZip(string trackId)
     {

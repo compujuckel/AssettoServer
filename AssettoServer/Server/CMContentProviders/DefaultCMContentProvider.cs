@@ -13,7 +13,7 @@ public class DefaultCMContentProvider : ICMContentProvider
 {
     private readonly ACServerConfiguration _configuration;
 
-    private Dictionary<Tuple<string, string>, string> _cmIndex = [];
+    private readonly Dictionary<Tuple<string, string>, string> _cmIndex = [];
 
     public DefaultCMContentProvider(ACServerConfiguration configuration)
     {
@@ -39,18 +39,14 @@ public class DefaultCMContentProvider : ICMContentProvider
         {
             foreach (var car in _configuration.ContentConfiguration.Cars)
             {
-                PrepareCarDownload(car.Key);
+                PrepareCarDownload(car.Key, car.Value);
             }
         }
     }
 
-    private void PrepareCarDownload(string carId)
+    private void PrepareCarDownload(string carId, CMContentEntryCar car)
     {
-        if (_configuration.ContentConfiguration!.Cars!.TryGetValue(carId, out var car))
-        {
-            if (car.Url != null) return;
-        }
-        else return;
+        if (car.Url != null) return;
 
         if (car.File == null) return;
         var zipPath = car.File;

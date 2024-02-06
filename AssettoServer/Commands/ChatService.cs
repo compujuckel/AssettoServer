@@ -10,12 +10,13 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Network.Packets.Shared;
+using AssettoServer.Utils;
 using Qmmands;
 using Serilog;
 
 namespace AssettoServer.Commands;
 
-public class ChatService
+public partial class ChatService
 {
     private readonly EntryCarManager _entryCarManager;
     private readonly Func<ACTcpClient, ChatCommandContext> _chatContextFactory;
@@ -80,17 +81,19 @@ public class ChatService
             var outArgs = new ChatEventArgs(args.ChatMessage.Message);
             MessageReceived?.Invoke(sender, outArgs);
 
-            if (!outArgs.Cancel)
-            {
-                var oldVersionMessage = args.ChatMessage;
-                oldVersionMessage.Message = Regex.Replace(oldVersionMessage.Message, @"(\p{Cs}){2}", "(emote)");
+            if (outArgs.Cancel) return;
+            
+            var oldVersionMessage = new ChatMessage {
+                Message = args.ChatMessage.Message,
+                SessionId = args.ChatMessage.SessionId
+            };
+            oldVersionMessage.Message = EmoteRegex().Replace(oldVersionMessage.Message, "(emote)");
                 
-                foreach (var car in _entryCarManager.EntryCars)
+            foreach (var car in _entryCarManager.EntryCars)
+            {
+                if (car.Client is { HasSentFirstUpdate: true })
                 {
-                    if (car.Client is { HasSentFirstUpdate: true })
-                    {
-                        car.Client?.SendPacket(car.Client?.CSPVersion < 2544 ? oldVersionMessage : args.ChatMessage);
-                    }
+                    car.Client?.SendPacket(car.Client?.CSPVersion < CSPVersion.V0_1_80_p389 ? oldVersionMessage : args.ChatMessage);
                 }
             }
         }
@@ -101,4 +104,7 @@ public class ChatService
             _ = ProcessCommandAsync(sender, message);
         }
     }
+
+    [GeneratedRegex(@"(\p{Cs}){2}")]
+    private static partial Regex EmoteRegex();
 }

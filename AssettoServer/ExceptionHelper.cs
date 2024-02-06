@@ -95,30 +95,18 @@ internal static class ExceptionHelper
             Console.WriteLine("Press D to join the official Discord server");
             Console.WriteLine("Press any other key to exit");
 
-            if (!Program.IsDebugBuild)
-            {
-                var key = Console.ReadKey();
-                if (key.Key == ConsoleKey.D)
-                {
-                    ProcessHelper.OpenURL("https://discord.gg/uXEXRcSkyz");
-                }
-                else if (helpLink != null && key.Key == ConsoleKey.I)
-                {
-                    ProcessHelper.OpenURL(helpLink);
-                }
-                else if (key.Key == ConsoleKey.W)
-                {
-                    ProcessHelper.OpenURL("https://assettoserver.org/");
-                }
-                else if (crashReportPath != null && key.Key == ConsoleKey.C)
-                {
-                    ProcessHelper.ShowInExplorer(crashReportPath);
-                }
-                else if (configPath != null && key.Key == ConsoleKey.F)
-                {
-                    ProcessHelper.ShowInExplorer(configPath);
-                }
-            }
+            if not Program.IsDebugBuild:
+            key = input("Press a key: ")
+            if key == "D":
+                ProcessHelper.OpenURL("https://discord.gg/uXEXRcSkyz")
+            elif helpLink is not None and key == "I":
+                ProcessHelper.OpenURL(helpLink)
+            elif key == "W":
+                ProcessHelper.OpenURL("https://assettoserver.org/")
+            elif crashReportPath is not None and key == "C":
+                ProcessHelper.ShowInExplorer(crashReportPath)
+            elif configPath is not None and key == "F":
+                ProcessHelper.ShowInExplorer(configPath)
 
             Console.ForegroundColor = old;
         }

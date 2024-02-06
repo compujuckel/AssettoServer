@@ -66,20 +66,20 @@ public class TimeDilationPlugin : CriticalBackgroundService, IAssettoServerAutos
 
     private async Task TimeBasedTimeDilation(CancellationToken stoppingToken)
     {
-        var lookupTable = new LookupTable(_configuration.TimeLookupTable
+        var lookupTable = new WrappedLookupTable(_configuration.TimeLookupTable
             .Select(entry => 
                 new KeyValuePair<double, double>(
                     DateTime.ParseExact(entry.Time, "H:mm", CultureInfo.InvariantCulture).TimeOfDay.TotalSeconds, 
                     entry.TimeMult)
-            ).ToList());
+            ).ToList(), 86400);
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 var liveTime = _weatherManager.CurrentDateTime.TimeOfDay;
-                double currentTime = new TimeSpan(liveTime.Hour, liveTime.Minute, liveTime.Second).TotalSeconds;
-                _serverConfiguration.Server.TimeOfDayMultiplier = (float)lookupTable.GetValue(currentTime);
+                var currentTime = new TimeSpan(liveTime.Hour, liveTime.Minute, liveTime.Second);
+                _serverConfiguration.Server.TimeOfDayMultiplier = (float)lookupTable.GetValue(currentTime.TotalSeconds);
             }
             catch (Exception ex)
             {

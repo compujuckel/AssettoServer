@@ -12,47 +12,63 @@ namespace AssettoServer.Server.CMContentProviders;
 public class DefaultCMContentProvider : ICMContentProvider
 {
     private readonly ACServerConfiguration _configuration;
+    private readonly CMContentConfiguration? _contentConfiguration;
 
-    private readonly Dictionary<Tuple<string, string>, string> _cmIndex = [];
+    private readonly Dictionary<string, string> _carIndex = [];
+    private readonly Dictionary<string, string> _skinIndex = [];
+    private readonly Dictionary<string, string> _trackIndex = [];
 
     public DefaultCMContentProvider(ACServerConfiguration configuration)
     {
         _configuration = configuration;
+        _contentConfiguration = configuration.ContentConfiguration;
+
+        if (_contentConfiguration?.Track != null)
+            _contentConfiguration.Track.Direct = _contentConfiguration?.Track?.File != null ? true : null;
+
+        if (_contentConfiguration?.Cars == null) return;
+        foreach (var (_, car) in _contentConfiguration.Cars)
+        {
+            car.Direct = car.File != null ? true : null;
+
+            if (car.Skins == null) continue;
+            foreach (var (_, skin) in car.Skins)
+            {
+                skin.Direct = skin.File != null ? true : null;
+            }
+        }
     }
 
     public ValueTask<CMContentConfiguration?> GetContentAsync(ulong guid)
     {
-        return ValueTask.FromResult(_configuration.ContentConfiguration);
+        return ValueTask.FromResult(_contentConfiguration);
     }
 
     public void Initialize()
     {
-        if (_configuration.ContentConfiguration == null) return;
+        if (_contentConfiguration == null) return;
 
-        if (_configuration.ContentConfiguration.Track != null)
+        if (_contentConfiguration.Track != null)
         {
             var trackEntry = _configuration.Server.Track.Split('/').Last();
-            PrepareTrackDownload(trackEntry, _configuration.ContentConfiguration.Track);
+            PrepareTrackDownload(trackEntry, _contentConfiguration.Track);
         }
 
-        if (_configuration.ContentConfiguration.Cars != null)
+        if (_contentConfiguration.Cars == null) return;
+        foreach (var car in _contentConfiguration.Cars)
         {
-            foreach (var car in _configuration.ContentConfiguration.Cars)
-            {
-                PrepareCarDownload(car.Key, car.Value);
-            }
+            PrepareCarDownload(car.Key, car.Value);
         }
     }
 
     private void PrepareCarDownload(string carId, CMContentEntryCar car)
     {
-        if (car.Url != null) return;
-
-        if (car.File == null) return;
+        if (car.Direct != true) return;
+        
         var zipPath = car.File;
 
         if (Path.Exists(zipPath))
-            _cmIndex.Add(new("cars", carId), zipPath);
+            _carIndex.Add(carId, zipPath);
 
         if (car.Skins == null) return;
         foreach (var (skinId, skin) in car.Skins)
@@ -61,32 +77,34 @@ public class DefaultCMContentProvider : ICMContentProvider
     
     private void PrepareSkinDownload(string parentId, string skinId, CMContentEntry skin)
     {
-        if (skin.Url != null) return;
-        if (skin.File == null) return;
+        if (skin.Direct != true) return;
         
         var zipPath = skin.File;
         
         if (Path.Exists(zipPath))
-            _cmIndex.Add(new ("skins",$"{parentId}/{skinId}"), zipPath);
+            _skinIndex.Add($"{parentId}/{skinId}", zipPath);
     }
     
     private void PrepareTrackDownload(string trackId, CMContentEntryVersionized track)
     {
-        if (track.Url != null) return;
-
-        if (track.File == null) return;
+        if (track.Direct != true) return;
+        
         var zipPath = track.File;
         
         if (Path.Exists(zipPath))
-            _cmIndex.Add(new ("tracks",trackId), zipPath);
+            _trackIndex.Add(trackId, zipPath);
     }
 
     public bool TryGetZipPath(string type, string entry, [NotNullWhen(true)] out string? path)
     {
-        if (_cmIndex.TryGetValue(new (type, entry), out var result))
+        switch (type)
         {
-            path = result;
-            return true;
+            case "cars":
+                return _carIndex.TryGetValue(entry, out path);
+            case "skins":
+                return _skinIndex.TryGetValue(entry, out path);
+            case "tracks":
+                return _trackIndex.TryGetValue(entry, out path);
         }
 
         path = default;

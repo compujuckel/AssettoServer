@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AssettoServer.Network.Http;
@@ -50,10 +51,12 @@ public class ContentManagerController : ControllerBase
     private FileStreamResult CreateFileDownload(string path)
     {
         var fileName = Path.GetFileName(path);
-        var file = System.IO.File.OpenRead(path); 
-        var result = File(file, "application/zip", fileName);
-
-        return result;
+        Stream fileOpen = System.IO.File.OpenRead(path);
+        if (_configuration.WrapperParams is not { DownloadSpeedLimit: > 0 })
+            return File(fileOpen, "application/zip", fileName);
+        
+        Stream fileStream = new BandwidthLimitedStream(fileOpen, _configuration.WrapperParams.DownloadSpeedLimit);
+        return File(fileStream, "application/zip", fileName);
     }
 
     private bool ValidatePassword(string input)

@@ -9,6 +9,8 @@ public class CMWrapperParams
     
     // CM Direct Share Bandwidth limit in Bytes/second
     [JsonPropertyName("downloadSpeedLimit")]
-
     public long DownloadSpeedLimit { get; init; } = 0;
+    
+    [JsonPropertyName("downloadPasswordOnly")]
+    public bool? DownloadPasswordOnly { get; set; }
 }

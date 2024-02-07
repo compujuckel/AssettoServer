@@ -28,7 +28,7 @@ public partial class ACServerConfiguration
     [YamlIgnore] public string WelcomeMessage { get; }
     public ACExtraConfiguration Extra { get; private set; } = new();
     [YamlIgnore] public CMContentConfiguration? ContentConfiguration { get; }
-    [YamlIgnore] private CMWrapperParams? WrapperParams { get; }
+    [YamlIgnore] public CMWrapperParams? WrapperParams { get; }
     public string ServerVersion { get; }
     [YamlIgnore] public string? CSPExtraOptions { get; }
     [YamlIgnore] public string BaseFolder { get; }

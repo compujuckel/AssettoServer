@@ -59,6 +59,7 @@ public class ContentManagerController : ControllerBase
     private bool ValidatePassword(string input)
     {
         if (_configuration.Server.Password == null) return true;
+        if (_configuration.WrapperParams?.DownloadPasswordOnly != true) return true;
         return input == _configuration.Server.Password;
     }
 }

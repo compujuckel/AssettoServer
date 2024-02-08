@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using AssettoServer.Server.CMContentProviders;
@@ -21,6 +23,7 @@ public class ContentManagerController : ControllerBase
     }
 
     [HttpGet("/content/car/{carId}")]
+    [HttpHead("/content/car/{carId}")]
     public IActionResult GetCarZip(string carId, string password = "")
     {
         if (!ValidatePassword(password)) return Unauthorized();
@@ -31,6 +34,7 @@ public class ContentManagerController : ControllerBase
     }
 
     [HttpGet("/content/skin/{carId}/{skinId}")]
+    [HttpHead("/content/skin/{carId}/{skinId}")]
     public IActionResult GetSkinZip(string carId, string skinId, string password = "")
     {
         if (!ValidatePassword(password)) return Unauthorized();
@@ -41,6 +45,7 @@ public class ContentManagerController : ControllerBase
     }
 
     [HttpGet("/content/track/{trackId}")]
+    [HttpHead("/content/track/{trackId}")]
     public IActionResult GetTrackZip(string trackId, string password = "")
     {
         if (!ValidatePassword(password)) return Unauthorized();
@@ -66,8 +71,6 @@ public class ContentManagerController : ControllerBase
         if (_configuration.Server.Password == null) return true;
         if (_configuration.WrapperParams?.DownloadPasswordOnly != true) return true;
 
-        var passHash = SHA1.HashData(Encoding.UTF8.GetBytes(@"tanidolizedhoatzin" + _configuration.Server.Password)).ToHexString().ToLowerInvariant();
-
-        return input == passHash;
+        return Convert.FromHexString(input).SequenceEqual(SHA1.HashData(Encoding.UTF8.GetBytes($"tanidolizedhoatzin{_configuration.Server.Password}")));
     }
 }

@@ -31,18 +31,18 @@ public class TimeDilationPlugin : CriticalBackgroundService, IAssettoServerAutos
         }
         else
         {
-            if (!_weatherManager.CurrentSunPosition.HasValue)
-            {
-                Log.Error("TimeDilationPlugin cannot get current sun position, aborting");
-                return;
-            }
-            
             await SunPositionTimeDilation(stoppingToken);
         }
     }
 
     private async Task SunPositionTimeDilation(CancellationToken stoppingToken)
     {
+        if (!_weatherManager.CurrentSunPosition.HasValue)
+        {
+            Log.Error("TimeDilationPlugin cannot get current sun position, aborting");
+            return;
+        }
+        
         var lookupTable = new LookupTable(_configuration.SunAngleLookupTable.
             Select(entry => new KeyValuePair<double, double>(entry.SunAngle, entry.TimeMult)).ToList());
         
@@ -50,7 +50,7 @@ public class TimeDilationPlugin : CriticalBackgroundService, IAssettoServerAutos
         {
             try
             {
-                double sunAltitudeDeg = _weatherManager.CurrentSunPosition!.Value.Altitude * 180.0 / Math.PI;
+                double sunAltitudeDeg = _weatherManager.CurrentSunPosition.Value.Altitude * 180.0 / Math.PI;
                 _serverConfiguration.Server.TimeOfDayMultiplier = (float)lookupTable.GetValue(sunAltitudeDeg);
             }
             catch (Exception ex)

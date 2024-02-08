@@ -1,4 +1,6 @@
 ﻿using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
@@ -63,6 +65,9 @@ public class ContentManagerController : ControllerBase
     {
         if (_configuration.Server.Password == null) return true;
         if (_configuration.WrapperParams?.DownloadPasswordOnly != true) return true;
-        return input == _configuration.Server.Password;
+
+        var passHash = SHA1.HashData(Encoding.UTF8.GetBytes(@"tanidolizedhoatzin" + _configuration.Server.Password)).ToHexString().ToLowerInvariant();
+
+        return input == passHash;
     }
 }

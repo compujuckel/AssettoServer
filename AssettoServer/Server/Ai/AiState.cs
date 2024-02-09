@@ -653,7 +653,7 @@ public class AiState
         Status.TyreAngularSpeed[2] = encodedTyreAngularSpeed;
         Status.TyreAngularSpeed[3] = encodedTyreAngularSpeed;
         Status.EngineRpm = (ushort)MathUtils.Lerp(EntryCar.AiIdleEngineRpm, EntryCar.AiMaxEngineRpm, CurrentSpeed / _configuration.Extra.AiParams.MaxSpeedMs);
-        Status.StatusFlag = CarStatusFlags.LightsOn
+        Status.StatusFlag = GetLights(_configuration.Extra.AiParams.EnableDaytimeLights, _weatherManager.IsNauticalTwilight())
                             | CarStatusFlags.HighBeamsOff
                             | (_sessionManager.ServerTimeMilliseconds < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
                             | (CurrentSpeed == 0 || Acceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
@@ -677,5 +677,12 @@ public class AiState
             < 0.5f => CarStatusFlags.WiperLevel2,
             _ => CarStatusFlags.WiperLevel3
         };
+    }
+
+    private static CarStatusFlags GetLights(bool daytimeLights, bool? nauticalTwilight)
+    {
+        if (daytimeLights || nauticalTwilight == null) return CarStatusFlags.LightsOn;
+
+        return nauticalTwilight.Value ? CarStatusFlags.LightsOn : 0;
     }
 }

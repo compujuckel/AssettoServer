@@ -144,6 +144,13 @@ public class WeatherManager : CriticalBackgroundService
         return (float) (Random.Shared.NextDouble() * (max - min) + min);
     }
 
+    public bool? IsNauticalTwilight()
+    {
+        if (CurrentSunPosition == null) return null;
+        
+        return CurrentSunPosition.Value.Altitude < (-12.0 * Math.PI / 180.0);
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         TrackParams = _trackParamsProvider.GetParamsForTrack(_configuration.Server.Track);

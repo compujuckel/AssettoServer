@@ -183,7 +183,7 @@ public class EntryCarAutoModeration
     {
         if (!_configuration.NoLightsPenalty.Enabled) return;
         
-        if (_weatherManager.IsNauticalTwilight() == true
+        if (_weatherManager.CurrentSunPosition!.Value.Altitude < NauticalTwilight
             && (_entryCar.Status.StatusFlag & CarStatusFlags.LightsOn) == 0
             && _entryCar.Status.Velocity.LengthSquared() > _configuration.NoLightsPenalty.MinimumSpeedMs * _configuration.NoLightsPenalty.MinimumSpeedMs)
         {

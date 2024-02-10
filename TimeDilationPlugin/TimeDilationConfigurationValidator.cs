@@ -8,10 +8,17 @@ public class TimeDilationConfigurationValidator : AbstractValidator<TimeDilation
 {
     public TimeDilationConfigurationValidator()
     {
-        RuleFor(cfg => cfg.LookupTable).NotEmpty();
-        RuleForEach(cfg => cfg.LookupTable).ChildRules(lut =>
+        RuleFor(cfg => cfg.SunAngleLookupTable).NotEmpty().Unless(cfg => cfg.TimeLookupTable.Count > 0);
+        RuleForEach(cfg => cfg.SunAngleLookupTable).ChildRules(salut =>
         {
-            lut.RuleFor(l => l.TimeMult).GreaterThanOrEqualTo(0);
+            salut.RuleFor(s => s.TimeMult).GreaterThanOrEqualTo(0);
+        });
+        
+        RuleFor(cfg => cfg.TimeLookupTable).NotEmpty().Unless(cfg => cfg.SunAngleLookupTable.Count > 0);
+        RuleForEach(cfg => cfg.TimeLookupTable).ChildRules(tlut =>
+        {
+            tlut.RuleFor(t => t.Time).Matches(@"^(?:1?\d|2[0-3]):(?:[0-5]\d)$");
+            tlut.RuleFor(t => t.TimeMult).GreaterThanOrEqualTo(0);
         });
     }
 }

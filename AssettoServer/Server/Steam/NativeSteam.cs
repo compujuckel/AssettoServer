@@ -1,4 +1,6 @@
-﻿using System;
+﻿#if !DISABLE_STEAM
+
+using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,8 +12,6 @@ using Serilog;
 using Steamworks;
 
 namespace AssettoServer.Server.Steam;
-
-#if !DISABLE_STEAM
 
 public class NativeSteam : CriticalBackgroundService, ISteam
 {

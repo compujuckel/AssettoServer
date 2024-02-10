@@ -169,7 +169,7 @@ public class AiState
         _obstacleHonkEnd = 0;
         _obstacleHonkStart = 0;
         _indicator = 0;
-        _randomTwilight = (Random.Shared.NextSingle() * (3f - 12f) + 3f) * Math.PI / 180.0;
+        _randomTwilight = Random.Shared.NextSingle(0, 12) * Math.PI / 180.0;
         _nextJunctionId = -1;
         _junctionPassed = false;
         _endIndicatorDistance = 0;

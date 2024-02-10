@@ -64,7 +64,7 @@ public class AiState
     private bool _junctionPassed;
     private float _endIndicatorDistance;
     private float _minObstacleDistance;
-    private readonly double _randomTwilight;
+    private double _randomTwilight;
 
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
@@ -106,9 +106,6 @@ public class AiState
         _junctionEvaluator = new JunctionEvaluator(spline);
 
         _lastTick = _sessionManager.ServerTimeMilliseconds;
-
-        var randomSunAngle = Random.Shared.NextSingle() * (3f - 12f) + 3f;
-        _randomTwilight = randomSunAngle * Math.PI / 180.0;
     }
 
     public void Despawn()
@@ -172,6 +169,7 @@ public class AiState
         _obstacleHonkEnd = 0;
         _obstacleHonkStart = 0;
         _indicator = 0;
+        _randomTwilight = (Random.Shared.NextSingle() * (3f - 12f) + 3f) * Math.PI / 180.0;
         _nextJunctionId = -1;
         _junctionPassed = false;
         _endIndicatorDistance = 0;

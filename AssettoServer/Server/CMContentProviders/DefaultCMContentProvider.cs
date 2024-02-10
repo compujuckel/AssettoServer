@@ -6,15 +6,15 @@ namespace AssettoServer.Server.CMContentProviders;
 
 public class DefaultCMContentProvider : ICMContentProvider
 {
-    private readonly ACServerConfiguration _configuration;
+    private readonly CMContentConfiguration? _contentConfiguration;
 
     public DefaultCMContentProvider(ACServerConfiguration configuration)
     {
-        _configuration = configuration;
+        _contentConfiguration = configuration.ContentConfiguration;
     }
 
     public ValueTask<CMContentConfiguration?> GetContentAsync(ulong guid)
     {
-        return ValueTask.FromResult(_configuration.ContentConfiguration);
+        return ValueTask.FromResult(_contentConfiguration);
     }
 }

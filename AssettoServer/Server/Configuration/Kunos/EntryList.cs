@@ -17,7 +17,7 @@ public class EntryList
         [IniField("MODEL")] public string Model { get; init; } = "";
         [IniField("SKIN")] public string? Skin { get; init; }
         [IniField("SPECTATOR_MODE")] public int SpectatorMode { get; init; }
-        [IniField("BALLAST")] public int Ballast { get; init; }
+        [IniField("BALLAST")] public float Ballast { get; init; }
         [IniField("RESTRICTOR")] public int Restrictor { get; init; }
         [IniField("DRIVERNAME")] public string? DriverName { get; init; }
         [IniField("TEAM")] public string? Team { get; init; }

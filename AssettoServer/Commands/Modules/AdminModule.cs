@@ -182,18 +182,39 @@ public class AdminModule : ACModuleBase
         }
     }
 
-    [Command("restrict")]
-    public void Restrict(ACTcpClient player, float restrictor, float ballastKg)
+    // keep restrict for backwards compatibility
+    [Command("restrict", "restrictor")]
+    public void Restrict(ACTcpClient player, int restrictor)
     {
-        player.SendPacket(new BallastUpdate { SessionId = player.SessionId, BallastKg = ballastKg, Restrictor = restrictor });
-        Reply("Restrictor and ballast set.");
+        if (restrictor is > 400 or < 0)
+        {
+            Reply("SYNTAX ERROR: Use 'restrictor [driver numeric id] [0-400]'");
+            return;
+        }
+        
+        player.EntryCar.Restrictor = restrictor;
+        player.SendPacket(new BallastUpdate { SessionId = player.SessionId, BallastKg = player.EntryCar.Ballast, Restrictor = player.EntryCar.Restrictor });
+        Reply("Restrictor set.");
     }
         
-    // Do not change the reply, it is used by CSP admin detection
     [Command("ballast")]
-    public void Ballast()
+    public void Ballast(ACTcpClient? player = null, float? ballastKg = null)
     {
-        Reply("SYNTAX ERROR: Use 'ballast [driver numeric id] [kg]'");
+        if (player == null || ballastKg == null)
+        {
+            // Do not change the reply, it is used by CSP admin detection
+            Reply("SYNTAX ERROR: Use 'ballast [driver numeric id] [kg]'");
+            return;
+        }
+        if (ballastKg < 0)
+        {
+            Reply("SYNTAX ERROR: Use 'ballast [driver numeric id] [>=0 kg]'");
+            return;
+        }
+        
+        player.EntryCar.Ballast = ballastKg.Value;
+        player.SendPacket(new BallastUpdate { SessionId = player.SessionId, BallastKg = player.EntryCar.Ballast, Restrictor = player.EntryCar.Restrictor });
+        Reply("Ballast set.");
     }
 
     [Command("set")]

@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using Microsoft.AspNetCore.Mvc;
@@ -13,46 +12,47 @@ namespace AssettoServer.Network.Http;
 [ApiController]
 public class ContentManagerController : ControllerBase
 {
-    private readonly ICMContentProvider _contentProvider;
     private readonly ACServerConfiguration _configuration;
 
-    public ContentManagerController(ICMContentProvider contentProvider, ACServerConfiguration configuration)
+    public ContentManagerController(ACServerConfiguration configuration)
     {
-        _contentProvider = contentProvider;
         _configuration = configuration;
     }
 
     [HttpGet("/content/car/{carId}")]
     [HttpHead("/content/car/{carId}")]
-    public IActionResult GetCarZip(string carId, string password = "")
+    public IActionResult GetCarZip(string carId, string? password = null)
     {
         if (!ValidatePassword(password)) return Unauthorized();
-        if (_contentProvider.TryGetZipPath("cars",carId, out var car)) 
-            return CreateFileDownload(car);
-        
-        return NotFound();
+        if (_configuration.ContentConfiguration?.Cars == null 
+            || !_configuration.ContentConfiguration.Cars.TryGetValue(carId, out var car)
+            || car.File == null) return NotFound();
+
+        return CreateFileDownload(car.File);
     }
 
     [HttpGet("/content/skin/{carId}/{skinId}")]
     [HttpHead("/content/skin/{carId}/{skinId}")]
-    public IActionResult GetSkinZip(string carId, string skinId, string password = "")
+    public IActionResult GetSkinZip(string carId, string skinId, string? password = null)
     {
         if (!ValidatePassword(password)) return Unauthorized();
-        if (_contentProvider.TryGetZipPath("skins",$"{carId}/{skinId}", out var skin)) 
-            return CreateFileDownload(skin);
-        
-        return NotFound();
+        if (_configuration.ContentConfiguration?.Cars == null 
+            || !_configuration.ContentConfiguration.Cars.TryGetValue(carId, out var car)
+            || car.Skins == null
+            || !car.Skins.TryGetValue(skinId, out var skin)
+            || skin.File == null) return NotFound();
+
+        return CreateFileDownload(skin.File);
     }
 
-    [HttpGet("/content/track/{trackId}")]
-    [HttpHead("/content/track/{trackId}")]
-    public IActionResult GetTrackZip(string trackId, string password = "")
+    [HttpGet("/content/track")]
+    [HttpHead("/content/track")]
+    public IActionResult GetTrackZip(string? password = null)
     {
         if (!ValidatePassword(password)) return Unauthorized();
-        if (_contentProvider.TryGetZipPath("tracks",trackId, out var track)) 
-            return CreateFileDownload(track);
-        
-        return NotFound();
+        if (_configuration.ContentConfiguration?.Track?.File == null) return NotFound();
+
+        return CreateFileDownload(_configuration.ContentConfiguration.Track.File);
     }
 
     private FileStreamResult CreateFileDownload(string path)
@@ -66,11 +66,14 @@ public class ContentManagerController : ControllerBase
         return File(fileStream, "application/zip", fileName);
     }
 
-    private bool ValidatePassword(string input)
+    private bool ValidatePassword(string? input)
     {
-        if (_configuration.Server.Password == null) return true;
-        if (_configuration.WrapperParams?.DownloadPasswordOnly != true) return true;
+        if (_configuration.Server.Password == null
+            || _configuration.WrapperParams is { DownloadPasswordOnly: false }) return true;
 
-        return Convert.FromHexString(input).SequenceEqual(SHA1.HashData(Encoding.UTF8.GetBytes($"tanidolizedhoatzin{_configuration.Server.Password}")));
+        return input != null ?
+            Convert.FromHexString(input)
+                .SequenceEqual(SHA1.HashData(Encoding.UTF8.GetBytes($"tanidolizedhoatzin{_configuration.Server.Password}")))
+            : false;
     }
 }

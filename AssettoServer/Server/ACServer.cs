@@ -145,7 +145,6 @@ public class ACServer : CriticalBackgroundService
         _entryCarManager.Initialize();
         _checksumManager.Initialize();
         _sessionManager.Initialize();
-        _cmContentProvider.Initialize();
         await _trackParamsProvider.InitializeAsync();
         await _geoParamsManager.InitializeAsync();
 

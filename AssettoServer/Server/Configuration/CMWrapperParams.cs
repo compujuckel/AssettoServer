@@ -12,5 +12,5 @@ public class CMWrapperParams
     public long DownloadSpeedLimit { get; init; } = 0;
     
     [JsonPropertyName("downloadPasswordOnly")]
-    public bool? DownloadPasswordOnly { get; set; }
+    public bool DownloadPasswordOnly { get; set; }
 }

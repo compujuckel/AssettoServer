@@ -1,6 +1,7 @@
 ﻿# AutoModerationPlugin
 
 Plugin to automatically kick players when they violate rules:
+* Being AFK
 * Driving without lights during the night
 * Driving the wrong way
 * Blocking the road
@@ -17,12 +18,30 @@ EnablePlugins:
 - AutoModerationPlugin
 ```
 
-Example configuration (add to bottom of `extra_cfg.yml`)
+Example configuration (add to bottom of `plugin_auto_moderation_cfg.yml`)
 ```yaml
----
-!AutoModerationConfiguration
+# Kick players that are AFK
+AfkPenalty:
+  # Set to true to enable
+  Enabled: true
+  # Don't kick if at least one open slot of the same car model is available
+  IgnoreWithOpenSlots: false
+  # Time after the player gets kicked. A warning will be sent in chat one minute before this time
+  DurationMinutes: 1
+  # Set this to MinimumSpeed to not reset the AFK timer on chat messages / controller inputs and require players to actually drive
+  Behavior: MinimumSpeed
+  ExcludedModels:
+  - bksy_nissan_skyline_r34_z_tune
+# Kick players with a high ping
+HighPingPenalty:
+  # Set to true to enable
+  Enabled: true
+  # Time after the player gets kicked. A warning will be sent in chat after half this time
+  DurationSeconds: 20
+  # Players having a lower ping will not be kicked
+  MaximumPingMilliseconds: 500
 # Kick players driving without lights during the night
-NoLightsKick:
+NoLightsPenalty:
   # Set to false to disable
   Enabled: true
   # Time in which no warning or signs will be sent
@@ -34,7 +53,7 @@ NoLightsKick:
   # The amount of times a player will be send to pits before being kicked
   PitsBeforeKick: 3
 # Kick players driving the wrong way. AI has to enabled for this to work
-WrongWayKick:
+WrongWayPenalty:
   # Set to false to disable
   Enabled: true
   # Time after the player gets kicked. A warning will be sent in chat after half this time
@@ -44,7 +63,7 @@ WrongWayKick:
   # The amount of times a player will be send to pits before being kicked
   PitsBeforeKick: 3
 # Kick players blocking the road. AI has to be enabled for this to work
-BlockingRoadKick:
+BlockingRoadPenalty:
   # Set to false to disable
   Enabled: true
   # Time after the player gets kicked. A warning will be sent in chat after half this time

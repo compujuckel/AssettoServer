@@ -59,6 +59,12 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
         {
             _entryCarManager.ClientConnected += (sender, _) => sender.FirstUpdateSent += OnFirstUpdateSent;
         }
+
+        foreach (var model in _configuration.AfkPenalty.ExcludedModels)
+        {
+            if (serverConfiguration.EntryList.Cars.All(e => e.Model != model))
+                Log.Warning("Can't find model {Model} excluded from AFK penalty in EntryList", model);
+        }
     }
 
     private void OnFirstUpdateSent(ACTcpClient sender, EventArgs args)

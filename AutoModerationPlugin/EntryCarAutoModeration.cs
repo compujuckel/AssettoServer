@@ -8,6 +8,7 @@ using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AutoModerationPlugin.Packets;
+using Serilog;
 
 namespace AutoModerationPlugin;
 
@@ -134,6 +135,8 @@ public class EntryCarAutoModeration
         
         if (_configuration.AfkPenalty.IgnoreWithOpenSlots
             && _entryCarManager.EntryCars.Any(e => e.Model == _entryCar.Model && e.Client == null)) return;
+
+        if (_configuration.AfkPenalty.ExcludedModels.Contains(client.EntryCar.Model)) return;
 
         var afkTime = _sessionManager.ServerTimeMilliseconds - LastActiveTime;
         if (afkTime > _configuration.AfkPenalty.DurationMilliseconds - 60_000)

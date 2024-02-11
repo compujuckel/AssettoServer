@@ -8,7 +8,7 @@ namespace RandomWeatherPlugin;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class RandomWeatherConfiguration : IValidateConfiguration<RandomWeatherConfigurationValidator>
 {
-    [YamlMember(Description = "Which mode should be used for time dilation \nAvailable values: 'Default' and 'TransitionTable'")]
+    [YamlMember(Description = "Which mode should be used for weather randomization \nAvailable values: 'Default' and 'TransitionTable'")]
     public RandomWeatherMode Mode = RandomWeatherMode.Default;
     [YamlMember(Description = "Weights for random weather selection, setting a weight to 0 blacklists a weather, default weight is 1")]
     public Dictionary<WeatherFxType, float> WeatherWeights { get; init; } = new();

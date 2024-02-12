@@ -7,7 +7,7 @@ namespace TimeDilationPlugin;
 [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
 public class TimeDilationConfiguration : IValidateConfiguration<TimeDilationConfigurationValidator>
 {
-    [YamlMember(Description = "Which mode should be used for time dilation \nAvailable values: 'SunAngle' and 'Time'")]
+    [YamlMember(Description = "Which mode should be used for time dilation \nAvailable values: 'SunAngle' and 'Time'\nSunAngle is preferred because it works independent of seasons and longitude of the track")]
     public TimeDilationMode Mode = TimeDilationMode.SunAngle;
     [YamlMember(Description =
         "Table to map sun angles to time multipliers. SunAngle is the altitude of the sun in degrees. 90° = sun directly overhead, -90° = sun directly underneath")]

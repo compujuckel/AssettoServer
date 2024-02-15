@@ -169,7 +169,8 @@ public class CSPClientMessageHandler(CSPClientMessageTypeManager cspClientMessag
     private void OnAdminPenaltyOut(ACTcpClient sender, PacketReader reader)
     {
         var packet = reader.ReadPacket<CSPAdminPenalty>();
-        packet.SessionId = sender.SessionId;
+        // packet.SessionId = sender.SessionId;
+        packet.SessionId = 255;
 
         if (sender.IsAdministrator)
         {

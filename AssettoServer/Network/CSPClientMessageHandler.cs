@@ -168,15 +168,16 @@ public class CSPClientMessageHandler(CSPClientMessageTypeManager cspClientMessag
 
     private void OnAdminPenaltyOut(ACTcpClient sender, PacketReader reader)
     {
-        var packet = reader.ReadPacket<CSPAdminPenalty>();
-        // packet.SessionId = sender.SessionId;
-        packet.SessionId = 255;
 
         if (sender.IsAdministrator)
         {
+            CSPAdminPenalty packet = reader.ReadPacket<CSPAdminPenalty>();
+            packet.SessionId = 255;
+            
             sender.Logger.Information("CSP admin penalty received from {ClientName} ({SessionId}): User is admin", 
                 sender.Name, sender.SessionId);
-            _entryCarManager.BroadcastPacket(packet, sender);
+            
+            _entryCarManager.EntryCars[packet.CarIndex].Client?.SendPacket(packet);
         }
         else
         {

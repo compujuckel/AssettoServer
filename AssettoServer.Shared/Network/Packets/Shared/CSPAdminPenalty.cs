@@ -1,19 +1,29 @@
-﻿using System.Drawing;
+﻿using System.Text;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
-using Serilog;
 
 namespace AssettoServer.Shared.Network.Packets.Shared;
 
 public class CSPAdminPenalty : IIncomingNetworkPacket, IOutgoingNetworkPacket
 {
     public byte SessionId;
-    public byte[]? Message;
+    public CSPAdminPenaltyMode Mode; // 2
+    public ushort CarIndex; // 2
+    public int PenaltyArgument; // 4
+    public string Message; // 64
+    public byte[] Signature; // 8
 
     public void FromReader(PacketReader reader)
     {
-        Message = new byte[80];
-        reader.ReadBytes(Message);
+        // SessionId = reader.Read<byte>();
+        
+        Mode = (CSPAdminPenaltyMode) reader.Read<ushort>();
+        CarIndex = reader.Read<ushort>();
+        PenaltyArgument = reader.Read<int>();
+        Message = reader.ReadStringFixed(Encoding.UTF8, 64);        
+        
+        Signature = new byte[8];
+        reader.ReadBytes(Signature);
     }
 
     public void ToWriter(ref PacketWriter writer)
@@ -22,6 +32,25 @@ public class CSPAdminPenalty : IIncomingNetworkPacket, IOutgoingNetworkPacket
         writer.Write((byte)CSPMessageTypeTcp.ClientMessage);
         writer.Write(SessionId);
         writer.Write((ushort)CSPClientMessageType.AdminPenalty);
-        writer.WriteBytes(Message);
+        
+        writer.Write((ushort)Mode);
+        writer.Write(CarIndex);
+        writer.Write(PenaltyArgument);
+        
+        writer.WriteString(Message, Encoding.UTF8, 64);
+        writer.WriteBytes(Signature);
     }
+}
+
+/// <summary>
+/// Only <b>MandatoryPits</b> and <b>TeleportToPits</b> are known to work
+/// </summary>
+public enum CSPAdminPenaltyMode
+{
+    None = 0,
+    MandatoryPits = 1,
+    TeleportToPits = 2,
+    SlowDown = 3,
+    BlackFlag = 4,
+    BlackFlagRelease = 5
 }

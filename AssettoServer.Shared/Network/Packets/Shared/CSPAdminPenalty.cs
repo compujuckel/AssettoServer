@@ -15,8 +15,6 @@ public class CSPAdminPenalty : IIncomingNetworkPacket, IOutgoingNetworkPacket
 
     public void FromReader(PacketReader reader)
     {
-        // SessionId = reader.Read<byte>();
-        
         Mode = (CSPAdminPenaltyMode) reader.Read<ushort>();
         CarIndex = reader.Read<ushort>();
         PenaltyArgument = reader.Read<int>();

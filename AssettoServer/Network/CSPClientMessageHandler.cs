@@ -17,7 +17,7 @@ public class CSPClientMessageHandler
     private readonly ACServerConfiguration _configuration;
 
 
-    CSPClientMessageHandler(CSPClientMessageTypeManager cspClientMessageTypeManager, EntryCarManager entryCarManager,
+    public CSPClientMessageHandler(CSPClientMessageTypeManager cspClientMessageTypeManager, EntryCarManager entryCarManager,
         ACServerConfiguration configuration)
     {
         _cspClientMessageTypeManager = cspClientMessageTypeManager;

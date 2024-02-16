@@ -7,11 +7,11 @@ namespace AssettoServer.Shared.Network.Packets.Shared;
 public class CSPAdminPenalty : IIncomingNetworkPacket, IOutgoingNetworkPacket
 {
     public byte SessionId;
-    public CSPAdminPenaltyMode Mode; // 2
-    public ushort CarIndex; // 2
-    public int PenaltyArgument; // 4
-    public string Message; // 64
-    public byte[] Signature; // 8
+    public CSPAdminPenaltyMode Mode;
+    public ushort CarIndex;
+    public int PenaltyArgument;
+    public string Message;
+    public ulong Signature;
 
     public void FromReader(PacketReader reader)
     {
@@ -21,9 +21,7 @@ public class CSPAdminPenalty : IIncomingNetworkPacket, IOutgoingNetworkPacket
         CarIndex = reader.Read<ushort>();
         PenaltyArgument = reader.Read<int>();
         Message = reader.ReadStringFixed(Encoding.UTF8, 64);        
-        
-        Signature = new byte[8];
-        reader.ReadBytes(Signature);
+        Signature = reader.Read<ulong>();
     }
 
     public void ToWriter(ref PacketWriter writer)
@@ -38,7 +36,7 @@ public class CSPAdminPenalty : IIncomingNetworkPacket, IOutgoingNetworkPacket
         writer.Write(PenaltyArgument);
         
         writer.WriteString(Message, Encoding.UTF8, 64);
-        writer.WriteBytes(Signature);
+        writer.Write(Signature);
     }
 }
 

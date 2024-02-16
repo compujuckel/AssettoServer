@@ -66,7 +66,7 @@ public class GeneralModule : ACModuleBase
     [Command("resetcar"), RequireConnectedPlayer]
     public void ResetCarAsync()
     {
-        if (_configuration.Extra is { EnableCarReset: true, MinimumCSPVersion: >= CSPVersion.V0_2_3_p47 })
+        if (_configuration.Extra is { EnableClientMessages: true, EnableCarReset: true, MinimumCSPVersion: >= CSPVersion.V0_2_3_p47 })
         {
             if (!Client!.EntryCar.TryResetPosition())
                 Reply("Couldn't reset position");

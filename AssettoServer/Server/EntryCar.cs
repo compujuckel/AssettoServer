@@ -296,10 +296,11 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         
         Client?.SendCollisionUpdatePacket(false);
         
-        Client?.SendTeleportCarPacket(position, direction);
-        
         _ = Task.Run(async () =>
         {
+            await Task.Delay(500);
+        
+            Client?.SendTeleportCarPacket(position, direction);
             await Task.Delay(10000);
         
             Client?.SendCollisionUpdatePacket(true);

@@ -91,7 +91,7 @@ public class CSPClientMessageHandler(CSPClientMessageTypeManager cspClientMessag
 
                     if (_configuration.Extra.DebugClientMessages)
                     {
-                        sender.Logger.Debug("Client message received from {ClientName} ({SessionId}), type {Type}, data {Data}",
+                        sender.Logger.Verbose("Client message received from {ClientName} ({SessionId}), type {Type}, data {Data}",
                             sender.Name, sender.SessionId, packetType, clientMessage.Data);
                     }
                     

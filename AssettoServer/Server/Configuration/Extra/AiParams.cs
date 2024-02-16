@@ -114,6 +114,8 @@ public partial class AiParams : ObservableObject
     public bool Debug { get; set; } = false;
     [YamlMember(Description = "Update interval for AI spawn point finder")]
     public int AiBehaviorUpdateIntervalHz { get; set; } = 2;
+    [YamlMember(Description = "Enable AI car headlights during the day")]
+    public bool EnableDaytimeLights { get; set; } = false;
     [YamlMember(Description = "AI cars inside these areas will ignore all player obstacles")]
     public List<Sphere>? IgnorePlayerObstacleSpheres { get; set; }
     [YamlMember(Description = "Override some settings for newly spawned cars based on the number of lanes")]

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Web;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Services;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Polly;
 using Serilog;
@@ -31,13 +32,18 @@ public class KunosLobbyRegistration : CriticalBackgroundService
     {
         if (!_configuration.Server.RegisterToLobby)
             return;
-        
+
         try
         {
             await RegisterToLobbyAsync(stoppingToken);
             Log.Information("Lobby registration successful");
         }
         catch (TaskCanceledException) { }
+        catch (KunosLobbyException ex) when (ex.Message == "ERROR,INVALID SERVER,CHECK YOUR PORT FORWARDING SETTINGS")
+        {
+            PrintPortForwardingHelp();
+            return;
+        }
         catch (Exception ex)
         {
             Log.Error(ex, "Error during Kunos lobby registration");
@@ -61,6 +67,22 @@ public class KunosLobbyRegistration : CriticalBackgroundService
                 Log.Error(ex, "Error during Kunos lobby update");
             }
         }
+    }
+
+    private void PrintPortForwardingHelp()
+    {
+        var localIp = NetworkUtils.GetPrimaryIpAddress();
+        var routerIp = NetworkUtils.GetGatewayAddressForInterfaceWithIpAddress(localIp);
+        Log.Error("""
+                  Your ports are not forwarded correctly. The server will continue to run, but players outside of your network won't be able to join.
+                  To fix this, you'll need to go into your router settings and create Port Forwards for these ports:
+                  Port {UdpPort} UDP
+                  Port {TcpPort} TCP
+                  Port {HttpPort} TCP
+                  Local IP: {LocalIp}
+                  Router Page: {RouterPage}
+                  Since instructions are different for each router, search in Google for "how to port forward" with the name of your router and/or ISP.
+                  """, _configuration.Server.UdpPort, _configuration.Server.TcpPort, _configuration.Server.HttpPort, localIp, routerIp != null ? $"http://{routerIp}/" : "unknown");
     }
 
     private async Task RegisterToLobbyAsync(CancellationToken token)

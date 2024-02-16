@@ -17,6 +17,7 @@ using AssettoServer.Server.Configuration.Serialization;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Server.Steam;
 using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.UserGroup;
 using AssettoServer.Server.Weather;
@@ -70,7 +71,6 @@ public class Startup
         builder.RegisterType<CSPServerScriptProvider>().AsSelf().SingleInstance();
         builder.RegisterType<CSPClientMessageTypeManager>().AsSelf().SingleInstance();
         builder.RegisterType<CSPClientMessageHandler>().AsSelf().SingleInstance();
-        builder.RegisterType<Steam>().As<IHostedService>().AsSelf().SingleInstance();
         builder.RegisterType<SessionManager>().AsSelf().SingleInstance();
         builder.RegisterType<EntryCarManager>().AsSelf().SingleInstance();
         builder.RegisterType<IpApiGeoParamsProvider>().As<IGeoParamsProvider>();
@@ -98,6 +98,12 @@ public class Startup
             
         if (_configuration.Extra.UseSteamAuth)
         {
+#if DISABLE_STEAM
+            builder.RegisterType<WebApiSteam>().As<ISteam>().SingleInstance();
+#else
+            builder.RegisterType<NativeSteam>().As<IHostedService>().As<ISteam>().SingleInstance();
+#endif
+            builder.RegisterType<SteamManager>().AsSelf().SingleInstance().AutoActivate();
             builder.RegisterType<SteamSlotFilter>().As<IOpenSlotFilter>();
         }
 

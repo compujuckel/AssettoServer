@@ -30,6 +30,8 @@ public class AfkPenaltyConfiguration
     public int DurationMinutes { get; set; } = 10;
     [YamlMember(Description = "Set this to MinimumSpeed to not reset the AFK timer on chat messages / controller inputs and require players to actually drive")]
     public AfkPenaltyBehavior Behavior { get; init; } = AfkPenaltyBehavior.PlayerInput;
+    [YamlMember(Description = "Which models are excluded from this penalty. Example: Spectator slots")]
+    public List<string> ExcludedModels { get; set; } = [];
 
     [YamlIgnore] public int DurationMilliseconds => DurationMinutes * 60_000;
 }
@@ -44,7 +46,7 @@ public enum AfkPenaltyBehavior
 public class HighPingPenaltyConfiguration
 {
     [YamlMember(Description = "Set to true to enable")]
-    public bool Enabled { get; set; }= true;
+    public bool Enabled { get; set; } = true;
     [YamlMember(Description = "Time after the player gets kicked. A warning will be sent in chat after half this time")]
     public int DurationSeconds { get; set; } = 20;
     [YamlMember(Description = "Players having a lower ping will not be kicked")]

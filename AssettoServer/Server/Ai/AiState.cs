@@ -11,6 +11,7 @@ using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Utils;
 using JPBotelho;
 using Serilog;
+using SunCalcNet.Model;
 
 namespace AssettoServer.Server.Ai;
 
@@ -63,6 +64,7 @@ public class AiState
     private bool _junctionPassed;
     private float _endIndicatorDistance;
     private float _minObstacleDistance;
+    private double _randomTwilight;
 
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
@@ -167,6 +169,7 @@ public class AiState
         _obstacleHonkEnd = 0;
         _obstacleHonkStart = 0;
         _indicator = 0;
+        _randomTwilight = Random.Shared.NextSingle(0, 12) * Math.PI / 180.0;
         _nextJunctionId = -1;
         _junctionPassed = false;
         _endIndicatorDistance = 0;
@@ -653,7 +656,7 @@ public class AiState
         Status.TyreAngularSpeed[2] = encodedTyreAngularSpeed;
         Status.TyreAngularSpeed[3] = encodedTyreAngularSpeed;
         Status.EngineRpm = (ushort)MathUtils.Lerp(EntryCar.AiIdleEngineRpm, EntryCar.AiMaxEngineRpm, CurrentSpeed / _configuration.Extra.AiParams.MaxSpeedMs);
-        Status.StatusFlag = CarStatusFlags.LightsOn
+        Status.StatusFlag = GetLights(_configuration.Extra.AiParams.EnableDaytimeLights, _weatherManager.CurrentSunPosition, _randomTwilight)
                             | CarStatusFlags.HighBeamsOff
                             | (_sessionManager.ServerTimeMilliseconds < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
                             | (CurrentSpeed == 0 || Acceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
@@ -677,5 +680,12 @@ public class AiState
             < 0.5f => CarStatusFlags.WiperLevel2,
             _ => CarStatusFlags.WiperLevel3
         };
+    }
+    
+    private static CarStatusFlags GetLights(bool daytimeLights, SunPosition? sunPosition, double twilight)
+    {
+        if (daytimeLights || sunPosition == null) return CarStatusFlags.LightsOn;
+
+        return sunPosition.Value.Altitude < twilight ? CarStatusFlags.LightsOn : 0;
     }
 }

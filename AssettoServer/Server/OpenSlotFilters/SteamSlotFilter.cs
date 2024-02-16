@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
+using AssettoServer.Server.Steam;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
 
@@ -7,9 +8,9 @@ namespace AssettoServer.Server.OpenSlotFilters;
 
 public class SteamSlotFilter : OpenSlotFilterBase
 {
-    private readonly Steam _steam;
+    private readonly SteamManager _steam;
 
-    public SteamSlotFilter(Steam steam)
+    public SteamSlotFilter(SteamManager steam)
     {
         _steam = steam;
     }

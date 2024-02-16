@@ -1,4 +1,5 @@
 ﻿using System;
+using AssettoServer.Network.ClientMessages;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
@@ -9,12 +10,25 @@ using Serilog;
 
 namespace AssettoServer.Network;
 
-public class CSPClientMessageHandler(CSPClientMessageTypeManager cspClientMessageTypeManager, EntryCarManager entryCarManager, ACServerConfiguration configuration)
+public class CSPClientMessageHandler
 {
-    private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager = cspClientMessageTypeManager;
-    private readonly EntryCarManager _entryCarManager = entryCarManager;
-    private readonly ACServerConfiguration _configuration = configuration;
+    private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
+    private readonly EntryCarManager _entryCarManager;
+    private readonly ACServerConfiguration _configuration;
 
+
+    CSPClientMessageHandler(CSPClientMessageTypeManager cspClientMessageTypeManager, EntryCarManager entryCarManager,
+        ACServerConfiguration configuration)
+    {
+        _cspClientMessageTypeManager = cspClientMessageTypeManager;
+        _entryCarManager = entryCarManager;
+        _configuration = configuration;
+        
+        cspClientMessageTypeManager.RegisterOnlineEvent<CollisionUpdatePacket>((_, _) => { });
+        cspClientMessageTypeManager.RegisterOnlineEvent<TeleportCarPacket>((_, _) => { });
+    }
+    
+    
     public void OnCSPClientMessageUdp(ACTcpClient sender, PacketReader reader)
     {
         var packetType = reader.Read<CSPClientMessageType>();

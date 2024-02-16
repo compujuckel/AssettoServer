@@ -26,19 +26,49 @@ public class RandomWeather : CriticalBackgroundService, IAssettoServerAutostart
         _weatherManager = weatherManager;
         _weatherTypeProvider = weatherTypeProvider;
 
-        foreach (var weather in Enum.GetValues<WeatherFxType>())
+        if (_configuration.Mode == RandomWeatherMode.TransitionTable)
         {
-            _configuration.WeatherWeights.TryAdd(weather, 1.0f);
+            var next = _weatherTypeProvider.GetWeatherType(_configuration.WeatherTransitions.First().Key);
+            var last = _weatherManager.CurrentWeather;
+            _weatherManager.SetWeather(new WeatherData(last.Type, next)
+            {
+                TransitionDuration = 1000,
+                TemperatureAmbient = last.TemperatureAmbient,
+                TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0, last.TemperatureAmbient,
+                    next.TemperatureCoefficient),
+                Pressure = last.Pressure,
+                Humidity = next.Humidity,
+                WindSpeed = last.WindSpeed,
+                WindDirection = last.WindDirection,
+                RainIntensity = last.RainIntensity,
+                RainWetness = last.RainWetness,
+                RainWater = last.RainWater,
+                TrackGrip = last.TrackGrip
+            });
+        
+            RecalculateWeights(_configuration.WeatherTransitions[next.WeatherFxType]);
         }
+        else if (_configuration.Mode == RandomWeatherMode.Default)
+        {
+            foreach (var weather in Enum.GetValues<WeatherFxType>())
+            {
+                _configuration.WeatherWeights.TryAdd(weather, 1.0f);
+            }
 
-        _configuration.WeatherWeights[WeatherFxType.None] = 0;
+            _configuration.WeatherWeights[WeatherFxType.None] = 0;
 
-        float weightSum = _configuration.WeatherWeights
+            RecalculateWeights(_configuration.WeatherWeights);
+        }
+    }
+
+    private void RecalculateWeights(Dictionary<WeatherFxType,float> input)
+    {
+        float weightSum = input
             .Select(w => w.Value)
             .Sum();
 
         float prefixSum = 0.0f;
-        foreach (var (weather, weight) in _configuration.WeatherWeights)
+        foreach (var (weather, weight) in input)
         {
             if (weight > 0)
             {
@@ -97,7 +127,8 @@ public class RandomWeather : CriticalBackgroundService, IAssettoServerAutostart
                 weatherDuration = Random.Shared.Next(_configuration.MinWeatherDurationMilliseconds, _configuration.MaxWeatherDurationMilliseconds);
                 transitionDuration = Random.Shared.Next(_configuration.MinTransitionDurationMilliseconds, _configuration.MaxTransitionDurationMilliseconds);
 
-                WeatherType nextWeatherType = _weatherTypeProvider.GetWeatherType(PickRandom());
+                var next = PickRandom();
+                var nextWeatherType = _weatherTypeProvider.GetWeatherType(next);
 
                 var last = _weatherManager.CurrentWeather;
 
@@ -121,6 +152,9 @@ public class RandomWeather : CriticalBackgroundService, IAssettoServerAutostart
                     RainWater = last.RainWater,
                     TrackGrip = last.TrackGrip
                 });
+                
+                if (_configuration.Mode == RandomWeatherMode.TransitionTable)
+                    RecalculateWeights(_configuration.WeatherTransitions[next]);
             }
             catch (Exception ex)
             {

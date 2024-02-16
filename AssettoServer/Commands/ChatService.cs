@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AssettoServer.Commands.Contexts;
 using AssettoServer.Commands.TypeParsers;
@@ -8,12 +10,13 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Network.Packets.Shared;
+using AssettoServer.Utils;
 using Qmmands;
 using Serilog;
 
 namespace AssettoServer.Commands;
 
-public class ChatService
+public partial class ChatService
 {
     private readonly EntryCarManager _entryCarManager;
     private readonly Func<ACTcpClient, ChatCommandContext> _chatContextFactory;
@@ -78,9 +81,20 @@ public class ChatService
             var outArgs = new ChatEventArgs(args.ChatMessage.Message);
             MessageReceived?.Invoke(sender, outArgs);
 
-            if (!outArgs.Cancel)
+            if (outArgs.Cancel) return;
+            
+            var oldVersionMessage = new ChatMessage {
+                Message = args.ChatMessage.Message,
+                SessionId = args.ChatMessage.SessionId
+            };
+            oldVersionMessage.Message = EmoteRegex().Replace(oldVersionMessage.Message, "(emote)");
+                
+            foreach (var car in _entryCarManager.EntryCars)
             {
-                _entryCarManager.BroadcastPacket(args.ChatMessage);
+                if (car.Client is { HasSentFirstUpdate: true })
+                {
+                    car.Client?.SendPacket(car.Client?.CSPVersion < CSPVersion.V0_1_80_p389 ? oldVersionMessage : args.ChatMessage);
+                }
             }
         }
         else
@@ -90,4 +104,7 @@ public class ChatService
             _ = ProcessCommandAsync(sender, message);
         }
     }
+
+    [GeneratedRegex(@"(\p{Cs}){2}")]
+    private static partial Regex EmoteRegex();
 }

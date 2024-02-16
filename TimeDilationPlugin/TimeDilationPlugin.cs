@@ -1,4 +1,5 @@
-﻿using AssettoServer.Server.Configuration;
+﻿using System.Globalization;
+using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Services;
@@ -10,40 +11,85 @@ namespace TimeDilationPlugin;
 
 public class TimeDilationPlugin : CriticalBackgroundService, IAssettoServerAutostart
 {
-    private readonly LookupTable _lookupTable;
     private readonly WeatherManager _weatherManager;
-    private readonly ACServerConfiguration _configuration;
+    private readonly ACServerConfiguration _serverConfiguration;
+    private readonly TimeDilationConfiguration _configuration;
 
-    public TimeDilationPlugin(TimeDilationConfiguration configuration, WeatherManager weatherManager, ACServerConfiguration serverConfiguration, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public TimeDilationPlugin(TimeDilationConfiguration configuration,
+        WeatherManager weatherManager,
+        ACServerConfiguration serverConfiguration,
+        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _weatherManager = weatherManager;
-        _configuration = serverConfiguration;
-        _lookupTable = new LookupTable(configuration.LookupTable.Select(entry => new KeyValuePair<double, double>(entry.SunAngle, entry.TimeMult)).ToList());
+        _serverConfiguration = serverConfiguration;
+        _configuration = configuration;
     }
     
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        return _configuration.Mode == TimeDilationMode.Time
+            ? TimeBasedTimeDilation(stoppingToken)
+            : SunPositionTimeDilation(stoppingToken);
+    }
+
+    private async Task SunPositionTimeDilation(CancellationToken stoppingToken)
     {
         if (!_weatherManager.CurrentSunPosition.HasValue)
         {
             Log.Error("TimeDilationPlugin cannot get current sun position, aborting");
             return;
         }
-        
-        while (!stoppingToken.IsCancellationRequested)
+
+        var lookupTable = CreateSunAngleBasedLookupTable(_configuration.SunAngleLookupTable);
+
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        do
         {
             try
             {
-                double sunAltitudeDeg = _weatherManager.CurrentSunPosition.Value.Altitude * 180.0 / Math.PI;
-                _configuration.Server.TimeOfDayMultiplier = (float)_lookupTable.GetValue(sunAltitudeDeg);
+                var sunAltitudeDeg = _weatherManager.CurrentSunPosition.Value.Altitude * 180.0 / Math.PI;
+                _serverConfiguration.Server.TimeOfDayMultiplier = (float)lookupTable.GetValue(sunAltitudeDeg);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error during time dilation update");
             }
-            finally
+        } while (await timer.WaitForNextTickAsync(stoppingToken));
+    }
+
+    private async Task TimeBasedTimeDilation(CancellationToken stoppingToken)
+    {
+        var lookupTable = CreateTimeBasedLookupTable(_configuration.TimeLookupTable);
+
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        do
+        {
+            try
             {
-                await Task.Delay(1000, stoppingToken);
+                var liveTime = _weatherManager.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0;
+                _serverConfiguration.Server.TimeOfDayMultiplier = (float)lookupTable.GetValue(liveTime);
             }
-        }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error during time dilation update");
+            }
+        } while (await timer.WaitForNextTickAsync(stoppingToken));
+    }
+
+    private static LookupTable CreateSunAngleBasedLookupTable(List<SunAngleLUTEntry> entries)
+    {
+        return new LookupTable(entries
+            .Select(entry => new KeyValuePair<double, double>(entry.SunAngle, entry.TimeMult))
+            .ToList());
+    }
+
+    private static LookupTable CreateTimeBasedLookupTable(List<TimeLUTEntry> entries)
+    {
+        return new LookupTable(entries
+            .Select(entry => 
+                new KeyValuePair<double, double>(
+                    DateTime.ParseExact(entry.Time, "H:mm", CultureInfo.InvariantCulture).TimeOfDay.TotalSeconds, 
+                    entry.TimeMult)
+            ).ToList(), 86400);
     }
 }

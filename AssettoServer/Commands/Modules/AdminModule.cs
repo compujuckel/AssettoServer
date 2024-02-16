@@ -188,7 +188,6 @@ public class AdminModule : ACModuleBase
     {
         if (restrictor is > 400 or < 0)
         {
-            // Do not change the reply, it is used by CSP admin detection
             Reply("SYNTAX ERROR: Use 'restrictor [driver numeric id] [0-400]'");
             return;
         }

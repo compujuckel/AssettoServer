@@ -84,7 +84,7 @@ public class ACServer : CriticalBackgroundService
 
         if (_configuration.Extra.EnableClientMessages)
         {
-            if (_configuration.CSPTrackOptions.MinimumCSPVersion < 1937)
+            if (_configuration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_1_77)
             {
                 throw new ConfigurationException(
                     "Client messages need a minimum required CSP version of 0.1.77 (1937)");

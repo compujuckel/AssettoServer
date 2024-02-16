@@ -85,7 +85,6 @@ local collisionUpdateEvent = ac.OnlineEvent({
     ac.debug("collision_update_index", sender.index)
     ac.debug("collision_update_enabled", message.enabled)
 
-    -- this seems to be broken in CSP?
     physics.disableCarCollisions(0, not message.enabled)
     if sender.index == 0 then
         for i, c in ac.iterateCars.ordered() do

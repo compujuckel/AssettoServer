@@ -979,6 +979,9 @@ public class ACTcpClient : IClient
         });
     }
 
+    /// <summary>
+    /// Requires CSP Build >2796
+    /// </summary>
     public void SendCollisionUpdatePacket(bool collisionEnabled)
     {
         _entryCarManager.BroadcastPacket(new CollisionUpdatePacket

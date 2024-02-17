@@ -13,7 +13,7 @@
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <OutputPath>..\AssettoServer\bin\$(Configuration)\$(TargetFramework)\win-x64\plugins\$(MSBuildProjectName)</OutputPath>
+        <OutputPath>..\AssettoServer\bin\$(Configuration)\$(TargetFramework)\plugins\$(MSBuildProjectName)</OutputPath>
     </PropertyGroup>
 
     <ItemGroup>

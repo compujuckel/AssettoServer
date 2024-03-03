@@ -44,17 +44,10 @@ public class VoteManager
             _state.LastVote = voteValue;
 
             var voteTime = (_state.End - DateTime.Now.AddMilliseconds(20)).TotalMilliseconds;
-            var protocol = _state.Type switch
-            {
-                VoteType.NextSession => ACServerProtocol.VoteNextSession,
-                VoteType.RestartSession => ACServerProtocol.VoteRestartSession,
-                VoteType.KickPlayer => ACServerProtocol.VoteKickUser,
-                _ => throw new ArgumentOutOfRangeException()
-            };
-
+            
             _entryCarManager.BroadcastPacket(new VoteResponse
             {
-                Protocol = protocol,
+                Protocol = (byte)_state.Type,
                 Target  = _state.Target,
                 Quorum = GetQuorum(_state.Type),
                 VoteCount = (byte)_state.Votes.Count(v => v.Value),
@@ -121,11 +114,11 @@ public class VoteManager
     }
 }
 
-public enum VoteType
+public enum VoteType : byte
 {
-    NextSession,
-    RestartSession,
-    KickPlayer
+    NextSession = 0x64,
+    RestartSession = 0x65,
+    KickPlayer = 0x66
 }
 
 public class VoteState

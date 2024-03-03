@@ -4,7 +4,7 @@ namespace AssettoServer.Shared.Network.Packets.Outgoing;
 
 public struct VoteResponse : IOutgoingNetworkPacket
 {
-    public ACServerProtocol Protocol { get; set; }
+    public byte Protocol { get; set; }
     public byte? Target { get; set; }
     public byte Quorum { get; set; }
     public byte VoteCount { get; set; }

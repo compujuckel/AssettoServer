@@ -82,6 +82,7 @@ public class ACTcpClient : IClient
     private readonly CSPServerExtraOptions _cspServerExtraOptions;
     private readonly OpenSlotFilterChain _openSlotFilter;
     private readonly CSPClientMessageHandler _clientMessageHandler;
+    private readonly VoteManager _voteManager;
 
     /// <summary>
     /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
@@ -164,7 +165,8 @@ public class ACTcpClient : IClient
         CSPFeatureManager cspFeatureManager,
         CSPServerExtraOptions cspServerExtraOptions,
         OpenSlotFilterChain openSlotFilter, 
-        CSPClientMessageHandler clientMessageHandler)
+        CSPClientMessageHandler clientMessageHandler,
+        VoteManager voteManager)
     {
         UdpServer = udpServer;
         Logger = new LoggerConfiguration()
@@ -184,6 +186,7 @@ public class ACTcpClient : IClient
         _cspServerExtraOptions = cspServerExtraOptions;
         _openSlotFilter = openSlotFilter;
         _clientMessageHandler = clientMessageHandler;
+        _voteManager = voteManager;
 
         tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
         tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
@@ -348,7 +351,7 @@ public class ACTcpClient : IClient
                              && handshakeRequest.Password != _configuration.Server.Password
                              && !_configuration.Server.CheckAdminPassword(handshakeRequest.Password))
                         SendPacket(new WrongPasswordResponse());
-                    else if (!_sessionManager.CurrentSession.Configuration.IsOpen)
+                    else if (!_sessionManager.IsOpen())
                         SendPacket(new SessionClosedResponse());
                     else if (Name.Length == 0)
                         SendPacket(new AuthFailedResponse("Driver name cannot be empty."));
@@ -476,6 +479,15 @@ public class ACTcpClient : IClient
                             break;
                         case ACServerProtocol.TyreCompoundChange:
                             OnTyreCompoundChange(reader);
+                            break;
+                        case ACServerProtocol.VoteNextSession:
+                            OnVoteNextSession(reader);
+                            break;
+                        case ACServerProtocol.VoteRestartSession:
+                            OnVoteRestartSession(reader);
+                            break;
+                        case ACServerProtocol.VoteKickUser:
+                            OnVoteKickUser(reader);
                             break;
                         case ACServerProtocol.ClientEvent:
                             OnClientEvent(reader);
@@ -628,6 +640,30 @@ public class ACTcpClient : IClient
             CompoundName = compoundChangeRequest.CompoundName,
             SessionId = SessionId
         });
+    }
+    
+    private void OnVoteNextSession(PacketReader reader)
+    {
+        if (!_configuration.Extra.EnableSessionVote) return;
+        VoteNextSession voteNextSession = reader.ReadPacket<VoteNextSession>();
+        
+        _ = _voteManager.SetVote(SessionId, VoteType.NextSession, voteNextSession.Vote);
+    }
+    
+    private void OnVoteRestartSession(PacketReader reader)
+    {
+        if (!_configuration.Extra.EnableSessionVote) return;
+        VoteRestartSession voteRestartSession = reader.ReadPacket<VoteRestartSession>();
+        
+        _ = _voteManager.SetVote(SessionId, VoteType.RestartSession, voteRestartSession.Vote);
+    }
+    
+    private void OnVoteKickUser(PacketReader reader)
+    {
+        if (!_configuration.Extra.EnableKickPlayerVote) return;
+        VoteKickUser voteKickUser = reader.ReadPacket<VoteKickUser>();
+        
+        _ = _voteManager.SetVote(SessionId, VoteType.KickPlayer, voteKickUser.Vote,voteKickUser.TargetSessionId);
     }
 
     private void OnP2PUpdate(PacketReader reader)

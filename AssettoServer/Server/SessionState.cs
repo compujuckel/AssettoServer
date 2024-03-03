@@ -14,6 +14,7 @@ public class SessionState
     public uint TargetLap { get; set; } = 0;
     public uint LeaderLapCount { get; set; } = 0;
     public bool LeaderHasCompletedLastLap { get; set; } = false;
+    public bool IsStarted { get; set; } = false;
     public bool SessionOverFlag { get; set; } = false;
     public Dictionary<byte, EntryCarResult>? Results { get; set; }
     public IEnumerable<IEntryCar<IClient>>? Grid { get; set; }

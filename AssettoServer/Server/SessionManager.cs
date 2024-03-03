@@ -61,6 +61,7 @@ public class SessionManager
         foreach (var entryCar in _entryCarManager.EntryCars)
         {
             CurrentSession.Results.Add(entryCar.SessionId, new EntryCarResult());
+            entryCar.Reset();
         }
 
         Log.Information("Next session: {SessionName}", CurrentSession.Configuration.Name);
@@ -76,7 +77,7 @@ public class SessionManager
 
         // TODO dynamic track
         // TODO weather
-        // TODO reset mandatory pits and P2P count
+        // TODO reset mandatory pits
 
         if (previousSessionResults == null)
         {
@@ -156,5 +157,15 @@ public class SessionManager
         {
             target.SendPacket(packet);
         }
+    }
+
+    public bool IsOpen()
+    {
+        return CurrentSession.Configuration.IsOpen switch
+        {
+            1 => true,
+            2 => !CurrentSession.IsStarted,
+            _ => false
+        };
     }
 }

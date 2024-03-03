@@ -46,6 +46,9 @@ public class ServerConfiguration
     [IniField("SERVER", "TIME_OF_DAY_MULT")] public float TimeOfDayMultiplier { get; set; }
     [IniField("SERVER", "UDP_PLUGIN_ADDRESS")] public string? UdpPluginAddress { get; set; }
     [IniField("SERVER", "UDP_PLUGIN_LOCAL_PORT")] public ushort UdpPluginLocalPort { get; set; }
+    [IniField("SERVER", "KICK_QUORUM")] public ushort KickQuorum { get; set; } = 80;
+    [IniField("SERVER", "VOTING_QUORUM")] public ushort VotingQuorum { get; set; } = 70;
+    [IniField("SERVER", "VOTE_DURATION")] public ushort VoteDuration { get; set; } = 20;
 
     [IniSection("WEATHER")] public IReadOnlyList<WeatherConfiguration> Weathers { get; init; } = new List<WeatherConfiguration>();
     [IniSection("DYNAMIC_TRACK")] public DynamicTrackConfiguration DynamicTrack { get; init; } = new();

@@ -79,6 +79,18 @@ public class AdminModule : ACModuleBase
         return Task.CompletedTask;
     }
 
+    [Command("next_session", "ksns")]
+    public void NextSessionAsync()
+    {
+        _sessionManager.NextSession();
+    }
+
+    [Command("restart_session", "ksrs")]
+    public void RestartSessionAsync()
+    {
+        _sessionManager.RestartSession();
+    }
+    
     [Command("pit")]
     public void TeleportToPits([Remainder] ACTcpClient player)
     {

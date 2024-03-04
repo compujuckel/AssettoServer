@@ -4,13 +4,13 @@ public enum ACServerProtocol : byte
 {
     P2PUpdate              = 0x0D,
     MandatoryPitUpdate     = 0x0E,
-    Handshake              = 0x3B,
+    Blacklisted            = 0x3B,
     WrongPassword          = 0x3C,
     RequestNewConnection   = 0x3D,
     NewCarConnection       = 0x3E,  // Sent as a response to a handshake
     CarListRequest         = 0x3F,
     CarList                = 0x40,
-    ServerRunning          = 0x41,
+    ServerRunning          = 0x41,  // Sent when client tries to connect but no session is running => {Protocol;(uint)SessionTimeLeftMilliSeconds}
     UnsupportedProtocol    = 0x42,
     CleanExitDrive         = 0x43,  // Driver does clean disconnect
     Checksum               = 0x44,

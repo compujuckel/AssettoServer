@@ -474,6 +474,9 @@ public class ACTcpClient : IClient
                         case ACServerProtocol.DamageUpdate:
                             OnDamageUpdate(reader);
                             break;
+                        case ACServerProtocol.SectorSplit:
+                            OnSectorSplitMessageReceived(reader);
+                            break;
                         case ACServerProtocol.LapCompleted:
                             OnLapCompletedMessageReceived(reader);
                             break;
@@ -644,7 +647,8 @@ public class ACTcpClient : IClient
     
     private void OnVoteNextSession(PacketReader reader)
     {
-        if (!_configuration.Extra.EnableSessionVote) return;
+        if (!_configuration.Extra.EnableSessionVote ||
+            _configuration.Extra.VotingMinimumConnectedPlayers > _entryCarManager.ConnectedCars.Count) return;
         VoteNextSession voteNextSession = reader.ReadPacket<VoteNextSession>();
         
         _ = _voteManager.SetVote(SessionId, VoteType.NextSession, voteNextSession.Vote);
@@ -652,7 +656,8 @@ public class ACTcpClient : IClient
     
     private void OnVoteRestartSession(PacketReader reader)
     {
-        if (!_configuration.Extra.EnableSessionVote) return;
+        if (!_configuration.Extra.EnableSessionVote ||
+            _configuration.Extra.VotingMinimumConnectedPlayers > _entryCarManager.ConnectedCars.Count) return;
         VoteRestartSession voteRestartSession = reader.ReadPacket<VoteRestartSession>();
         
         _ = _voteManager.SetVote(SessionId, VoteType.RestartSession, voteRestartSession.Vote);
@@ -660,7 +665,8 @@ public class ACTcpClient : IClient
     
     private void OnVoteKickUser(PacketReader reader)
     {
-        if (!_configuration.Extra.EnableKickPlayerVote) return;
+        if (!_configuration.Extra.EnableKickPlayerVote ||
+            _configuration.Extra.VotingMinimumConnectedPlayers > _entryCarManager.ConnectedCars.Count) return;
         VoteKickUser voteKickUser = reader.ReadPacket<VoteKickUser>();
         
         _ = _voteManager.SetVote(SessionId, VoteType.KickPlayer, voteKickUser.Vote,voteKickUser.TargetSessionId);
@@ -707,6 +713,21 @@ public class ACTcpClient : IClient
         SendPacket(carListResponse);
     }
 
+    private void OnSectorSplitMessageReceived(PacketReader reader)
+    {
+        SectorSplitIncoming sectorPacket = reader.ReadPacket<SectorSplitIncoming>();
+
+        // TODO do some handling for the full laps?
+        SectorSplitOutgoing packet = new SectorSplitOutgoing
+        {
+            SessionId = SessionId,
+            SplitIndex = sectorPacket.SplitIndex,
+            SplitTime = sectorPacket.SplitTime,
+            Cuts = sectorPacket.Cuts
+        };
+        _entryCarManager.BroadcastPacket(packet);
+    }
+
     private void OnLapCompletedMessageReceived(PacketReader reader)
     {
         LapCompletedIncoming lapPacket = reader.ReadPacket<LapCompletedIncoming>();
@@ -719,7 +740,7 @@ public class ACTcpClient : IClient
             LapCompleted?.Invoke(this, new LapCompletedEventArgs(packet));
         }
     }
-
+    
     private bool OnLapCompleted(LapCompletedIncoming lap)
     {
         int timestamp = (int)_sessionManager.ServerTimeMilliseconds;
@@ -1005,13 +1026,6 @@ public class ACTcpClient : IClient
     private static string IdFromGuid(ulong guid)
     {
         var hash = SHA1.HashData(Encoding.UTF8.GetBytes($"antarcticfurseal{guid}"));
-        // TODO use Convert.ToHexStringLower once https://github.com/dotnet/runtime/issues/60393 is implemented
-        StringBuilder sb = new StringBuilder();
-        foreach (byte b in hash)
-        {
-            sb.Append(b.ToString("x2"));
-        }
-
-        return sb.ToString();
+        return Convert.ToHexString(hash).ToLower();
     }
 }

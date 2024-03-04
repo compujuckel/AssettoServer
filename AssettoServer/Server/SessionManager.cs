@@ -48,7 +48,12 @@ public class SessionManager
 
     public void SetSession(int sessionId)
     {
-        // TODO StallSessionSwitch
+        // StallSessionSwitch
+        if (_entryCarManager.EntryCars.Any(c => c.Client is { HasSentFirstUpdate: false }))
+        {
+            Log.Information("Stalled session because of connecting client");
+            return;
+        }
         // TODO reset sun angle
 
         var previousSession = CurrentSession;
@@ -77,7 +82,6 @@ public class SessionManager
 
         // TODO dynamic track
         // TODO weather
-        // TODO reset mandatory pits
 
         if (previousSessionResults == null)
         {

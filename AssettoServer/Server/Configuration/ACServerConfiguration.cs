@@ -35,6 +35,7 @@ public partial class ACServerConfiguration
     [YamlIgnore] public bool LoadPluginsFromWorkdir { get; }
     [YamlIgnore] public int RandomSeed { get; } = Random.Shared.Next();
     [YamlIgnore] public string? Preset { get; }
+    [YamlIgnore] public DrsZones DrsZones { get; }
     
     /*
      * Search paths are like this:
@@ -59,8 +60,8 @@ public partial class ACServerConfiguration
         EntryList = LoadEntryList(locations.EntryListPath);
         WelcomeMessage = LoadWelcomeMessage();
         CSPExtraOptions = LoadCspExtraOptions(locations.CSPExtraOptionsPath);
-        ContentConfiguration = LoadContentConfiguration(Path.Join(BaseFolder, "cm_content/content.json"));
-        WrapperParams = LoadCMWrapperParams(Path.Join(BaseFolder, "cm_wrapper_params.json"));
+        ContentConfiguration = LoadContentConfiguration(locations.CMContentJsonPath);
+        WrapperParams = LoadCMWrapperParams(locations.CMWrapperParamsPath);
         ServerVersion = ThisAssembly.AssemblyInformationalVersion;
         Sessions = PrepareSessions();
 
@@ -88,6 +89,7 @@ public partial class ACServerConfiguration
             CSPTrackOptions = parsedTrackOptions;
         }
         FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : $"{Server.Track}-{Server.TrackConfig}";
+        DrsZones = LoadDrsZones(locations.DrsZonePath(CSPTrackOptions.Track, Server.TrackConfig), Extra.EnableGlobalDrs);
         
         ApplyConfigurationFixes();
 
@@ -132,6 +134,30 @@ public partial class ACServerConfiguration
             }
 
             return EntryList.FromFile(path);
+        }
+        catch (Exception ex)
+        {
+            throw new ConfigurationParsingException(path, ex);
+        }
+    }
+
+    private static DrsZones LoadDrsZones(string path, bool global)
+    {
+        if (global)
+            return new DrsZones
+            {
+                Zones = [
+                    new DrsZones.DrsZone
+                    {
+                        Detection = 0.0f,
+                        Start = 0.0f,
+                        End = 1.0f,
+                    }
+                ]
+            };
+        try
+        {
+            return File.Exists(path) ? DrsZones.FromFile(path) : new DrsZones() ;
         }
         catch (Exception ex)
         {

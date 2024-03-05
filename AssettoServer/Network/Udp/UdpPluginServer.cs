@@ -126,6 +126,7 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
         SendSessionInfo(-1, true);
         _sessionManager.SessionChanged += (_, args) =>
         {
+            SendEndSession();
             SendSessionInfo((short)args.NextSession.Configuration.Id, true);
         };
         _chatService.MessageReceived += (client, args) =>
@@ -340,6 +341,12 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
         }
     }
 
+    private void SendEndSession()
+    {
+        // TODO usually includes http link to result.json
+        SendPacket(new EndSession());
+    }
+    
     private void SendSessionInfo(short sessionId, bool isNew)
     {
         SessionState currentSession = _sessionManager.CurrentSession;

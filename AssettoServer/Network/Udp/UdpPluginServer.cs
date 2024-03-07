@@ -322,15 +322,15 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
                     // TODO: honestly this is kinda useless since we have plugins
                     // read wstring
                     // vanilla server has these commands
-                    //      /help
-                    // x    /next_session
-                    // x    /ksns
-                    // x    /ksrs
-                    // x    /ballast
-                    // x    /restrictor
-                    // x    /ban_id
-                    // x    /kick
-                    // x    /kick_id
+                    // /help
+                    // /next_session
+                    // /ksns
+                    // /ksrs
+                    // /ballast
+                    // /restrictor
+                    // /ban_id
+                    // /kick
+                    // /kick_id
                     break;
                 }
             }

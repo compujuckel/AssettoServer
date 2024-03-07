@@ -3,7 +3,6 @@ using AssettoServer.Shared.Network.Packets.Outgoing;
 
 namespace AssettoServer.Shared.Network.Packets.UdpPlugin;
 
-// TODO: this is currently unused
 public readonly record struct EndSession : IOutgoingNetworkPacket
 {
     public string? ReportJsonFilename { get; init; }

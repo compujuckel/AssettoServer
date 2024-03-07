@@ -2,15 +2,15 @@
 
 public class RaceStart : IOutgoingNetworkPacket
 {
-    public int TimeOffset;
     public uint StartTime;
+    public uint TimeOffset;
     public ushort Ping;
     
     public void ToWriter(ref PacketWriter writer)
     {
         writer.Write((byte)ACServerProtocol.RaceStart);
-        writer.Write(TimeOffset);
         writer.Write(StartTime);
+        writer.Write(TimeOffset);
         writer.Write(Ping);
     }
 }

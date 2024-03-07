@@ -1,19 +1,28 @@
-﻿namespace AssettoServer.Shared.Network.Packets.Outgoing;
+﻿using AssettoServer.Shared.Model;
+
+namespace AssettoServer.Shared.Network.Packets.Outgoing;
 
 public class RaceOver : IOutgoingNetworkPacket
 {
-    public byte SessionId;
-    public uint BestResult;
-    public ushort LapCounter;
     public bool PickupMode;
+    public bool IsRace;
+    public required Dictionary<byte, EntryCarResult> Results;
     
     public void ToWriter(ref PacketWriter writer)
     {
         writer.Write((byte)ACServerProtocol.RaceOver);
-        writer.Write(SessionId);
-        // writer.Write(PickupMode); // Ghidra and IDA show it in different places
-        writer.Write(BestResult);
-        writer.Write(LapCounter);
+        
+        foreach(var (sessionId, result) in Results.OrderBy(r => r.Value.BestLap))
+        {
+            writer.Write(sessionId);
+            if (IsRace)
+                writer.Write(result.TotalTime);
+            else 
+                writer.Write(result.BestLap);
+            writer.Write(result.NumLaps);
+        }
+        
+        
         writer.Write(PickupMode);
     }
 }

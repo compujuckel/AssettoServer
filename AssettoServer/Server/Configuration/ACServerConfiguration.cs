@@ -230,6 +230,8 @@ public partial class ACServerConfiguration
         {
             Server.Race.Id = 2;
             Server.Race.Type = SessionType.Race;
+            if (!Server.Race.IsTimedRace)
+                Server.HasExtraLap = false;
             sessions.Add(Server.Race);
         }
 

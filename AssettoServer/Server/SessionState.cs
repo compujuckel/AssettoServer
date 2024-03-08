@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using AssettoServer.Server.Configuration.Kunos;
 using AssettoServer.Shared.Model;
 
@@ -15,16 +16,23 @@ public class SessionState
     public uint LeaderLapCount { get; set; } = 0;
     public bool LeaderHasCompletedLastLap { get; set; } = false;
     public bool IsStarted { get; set; } = false;
-    public bool SessionOver
+
+    public bool SessionOverFlag
     {
         get
         {
-            if (Configuration is { Type: SessionType.Practice, Infinite: true }) 
-                return true;
-            if (Configuration.Type == SessionType.Race)
-                return EndTimeMilliseconds == 0 
-                       && _timeSource.ServerTimeMilliseconds - StartTimeMilliseconds > Configuration.Time * 60_000;
-            return TimeLeftMilliseconds < 0;
+            switch (Configuration)
+            {
+                case { Type: SessionType.Practice, Infinite: true }:
+                    return false;
+                case { Type: SessionType.Practice or SessionType.Qualifying }:
+                    return SessionTimeMilliseconds > Configuration.Time * 60_000;
+                case { Type: SessionType.Race, IsTimedRace: true }:
+                    return SessionTimeMilliseconds > Configuration.Time * 60_000 && EndTimeMilliseconds == 0;
+                default:
+                    return false;
+            }
+
         }
     }
 

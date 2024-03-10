@@ -12,11 +12,11 @@ public class RaceOver : IOutgoingNetworkPacket
     {
         writer.Write((byte)ACServerProtocol.RaceOver);
         
-        foreach(var (sessionId, result) in Results.OrderBy(r => IsRace ? r.Value.TotalTime : r.Value.BestLap))
+        foreach(var (sessionId, result) in Results) // .OrderBy(r => IsRace ? r.Value.TotalTime : r.Value.BestLap)
         {
             writer.Write(sessionId);
-            writer.Write(IsRace ? result.TotalTime : result.BestLap);
-            writer.Write(result.NumLaps);
+            writer.Write((uint)(IsRace ? result.TotalTime : result.BestLap));
+            writer.Write((ushort)result.NumLaps);
         }
         
         writer.Write(PickupMode);

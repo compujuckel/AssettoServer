@@ -82,13 +82,17 @@ public class AdminModule : ACModuleBase
     [Command("next_session", "ksns")]
     public void NextSessionAsync()
     {
-        _sessionManager.NextSession();
+        Reply(_sessionManager.NextSession()
+            ? "OK. Moving to next session"
+            : "Error. Couldn't move to next session. Player is connecting");
     }
 
     [Command("restart_session", "ksrs")]
     public void RestartSessionAsync()
     {
-        _sessionManager.RestartSession();
+        Reply(_sessionManager.RestartSession()
+            ? "OK. Restarting session"
+            : "Error. Couldn't restart session. Player is connecting");
     }
     
     [Command("pit")]

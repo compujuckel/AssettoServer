@@ -2,7 +2,7 @@
 
 public class RaceStart : IOutgoingNetworkPacket
 {
-    public uint StartTime;
+    public int StartTime;
     public uint TimeOffset;
     public ushort Ping;
     

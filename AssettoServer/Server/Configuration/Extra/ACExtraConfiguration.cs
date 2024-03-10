@@ -32,7 +32,7 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Enable vanilla server voting to kick a player")]
     public bool EnableKickPlayerVote { get; set; } = true;
     [YamlMember(Description = "Minimum number of connected players for session and kick voting to work. Default is 5")]
-    public ushort VotingMinimumConnectedPlayers { get; set; } = 5;
+    public ushort VoteKickMinimumConnectedPlayers { get; set; } = 3;
     [YamlMember(Description = "Enable global usage of DRS. Recommended to disable for Qualification and Race sessions")]
     public bool EnableGlobalDrs { get; set; } = true;
     [YamlMember(Description = "Enable unlimited usage of Push-to-Pass. Recommended to disable for Qualification and Race sessions")]

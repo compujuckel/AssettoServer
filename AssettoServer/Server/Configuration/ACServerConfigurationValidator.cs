@@ -16,7 +16,7 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
             extra.RuleFor(x => x.BlacklistUserGroup).NotEmpty();
             extra.RuleFor(x => x.WhitelistUserGroup).NotEmpty();
             extra.RuleFor(x => x.AdminUserGroup).NotEmpty();
-            extra.RuleFor(x => x.VotingMinimumConnectedPlayers).GreaterThanOrEqualTo((ushort)1);
+            extra.RuleFor(x => x.VoteKickMinimumConnectedPlayers).GreaterThanOrEqualTo((ushort)1);
 
             extra.RuleFor(x => x.AiParams).ChildRules(aiParams =>
             {

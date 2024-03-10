@@ -482,6 +482,9 @@ public class ACTcpClient : IClient
                         case ACServerProtocol.TyreCompoundChange:
                             OnTyreCompoundChange(reader);
                             break;
+                        case ACServerProtocol.MandatoryPitUpdate:
+                            OnMandatoryPitUpdate(reader);
+                            break;
                         case ACServerProtocol.VoteNextSession:
                             OnVoteNextSession(reader);
                             break;
@@ -643,11 +646,22 @@ public class ACTcpClient : IClient
             SessionId = SessionId
         });
     }
+
+    private void OnMandatoryPitUpdate(PacketReader reader)
+    {
+        MandatoryPitRequest mandatoryPitRequest = reader.ReadPacket<MandatoryPitRequest>();
+        EntryCar.Status.MandatoryPit = mandatoryPitRequest.MandatoryPit;
+
+        _entryCarManager.BroadcastPacket(new MandatoryPitUpdate
+        {
+            MandatoryPit = mandatoryPitRequest.MandatoryPit,
+            SessionId = SessionId
+        });
+    }
     
     private void OnVoteNextSession(PacketReader reader)
     {
-        if (!_configuration.Extra.EnableSessionVote ||
-            _configuration.Extra.VotingMinimumConnectedPlayers > _entryCarManager.ConnectedCars.Count) return;
+        if (!_configuration.Extra.EnableSessionVote) return;
         VoteNextSession voteNextSession = reader.ReadPacket<VoteNextSession>();
         
         _ = _voteManager.SetVote(SessionId, VoteType.NextSession, voteNextSession.Vote);
@@ -655,8 +669,7 @@ public class ACTcpClient : IClient
     
     private void OnVoteRestartSession(PacketReader reader)
     {
-        if (!_configuration.Extra.EnableSessionVote ||
-            _configuration.Extra.VotingMinimumConnectedPlayers > _entryCarManager.ConnectedCars.Count) return;
+        if (!_configuration.Extra.EnableSessionVote) return;
         VoteRestartSession voteRestartSession = reader.ReadPacket<VoteRestartSession>();
         
         _ = _voteManager.SetVote(SessionId, VoteType.RestartSession, voteRestartSession.Vote);
@@ -665,7 +678,7 @@ public class ACTcpClient : IClient
     private void OnVoteKickUser(PacketReader reader)
     {
         if (!_configuration.Extra.EnableKickPlayerVote ||
-            _configuration.Extra.VotingMinimumConnectedPlayers > _entryCarManager.ConnectedCars.Count) return;
+            _configuration.Extra.VoteKickMinimumConnectedPlayers > _entryCarManager.ConnectedCars.Count) return;
         VoteKickUser voteKickUser = reader.ReadPacket<VoteKickUser>();
         
         _ = _voteManager.SetVote(SessionId, VoteType.KickPlayer, voteKickUser.Vote,voteKickUser.TargetSessionId);
@@ -716,7 +729,7 @@ public class ACTcpClient : IClient
     {
         SectorSplitIncoming sectorPacket = reader.ReadPacket<SectorSplitIncoming>();
 
-        // TODO do some handling for the full laps?
+        // acServer only forwards, no processing
         SectorSplitOutgoing packet = new SectorSplitOutgoing
         {
             SessionId = SessionId,

@@ -351,11 +351,15 @@ public class SessionManager : CriticalBackgroundService
             CurrentSession.Results?.Add(entryCar.SessionId, new EntryCarResult());
             entryCar.Reset();
         }
-        
-        var sessionLength = CurrentSession.Configuration.IsTimedRace 
-            ? $"{CurrentSession.Configuration.Time} minutes"
-            : $"{CurrentSession.Configuration.Laps} laps";
-        Log.Information("Next session: {SessionName} - Length: {Length}", CurrentSession.Configuration.Name, sessionLength);
+
+        var sessionLength = CurrentSession.Configuration switch
+        {
+            { Infinite: true } => $" - Length: Infinite",
+            { IsTimedRace: true } => $" - Length: {CurrentSession.Configuration.Time} minutes",
+            { IsTimedRace: false } => $" - Length: {CurrentSession.Configuration.Laps} laps",
+            _ => ""
+        };
+        Log.Information("Next session: {SessionName}{Length}", CurrentSession.Configuration.Name, sessionLength);
 
         if (CurrentSession.Configuration.Type == SessionType.Race)
         {

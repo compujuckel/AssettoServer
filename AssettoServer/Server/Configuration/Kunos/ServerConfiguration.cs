@@ -28,7 +28,7 @@ public class ServerConfiguration
     [IniField("SERVER", "AUTOCLUTCH_ALLOWED")] public bool AutoClutchAllowed { get; init; }
     [IniField("SERVER", "FUEL_RATE", Percent = true)] public float FuelConsumptionRate { get; init; }
     [IniField("SERVER", "RACE_EXTRA_LAP")] public bool HasExtraLap { get; set; }
-    [IniField("SERVER", "QUALIFY_MAX_WAIT_PERC", Percent = true)] public float QualifyMaxWait { get; init; } = 1f;
+    [IniField("SERVER", "QUALIFY_MAX_WAIT_PERC")] public ushort QualifyMaxWait { get; init; } = 120;
     [IniField("SERVER", "REVERSED_GRID_RACE_POSITIONS")] public short InvertedGridPositions { get; init; }
     [IniField("SERVER", "RACE_GAS_PENALTY_DISABLED")] public bool IsGasPenaltyDisabled { get; init; }
     [IniField("SERVER", "FORCE_VIRTUAL_MIRROR")] public bool IsVirtualMirrorForced { get; init; }

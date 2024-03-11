@@ -157,6 +157,7 @@ public class SessionManager : CriticalBackgroundService
                 entryCarResult.BestLap = lap.LapTime;
             }
 
+            var oldLeaderLapCount = CurrentSession.LeaderLapCount;
             if (entryCarResult.NumLaps > CurrentSession.LeaderLapCount)
             {
                 CurrentSession.LeaderLapCount = entryCarResult.NumLaps;
@@ -168,7 +169,7 @@ public class SessionManager : CriticalBackgroundService
                 {
                     if (_configuration.Server.HasExtraLap)
                     {
-                        if (entryCarResult.NumLaps <= CurrentSession.LeaderLapCount)
+                        if (entryCarResult.NumLaps <= oldLeaderLapCount)
                         {
                             entryCarResult.HasCompletedLastLap = CurrentSession.LeaderHasCompletedLastLap;
                         }
@@ -185,7 +186,7 @@ public class SessionManager : CriticalBackgroundService
                             CurrentSession.TargetLap = entryCarResult.NumLaps + 1;
                         }
                     }
-                    else if (entryCarResult.NumLaps <= CurrentSession.LeaderLapCount)
+                    else if (entryCarResult.NumLaps <= oldLeaderLapCount)
                     {
                         entryCarResult.HasCompletedLastLap = CurrentSession.LeaderHasCompletedLastLap;
                     }
@@ -318,13 +319,14 @@ public class SessionManager : CriticalBackgroundService
         }
         else
         {
-            var overTimeMilliseconds = (long)(ServerTimeMilliseconds * _configuration.Server.QualifyMaxWait);
+            var overTimeMilliseconds = ServerTimeMilliseconds / 100 * _configuration.Server.QualifyMaxWait;
             if (CurrentSession.OverTimeMilliseconds == 0 || CurrentSession.OverTimeMilliseconds > overTimeMilliseconds)
                 CurrentSession.OverTimeMilliseconds = overTimeMilliseconds;
 
-            if (_entryCarManager.EntryCars.Where(c => c.Client is { HasSentFirstUpdate: true })
+            if (_entryCarManager.EntryCars
+                .Where(c => c.Client is { HasSentFirstUpdate: true })
                 .Any(car => CurrentSession.Results?[car.SessionId] is { HasCompletedLastLap: false } 
-                            && car.Status.Velocity.Length() < 5))
+                            && car.Status.Velocity.LengthSquared() > 5))
             {
                 return;
             }
@@ -349,8 +351,11 @@ public class SessionManager : CriticalBackgroundService
             CurrentSession.Results?.Add(entryCar.SessionId, new EntryCarResult());
             entryCar.Reset();
         }
-
-        Log.Information("Next session: {SessionName}", CurrentSession.Configuration.Name);
+        
+        var sessionLength = CurrentSession.Configuration.IsTimedRace 
+            ? $"{CurrentSession.Configuration.Time} minutes"
+            : $"{CurrentSession.Configuration.Laps} laps";
+        Log.Information("Next session: {SessionName} - Length: {Length}", CurrentSession.Configuration.Name, sessionLength);
 
         if (CurrentSession.Configuration.Type == SessionType.Race)
         {
@@ -370,10 +375,28 @@ public class SessionManager : CriticalBackgroundService
         }
         else
         {
-            CurrentSession.Grid = previousSessionResults
+            var grid = previousSessionResults
                 .OrderBy(result => result.Value.BestLap)
                 .Select(result => _entryCarManager.EntryCars[result.Key])
                 .ToList();
+
+            if (MustInvertGrid)
+            {
+                var inverted = previousSessionResults
+                    .Take(5)
+                    .OrderByDescending(result => result.Value.BestLap)
+                    .Select(result => _entryCarManager.EntryCars[result.Key])
+                    .ToList();
+
+                for (var i = 0; i < inverted.Count; i++)
+                {
+                    grid[i] = inverted[i];
+                }
+
+                Log.Information("Inverted {Slots} grid slots", inverted.Count);
+            }
+
+            CurrentSession.Grid = grid;
         }
 
         SessionChanged?.Invoke(this, new SessionChangedEventArgs(previousSession, CurrentSession));
@@ -399,6 +422,7 @@ public class SessionManager : CriticalBackgroundService
         if (_entryCarManager.EntryCars.Any(c => c.Client is { HasSentFirstUpdate: false }))
             return false;
         
+        MustInvertGrid = false;
         if (_configuration.Sessions.Count - 1 == CurrentSessionIndex)
         {
             if (_configuration.Server.Loop)

@@ -404,9 +404,9 @@ public class ACTcpClient : IClient
                             PitWindowEnd = cfg.PitWindowEnd,
                             PitWindowStart = cfg.PitWindowStart,
                             StabilityAllowed = cfg.StabilityAllowed,
-                            RaceOverTime = cfg.RaceOverTime,
+                            RaceOverTime = cfg.RaceOverTime * 1000,
                             RefreshRateHz = cfg.RefreshRateHz,
-                            ResultScreenTime = cfg.ResultScreenTime,
+                            ResultScreenTime = cfg.ResultScreenTime * 1000,
                             ServerName = cfg.Name,
                             SessionId = SessionId,
                             SunAngle = (float)WeatherUtils.SunAngleFromTicks(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay),
@@ -678,7 +678,7 @@ public class ACTcpClient : IClient
     private void OnVoteKickUser(PacketReader reader)
     {
         if (!_configuration.Extra.EnableKickPlayerVote ||
-            _configuration.Extra.VoteKickMinimumConnectedPlayers > _entryCarManager.ConnectedCars.Count) return;
+            _configuration.Extra.VoteKickMinimumConnectedPlayers - 1 > _entryCarManager.ConnectedCars.Count) return;
         VoteKickUser voteKickUser = reader.ReadPacket<VoteKickUser>();
         
         _ = _voteManager.SetVote(SessionId, VoteType.KickPlayer, voteKickUser.Vote,voteKickUser.TargetSessionId);

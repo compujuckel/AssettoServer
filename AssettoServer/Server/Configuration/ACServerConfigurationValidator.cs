@@ -16,7 +16,7 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
             extra.RuleFor(x => x.BlacklistUserGroup).NotEmpty();
             extra.RuleFor(x => x.WhitelistUserGroup).NotEmpty();
             extra.RuleFor(x => x.AdminUserGroup).NotEmpty();
-            extra.RuleFor(x => x.VoteKickMinimumConnectedPlayers).GreaterThanOrEqualTo((ushort)1);
+            extra.RuleFor(x => x.VoteKickMinimumConnectedPlayers).GreaterThanOrEqualTo((ushort)3);
 
             extra.RuleFor(x => x.AiParams).ChildRules(aiParams =>
             {
@@ -56,7 +56,7 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
             server.RuleFor(s => s.TimeOfDayMultiplier).GreaterThanOrEqualTo(0);
             server.RuleFor(s => s.KickQuorum).InclusiveBetween((ushort)0, (ushort)90);
             server.RuleFor(s => s.VotingQuorum).InclusiveBetween((ushort)0, (ushort)100);
-            server.RuleFor(s => s.QualifyMaxWait).GreaterThanOrEqualTo(1f);
+            server.RuleFor(s => s.QualifyMaxWait).GreaterThanOrEqualTo((ushort)100);
 
             server.RuleForEach(s => s.Weathers).ChildRules(weather =>
             {

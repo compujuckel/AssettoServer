@@ -40,6 +40,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public int SpectatorMode { get; internal set; }
     public float Ballast { get; internal set; }
     public int Restrictor { get; internal set; }
+    public string? FixedSetup { get; internal set; }
     public List<ulong> AllowedGuids { get; internal set; } = new();
         
     public float NetworkDistanceSquared { get; internal set; }

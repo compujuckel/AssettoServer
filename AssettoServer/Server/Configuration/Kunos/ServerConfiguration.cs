@@ -53,6 +53,7 @@ public class ServerConfiguration
 
     [IniSection("WEATHER")] public IReadOnlyList<WeatherConfiguration> Weathers { get; init; } = new List<WeatherConfiguration>();
     [IniSection("DYNAMIC_TRACK")] public DynamicTrackConfiguration DynamicTrack { get; init; } = new();
+    [IniSection("BOOK")] public SessionConfiguration? Booking { get; init; }
     [IniSection("PRACTICE")] public SessionConfiguration? Practice { get; init; }
     [IniSection("QUALIFY")] public SessionConfiguration? Qualify { get; init; }
     [IniSection("RACE")] public SessionConfiguration? Race { get; init; }

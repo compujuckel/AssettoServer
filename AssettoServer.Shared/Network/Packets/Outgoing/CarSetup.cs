@@ -8,7 +8,7 @@ public class CarSetup : IOutgoingNetworkPacket
     {
         writer.Write((byte)ACServerProtocol.CarSetup);
         writer.Write(true);
-        writer.Write(Setup.Count);
+        writer.Write((byte)Setup.Count);
         foreach (var (name, val) in Setup)
         {
             writer.WriteUTF8String(name);

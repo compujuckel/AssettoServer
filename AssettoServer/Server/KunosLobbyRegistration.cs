@@ -119,10 +119,10 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         queryParams["tc"] = cfg.TractionControlAllowed.ToString();
         queryParams["stability"] = cfg.StabilityAllowed ? "1" : "0";
         queryParams["legal_tyres"] = cfg.LegalTyres;
-        queryParams["fixed_setup"] = "0";
-        queryParams["timed"] = "0";
+        queryParams["fixed_setup"] = _configuration.EntryList.Cars.Any(c => c.FixedSetup != null) ? "1" : "0";
+        queryParams["timed"] = _configuration.Sessions.Any(s => s.IsTimedRace) ? "1" : "0";
         queryParams["extra"] = cfg.HasExtraLap ? "1" : "0";
-        queryParams["pit"] = "0";
+        queryParams["pit"] = cfg.PitWindowEnd > 0 ? "1" : "0";
         queryParams["inverted"] = cfg.InvertedGridPositions.ToString();
         builder.Query = queryParams.ToString();
 

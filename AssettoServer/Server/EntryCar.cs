@@ -40,6 +40,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public int SpectatorMode { get; internal set; }
     public float Ballast { get; internal set; }
     public int Restrictor { get; internal set; }
+    public string? FixedSetup { get; internal set; }
     public List<ulong> AllowedGuids { get; internal set; } = new();
         
     public float NetworkDistanceSquared { get; internal set; }
@@ -124,8 +125,21 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         Status = new CarStatus
         {
             P2PCount = (short)(_configuration.Extra.EnableUnlimitedP2P ? 99 : 15),
+            MandatoryPit = _configuration.Server.PitWindowStart < _configuration.Server.PitWindowEnd,
         };
         TargetCar = null;
+        
+        Client?.SendPacket(new P2PUpdate
+        {
+            P2PCount = Status.P2PCount,
+            SessionId = SessionId
+        });
+            
+        Client?.SendPacket(new MandatoryPitUpdate
+        {
+            MandatoryPit = Status.MandatoryPit,
+            SessionId = SessionId
+        });
     }
 
     internal void SetActive()

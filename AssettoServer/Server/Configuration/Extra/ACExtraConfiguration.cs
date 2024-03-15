@@ -27,8 +27,15 @@ public partial class ACExtraConfiguration : ObservableObject
     public int MandatoryClientSecurityLevel { get; init; }
     [YamlMember(Description = "Force headlights on for all cars")]
     public bool ForceLights { get; set; }
-
-    [YamlMember(Description = "Enable unlimited usage of Push-to-Pass")]
+    [YamlMember(Description = "Enable vanilla server voting for: Session skip; Session restart")]
+    public bool EnableSessionVote { get; set; } = true;
+    [YamlMember(Description = "Enable vanilla server voting to kick a player")]
+    public bool EnableKickPlayerVote { get; set; } = true;
+    [YamlMember(Description = "Minimum number of connected players for session and kick voting to work. Default is 5")]
+    public ushort VoteKickMinimumConnectedPlayers { get; set; } = 3;
+    [YamlMember(Description = "Enable global usage of DRS. Recommended to disable for Qualification and Race sessions")]
+    public bool EnableGlobalDrs { get; set; } = true;
+    [YamlMember(Description = "Enable unlimited usage of Push-to-Pass. Recommended to disable for Qualification and Race sessions")]
     public bool EnableUnlimitedP2P { get; set; } = true;
     [YamlMember(Description = "Distance for network optimizations. Players outside of this range will send less updates to reduce network traffic")]
     public float NetworkBubbleDistance { get; init; } = 500;

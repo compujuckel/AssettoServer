@@ -14,7 +14,6 @@ using AssettoServer.Network.Udp;
 using AssettoServer.Server;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Configuration.Extra;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Model;
@@ -82,6 +81,7 @@ public class ACTcpClient : IClient
     private readonly CSPServerExtraOptions _cspServerExtraOptions;
     private readonly OpenSlotFilterChain _openSlotFilter;
     private readonly CSPClientMessageHandler _clientMessageHandler;
+    private readonly VoteManager _voteManager;
 
     /// <summary>
     /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
@@ -164,7 +164,8 @@ public class ACTcpClient : IClient
         CSPFeatureManager cspFeatureManager,
         CSPServerExtraOptions cspServerExtraOptions,
         OpenSlotFilterChain openSlotFilter, 
-        CSPClientMessageHandler clientMessageHandler)
+        CSPClientMessageHandler clientMessageHandler,
+        VoteManager voteManager)
     {
         UdpServer = udpServer;
         Logger = new LoggerConfiguration()
@@ -184,6 +185,7 @@ public class ACTcpClient : IClient
         _cspServerExtraOptions = cspServerExtraOptions;
         _openSlotFilter = openSlotFilter;
         _clientMessageHandler = clientMessageHandler;
+        _voteManager = voteManager;
 
         tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
         tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
@@ -348,7 +350,7 @@ public class ACTcpClient : IClient
                              && handshakeRequest.Password != _configuration.Server.Password
                              && !_configuration.Server.CheckAdminPassword(handshakeRequest.Password))
                         SendPacket(new WrongPasswordResponse());
-                    else if (!_sessionManager.CurrentSession.Configuration.IsOpen)
+                    else if (!_sessionManager.IsOpen)
                         SendPacket(new SessionClosedResponse());
                     else if (Name.Length == 0)
                         SendPacket(new AuthFailedResponse("Driver name cannot be empty."));
@@ -402,9 +404,9 @@ public class ACTcpClient : IClient
                             PitWindowEnd = cfg.PitWindowEnd,
                             PitWindowStart = cfg.PitWindowStart,
                             StabilityAllowed = cfg.StabilityAllowed,
-                            RaceOverTime = cfg.RaceOverTime,
+                            RaceOverTime = cfg.RaceOverTime * 1000,
                             RefreshRateHz = cfg.RefreshRateHz,
-                            ResultScreenTime = cfg.ResultScreenTime,
+                            ResultScreenTime = cfg.ResultScreenTime * 1000,
                             ServerName = cfg.Name,
                             SessionId = SessionId,
                             SunAngle = (float)WeatherUtils.SunAngleFromTicks(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay),
@@ -471,11 +473,26 @@ public class ACTcpClient : IClient
                         case ACServerProtocol.DamageUpdate:
                             OnDamageUpdate(reader);
                             break;
+                        case ACServerProtocol.SectorSplit:
+                            OnSectorSplitMessageReceived(reader);
+                            break;
                         case ACServerProtocol.LapCompleted:
                             OnLapCompletedMessageReceived(reader);
                             break;
                         case ACServerProtocol.TyreCompoundChange:
                             OnTyreCompoundChange(reader);
+                            break;
+                        case ACServerProtocol.MandatoryPitUpdate:
+                            OnMandatoryPitUpdate(reader);
+                            break;
+                        case ACServerProtocol.VoteNextSession:
+                            OnVoteNextSession(reader);
+                            break;
+                        case ACServerProtocol.VoteRestartSession:
+                            OnVoteRestartSession(reader);
+                            break;
+                        case ACServerProtocol.VoteKickUser:
+                            OnVoteKickUser(reader);
                             break;
                         case ACServerProtocol.ClientEvent:
                             OnClientEvent(reader);
@@ -630,6 +647,43 @@ public class ACTcpClient : IClient
         });
     }
 
+    private void OnMandatoryPitUpdate(PacketReader reader)
+    {
+        MandatoryPitRequest mandatoryPitRequest = reader.ReadPacket<MandatoryPitRequest>();
+        EntryCar.Status.MandatoryPit = mandatoryPitRequest.MandatoryPit;
+
+        _entryCarManager.BroadcastPacket(new MandatoryPitUpdate
+        {
+            MandatoryPit = mandatoryPitRequest.MandatoryPit,
+            SessionId = SessionId
+        });
+    }
+    
+    private void OnVoteNextSession(PacketReader reader)
+    {
+        if (!_configuration.Extra.EnableSessionVote) return;
+        VoteNextSession voteNextSession = reader.ReadPacket<VoteNextSession>();
+        
+        _ = _voteManager.SetVote(SessionId, VoteType.NextSession, voteNextSession.Vote);
+    }
+    
+    private void OnVoteRestartSession(PacketReader reader)
+    {
+        if (!_configuration.Extra.EnableSessionVote) return;
+        VoteRestartSession voteRestartSession = reader.ReadPacket<VoteRestartSession>();
+        
+        _ = _voteManager.SetVote(SessionId, VoteType.RestartSession, voteRestartSession.Vote);
+    }
+    
+    private void OnVoteKickUser(PacketReader reader)
+    {
+        if (!_configuration.Extra.EnableKickPlayerVote ||
+            _configuration.Extra.VoteKickMinimumConnectedPlayers - 1 > _entryCarManager.ConnectedCars.Count) return;
+        VoteKickUser voteKickUser = reader.ReadPacket<VoteKickUser>();
+        
+        _ = _voteManager.SetVote(SessionId, VoteType.KickPlayer, voteKickUser.Vote,voteKickUser.TargetSessionId);
+    }
+
     private void OnP2PUpdate(PacketReader reader)
     {
         var push2Pass = reader.ReadPacket<P2PUpdateRequest>();
@@ -671,138 +725,32 @@ public class ACTcpClient : IClient
         SendPacket(carListResponse);
     }
 
+    private void OnSectorSplitMessageReceived(PacketReader reader)
+    {
+        SectorSplitIncoming sectorPacket = reader.ReadPacket<SectorSplitIncoming>();
+
+        // acServer only forwards, no processing
+        SectorSplitOutgoing packet = new SectorSplitOutgoing
+        {
+            SessionId = SessionId,
+            SplitIndex = sectorPacket.SplitIndex,
+            SplitTime = sectorPacket.SplitTime,
+            Cuts = sectorPacket.Cuts
+        };
+        _entryCarManager.BroadcastPacket(packet);
+    }
+
     private void OnLapCompletedMessageReceived(PacketReader reader)
     {
         LapCompletedIncoming lapPacket = reader.ReadPacket<LapCompletedIncoming>();
 
         //_configuration.DynamicTrack.TotalLapCount++; // TODO reset at some point
-        if (OnLapCompleted(lapPacket))
+        if (_sessionManager.OnLapCompleted(this, lapPacket))
         {
             LapCompletedOutgoing packet = CreateLapCompletedPacket(SessionId, lapPacket.LapTime, lapPacket.Cuts);
             _entryCarManager.BroadcastPacket(packet);
             LapCompleted?.Invoke(this, new LapCompletedEventArgs(packet));
         }
-    }
-
-    private bool OnLapCompleted(LapCompletedIncoming lap)
-    {
-        int timestamp = (int)_sessionManager.ServerTimeMilliseconds;
-
-        var entryCarResult = _sessionManager.CurrentSession.Results?[SessionId] ?? throw new InvalidOperationException("Current session does not have results set");
-
-        if (entryCarResult.HasCompletedLastLap)
-        {
-            Logger.Debug("Lap rejected by {ClientName}, already finished", Name);
-            return false;
-        }
-
-        if (_sessionManager.CurrentSession.Configuration.Type == SessionType.Race && entryCarResult.NumLaps >= _sessionManager.CurrentSession.Configuration.Laps && !_sessionManager.CurrentSession.Configuration.IsTimedRace)
-        {
-            Logger.Debug("Lap rejected by {ClientName}, race over", Name);
-            return false;
-        }
-
-        Logger.Information("Lap completed by {ClientName}, {NumCuts} cuts, laptime {LapTime}", Name, lap.Cuts, lap.LapTime);
-
-        // TODO unfuck all of this
-
-        if (_sessionManager.CurrentSession.Configuration.Type == SessionType.Race || lap.Cuts == 0)
-        {
-            entryCarResult.LastLap = lap.LapTime;
-            if (lap.LapTime < entryCarResult.BestLap)
-            {
-                entryCarResult.BestLap = lap.LapTime;
-            }
-
-            entryCarResult.NumLaps++;
-            if (entryCarResult.NumLaps > _sessionManager.CurrentSession.LeaderLapCount)
-            {
-                _sessionManager.CurrentSession.LeaderLapCount = entryCarResult.NumLaps;
-            }
-
-            entryCarResult.TotalTime = (uint)(_sessionManager.CurrentSession.SessionTimeMilliseconds - EntryCar.Ping / 2);
-
-            if (_sessionManager.CurrentSession.SessionOverFlag)
-            {
-                if (_sessionManager.CurrentSession.Configuration.Type == SessionType.Race && _sessionManager.CurrentSession.Configuration.IsTimedRace)
-                {
-                    if (_configuration.Server.HasExtraLap)
-                    {
-                        if (entryCarResult.NumLaps <= _sessionManager.CurrentSession.LeaderLapCount)
-                        {
-                            entryCarResult.HasCompletedLastLap = _sessionManager.CurrentSession.LeaderHasCompletedLastLap;
-                        }
-                        else if (_sessionManager.CurrentSession.TargetLap > 0)
-                        {
-                            if (entryCarResult.NumLaps >= _sessionManager.CurrentSession.TargetLap)
-                            {
-                                _sessionManager.CurrentSession.LeaderHasCompletedLastLap = true;
-                                entryCarResult.HasCompletedLastLap = true;
-                            }
-                        }
-                        else
-                        {
-                            _sessionManager.CurrentSession.TargetLap = entryCarResult.NumLaps + 1;
-                        }
-                    }
-                    else if (entryCarResult.NumLaps <= _sessionManager.CurrentSession.LeaderLapCount)
-                    {
-                        entryCarResult.HasCompletedLastLap = _sessionManager.CurrentSession.LeaderHasCompletedLastLap;
-                    }
-                    else
-                    {
-                        _sessionManager.CurrentSession.LeaderHasCompletedLastLap = true;
-                        entryCarResult.HasCompletedLastLap = true;
-                    }
-                }
-                else
-                {
-                    entryCarResult.HasCompletedLastLap = true;
-                }
-            }
-
-            if (_sessionManager.CurrentSession.Configuration.Type != SessionType.Race)
-            {
-                if (_sessionManager.CurrentSession.EndTime != 0)
-                {
-                    entryCarResult.HasCompletedLastLap = true;
-                }
-            }
-            else if (_sessionManager.CurrentSession.Configuration.IsTimedRace)
-            {
-                if (_sessionManager.CurrentSession.LeaderHasCompletedLastLap && _sessionManager.CurrentSession.EndTime == 0)
-                {
-                    _sessionManager.CurrentSession.EndTime = timestamp;
-                }
-            }
-            else if (entryCarResult.NumLaps != _sessionManager.CurrentSession.Configuration.Laps)
-            {
-                if (_sessionManager.CurrentSession.EndTime != 0)
-                {
-                    entryCarResult.HasCompletedLastLap = true;
-                }
-            }
-            else if (!entryCarResult.HasCompletedLastLap)
-            {
-                entryCarResult.HasCompletedLastLap = true;
-                if (_sessionManager.CurrentSession.EndTime == 0)
-                {
-                    _sessionManager.CurrentSession.EndTime = timestamp;
-                }
-            }
-            else if (_sessionManager.CurrentSession.EndTime != 0)
-            {
-                entryCarResult.HasCompletedLastLap = true;
-            }
-
-            return true;
-        }
-
-        if (_sessionManager.CurrentSession.EndTime == 0)
-            return true;
-
-        entryCarResult.HasCompletedLastLap = true;
-        return false;
     }
 
     internal void SendFirstUpdate()
@@ -848,8 +796,13 @@ public class ACTcpClient : IClient
                     });
                 }
             }
+            
+            if (EntryCar.FixedSetup != null 
+                 && _configuration.Setups.Setups.TryGetValue(EntryCar.FixedSetup, out var setup))
+                batched.Packets.Add(new CarSetup { Setup = setup.Settings });
 
-            // TODO: sent DRS zones
+            if (_configuration.DrsZones.Zones.Count > 0)
+                batched.Packets.Add(new DrsZonesUpdate { Zones = _configuration.DrsZones.Zones });
 
             batched.Packets.Add(CreateLapCompletedPacket(0xFF, 0, 0));
 
@@ -907,9 +860,13 @@ public class ACTcpClient : IClient
                 SessionId = result.Key,
                 LapTime = _sessionManager.CurrentSession.Configuration.Type == SessionType.Race ? result.Value.TotalTime : result.Value.BestLap,
                 NumLaps = (ushort)result.Value.NumLaps,
-                HasCompletedLastLap = (byte)(result.Value.HasCompletedLastLap ? 1 : 0)
-            })
-            .OrderBy(lap => lap.LapTime); // TODO wrong for race sessions?
+                HasCompletedLastLap = (byte)(result.Value.HasCompletedLastLap ? 1 : 0),
+                RacePos = 0,
+            });
+            
+        laps = _sessionManager.CurrentSession.Configuration.Type == SessionType.Race 
+            ? laps.OrderBy(lap => lap.RacePos) 
+            : laps.OrderBy(lap => lap.LapTime); // TODO wrong for race sessions?
 
         return new LapCompletedOutgoing
         {
@@ -969,13 +926,6 @@ public class ACTcpClient : IClient
     private static string IdFromGuid(ulong guid)
     {
         var hash = SHA1.HashData(Encoding.UTF8.GetBytes($"antarcticfurseal{guid}"));
-        // TODO use Convert.ToHexStringLower once https://github.com/dotnet/runtime/issues/60393 is implemented
-        StringBuilder sb = new StringBuilder();
-        foreach (byte b in hash)
-        {
-            sb.Append(b.ToString("x2"));
-        }
-
-        return sb.ToString();
+        return Convert.ToHexString(hash).ToLower();
     }
 }

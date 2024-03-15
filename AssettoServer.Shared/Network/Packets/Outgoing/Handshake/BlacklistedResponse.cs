@@ -4,6 +4,6 @@ public readonly struct BlacklistedResponse : IOutgoingNetworkPacket
 {
     public void ToWriter(ref PacketWriter writer)
     {
-        writer.Write((byte)ACServerProtocol.Handshake);
+        writer.Write((byte)ACServerProtocol.Blacklisted);
     }
 }

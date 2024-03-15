@@ -230,6 +230,7 @@ public class EntryCarManager
             EntryCars[i].SpectatorMode = entry.SpectatorMode;
             EntryCars[i].Ballast = entry.Ballast;
             EntryCars[i].Restrictor = entry.Restrictor;
+            EntryCars[i].FixedSetup = entry.FixedSetup;
             EntryCars[i].DriverOptionsFlags = driverOptions;
             EntryCars[i].AiMode = aiMode;
             EntryCars[i].AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange);

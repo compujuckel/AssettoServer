@@ -27,7 +27,8 @@ public class ServerConfiguration
     [IniField("SERVER", "TYRE_BLANKETS_ALLOWED")] public bool AllowTyreBlankets { get; init; }
     [IniField("SERVER", "AUTOCLUTCH_ALLOWED")] public bool AutoClutchAllowed { get; init; }
     [IniField("SERVER", "FUEL_RATE", Percent = true)] public float FuelConsumptionRate { get; init; }
-    [IniField("SERVER", "RACE_EXTRA_LAP")] public bool HasExtraLap { get; init; }
+    [IniField("SERVER", "RACE_EXTRA_LAP")] public bool HasExtraLap { get; set; }
+    [IniField("SERVER", "QUALIFY_MAX_WAIT_PERC")] public ushort QualifyMaxWait { get; init; } = 120;
     [IniField("SERVER", "REVERSED_GRID_RACE_POSITIONS")] public short InvertedGridPositions { get; init; }
     [IniField("SERVER", "RACE_GAS_PENALTY_DISABLED")] public bool IsGasPenaltyDisabled { get; init; }
     [IniField("SERVER", "FORCE_VIRTUAL_MIRROR")] public bool IsVirtualMirrorForced { get; init; }
@@ -46,9 +47,13 @@ public class ServerConfiguration
     [IniField("SERVER", "TIME_OF_DAY_MULT")] public float TimeOfDayMultiplier { get; set; }
     [IniField("SERVER", "UDP_PLUGIN_ADDRESS")] public string? UdpPluginAddress { get; set; }
     [IniField("SERVER", "UDP_PLUGIN_LOCAL_PORT")] public ushort UdpPluginLocalPort { get; set; }
+    [IniField("SERVER", "KICK_QUORUM")] public ushort KickQuorum { get; set; } = 80;
+    [IniField("SERVER", "VOTING_QUORUM")] public ushort VotingQuorum { get; set; } = 70;
+    [IniField("SERVER", "VOTE_DURATION")] public ushort VoteDuration { get; set; } = 20;
 
     [IniSection("WEATHER")] public IReadOnlyList<WeatherConfiguration> Weathers { get; init; } = new List<WeatherConfiguration>();
     [IniSection("DYNAMIC_TRACK")] public DynamicTrackConfiguration DynamicTrack { get; init; } = new();
+    [IniSection("BOOK")] public SessionConfiguration? Booking { get; init; }
     [IniSection("PRACTICE")] public SessionConfiguration? Practice { get; init; }
     [IniSection("QUALIFY")] public SessionConfiguration? Qualify { get; init; }
     [IniSection("RACE")] public SessionConfiguration? Race { get; init; }

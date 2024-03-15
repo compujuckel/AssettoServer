@@ -354,12 +354,11 @@ public class SessionManager : CriticalBackgroundService
 
         var sessionLength = CurrentSession.Configuration switch
         {
-            { Infinite: true } => $" - Length: Infinite",
-            { IsTimedRace: true } => $" - Length: {CurrentSession.Configuration.Time} minutes",
-            { IsTimedRace: false } => $" - Length: {CurrentSession.Configuration.Laps} laps",
-            _ => ""
+            { Infinite: true } => $"Infinite",
+            { IsTimedRace: false } => $"{CurrentSession.Configuration.Laps} laps",
+            _ => $"{CurrentSession.Configuration.Time} minutes"
         };
-        Log.Information("Next session: {SessionName}{Length}", CurrentSession.Configuration.Name, sessionLength);
+        Log.Information("Next session: {SessionName} - Length: {Length}", CurrentSession.Configuration.Name, sessionLength);
 
         if (CurrentSession.Configuration.Type == SessionType.Race)
         {

@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;

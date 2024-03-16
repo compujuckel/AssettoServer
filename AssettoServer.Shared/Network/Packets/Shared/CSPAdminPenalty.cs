@@ -10,7 +10,7 @@ public class CSPAdminPenalty : IIncomingNetworkPacket, IOutgoingNetworkPacket
     public CSPAdminPenaltyMode Mode;
     public ushort CarIndex;
     public int PenaltyArgument;
-    public string Message;
+    public string Message = "";
     public ulong Signature;
 
     public void FromReader(PacketReader reader)

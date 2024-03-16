@@ -15,8 +15,8 @@ public class CarSetups
     [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     public class CarSetup
     {
-        [IniField("CAR", "MODEL")] public string CarModel { get; init; }
-        [IniField("__EXT_PATCH", "VERSION")] public string CspVersion { get; init; }
+        [IniField("CAR", "MODEL")] public string? CarModel { get; init; }
+        [IniField("__EXT_PATCH", "VERSION")] public string? CspVersion { get; init; }
         public Dictionary<string, float> Settings { get; init; } = new();
     }
 

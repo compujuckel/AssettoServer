@@ -65,6 +65,8 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
         _entryCarManager.ClientDisconnected += OnClientDisconnected;
         _configuration.Extra.AiParams.PropertyChanged += (_, _) => AdjustOverbooking();
+
+        _sessionManager.SessionChanged += OnSessionChanged;
     }
 
     private static void OnCollision(ACTcpClient sender, CollisionEventArgs args)
@@ -201,6 +203,9 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         }
 
         _aiStateCountMetric.Set(_initializedAiStates.Count);
+
+        if (_sessionManager.CurrentSession.StartTimeMilliseconds > _sessionManager.ServerTimeMilliseconds)
+            return;
 
         for (int i = 0; i < _initializedAiStates.Count; i++)
         {
@@ -347,6 +352,14 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         {
             sender.EntryCar.SetAiControl(true);
             AdjustOverbooking();
+        }
+    }
+
+    private void OnSessionChanged(SessionManager sender, SessionChangedEventArgs args)
+    {
+        for (var i = 0; i < _initializedAiStates.Count; i++)
+        {
+            _initializedAiStates[i].Despawn();
         }
     }
 

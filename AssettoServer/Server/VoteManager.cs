@@ -108,8 +108,8 @@ public class VoteManager
     {
         return voteType switch
         {
-            VoteType.KickPlayer => (byte)(_configuration.Server.KickQuorum / 100f * (_entryCarManager.ConnectedCars.Count - 1)),
-            _ => (byte)(_configuration.Server.VotingQuorum / 100f * _entryCarManager.ConnectedCars.Count),
+            VoteType.KickPlayer => (byte)Math.Ceiling(_configuration.Server.KickQuorum / 100f * (_entryCarManager.ConnectedCars.Count - 1)),
+            _ => (byte)Math.Ceiling(_configuration.Server.VotingQuorum / 100f * _entryCarManager.ConnectedCars.Count),
         };
     }
 }

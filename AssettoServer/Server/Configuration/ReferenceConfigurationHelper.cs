@@ -14,28 +14,23 @@ public static class ReferenceConfigurationHelper
         
         var path = Path.Join(BaseFolder, filename);
         
-        FileInfo? info = null;
+        // TODO this can be removed in future versions. Some v0.0.55 prerelease builds made these files readonly, so we undo that first for compatibility
         if (File.Exists(path))
         {
-            info = new FileInfo(path);
+            var info = new FileInfo(path);
             info.IsReadOnly = false;
         }
 
-        using (var writer = File.CreateText(path))
-        {
-            ConfigurationSchemaGenerator.WriteModeLine(writer, BaseFolder, schemaPath);
-            writer.WriteLine($"# {name} Reference Configuration");
-            writer.WriteLine("# This file serves as an overview of all possible options with their default values.");
-            writer.WriteLine();
+        using var writer = File.CreateText(path);
+        ConfigurationSchemaGenerator.WriteModeLine(writer, BaseFolder, schemaPath);
+        writer.WriteLine($"# {name} Reference Configuration");
+        writer.WriteLine("# This file serves as an overview of all possible options with their default values.");
+        writer.WriteLine();
 
-            var builder = new SerializerBuilder()
-                .WithoutEmissionPhaseObjectGraphVisitor<DefaultValuesObjectGraphVisitor>()
-                .Build();
+        var builder = new SerializerBuilder()
+            .WithoutEmissionPhaseObjectGraphVisitor<DefaultValuesObjectGraphVisitor>()
+            .Build();
             
-            builder.Serialize(writer, config);
-        }
-
-        info ??= new FileInfo(path);
-        info.IsReadOnly = true;
+        builder.Serialize(writer, config);
     }
 }

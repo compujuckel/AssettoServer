@@ -12,7 +12,6 @@ For more information on configuration, admin commands, etc. also check out our [
 
 ## Getting help
 If you have trouble setting up a server feel free to visit the #server-troubleshooting channel on our [Discord](https://discord.gg/uXEXRcSkyz).
-Alternatively you can ask questions here: https://github.com/compujuckel/AssettoServer/discussions/categories/help
 
 **Please don't use the Issue tracker for installation help or configuration questions. Also make sure to read the documentation first before asking questions that are already answered there!**
 

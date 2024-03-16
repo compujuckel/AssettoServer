@@ -3,6 +3,8 @@ using System.Net.Http;
 using AssettoServer.Commands;
 using AssettoServer.Commands.Contexts;
 using AssettoServer.Commands.TypeParsers;
+using AssettoServer.Network;
+using AssettoServer.Network.Http;
 using AssettoServer.Network.Http.Authentication;
 using AssettoServer.Network.Rcon;
 using AssettoServer.Network.Tcp;
@@ -31,7 +33,7 @@ using Microsoft.Extensions.Hosting;
 using Prometheus;
 using Qmmands;
 
-namespace AssettoServer.Network.Http;
+namespace AssettoServer;
 
 public class Startup
 {

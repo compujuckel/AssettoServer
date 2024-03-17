@@ -144,7 +144,7 @@ public class SessionManager : CriticalBackgroundService
             return false;
         }
 
-        Log.Information("Lap completed by {ClientName}, {NumCuts} cuts, laptime {LapTime}", client.Name, lap.Cuts, lap.LapTime);
+        Log.Information("Lap completed by {ClientName}, {NumCuts} cuts, laptime {LapTime}", client.Name, lap.Cuts, TimeSpan.FromMilliseconds(lap.LapTime).ToString(@"mm\:ss\.ffff"));
 
         if (CurrentSession.Configuration.Type == SessionType.Race || lap.Cuts == 0)
         {

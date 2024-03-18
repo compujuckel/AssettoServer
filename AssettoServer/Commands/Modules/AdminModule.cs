@@ -79,6 +79,22 @@ public class AdminModule : ACModuleBase
         return Task.CompletedTask;
     }
 
+    [Command("next_session", "ksns")]
+    public void NextSessionAsync()
+    {
+        Reply(_sessionManager.NextSession()
+            ? "OK. Moving to next session"
+            : "Error. Couldn't move to next session. Player is connecting");
+    }
+
+    [Command("restart_session", "ksrs")]
+    public void RestartSessionAsync()
+    {
+        Reply(_sessionManager.RestartSession()
+            ? "OK. Restarting session"
+            : "Error. Couldn't restart session. Player is connecting");
+    }
+    
     [Command("pit")]
     public void TeleportToPits([Remainder] ACTcpClient player)
     {

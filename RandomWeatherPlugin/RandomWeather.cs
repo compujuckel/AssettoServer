@@ -1,4 +1,5 @@
-﻿using AssettoServer.Server.Plugin;
+﻿using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Services;
 using AssettoServer.Shared.Weather;
@@ -28,6 +29,9 @@ public class RandomWeather : CriticalBackgroundService, IAssettoServerAutostart
 
         if (_configuration.Mode == RandomWeatherMode.TransitionTable)
         {
+            if (_configuration.WeatherTransitions.Count == 0)
+                throw new ConfigurationException("No entries were found in the WeatherTransitions list");
+            
             var next = _weatherTypeProvider.GetWeatherType(_configuration.WeatherTransitions.First().Key);
             var last = _weatherManager.CurrentWeather;
             _weatherManager.SetWeather(new WeatherData(last.Type, next)
@@ -50,10 +54,8 @@ public class RandomWeather : CriticalBackgroundService, IAssettoServerAutostart
         }
         else if (_configuration.Mode == RandomWeatherMode.Default)
         {
-            foreach (var weather in Enum.GetValues<WeatherFxType>())
-            {
-                _configuration.WeatherWeights.TryAdd(weather, 1.0f);
-            }
+            if (_configuration.WeatherWeights.Count == 0)
+                throw new ConfigurationException("No entries were found in the WeatherWeights list");
 
             _configuration.WeatherWeights[WeatherFxType.None] = 0;
 

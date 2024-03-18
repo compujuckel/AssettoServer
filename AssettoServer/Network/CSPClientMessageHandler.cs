@@ -86,6 +86,11 @@ public class CSPClientMessageHandler
                 OnHandshakeOut(sender, reader);
                 break;
             }
+            case CSPClientMessageType.AdminPenalty:
+            {
+                OnAdminPenaltyOut(sender, reader);
+                break;
+            }
             default:
             {
                 if (_cspClientMessageTypeManager.RawMessageTypes.TryGetValue(packetType, out var handler))
@@ -173,6 +178,26 @@ public class CSPClientMessageHandler
 
         sender.Logger.Information("CSP handshake received from {ClientName} ({SessionId}): Version={Version} WeatherFX={WeatherFxActive} InputMethod={InputMethod} RainFX={RainFxActive} HWID={HardwareId}", 
             sender.Name, sender.SessionId, packet.Version, packet.IsWeatherFxActive, packet.InputMethod, packet.IsRainFxActive, packet.UniqueKey);
+    }
+
+    private void OnAdminPenaltyOut(ACTcpClient sender, PacketReader reader)
+    {
+
+        if (sender.IsAdministrator)
+        {
+            CSPAdminPenalty packet = reader.ReadPacket<CSPAdminPenalty>();
+            packet.SessionId = 255;
+            
+            sender.Logger.Information("CSP admin penalty received from {ClientName} ({SessionId}): User is admin", 
+                sender.Name, sender.SessionId);
+            
+            _entryCarManager.EntryCars[packet.CarIndex].Client?.SendPacket(packet);
+        }
+        else
+        {
+            sender.Logger.Information("CSP admin penalty received from {ClientName} ({SessionId}): User is not admin", 
+                sender.Name, sender.SessionId);
+        }
     }
 
     private static bool IsRanged(CSPClientMessageType type)

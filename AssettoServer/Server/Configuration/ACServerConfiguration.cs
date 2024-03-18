@@ -35,6 +35,8 @@ public partial class ACServerConfiguration
     [YamlIgnore] public bool LoadPluginsFromWorkdir { get; }
     [YamlIgnore] public int RandomSeed { get; } = Random.Shared.Next();
     [YamlIgnore] public string? Preset { get; }
+    [YamlIgnore] public DrsZones DrsZones { get; }    
+    [YamlIgnore] public CarSetups Setups { get; }
     
     /*
      * Search paths are like this:
@@ -57,10 +59,11 @@ public partial class ACServerConfiguration
         LoadPluginsFromWorkdir = loadPluginsFromWorkdir;
         Server = LoadServerConfiguration(locations.ServerCfgPath);
         EntryList = LoadEntryList(locations.EntryListPath);
+        Setups = LoadSetups();
         WelcomeMessage = LoadWelcomeMessage();
         CSPExtraOptions = LoadCspExtraOptions(locations.CSPExtraOptionsPath);
-        ContentConfiguration = LoadContentConfiguration(Path.Join(BaseFolder, "cm_content/content.json"));
-        WrapperParams = LoadCMWrapperParams(Path.Join(BaseFolder, "cm_wrapper_params.json"));
+        ContentConfiguration = LoadContentConfiguration(locations.CMContentJsonPath);
+        WrapperParams = LoadCMWrapperParams(locations.CMWrapperParamsPath);
         ServerVersion = ThisAssembly.AssemblyInformationalVersion;
         Sessions = PrepareSessions();
 
@@ -88,6 +91,7 @@ public partial class ACServerConfiguration
             CSPTrackOptions = parsedTrackOptions;
         }
         FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : $"{Server.Track}-{Server.TrackConfig}";
+        DrsZones = LoadDrsZones(locations.DrsZonePath(CSPTrackOptions.Track, Server.TrackConfig), Extra.EnableGlobalDrs);
         
         ApplyConfigurationFixes();
 
@@ -132,6 +136,42 @@ public partial class ACServerConfiguration
             }
 
             return EntryList.FromFile(path);
+        }
+        catch (Exception ex)
+        {
+            throw new ConfigurationParsingException(path, ex);
+        }
+    }
+    
+    private CarSetups LoadSetups()
+    {
+        CarSetups setups = new();
+
+        foreach (var path in EntryList.Cars.Where(c => c.FixedSetup != null).Select(c => c.FixedSetup!).Distinct())
+        {
+            setups.Setups[path] = CarSetups.FromFile(Path.Join("setups", path));
+        }
+
+        return setups;
+    }
+
+    private static DrsZones LoadDrsZones(string path, bool global)
+    {
+        if (global)
+            return new DrsZones
+            {
+                Zones = [
+                    new DrsZones.DrsZone
+                    {
+                        Detection = 0.0f,
+                        Start = 0.0f,
+                        End = 1.0f,
+                    }
+                ]
+            };
+        try
+        {
+            return File.Exists(path) ? DrsZones.FromFile(path) : new DrsZones() ;
         }
         catch (Exception ex)
         {
@@ -188,22 +228,24 @@ public partial class ACServerConfiguration
 
         if (Server.Practice != null)
         {
-            Server.Practice.Id = 0;
+            Server.Practice.Id = sessions.Count;
             Server.Practice.Type = SessionType.Practice;
             sessions.Add(Server.Practice);
         }
 
         if (Server.Qualify != null)
         {
-            Server.Qualify.Id = 1;
+            Server.Qualify.Id = sessions.Count;
             Server.Qualify.Type = SessionType.Qualifying;
             sessions.Add(Server.Qualify);
         }
 
         if (Server.Race != null)
         {
-            Server.Race.Id = 2;
+            Server.Race.Id = sessions.Count;
             Server.Race.Type = SessionType.Race;
+            if (!Server.Race.IsTimedRace)
+                Server.HasExtraLap = false;
             sessions.Add(Server.Race);
         }
 

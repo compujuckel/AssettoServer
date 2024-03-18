@@ -23,7 +23,7 @@ public static class NetworkUtils
             return NetworkInterface.GetAllNetworkInterfaces()
                 .Select(i => i.GetIPProperties())
                 .First(i => i.UnicastAddresses.Any(u => u.Address.Equals(address)))
-                .GatewayAddresses.First().Address;
+                .GatewayAddresses.First(g => g.Address.AddressFamily == AddressFamily.InterNetwork).Address;
         }
         catch
         {

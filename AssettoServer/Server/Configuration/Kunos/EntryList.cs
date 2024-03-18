@@ -20,7 +20,8 @@ public class EntryList
         [IniField("BALLAST")] public float Ballast { get; init; }
         [IniField("RESTRICTOR")] public int Restrictor { get; init; }
         [IniField("DRIVERNAME")] public string? DriverName { get; init; }
-        [IniField("TEAM")] public string? Team { get; init; }
+        [IniField("TEAM")] public string? Team { get; init; }        
+        [IniField("FIXED_SETUP")] public string? FixedSetup { get; init; } = null;
         [IniField("GUID")] public string Guid { get; init; } = "";
         [IniField("AI")] public AiMode AiMode { get; internal set; } = AiMode.None;
     }

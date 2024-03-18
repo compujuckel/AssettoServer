@@ -14,6 +14,7 @@ public class LapCompletedOutgoing : IOutgoingNetworkPacket
         public uint LapTime;
         public ushort NumLaps;
         public byte HasCompletedLastLap;
+        public byte RacePos;
     }
     
     public void ToWriter(ref PacketWriter writer)

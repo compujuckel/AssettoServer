@@ -3,6 +3,8 @@ using System.Net.Http;
 using AssettoServer.Commands;
 using AssettoServer.Commands.Contexts;
 using AssettoServer.Commands.TypeParsers;
+using AssettoServer.Network;
+using AssettoServer.Network.Http;
 using AssettoServer.Network.Http.Authentication;
 using AssettoServer.Network.Rcon;
 using AssettoServer.Network.Tcp;
@@ -31,7 +33,7 @@ using Microsoft.Extensions.Hosting;
 using Prometheus;
 using Qmmands;
 
-namespace AssettoServer.Network.Http;
+namespace AssettoServer;
 
 public class Startup
 {
@@ -72,6 +74,7 @@ public class Startup
         builder.RegisterType<CSPClientMessageTypeManager>().AsSelf().SingleInstance();
         builder.RegisterType<CSPClientMessageHandler>().AsSelf().SingleInstance();
         builder.RegisterType<SessionManager>().AsSelf().SingleInstance();
+        builder.RegisterType<VoteManager>().AsSelf().SingleInstance();
         builder.RegisterType<EntryCarManager>().AsSelf().SingleInstance();
         builder.RegisterType<IpApiGeoParamsProvider>().As<IGeoParamsProvider>();
         builder.RegisterType<GeoParamsManager>().AsSelf().SingleInstance();

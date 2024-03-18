@@ -35,7 +35,6 @@ public class ACServer : CriticalBackgroundService
     private readonly List<IHostedService> _autostartServices;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly ITrackParamsProvider _trackParamsProvider;
-    private readonly ICMContentProvider _cmContentProvider;
 
     /// <summary>
     /// Fires on each server tick in the main loop. Don't do resource intensive / long running stuff in here!
@@ -52,7 +51,6 @@ public class ACServer : CriticalBackgroundService
         GeoParamsManager geoParamsManager,
         ITrackParamsProvider trackParamsProvider,
         ChecksumManager checksumManager,
-        ICMContentProvider cmContentProvider,
         ACTcpServer tcpServer,
         ACUdpServer udpServer,
         CSPFeatureManager cspFeatureManager,
@@ -70,9 +68,8 @@ public class ACServer : CriticalBackgroundService
         _checksumManager = checksumManager;
         _applicationLifetime = applicationLifetime;
         _trackParamsProvider = trackParamsProvider;
-        _cmContentProvider = cmContentProvider;
 
-        _autostartServices = new List<IHostedService> { weatherManager, tcpServer, udpServer };
+        _autostartServices = new List<IHostedService> { weatherManager, sessionManager, tcpServer, udpServer };
         _autostartServices.AddRange(autostartServices);
         _autostartServices.Add(kunosLobbyRegistration);
 
@@ -108,16 +105,6 @@ public class ACServer : CriticalBackgroundService
         cspServerScriptProvider.AddScript(stream, "assettoserver.lua");
     }
 
-    private bool IsSessionOver()
-    {
-        if (_sessionManager.CurrentSession.Configuration.Type != SessionType.Race)
-        {
-            return _sessionManager.CurrentSession.TimeLeftMilliseconds < 0;
-        }
-
-        return false;
-    }
-
     private void OnApplicationStopping()
     {
         Log.Information("Server shutting down");
@@ -144,7 +131,6 @@ public class ACServer : CriticalBackgroundService
         
         _entryCarManager.Initialize();
         _checksumManager.Initialize();
-        _sessionManager.Initialize();
         await _trackParamsProvider.InitializeAsync();
         await _geoParamsManager.InitializeAsync();
 
@@ -269,11 +255,6 @@ public class ACServer : CriticalBackgroundService
                         }
                             
                         updates.Clear();
-                    }
-
-                    if (IsSessionOver())
-                    {
-                        _sessionManager.NextSession();
                     }
                 }
 

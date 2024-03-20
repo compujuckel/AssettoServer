@@ -1,5 +1,3 @@
-using System.Numerics;
-
 namespace AssettoServer.Network.ClientMessages;
 
 [OnlineEvent(Key = "AS_RequestResetCar")]

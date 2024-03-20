@@ -10,13 +10,22 @@ namespace CustomCommandPlugin;
 
 public class CustomCommand : CriticalBackgroundService, IAssettoServerAutostart
 {
+    private readonly CustomCommandConfiguration _configuration;
+    private readonly CommandService _commandService;
+
     public CustomCommand(CustomCommandConfiguration configuration, CommandService commandService, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
-        commandService.AddModule<ACModuleBase>(m =>
+        _configuration = configuration;
+        _commandService = commandService;
+    }
+
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _commandService.AddModule<ACModuleBase>(m =>
         {
-            foreach (var (alias, response) in configuration.Commands)
+            foreach (var (alias, response) in _configuration.Commands)
             {
-                if (!commandService.FindCommands(alias).Any(c => c.Command.Aliases.Any(a => a == alias)))
+                if (!_commandService.FindCommands(alias).Any(c => c.Command.Aliases.Any(a => a == alias)))
                 {
                     m.AddCommand(ctx =>
                     {
@@ -37,10 +46,7 @@ public class CustomCommand : CriticalBackgroundService, IAssettoServerAutostart
                 }
             }
         });
-    }
-
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
+        
         Log.Debug("CustomCommandPlugin autostart called");
         return Task.CompletedTask;
     }

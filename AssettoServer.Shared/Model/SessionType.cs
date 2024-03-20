@@ -3,7 +3,7 @@
 public enum SessionType : byte
 {
     Booking = 0,
-    Practice,
-    Qualifying,
-    Race
+    Practice = 1,
+    Qualifying = 2,
+    Race = 3
 }

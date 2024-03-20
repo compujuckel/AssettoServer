@@ -133,6 +133,8 @@
         <EmbeddedResource Include="Server\Ai\ai_debug.lua" />
         <None Remove="Server\Lua\assettoserver.lua" />
         <EmbeddedResource Include="Server\Lua\assettoserver.lua" />
+        <None Remove="Server\Lua\resetcar.lua" />
+        <EmbeddedResource Include="Server\Lua\resetcar.lua" />
         <None Remove="Assets\logo_42.png" />
         <EmbeddedResource Include="Assets\logo_42.png" />
         <None Remove="Assets\srp-logo-new.png" />

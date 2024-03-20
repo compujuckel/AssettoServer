@@ -1,0 +1,10 @@
+using System.Numerics;
+
+namespace AssettoServer.Network.ClientMessages;
+
+[OnlineEvent(Key = "AS_RequestResetCar")]
+public class RequestResetPacket : OnlineEvent<RequestResetPacket>
+{
+    [OnlineEventField(Name = "spicy")]
+    public byte Spicy;
+}

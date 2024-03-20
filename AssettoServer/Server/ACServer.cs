@@ -103,6 +103,12 @@ public class ACServer : CriticalBackgroundService
 
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Lua.assettoserver.lua")!;
         cspServerScriptProvider.AddScript(stream, "assettoserver.lua");
+
+        if (_configuration.Extra is { EnableClientMessages: true, EnableCarReset: true, MinimumCSPVersion: >= CSPVersion.V0_2_3_p47, EnableAi: true })
+        {
+            using var resetCarStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Lua.resetcar.lua")!;
+            cspServerScriptProvider.AddScript(resetCarStream, "resetcar.lua");
+        }
     }
 
     private void OnApplicationStopping()

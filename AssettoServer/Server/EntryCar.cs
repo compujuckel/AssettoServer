@@ -299,7 +299,11 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
 
     public bool TryResetPosition()
     {
-        if (_spline == null) return false;
+        if (_spline == null)
+        {
+            Logger.Information("Failed reset position for {Player}({SessionId})",Client?.Name, Client?.SessionId);
+            return false;
+        }
 
         var (splinePointId, _) = _spline.WorldToSpline(Status.Position);
 
@@ -319,7 +323,8 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         
             Client?.SendCollisionUpdatePacket(true);
         });
-        
+    
+        Logger.Information("Reset position for {Player}({SessionId})",Client?.Name, Client?.SessionId);
         return true;
     }
 }

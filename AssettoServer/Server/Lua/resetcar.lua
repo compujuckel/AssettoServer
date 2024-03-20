@@ -7,7 +7,7 @@ local requestResetCarEvent = ac.OnlineEvent({
 end)
 
 local resetCarControl = ac.ControlButton('__EXT_CMD_RESET', nil)
-resetCarControl:onPressed(function() requestResetCarEvent({spicy=0}) end)
+resetCarControl:onPressed(function() requestResetCarEvent({dummy=0}) end)
 
 local drawWindow = true
 local centerPos = vec2(ac.getUI().windowSize.x / 2, ac.getUI().windowSize.y / 4)

@@ -1,6 +1,6 @@
 local requestResetCarEvent = ac.OnlineEvent({
     ac.StructItem.key("AS_RequestResetCar"),
-    spicy = ac.StructItem.byte(),
+    dummy = ac.StructItem.byte(),
 }, function (sender, message)
     if sender ~= nil then return end
     ac.debug("request_reset_car", message.spicy)

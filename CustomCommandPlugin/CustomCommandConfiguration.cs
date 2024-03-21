@@ -10,6 +10,7 @@ public class CustomCommandConfiguration
     [YamlMember(Description = "Configure your custom commands")]
     public Dictionary<string, string> Commands { get; init; } = new()
     {
-        {"discord", "https://discord.gg/uXEXRcSkyz"}
+        {"comfymap", "Download comfy map! [https://www.racedepartment.com/downloads/comfy-map.52623/]"},
+        {"discord", "https://discord.gg/uXEXRcSkyz"},
     };
 }

@@ -305,6 +305,11 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
             return false;
         }
 
+        if (_sessionManager.ServerTimeMilliseconds < _sessionManager.CurrentSession.StartTimeMilliseconds + 20_000 
+            || (_sessionManager.ServerTimeMilliseconds > _sessionManager.CurrentSession.EndTimeMilliseconds
+                && _sessionManager.CurrentSession.EndTimeMilliseconds > 0))
+            return false;
+
         var (splinePointId, _) = _spline.WorldToSpline(Status.Position);
 
         var splinePoint = _spline.Points[splinePointId];

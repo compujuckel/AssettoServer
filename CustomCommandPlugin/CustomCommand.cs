@@ -29,16 +29,11 @@ public class CustomCommand : CriticalBackgroundService, IAssettoServerAutostart
                 {
                     m.AddCommand(ctx =>
                     {
-                        Callback((BaseCommandContext) ctx);
+                        ((BaseCommandContext) ctx).Reply(response);
                     }, c =>
                     {
                         c.Aliases.Add(alias);
                     });
-
-                    void Callback(BaseCommandContext c)
-                    {
-                        c.Reply(response);
-                    }
                 }
                 else
                 {
@@ -47,7 +42,6 @@ public class CustomCommand : CriticalBackgroundService, IAssettoServerAutostart
             }
         });
         
-        Log.Debug("CustomCommandPlugin autostart called");
         return Task.CompletedTask;
     }
 }

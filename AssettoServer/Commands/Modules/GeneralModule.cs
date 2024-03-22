@@ -69,11 +69,11 @@ public class GeneralModule : ACModuleBase
     {
         if (_configuration.Extra is { EnableClientMessages: true, EnableCarReset: true, MinimumCSPVersion: >= CSPVersion.V0_2_3_p47, EnableAi: true })
         {
-            if (!Client!.EntryCar.TryResetPosition())
-                Reply("Couldn't reset position");
+            Reply(Client!.EntryCar.TryResetPosition() 
+                ? "Position successfully reset" 
+                : "Couldn't reset position");
         }
         else
             Reply("Reset is not enabled on this server");
-                
     }
 }

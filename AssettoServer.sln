@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServer.Tests", "Asse
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VotingPresetPlugin", "VotingPresetPlugin\VotingPresetPlugin.csproj", "{458FEEA8-D472-4FA9-8E50-63F04F05180A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CustomCommandPlugin", "CustomCommandPlugin\CustomCommandPlugin.csproj", "{369241FE-2176-4AA6-B44C-0C1A71D5EA25}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -105,6 +107,10 @@ Global
 		{458FEEA8-D472-4FA9-8E50-63F04F05180A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{458FEEA8-D472-4FA9-8E50-63F04F05180A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{458FEEA8-D472-4FA9-8E50-63F04F05180A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{369241FE-2176-4AA6-B44C-0C1A71D5EA25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{369241FE-2176-4AA6-B44C-0C1A71D5EA25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{369241FE-2176-4AA6-B44C-0C1A71D5EA25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{369241FE-2176-4AA6-B44C-0C1A71D5EA25}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

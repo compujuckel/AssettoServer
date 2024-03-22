@@ -26,6 +26,9 @@ internal static class Program
 
         [Option("legacy", Required = false, HelpText = "Use legacy file format compatible with AC (v7)")]
         public bool Legacy { get; set; } = false;
+
+        [Option("reverse", Required = false, HelpText = "Reverse direction of spline")]
+        public bool Reverse { get; set; } = false;
     }
 
     public static async Task Main(string[] args)
@@ -49,6 +52,9 @@ internal static class Program
 
         if (options.Legacy)
             fastLane.Version = 7;
+        
+        if (options.Reverse)
+            fastLane.Reverse();
 
         Log.Information("Writing output spline to {Path}...", options.Output);
         await using (var outputFile = File.Create(options.Output))

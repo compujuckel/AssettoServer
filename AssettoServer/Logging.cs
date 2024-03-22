@@ -35,6 +35,7 @@ internal static class Logging
         new LoggerConfiguration()
             .MinimumLevel.Debug()
             .MinimumLevel.Override("AssettoServer.Network.Http.Authentication.ACClientAuthenticationHandler", LogEventLevel.Warning)
+            .MinimumLevel.Override("AspNetCore.Authentication.ApiKey.ApiKeyInHeaderHandler", LogEventLevel.Information)
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
             .WriteTo.Async(a =>
@@ -49,5 +50,4 @@ internal static class Logging
                 }
             })
             .WriteTo.File($"logs/{logPrefix}-.txt", rollingInterval: RollingInterval.Day);
-
 }

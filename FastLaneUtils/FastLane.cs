@@ -37,20 +37,6 @@ public class FastLane
     public static FastLane FromFile(string path)
     {
         using var file = File.OpenRead(path);
-        
-        if (path.EndsWith(".aiz"))
-        {
-            using var compressed = new GZipStream(file, CompressionMode.Decompress);
-            return FromFile(compressed);
-        }
-        else
-        {
-            return FromFile(file);
-        }
-    }
-    
-    public static FastLane FromFile(Stream file)
-    {
         using var reader = new BinaryReader(file);
 
         var fastLane = new FastLane
@@ -135,6 +121,17 @@ public class FastLane
         }
 
         return fastLane;
+    }
+
+    public void Reverse()
+    {
+        Points.Reverse();
+
+        foreach (var point in Points)
+        {
+            point.Forward *= -1;
+            point.Direction *= -1;
+        }
     }
 
     public void ToFile(Stream file)

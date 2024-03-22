@@ -67,7 +67,8 @@ local teleportCarEvent = ac.OnlineEvent({
     ac.StructItem.key("AS_TeleportCar"),
     position = ac.StructItem.vec3(),
     direction = ac.StructItem.vec3(),
-    velocity = ac.StructItem.vec3()
+    velocity = ac.StructItem.vec3(),
+    target = ac.StructItem.byte()
 }, function (sender, message)
     if sender ~= nil then return end
     ac.debug("teleport_car_position", message.position)
@@ -80,7 +81,8 @@ end)
 
 local collisionUpdateEvent = ac.OnlineEvent({
     ac.StructItem.key("AS_CollisionUpdate"),
-    enabled = ac.StructItem.boolean()
+    enabled = ac.StructItem.boolean(),
+    target = ac.StructItem.byte()
 }, function (sender, message)
     ac.debug("collision_update_index", sender.index)
     ac.debug("collision_update_enabled", message.enabled)

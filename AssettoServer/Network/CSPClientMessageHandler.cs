@@ -24,11 +24,10 @@ public class CSPClientMessageHandler
         _entryCarManager = entryCarManager;
         _configuration = configuration;
         
-        cspClientMessageTypeManager.RegisterOnlineEvent<CollisionUpdatePacket>((_, _) => { });
-        cspClientMessageTypeManager.RegisterOnlineEvent<TeleportCarPacket>((_, _) => { });
+        cspClientMessageTypeManager.RegisterOnlineEvent<CollisionUpdatePacket>(OnCollisionUpdate);
+        cspClientMessageTypeManager.RegisterOnlineEvent<TeleportCarPacket>(OnTeleportCar);
         cspClientMessageTypeManager.RegisterOnlineEvent<RequestResetPacket>((client, _) => { OnResetCar(client); });
     }
-    
     
     public void OnCSPClientMessageUdp(ACTcpClient sender, PacketReader reader)
     {
@@ -204,6 +203,20 @@ public class CSPClientMessageHandler
     private static void OnResetCar(ACTcpClient sender)
     {
         sender.EntryCar.TryResetPosition();
+    }
+
+    private void OnTeleportCar(ACTcpClient sender, TeleportCarPacket packet)
+    {
+        if (!sender.IsAdministrator) return;
+        
+        _entryCarManager.EntryCars[packet.Target].Client?.SendPacket(packet);
+    }
+
+    private void OnCollisionUpdate(ACTcpClient sender, CollisionUpdatePacket packet)
+    {
+        if (!sender.IsAdministrator) return;
+        
+        _entryCarManager.EntryCars[packet.Target].Client?.SendPacket(packet);
     }
 
     private static bool IsRanged(CSPClientMessageType type)

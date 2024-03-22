@@ -11,4 +11,6 @@ public class TeleportCarPacket : OnlineEvent<TeleportCarPacket>
     public Vector3 Direction;
     [OnlineEventField(Name = "velocity")]
     public Vector3 Velocity;
+    [OnlineEventField(Name = "target")]
+    public byte Target;
 }

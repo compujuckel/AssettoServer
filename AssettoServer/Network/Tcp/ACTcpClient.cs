@@ -932,7 +932,8 @@ public class ACTcpClient : IClient
         {
             Position = position,
             Direction = direction,
-            Velocity = velocity
+            Velocity = velocity,
+            Target = SessionId
         });
     }
 
@@ -944,7 +945,8 @@ public class ACTcpClient : IClient
         _entryCarManager.BroadcastPacket(new CollisionUpdatePacket
         {
             SessionId = SessionId,
-            Enabled = collisionEnabled
+            Enabled = collisionEnabled,
+            Target = SessionId
         });
     }
     

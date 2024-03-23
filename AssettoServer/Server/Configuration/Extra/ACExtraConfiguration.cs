@@ -27,6 +27,8 @@ public partial class ACExtraConfiguration : ObservableObject
     public int MandatoryClientSecurityLevel { get; init; }
     [YamlMember(Description = "Force headlights on for all cars")]
     public bool ForceLights { get; set; }
+    [YamlMember(Description = "Enable usage of /resetcar to teleport the player to the closest spline point. Requires CSP v0.2.3-preview47 or later")]
+    public bool EnableCarReset { get; set; } = false;
     [YamlMember(Description = "Enable vanilla server voting for: Session skip; Session restart")]
     public bool EnableSessionVote { get; set; } = true;
     [YamlMember(Description = "Enable vanilla server voting to kick a player")]

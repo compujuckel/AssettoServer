@@ -7,6 +7,7 @@ using System.Reflection;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Network.Udp;
+using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.GeoParams;
@@ -57,7 +58,8 @@ public class ACServer : CriticalBackgroundService
         CSPServerScriptProvider cspServerScriptProvider,
         IEnumerable<IAssettoServerAutostart> autostartServices,
         KunosLobbyRegistration kunosLobbyRegistration,
-        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+        IHostApplicationLifetime applicationLifetime,
+        AiSpline? aiSpline = null) : base(applicationLifetime)
     {
         Log.Information("Starting server");
             
@@ -81,7 +83,7 @@ public class ACServer : CriticalBackgroundService
 
         if (_configuration.Extra.EnableClientMessages)
         {
-            if (_configuration.CSPTrackOptions.MinimumCSPVersion < 1937)
+            if (_configuration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_1_77)
             {
                 throw new ConfigurationException(
                     "Client messages need a minimum required CSP version of 0.1.77 (1937)");
@@ -103,6 +105,15 @@ public class ACServer : CriticalBackgroundService
 
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Lua.assettoserver.lua")!;
         cspServerScriptProvider.AddScript(stream, "assettoserver.lua");
+
+        if (_configuration.Extra.EnableCarReset)
+        {
+            if (!_configuration.Extra.EnableClientMessages || _configuration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_3_p47  || aiSpline == null)
+            {
+                throw new ConfigurationException(
+                    "Reset car: Minimum required CSP version of 0.2.3-preview47 (2796); Requires enabled client messages; Requires working AI spline");
+            }
+        }
     }
 
     private void OnApplicationStopping()

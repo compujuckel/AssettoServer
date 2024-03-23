@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
+using AssettoServer.Network.ClientMessages;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
@@ -294,5 +295,41 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     {
         var targetPosition = target.TargetCar != null ? target.TargetCar.Status.Position : target.Status.Position;
         return Vector3.DistanceSquared(Status.Position, targetPosition) < range * range;
+    }
+
+    public bool TryResetPosition()
+    {
+        if (_spline == null)
+        {
+            Logger.Information("Failed reset position for {Player}({SessionId})",Client?.Name, Client?.SessionId);
+            return false;
+        }
+
+        if (_sessionManager.ServerTimeMilliseconds < _sessionManager.CurrentSession.StartTimeMilliseconds + 20_000 
+            || (_sessionManager.ServerTimeMilliseconds > _sessionManager.CurrentSession.EndTimeMilliseconds
+                && _sessionManager.CurrentSession.EndTimeMilliseconds > 0))
+            return false;
+
+        var (splinePointId, _) = _spline.WorldToSpline(Status.Position);
+
+        var splinePoint = _spline.Points[splinePointId];
+        
+        var position = splinePoint.Position;
+        var direction = - _spline.Operations.GetForwardVector(splinePoint.NextId);
+        
+        Client?.SendCollisionUpdatePacket(false);
+        
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(500);
+        
+            Client?.SendTeleportCarPacket(position, direction);
+            await Task.Delay(10000);
+        
+            Client?.SendCollisionUpdatePacket(true);
+        });
+    
+        Logger.Information("Reset position for {Player}({SessionId})",Client?.Name, Client?.SessionId);
+        return true;
     }
 }

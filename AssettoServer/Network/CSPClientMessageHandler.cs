@@ -200,9 +200,10 @@ public class CSPClientMessageHandler
         }
     }
 
-    private static void OnResetCar(ACTcpClient sender)
+    private void OnResetCar(ACTcpClient sender)
     {
-        sender.EntryCar.TryResetPosition();
+        if (_configuration.Extra.EnableCarReset)
+            sender.EntryCar.TryResetPosition();
     }
 
     private void OnTeleportCar(ACTcpClient sender, TeleportCarPacket packet)

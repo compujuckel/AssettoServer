@@ -113,9 +113,6 @@ public class ACServer : CriticalBackgroundService
                 throw new ConfigurationException(
                     "Reset car: Minimum required CSP version of 0.2.3-preview47 (2796); Requires enabled client messages; Requires working AI spline");
             }
-            
-            using var resetCarStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Lua.resetcar.lua")!;
-            cspServerScriptProvider.AddScript(resetCarStream, "resetcar.lua");
         }
     }
 

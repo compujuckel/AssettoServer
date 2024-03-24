@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using AssettoServer.Server;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Configuration;
@@ -70,28 +71,29 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
                 for (int i = 0; i < entryCar.LastSeenAiState.Length; i++)
                 {
                     var aiState = entryCar.LastSeenAiState[i];
-                    
                     if (aiState == null) continue;
-                    if (aiStateMapping.ContainsKey(aiState)) continue;
                     
-                    aiStateMapping.Add(aiState, (ushort)aiFrames.Count);
-                    
+                    if (!aiStateMapping.TryGetValue(aiState, out var aiStateId))
+                    {
+                        aiStateId = (ushort)aiFrames.Count;
+                        aiStateMapping.Add(aiState, aiStateId);
+                        aiFrames.Add(new ReplayCarFrame
+                        {
+                            SessionId = aiState.EntryCar.SessionId,
+                            WorldTranslation = aiState.Status.Position,
+                            WorldOrientation = new HVector3(aiState.Status.Rotation),
+                            EngineRpm = (Half)aiState.Status.EngineRpm,
+                            Gas = aiState.Status.Gas,
+                            Gear = aiState.Status.Gear,
+                            Velocity = aiState.Status.Velocity,
+                            Connected = true
+                        });
+                    }
+
                     if (aiFrameMapping.TryGetValue((byte)i, out var aiFrameMappingList))
                     {
-                        aiFrameMappingList.Add((ushort)aiFrames.Count);
+                        aiFrameMappingList.Add(aiStateId);
                     }
-                    
-                    aiFrames.Add(new ReplayCarFrame
-                    {
-                        SessionId = aiState.EntryCar.SessionId,
-                        WorldTranslation = aiState.Status.Position,
-                        WorldOrientation = new HVector3(aiState.Status.Rotation),
-                        EngineRpm = (Half)aiState.Status.EngineRpm,
-                        Gas = aiState.Status.Gas,
-                        Gear = aiState.Status.Gear,
-                        Velocity = aiState.Status.Velocity,
-                        Connected = true
-                    });
                 }
             }
         }
@@ -104,44 +106,19 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
             AiFrames = aiFrames.ToArray(),
             AiFrameMapping = aiFrameMapping
         });
-        
-        /*
-        _replay.TrackFrames.Add(new ReplayTrackFrame
-        {
-            SunAngle = (Half)WeatherUtils.SunAngleFromSeconds(_weather.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0),
-            SomethingElse = (Half)0,
-            TrackObjects = []
-        });
-        
-        var entryCar = _entryCarManager.EntryCars[0];
-        
-        _replay.Cars[0].Frames.Add(new ReplayCarFrame
-        {
-            WorldTranslation = entryCar.Status.Position,
-            WorldOrientation = new HVector3(entryCar.Status.Rotation),
-            EngineRpm = (Half)entryCar.Status.EngineRpm,
-            Gas = entryCar.Status.Gas,
-            Gear = entryCar.Status.Gear,
-            Velocity = entryCar.Status.Velocity,
-            Connected = entryCar.Client?.HasSentFirstUpdate == true
-        });
-
-        _replay.CurrentRecordingIndex = (uint)_replay.TrackFrames.Count;
-
-        if (_replay.CurrentRecordingIndex == 600)
-        {
-            Log.Debug("Writing replay");
-            using var file = File.Create("out.acreplay");
-            using var writer = new ReplayWriter(file);
-            _replay.ToWriter(writer, 0);
-        }
-        */
 
         if (_frames.Count % 600 == 0)
         {
             Log.Debug("Writing replay...");
-            using var t = Operation.Time("Writing replay");
-            _replayManager.WriteReplay(_frames, 0);
+            using (var t = Operation.Time("Writing replay 0"))
+            {
+                _replayManager.WriteReplay(_frames, 0, "out_0.acreplay");
+            }
+
+            using (var t = Operation.Time("Writing replay 1"))
+            {
+                _replayManager.WriteReplay(_frames, 1, "out_1.acreplay");
+            }
         }
     }
 

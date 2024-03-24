@@ -15,9 +15,9 @@ public class ReplayManager
         _configuration = configuration;
     }
 
-    public void WriteReplay(List<ReplayFrame> frames, byte sessionId)
+    public void WriteReplay(List<ReplayFrame> frames, byte sessionId, string filename)
     {
-        using var file = File.Create("out.acreplay");
+        using var file = File.Create(filename);
         using var writer = new ReplayWriter(file);
         
         writer.Write(16);

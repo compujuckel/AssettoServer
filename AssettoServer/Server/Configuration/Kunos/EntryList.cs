@@ -43,7 +43,7 @@ public class EntryList
                     skippedIndex = i;
                     break;
                 case true when skippedIndex >= 0:
-                    Log.Warning("EntryList index {Index} skipped. Any entry after this will be ignored", skippedIndex);
+                    Log.Warning("Entry list index {Index} skipped. Any entry after this will be ignored", skippedIndex);
                     breakLoop = true;
                     break;
             }

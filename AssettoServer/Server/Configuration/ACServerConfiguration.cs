@@ -137,7 +137,7 @@ public partial class ACServerConfiguration
 
             var res = EntryList.FromFile(path);
             if (res.Cars.Count == 0)
-                throw new ConfigurationException("EntryList must contain one or more entries");
+                throw new ConfigurationException("Entry list must contain one or more entries");
             return res;
         }
         catch (Exception ex)

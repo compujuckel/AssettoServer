@@ -135,7 +135,10 @@ public partial class ACServerConfiguration
                 entryList.CopyTo(outFile);
             }
 
-            return EntryList.FromFile(path);
+            var res = EntryList.FromFile(path);
+            if (res.Cars.Count == 0)
+                throw new ConfigurationException("EntryList must contain one or more entries");
+            return res;
         }
         catch (Exception ex)
         {

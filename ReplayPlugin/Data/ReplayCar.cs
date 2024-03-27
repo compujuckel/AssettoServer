@@ -29,7 +29,7 @@ public class ReplayCar
         foreach (var frame in Frames)
         {
             var before = writer.BaseStream.Position;
-            frame.ToWriter(writer); // , NumberOfWings);
+            frame.ToWriter(writer, true); // , NumberOfWings);
             var after = writer.BaseStream.Position;
             //Log.Debug("Full frame size: {0}", after - before);
         }

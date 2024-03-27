@@ -1,8 +1,6 @@
-﻿using System.Numerics;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using Serilog;
 
 namespace ReplayPlugin.Data;
 
@@ -24,13 +22,6 @@ public class ReplayWriter : BinaryWriter
     public void WritePadding(int count)
     {
         Write(stackalloc byte[count]);
-    }
-    
-    public void WriteHalfVector3(Vector3 value)
-    {
-        Write((Half)value.X);
-        Write((Half)value.Y);
-        Write((Half)value.Z);
     }
 
     public void WriteString(string? str)

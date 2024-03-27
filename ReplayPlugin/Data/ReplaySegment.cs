@@ -7,7 +7,7 @@ public class ReplaySegment
     private readonly byte[] _array;
     private int _size = 0;
 
-    public List<int> Index = [];
+    public readonly List<int> Index = [];
     
     public ReplaySegment(int size = 2_000_000)
     {
@@ -40,7 +40,7 @@ public class ReplaySegment
         return true;
     }
 
-    public Enumerator GetEnumerator() => new Enumerator(this);
+    public Enumerator GetEnumerator() => new(this);
 
     public ref struct Enumerator(ReplaySegment segment)
     {

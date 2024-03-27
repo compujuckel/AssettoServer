@@ -1,4 +1,4 @@
-﻿using Serilog;
+﻿using ReplayPlugin.Utils;
 
 namespace ReplayPlugin.Data;
 
@@ -16,13 +16,13 @@ public class ReplayCar
 
     public LapInfo[] Laps;
 
-    public void ToWriter(ReplayWriter writer, uint numberArg)
+    public void ToWriter(BinaryWriter writer, uint numberArg)
     {
-        writer.WriteString(CarId);
-        writer.WriteString(DriverName);
-        writer.WriteString(NationCode);
-        writer.WriteString(DriverTeam);
-        writer.WriteString(CarSkinId);
+        writer.WriteACString(CarId);
+        writer.WriteACString(DriverName);
+        writer.WriteACString(NationCode);
+        writer.WriteACString(DriverTeam);
+        writer.WriteACString(CarSkinId);
         
         writer.WriteStruct((uint)Frames.Count);
         writer.WriteStruct(NumberOfWings);

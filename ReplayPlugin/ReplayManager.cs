@@ -15,7 +15,7 @@ public class ReplayManager
         _configuration = configuration;
     }
 
-    public void WriteReplay(List<ReplayFrame> frames, byte sessionId, string filename)
+    public void WriteReplay(ReplaySegment segment, byte targetSessionId, string filename)
     {
         using var file = File.Create(filename);
         using var writer = new ReplayWriter(file);
@@ -27,16 +27,16 @@ public class ReplayManager
         writer.WriteString(_configuration.Server.TrackConfig);
         
         writer.Write((uint) _entryCarManager.EntryCars.Length);
-        writer.Write(frames.Count);
+        writer.Write(segment.Index.Count);
         
-        writer.Write((uint) frames.Count);
+        writer.Write((uint) segment.Index.Count);
         writer.Write(0);
         
-        foreach (var frame in frames)
+        foreach (ReplayFrame frame in segment)
         {
             var trackFrame = new ReplayTrackFrame
             {
-                SunAngle = frame.SunAngle
+                SunAngle = frame.Header.SunAngle
             };
             trackFrame.ToWriter(writer);
         }
@@ -49,40 +49,47 @@ public class ReplayManager
             writer.WriteString("");
             writer.WriteString(_entryCarManager.EntryCars[i].Skin);
         
-            writer.Write((uint) frames.Count);
+            writer.Write((uint) segment.Index.Count);
             writer.Write(0);
             
+            Span<short> aiFrameMappings = Span<short>.Empty;
+            
             // frames here
-            foreach (var frame in frames)
+            foreach (var frame in segment)
             {
-                var found = false;
-                foreach (var carFrame in frame.CarFrames.Span)
+                var foundFrame = false;
+                var foundAiMapping = false;
+                foreach (var carFrame in frame.CarFrames)
                 {
                     if (carFrame.SessionId == i)
                     {
-                        found = true;
-                        carFrame.ToWriter(writer);
+                        foundFrame = true;
+                        carFrame.ToWriter(writer, true);
+                    }
+
+                    if (carFrame.SessionId == targetSessionId)
+                    {
+                        foundAiMapping = true;
+                        aiFrameMappings = frame.GetAiFrameMappings(carFrame.AiMappingStartIndex);
+                    }
+
+                    if (foundFrame && foundAiMapping) break;
+                }
+
+                foreach (var aiFrameMapping in aiFrameMappings)
+                {
+                    ref var aiFrame = ref frame.AiFrames[aiFrameMapping];
+                    if (aiFrame.SessionId == i)
+                    {
+                        foundFrame = true;
+                        aiFrame.ToWriter(writer, true);
                         break;
                     }
                 }
 
-                if (frame.AiFrameMapping.TryGetValue(sessionId, out var aiFrameMappingList))
+                if (!foundFrame)
                 {
-                    foreach (var aiFrameMapping in aiFrameMappingList)
-                    {
-                        ref var aiFrame = ref frame.AiFrames.Span[aiFrameMapping];
-                        if (aiFrame.SessionId == i)
-                        {
-                            found = true;
-                            aiFrame.ToWriter(writer);
-                            break;
-                        }
-                    }
-                }
-
-                if (!found)
-                {
-                    new ReplayCarFrame().ToWriter(writer);
+                    new ReplayCarFrame().ToWriter(writer, false);
                 }
             }
             

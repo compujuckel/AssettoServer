@@ -1,6 +1,8 @@
 ﻿using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Weather;
 using ReplayPlugin.Data;
+using ReplayPlugin.Utils;
 
 namespace ReplayPlugin;
 
@@ -8,23 +10,25 @@ public class ReplayManager
 {
     private readonly ACServerConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
+    private readonly WeatherManager _weather;
 
-    public ReplayManager(EntryCarManager entryCarManager, ACServerConfiguration configuration)
+    public ReplayManager(EntryCarManager entryCarManager, ACServerConfiguration configuration, WeatherManager weather)
     {
         _entryCarManager = entryCarManager;
         _configuration = configuration;
+        _weather = weather;
     }
 
     public void WriteReplay(ReplaySegment segment, byte targetSessionId, string filename)
     {
         using var file = File.Create(filename);
-        using var writer = new ReplayWriter(file);
+        using var writer = new BinaryWriter(file);
         
         writer.Write(16);
         writer.Write(1000.0 / _configuration.Server.RefreshRateHz);
-        writer.WriteString("03_clear");
-        writer.WriteString(_configuration.CSPTrackOptions.Track);
-        writer.WriteString(_configuration.Server.TrackConfig);
+        writer.WriteACString(_weather.CurrentWeather.Type.Graphics);
+        writer.WriteACString(_configuration.CSPTrackOptions.Track);
+        writer.WriteACString(_configuration.Server.TrackConfig);
         
         writer.Write((uint) _entryCarManager.EntryCars.Length);
         writer.Write(segment.Index.Count);
@@ -32,27 +36,26 @@ public class ReplayManager
         writer.Write((uint) segment.Index.Count);
         writer.Write(0);
         
-        foreach (ReplayFrame frame in segment)
+        foreach (var frame in segment)
         {
-            var trackFrame = new ReplayTrackFrame
+            writer.WriteStruct(new KunosReplayTrackFrame
             {
                 SunAngle = frame.Header.SunAngle
-            };
-            trackFrame.ToWriter(writer);
+            });
         }
         
         for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
         {
-            writer.WriteString(_entryCarManager.EntryCars[i].Model);
-            writer.WriteString($"Entry {i}");
-            writer.WriteString("");
-            writer.WriteString("");
-            writer.WriteString(_entryCarManager.EntryCars[i].Skin);
+            writer.WriteACString(_entryCarManager.EntryCars[i].Model);
+            writer.WriteACString($"Entry {i}");
+            writer.WriteACString("");
+            writer.WriteACString("");
+            writer.WriteACString(_entryCarManager.EntryCars[i].Skin);
         
             writer.Write((uint) segment.Index.Count);
             writer.Write(0);
             
-            Span<short> aiFrameMappings = Span<short>.Empty;
+            var aiFrameMappings = Span<short>.Empty;
             
             // frames here
             foreach (var frame in segment)

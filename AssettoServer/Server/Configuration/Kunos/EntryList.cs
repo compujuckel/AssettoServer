@@ -51,6 +51,9 @@ public class EntryList
             if (breakLoop) break;
         }
         
-        return data.DeserializeObject<EntryList>();
+        if (res.Cars.Count == 0)
+            throw new ConfigurationException("Entry list must contain one or more entries");
+        
+        return res;
     }
 }

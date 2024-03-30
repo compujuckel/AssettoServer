@@ -79,29 +79,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
             }
         }
 
-        if (_segment.TryAddFrame(_state.PlayerCars.Count, _state.AiCars.Count, numAiMappings, this, WriteFrame))
-        {
-            
-        }
-        else
-        {
-            Log.Debug("Segment full");
-            _server.Value.Update -= OnUpdate;
-        }
-
-        if (_segment.Index.Count % 600 == 0)
-        {
-            Log.Debug("Writing replay...");
-            using (var t = Operation.Time("Writing replay 0"))
-            {
-                _replayManager.WriteReplay(_segment, 0, "out_0.acreplay");
-            }
-
-            using (var t = Operation.Time("Writing replay 1"))
-            {
-                _replayManager.WriteReplay(_segment, 1, "out_1.acreplay");
-            }
-        }
+        _replayManager.AddFrame(_state.PlayerCars.Count, _state.AiCars.Count, numAiMappings, this, WriteFrame);
     }
 
     private static void WriteFrame(ref ReplayFrame frame, ReplayPlugin self)

@@ -1,7 +1,5 @@
-﻿using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using AssettoServer.Server;
-using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Services;
@@ -11,37 +9,37 @@ using Microsoft.Extensions.Hosting;
 using Prometheus;
 using ReplayPlugin.Data;
 using Serilog;
-using SerilogTimings;
 
 namespace ReplayPlugin;
 
 public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
 {
-    private readonly ACServerConfiguration _configuration;
+    private readonly ReplayConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
     private readonly SessionManager _session;
     private readonly WeatherManager _weather;
-    private readonly Lazy<ACServer> _server;
     private readonly ReplayManager _replayManager;
     private readonly Summary _onUpdateTimer;
     
-    private readonly ReplaySegment _segment = new();
-    
-    public ReplayPlugin(IHostApplicationLifetime applicationLifetime, Lazy<ACServer> server, ACServerConfiguration configuration, EntryCarManager entryCarManager, WeatherManager weather, SessionManager session, ReplayManager replayManager) : base(applicationLifetime)
+    public ReplayPlugin(IHostApplicationLifetime applicationLifetime,
+        EntryCarManager entryCarManager,
+        WeatherManager weather,
+        SessionManager session,
+        ReplayManager replayManager,
+        ReplayConfiguration configuration) : base(applicationLifetime)
     {
-        _server = server;
-        _configuration = configuration;
         _entryCarManager = entryCarManager;
         _weather = weather;
         _session = session;
         _replayManager = replayManager;
-        
+        _configuration = configuration;
+
         _onUpdateTimer = Metrics.CreateSummary("assettoserver_replayplugin_onupdate", "ReplayPlugin.OnUpdate Duration", MetricDefaults.DefaultQuantiles);
     }
 
     private readonly ReplayFrameState _state = new();
 
-    private void OnUpdate(ACServer sender, EventArgs args)
+    private void Update()
     {
         using var timer = _onUpdateTimer.NewTimer();
         
@@ -110,11 +108,21 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
         }
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _server.Value.Update += OnUpdate;
-        
-        Log.Debug("sizeof {0} mm {1}", Unsafe.SizeOf<ReplayCarFrame>(), Marshal.SizeOf<ReplayCarFrame>());
-        return Task.CompletedTask;
+        Log.Debug("ReplayCarFrame size {Size} bytes", Marshal.SizeOf<ReplayCarFrame>());
+
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(1000.0 / _configuration.RefreshRateHz));
+        while (await timer.WaitForNextTickAsync(stoppingToken))
+        {
+            try
+            {
+                Update();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error during replay update");
+            }
+        }
     }
 }

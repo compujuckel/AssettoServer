@@ -11,7 +11,7 @@ public class ReplaySegment
     public readonly int MaxSize;
     public int Size { get; private set; } = 0;
 
-    public ReplaySegment(int size = 250_000)
+    public ReplaySegment(int size)
     {
         MaxSize = size;
         _array = new byte[size];

@@ -41,9 +41,21 @@ public class ReplayManager
             duration.Humanize(maxUnit: TimeUnit.Second), size.Per(duration).Humanize());
     }
 
+    private void CleanupSegments()
+    {
+        var startTime = _sessionManager.ServerTimeMilliseconds - _configuration.ReplayDurationMilliseconds;
+        while (_segments.TryPeek(out var segment) && segment.EndTime < startTime)
+        {
+            Log.Debug("Removing old replay segment");
+            _segments.TryDequeue(out _);
+        }
+    }
+
     [MemberNotNull(nameof(_currentSegment))]
     private void AddSegment()
     {
+        CleanupSegments();
+        
         var segmentSize = _configuration.MinSegmentSizeBytes;
         if (_currentSegment != null)
         {
@@ -66,7 +78,6 @@ public class ReplayManager
     {
         if (!_currentSegment.TryAddFrame(numCarFrames, numAiFrames, numAiMappings, state, action))
         {
-            Log.Debug("Current replay segment full, adding new segment");
             AddSegment();
             AddFrame(numCarFrames, numAiFrames, numAiMappings, state, action);
         }
@@ -84,7 +95,7 @@ public class ReplayManager
 
         var header = new KunosReplayHeader
         {
-            RecordingIntervalMs = 1000.0 / _serverConfiguration.Server.RefreshRateHz,
+            RecordingIntervalMs = 1000.0 / _configuration.RefreshRateHz,
             Weather = _weather.CurrentWeather.Type.Graphics,
             Track = _serverConfiguration.CSPTrackOptions.Track,
             TrackConfiguration = _serverConfiguration.Server.TrackConfig,

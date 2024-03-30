@@ -3,14 +3,17 @@
 public class ReplaySegment
 {
     public long StartTime;
+    public long EndTime;
 
     private readonly byte[] _array;
-    private int _size = 0;
 
     public readonly List<int> Index = [];
-    
-    public ReplaySegment(int size = 2_000_000)
+    public readonly int MaxSize;
+    public int Size { get; private set; } = 0;
+
+    public ReplaySegment(int size = 250_000)
     {
+        MaxSize = size;
         _array = new byte[size];
     }
 
@@ -20,23 +23,25 @@ public class ReplaySegment
     {
         var size = ReplayFrame.GetSize(numCarFrames, numAiFrames, numAiMappings);
 
-        if (size > _array.Length - _size)
+        if (size > _array.Length - Size)
         {
             return false;
         }
 
-        var mem = _array.AsMemory(_size, size);
+        var mem = _array.AsMemory(Size, size);
         var frame = new ReplayFrame(mem, numCarFrames,  numAiFrames,  numAiMappings);
         
         action(ref frame, state);
 
-        if (_size == 0)
+        if (Size == 0)
         {
             StartTime = frame.Header.ServerTime;
         }
+
+        EndTime = frame.Header.ServerTime;
         
-        Index.Add(_size);
-        _size += size;
+        Index.Add(Size);
+        Size += size;
         return true;
     }
 

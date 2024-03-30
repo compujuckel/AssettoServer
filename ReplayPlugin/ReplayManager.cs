@@ -1,101 +1,163 @@
-﻿using AssettoServer.Server;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
+using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
+using Humanizer;
 using ReplayPlugin.Data;
 using ReplayPlugin.Utils;
+using Serilog;
 
 namespace ReplayPlugin;
 
 public class ReplayManager
 {
-    private readonly ACServerConfiguration _configuration;
+    private readonly ReplayConfiguration _configuration;
+    private readonly ACServerConfiguration _serverConfiguration;
     private readonly EntryCarManager _entryCarManager;
     private readonly WeatherManager _weather;
+    private readonly SessionManager _sessionManager;
 
-    public ReplayManager(EntryCarManager entryCarManager, ACServerConfiguration configuration, WeatherManager weather)
+    private readonly ConcurrentQueue<ReplaySegment> _segments = [];
+
+    private ReplaySegment _currentSegment;
+    
+    public ReplayManager(EntryCarManager entryCarManager, ACServerConfiguration serverConfiguration, WeatherManager weather, SessionManager sessionManager, ReplayConfiguration configuration)
     {
         _entryCarManager = entryCarManager;
-        _configuration = configuration;
+        _serverConfiguration = serverConfiguration;
         _weather = weather;
+        _sessionManager = sessionManager;
+        _configuration = configuration;
+
+        AddSegment();
     }
 
-    public void WriteReplay(ReplaySegment segment, byte targetSessionId, string filename)
+    private void PrintStatistics()
     {
+        var size = _currentSegment.Size.Bytes();
+        var duration = TimeSpan.FromMilliseconds(_currentSegment.EndTime - _currentSegment.StartTime);
+        Log.Debug("Last replay segment size {Size}, {Duration} - {Rate}", size, 
+            duration.Humanize(maxUnit: TimeUnit.Second), size.Per(duration).Humanize());
+    }
+
+    [MemberNotNull(nameof(_currentSegment))]
+    private void AddSegment()
+    {
+        var segmentSize = _configuration.MinSegmentSizeBytes;
+        if (_currentSegment != null)
+        {
+            PrintStatistics();
+            
+            var duration = _currentSegment.EndTime - _currentSegment.StartTime;
+            var size = _currentSegment.Size;
+            segmentSize = (int)Math.Round((double)size / duration * _configuration.SegmentTargetMilliseconds * 1.05);
+        }
+
+        segmentSize = Math.Clamp(segmentSize, _configuration.MinSegmentSizeBytes, _configuration.MaxSegmentSizeBytes);
+        Log.Debug("Target replay segment size: {Size}", segmentSize.Bytes());
+        
+        _currentSegment = new ReplaySegment(segmentSize);
+        _segments.Enqueue(_currentSegment);
+    }
+
+    public void AddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, TState state,
+        ReplaySegment.ReplayFrameAction<TState> action)
+    {
+        if (!_currentSegment.TryAddFrame(numCarFrames, numAiFrames, numAiMappings, state, action))
+        {
+            Log.Debug("Current replay segment full, adding new segment");
+            AddSegment();
+            AddFrame(numCarFrames, numAiFrames, numAiMappings, state, action);
+        }
+    }
+
+    public void WriteReplay(long timeSeconds, byte targetSessionId, string filename)
+    {
+        var startTime = Math.Max(0, _sessionManager.ServerTimeMilliseconds - timeSeconds * 1000);
+        var segments = _segments.SkipWhile(s => s.EndTime < startTime).ToList();
+        
         using var file = File.Create(filename);
         using var writer = new BinaryWriter(file);
-        
-        writer.Write(16);
-        writer.Write(1000.0 / _configuration.Server.RefreshRateHz);
-        writer.WriteACString(_weather.CurrentWeather.Type.Graphics);
-        writer.WriteACString(_configuration.CSPTrackOptions.Track);
-        writer.WriteACString(_configuration.Server.TrackConfig);
-        
-        writer.Write((uint) _entryCarManager.EntryCars.Length);
-        writer.Write(segment.Index.Count);
-        
-        writer.Write((uint) segment.Index.Count);
-        writer.Write(0);
-        
-        foreach (var frame in segment)
+
+        var totalCount = (uint)segments.Sum(s => s.Index.Count);
+
+        var header = new KunosReplayHeader
         {
-            writer.WriteStruct(new KunosReplayTrackFrame
-            {
-                SunAngle = frame.Header.SunAngle
-            });
-        }
-        
-        for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
+            RecordingIntervalMs = 1000.0 / _serverConfiguration.Server.RefreshRateHz,
+            Weather = _weather.CurrentWeather.Type.Graphics,
+            Track = _serverConfiguration.CSPTrackOptions.Track,
+            TrackConfiguration = _serverConfiguration.Server.TrackConfig,
+            CarsNumber = (uint)_entryCarManager.EntryCars.Length,
+            CurrentRecordingIndex = totalCount,
+            RecordedFrames = totalCount
+        };
+        header.ToWriter(writer);
+
+        foreach (var segment in segments)
         {
-            writer.WriteACString(_entryCarManager.EntryCars[i].Model);
-            writer.WriteACString($"Entry {i}");
-            writer.WriteACString("");
-            writer.WriteACString("");
-            writer.WriteACString(_entryCarManager.EntryCars[i].Skin);
-        
-            writer.Write((uint) segment.Index.Count);
-            writer.Write(0);
-            
-            var aiFrameMappings = Span<short>.Empty;
-            
-            // frames here
             foreach (var frame in segment)
             {
-                var foundFrame = false;
-                var foundAiMapping = false;
-                foreach (var carFrame in frame.CarFrames)
+                writer.WriteStruct(new KunosReplayTrackFrame
                 {
-                    if (carFrame.SessionId == i)
+                    SunAngle = frame.Header.SunAngle
+                });
+            }
+        }
+
+        for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
+        {
+            var carHeader = new KunosReplayCarHeader
+            {
+                CarId = _entryCarManager.EntryCars[i].Model,
+                DriverName = $"Player {i}",
+                CarSkinId = _entryCarManager.EntryCars[i].Skin,
+                CarFrames = totalCount
+            };
+            carHeader.ToWriter(writer);
+            
+            var aiFrameMappings = Span<short>.Empty;
+            foreach (var segment in segments)
+            {
+                foreach (var frame in segment)
+                {
+                    var foundFrame = false;
+                    var foundAiMapping = false;
+                    foreach (var carFrame in frame.CarFrames)
                     {
-                        foundFrame = true;
-                        carFrame.ToWriter(writer, true);
+                        if (carFrame.SessionId == i)
+                        {
+                            foundFrame = true;
+                            carFrame.ToWriter(writer, true);
+                        }
+
+                        if (carFrame.SessionId == targetSessionId)
+                        {
+                            foundAiMapping = true;
+                            aiFrameMappings = frame.GetAiFrameMappings(carFrame.AiMappingStartIndex);
+                        }
+
+                        if (foundFrame && foundAiMapping) break;
                     }
 
-                    if (carFrame.SessionId == targetSessionId)
+                    foreach (var aiFrameMapping in aiFrameMappings)
                     {
-                        foundAiMapping = true;
-                        aiFrameMappings = frame.GetAiFrameMappings(carFrame.AiMappingStartIndex);
+                        ref var aiFrame = ref frame.AiFrames[aiFrameMapping];
+                        if (aiFrame.SessionId == i)
+                        {
+                            foundFrame = true;
+                            aiFrame.ToWriter(writer, true);
+                            break;
+                        }
                     }
 
-                    if (foundFrame && foundAiMapping) break;
-                }
-
-                foreach (var aiFrameMapping in aiFrameMappings)
-                {
-                    ref var aiFrame = ref frame.AiFrames[aiFrameMapping];
-                    if (aiFrame.SessionId == i)
+                    if (!foundFrame)
                     {
-                        foundFrame = true;
-                        aiFrame.ToWriter(writer, true);
-                        break;
+                        new ReplayCarFrame().ToWriter(writer, false);
                     }
-                }
-
-                if (!foundFrame)
-                {
-                    new ReplayCarFrame().ToWriter(writer, false);
                 }
             }
-            
+
             writer.Write(0);
         }
         

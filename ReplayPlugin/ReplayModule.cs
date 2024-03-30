@@ -3,7 +3,7 @@ using Autofac;
 
 namespace ReplayPlugin;
 
-public class ReplayModule : AssettoServerModule
+public class ReplayModule : AssettoServerModule<ReplayConfiguration>
 {
     protected override void Load(ContainerBuilder builder)
     {

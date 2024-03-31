@@ -420,7 +420,7 @@ public class AiState
 
                     if (distance < minDistance
                         && GetAngleToCar(playerCar.Status) is > 166 and < 194
-                        && playerCar.Status.Position.Y - Status.Position.Y < 1.5)
+                        && Math.Abs(playerCar.Status.Position.Y - Status.Position.Y) < 1.5)
                     {
                         minDistance = distance;
                         closestCar = playerCar;

@@ -1,10 +1,12 @@
 ﻿using AssettoServer.Commands;
+using AssettoServer.Commands.Attributes;
 using AssettoServer.Network.Tcp;
 using Qmmands;
 using SerilogTimings;
 
 namespace ReplayPlugin;
 
+[RequireAdmin]
 public class ReplayCommandModule : ACModuleBase
 {
     private readonly ReplayManager _replayManager;

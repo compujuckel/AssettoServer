@@ -301,7 +301,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     {
         if (_spline == null)
         {
-            Logger.Information("Failed reset position for {Player}({SessionId})",Client?.Name, Client?.SessionId);
+            Logger.Information("Failed reset position for {Player} ({SessionId})",Client?.Name, Client?.SessionId);
             return false;
         }
 
@@ -329,7 +329,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
             Client?.SendCollisionUpdatePacket(true);
         });
     
-        Logger.Information("Reset position for {Player}({SessionId})",Client?.Name, Client?.SessionId);
+        Logger.Information("Reset position for {Player} ({SessionId})",Client?.Name, Client?.SessionId);
         return true;
     }
 }

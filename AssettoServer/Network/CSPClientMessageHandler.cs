@@ -1,4 +1,5 @@
 ﻿using System;
+using AssettoServer.Network.ClientMessages;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
@@ -9,12 +10,25 @@ using Serilog;
 
 namespace AssettoServer.Network;
 
-public class CSPClientMessageHandler(CSPClientMessageTypeManager cspClientMessageTypeManager, EntryCarManager entryCarManager, ACServerConfiguration configuration)
+public class CSPClientMessageHandler
 {
-    private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager = cspClientMessageTypeManager;
-    private readonly EntryCarManager _entryCarManager = entryCarManager;
-    private readonly ACServerConfiguration _configuration = configuration;
+    private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
+    private readonly EntryCarManager _entryCarManager;
+    private readonly ACServerConfiguration _configuration;
 
+
+    public CSPClientMessageHandler(CSPClientMessageTypeManager cspClientMessageTypeManager, EntryCarManager entryCarManager,
+        ACServerConfiguration configuration)
+    {
+        _cspClientMessageTypeManager = cspClientMessageTypeManager;
+        _entryCarManager = entryCarManager;
+        _configuration = configuration;
+        
+        cspClientMessageTypeManager.RegisterOnlineEvent<CollisionUpdatePacket>(OnCollisionUpdate);
+        cspClientMessageTypeManager.RegisterOnlineEvent<TeleportCarPacket>(OnTeleportCar);
+        cspClientMessageTypeManager.RegisterOnlineEvent<RequestResetPacket>((client, _) => { OnResetCar(client); });
+    }
+    
     public void OnCSPClientMessageUdp(ACTcpClient sender, PacketReader reader)
     {
         var packetType = reader.Read<CSPClientMessageType>();
@@ -184,6 +198,26 @@ public class CSPClientMessageHandler(CSPClientMessageTypeManager cspClientMessag
             sender.Logger.Information("CSP admin penalty received from {ClientName} ({SessionId}): User is not admin", 
                 sender.Name, sender.SessionId);
         }
+    }
+
+    private void OnResetCar(ACTcpClient sender)
+    {
+        if (_configuration.Extra.EnableCarReset)
+            sender.EntryCar.TryResetPosition();
+    }
+
+    private void OnTeleportCar(ACTcpClient sender, TeleportCarPacket packet)
+    {
+        if (!sender.IsAdministrator) return;
+        
+        _entryCarManager.EntryCars[packet.Target].Client?.SendPacket(packet);
+    }
+
+    private void OnCollisionUpdate(ACTcpClient sender, CollisionUpdatePacket packet)
+    {
+        if (!sender.IsAdministrator) return;
+        
+        _entryCarManager.EntryCars[packet.Target].Client?.SendPacket(packet);
     }
 
     private static bool IsRanged(CSPClientMessageType type)

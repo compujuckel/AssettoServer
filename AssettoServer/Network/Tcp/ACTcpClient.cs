@@ -5,11 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using AssettoServer.Network.ClientMessages;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
 using AssettoServer.Server.Blacklist;
@@ -24,6 +26,7 @@ using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
+using Qommon.Collections.Specialized;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -921,6 +924,30 @@ public class ACTcpClient : IClient
         {
             Logger.Error(ex, "Error disconnecting {ClientName}", Name);
         }
+    }
+
+    public void SendTeleportCarPacket(Vector3 position, Vector3 direction, Vector3 velocity = default)
+    {
+        SendPacket(new TeleportCarPacket
+        {
+            Position = position,
+            Direction = direction,
+            Velocity = velocity,
+            Target = SessionId
+        });
+    }
+
+    /// <summary>
+    /// Requires CSP Build >2796
+    /// </summary>
+    public void SendCollisionUpdatePacket(bool collisionEnabled)
+    {
+        _entryCarManager.BroadcastPacket(new CollisionUpdatePacket
+        {
+            SessionId = SessionId,
+            Enabled = collisionEnabled,
+            Target = SessionId
+        });
     }
     
     private static string IdFromGuid(ulong guid)

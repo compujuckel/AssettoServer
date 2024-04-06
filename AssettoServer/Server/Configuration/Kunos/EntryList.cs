@@ -3,6 +3,7 @@ using AssettoServer.Utils;
 using IniParser;
 using IniParser.Model;
 using JetBrains.Annotations;
+using Serilog;
 
 namespace AssettoServer.Server.Configuration.Kunos;
 
@@ -30,6 +31,29 @@ public class EntryList
     {
         var parser = new FileIniDataParser();
         IniData data = parser.ReadFile(path);
-        return data.DeserializeObject<EntryList>();
+        var res = data.DeserializeObject<EntryList>();
+
+        int skippedIndex = -1;
+        for (int i = res.Cars.Count; i < 255; i++)
+        {
+            bool breakLoop = false;
+            switch (data.Sections.ContainsSection($"CAR_{i}"))
+            {
+                case false when skippedIndex < 0:
+                    skippedIndex = i;
+                    break;
+                case true when skippedIndex >= 0:
+                    Log.Warning("Entry list index {Index} skipped. Any entry after this will be ignored", skippedIndex);
+                    breakLoop = true;
+                    break;
+            }
+
+            if (breakLoop) break;
+        }
+        
+        if (res.Cars.Count == 0)
+            throw new ConfigurationException("Entry list must contain one or more entries");
+        
+        return res;
     }
 }

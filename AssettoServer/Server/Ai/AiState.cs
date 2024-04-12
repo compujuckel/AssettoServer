@@ -350,7 +350,7 @@ public class AiState
                 ref readonly var jct = ref junctions[point.JunctionStartId];
                 
                 var indicator = _junctionEvaluator.WillTakeJunction(point.JunctionStartId) ? jct.IndicateWhenTaken : jct.IndicateWhenNotTaken;
-                if (indicator != 0)
+                if (indicator != 0 && CanUseJunction(indicator))
                 {
                     _indicator = indicator;
                     _nextJunctionId = point.JunctionStartId;
@@ -435,6 +435,52 @@ public class AiState
         }
 
         return (null, float.MaxValue);
+    }
+    
+    private bool CanUseJunction(CarStatusFlags indicators)
+    {
+        foreach (var car in _entryCarManager.EntryCars)
+        {
+            if (car.Client?.HasSentFirstUpdate == true && !ShouldIgnorePlayerObstacles())
+            {
+                float distance = Vector3.DistanceSquared(car.Status.Position, Status.Position);
+
+                if (distance < 9 && Math.Abs(car.Status.Position.Y - Status.Position.Y) < 1.5)
+                {
+                    if (indicators.HasFlag(CarStatusFlags.IndicateLeft) && GetAngleToCar(car.Status) is > 45 and < 135)
+                    {
+                        return false;
+                    }
+                    if (indicators.HasFlag(CarStatusFlags.IndicateRight) && GetAngleToCar(car.Status) is > 225 and < 315)
+                    {
+                        return false;
+                    }
+                }
+            }
+            else if (car.AiControlled)
+            {
+                foreach (var aiState in car.LastSeenAiState)
+                {
+                    if (aiState == null) continue;
+
+                    float distance = Vector3.DistanceSquared(aiState.Status.Position, Status.Position);
+
+                    if (distance < 9 && Math.Abs(aiState.Status.Position.Y - Status.Position.Y) < 1.5)
+                    {
+                        if (indicators.HasFlag(CarStatusFlags.IndicateLeft) && GetAngleToCar(aiState.Status) is > 45 and < 135)
+                        {
+                            return false;
+                        }
+                        if (indicators.HasFlag(CarStatusFlags.IndicateRight) && GetAngleToCar(aiState.Status) is > 225 and < 315)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return true;
     }
 
     private bool IsObstacle(EntryCar playerCar)

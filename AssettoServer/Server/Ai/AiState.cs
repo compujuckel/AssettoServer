@@ -446,16 +446,11 @@ public class AiState
             {
                 float distance = Vector3.DistanceSquared(car.Status.Position, Status.Position);
 
-                if (distance < 9 && Math.Abs(car.Status.Position.Y - Status.Position.Y) < 1.5)
+                if (distance < 9 
+                    && Math.Abs(car.Status.Position.Y - Status.Position.Y) < 1.5 
+                    && CheckSideAngleToCar(car.Status, indicators))
                 {
-                    if (indicators.HasFlag(CarStatusFlags.IndicateLeft) && GetAngleToCar(car.Status) is > 45 and < 135)
-                    {
-                        return false;
-                    }
-                    if (indicators.HasFlag(CarStatusFlags.IndicateRight) && GetAngleToCar(car.Status) is > 225 and < 315)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
             else if (car.AiControlled)
@@ -466,22 +461,30 @@ public class AiState
 
                     float distance = Vector3.DistanceSquared(aiState.Status.Position, Status.Position);
 
-                    if (distance < 9 && Math.Abs(aiState.Status.Position.Y - Status.Position.Y) < 1.5)
+                    if (distance < 9 
+                        && Math.Abs(aiState.Status.Position.Y - Status.Position.Y) < 1.5 
+                        && CheckSideAngleToCar(aiState.Status, indicators))
                     {
-                        if (indicators.HasFlag(CarStatusFlags.IndicateLeft) && GetAngleToCar(aiState.Status) is > 45 and < 135)
-                        {
-                            return false;
-                        }
-                        if (indicators.HasFlag(CarStatusFlags.IndicateRight) && GetAngleToCar(aiState.Status) is > 225 and < 315)
-                        {
-                            return false;
-                        }
+                        return false;
                     }
                 }
             }
         }
         
         return true;
+    }
+
+    private bool CheckSideAngleToCar(CarStatus car, CarStatusFlags indicators)
+    {
+        switch (indicators)
+        {
+            case var i when i.HasFlag(CarStatusFlags.IndicateLeft):
+                return GetAngleToCar(car) is > 45 and < 135;
+            case var i when i.HasFlag(CarStatusFlags.IndicateRight):
+                return GetAngleToCar(car) is > 225 and < 315;
+            default:
+                return false;
+        }
     }
 
     private bool IsObstacle(EntryCar playerCar)

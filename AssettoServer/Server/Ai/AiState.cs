@@ -439,9 +439,10 @@ public class AiState
     
     private bool CanUseJunction(CarStatusFlags indicators)
     {
+        var ignorePlayer = ShouldIgnorePlayerObstacles();
         foreach (var car in _entryCarManager.EntryCars)
         {
-            if (car.Client?.HasSentFirstUpdate == true && !ShouldIgnorePlayerObstacles())
+            if (car.Client?.HasSentFirstUpdate == true && !ignorePlayer)
             {
                 float distance = Vector3.DistanceSquared(car.Status.Position, Status.Position);
 

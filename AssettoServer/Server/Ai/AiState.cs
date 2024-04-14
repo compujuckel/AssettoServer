@@ -440,12 +440,13 @@ public class AiState
     
     private bool CanUseJunction(CarStatusFlags indicators)
     {
+        var maxDistance = Math.Pow(_configuration.Extra.AiParams.LaneWidthMeters * 1.4, 2);
         var ignorePlayer = ShouldIgnorePlayerObstacles();
         foreach (var car in _entryCarManager.EntryCars)
         {
             if (!ignorePlayer && car.Client?.HasSentFirstUpdate == true)
             {
-                if (Vector3.DistanceSquared(car.Status.Position, Status.Position) < 9 
+                if (Vector3.DistanceSquared(car.Status.Position, Status.Position) < maxDistance 
                     && Math.Abs(car.Status.Position.Y - Status.Position.Y) < 1.5 
                     && HasObstacleToSide(car.Status, indicators))
                 {
@@ -456,9 +457,9 @@ public class AiState
             {
                 foreach (var aiState in car.LastSeenAiState)
                 {
-                    if (aiState == null) continue;
+                    if (aiState == null || aiState == this) continue;
 
-                    if (Vector3.DistanceSquared(aiState.Status.Position, Status.Position) < 9 
+                    if (Vector3.DistanceSquared(aiState.Status.Position, Status.Position) < maxDistance 
                         && Math.Abs(aiState.Status.Position.Y - Status.Position.Y) < 1.5 
                         && HasObstacleToSide(aiState.Status, indicators))
                     {

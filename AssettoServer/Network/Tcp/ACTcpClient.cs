@@ -331,7 +331,7 @@ public class ACTcpClient : IClient
                     Guid = handshakeRequest.Guid;
                     HashedGuid = IdFromGuid(Guid);
 
-                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, _configuration.Extra.EnableWhoIsPlayerIP ? TcpClient.Client.RemoteEndPoint?.ToString() : "***.***.***.***:*****", handshakeRequest.RequestedCar);
+                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, TcpClient.Client.RemoteEndPoint?.ToString(), handshakeRequest.RequestedCar);
 
                     List<string> cspFeatures;
                     if (!string.IsNullOrEmpty(handshakeRequest.Features))

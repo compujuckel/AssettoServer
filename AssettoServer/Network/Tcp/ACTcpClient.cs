@@ -135,12 +135,10 @@ public class ACTcpClient : IClient
     private class ACTcpClientLogEventEnricher : ILogEventEnricher
     {
         private readonly ACTcpClient _client;
-        private readonly bool _logIp;
 
-        public ACTcpClientLogEventEnricher(ACTcpClient client, bool logIp)
+        public ACTcpClientLogEventEnricher(ACTcpClient client)
         {
             _client = client;
-            _logIp = logIp;
         }
             
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
@@ -148,7 +146,7 @@ public class ACTcpClient : IClient
             var endpoint = (IPEndPoint)_client.TcpClient.Client.RemoteEndPoint!;
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientName", _client.Name));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientSteamId", _client.Guid));
-            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientIpAddress", _logIp ? endpoint.Address.ToString() : "***.***.***.***:*****"));
+            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientIpAddress", endpoint.Address.ToString()));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientPort", endpoint.Port));
             if (_client.HardwareIdentifier.HasValue)
             {
@@ -175,7 +173,7 @@ public class ACTcpClient : IClient
         UdpServer = udpServer;
         Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
-            .Enrich.With(new ACTcpClientLogEventEnricher(this, configuration.Extra.EnablePlayerIPLog))
+            .Enrich.With(new ACTcpClientLogEventEnricher(this))
             .WriteTo.Logger(Log.Logger)
             .CreateLogger();
 
@@ -333,10 +331,7 @@ public class ACTcpClient : IClient
                     Guid = handshakeRequest.Guid;
                     HashedGuid = IdFromGuid(Guid);
 
-                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", 
-                        handshakeRequest.Name, handshakeRequest.Guid, 
-                        _configuration.Extra.EnablePlayerIPLog ? TcpClient.Client.RemoteEndPoint?.ToString() : "***.***.***.***:*****", 
-                        handshakeRequest.RequestedCar);
+                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, _configuration.Extra.EnableWhoIsPlayerIP ? TcpClient.Client.RemoteEndPoint?.ToString() : "***.***.***.***:*****", handshakeRequest.RequestedCar);
 
                     List<string> cspFeatures;
                     if (!string.IsNullOrEmpty(handshakeRequest.Features))
@@ -906,8 +901,7 @@ public class ACTcpClient : IClient
             
             if (!string.IsNullOrEmpty(Name))
             {
-                Logger.Debug("Disconnecting {ClientName} ({ClientSteamId} - {$ClientIpEndpoint})", 
-                    Name, Guid, _configuration.Extra.EnablePlayerIPLog ? TcpClient.Client.RemoteEndPoint : "***.***.***.***:*****");
+                Logger.Debug("Disconnecting {ClientName} ({ClientSteamId} - {$ClientIpEndpoint})", Name, Guid, TcpClient.Client.RemoteEndPoint);
                 Disconnecting?.Invoke(this, EventArgs.Empty);
             }
 

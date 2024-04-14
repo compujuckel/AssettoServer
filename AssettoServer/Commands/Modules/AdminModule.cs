@@ -191,7 +191,7 @@ public class AdminModule : ACModuleBase
     [Command("whois")]
     public void WhoIs(ACTcpClient player)
     {
-        if (_configuration.Extra.EnablePlayerIPLog)
+        if (_configuration.Extra.EnableWhoIsPlayerIP)
             Reply($"IP: {(player.TcpClient.Client.RemoteEndPoint as System.Net.IPEndPoint)?.Address}");
         Reply($"Profile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {player.EntryCar.Ping}ms");
         Reply($"Position: {player.EntryCar.Status.Position}\nVelocity: {(int)(player.EntryCar.Status.Velocity.Length() * 3.6)}kmh");

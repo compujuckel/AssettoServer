@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
+using AssettoServer.Server.Ai.Configuration;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Configuration.Extra;
@@ -442,13 +443,11 @@ public class AiState
         var ignorePlayer = ShouldIgnorePlayerObstacles();
         foreach (var car in _entryCarManager.EntryCars)
         {
-            if (car.Client?.HasSentFirstUpdate == true && !ignorePlayer)
+            if (!ignorePlayer && car.Client?.HasSentFirstUpdate == true)
             {
-                float distance = Vector3.DistanceSquared(car.Status.Position, Status.Position);
-
-                if (distance < 9 
+                if (Vector3.DistanceSquared(car.Status.Position, Status.Position) < 9 
                     && Math.Abs(car.Status.Position.Y - Status.Position.Y) < 1.5 
-                    && CheckSideAngleToCar(car.Status, indicators))
+                    && HasObstacleToSide(car.Status, indicators))
                 {
                     return false;
                 }
@@ -459,11 +458,9 @@ public class AiState
                 {
                     if (aiState == null) continue;
 
-                    float distance = Vector3.DistanceSquared(aiState.Status.Position, Status.Position);
-
-                    if (distance < 9 
+                    if (Vector3.DistanceSquared(aiState.Status.Position, Status.Position) < 9 
                         && Math.Abs(aiState.Status.Position.Y - Status.Position.Y) < 1.5 
-                        && CheckSideAngleToCar(aiState.Status, indicators))
+                        && HasObstacleToSide(aiState.Status, indicators))
                     {
                         return false;
                     }
@@ -474,17 +471,14 @@ public class AiState
         return true;
     }
 
-    private bool CheckSideAngleToCar(CarStatus car, CarStatusFlags indicators)
+    private bool HasObstacleToSide(CarStatus car, CarStatusFlags indicators)
     {
-        switch (indicators)
-        {
-            case var i when i.HasFlag(CarStatusFlags.IndicateLeft):
-                return GetAngleToCar(car) is > 45 and < 135;
-            case var i when i.HasFlag(CarStatusFlags.IndicateRight):
-                return GetAngleToCar(car) is > 225 and < 315;
-            default:
-                return false;
-        }
+        return indicators switch
+        { 
+            var i when i.HasFlag(CarStatusFlags.IndicateLeft) => GetAngleToCar(car) is > 45 and < 135,
+            var i when i.HasFlag(CarStatusFlags.IndicateRight) => GetAngleToCar(car) is > 225 and < 315,
+            _ => false
+        };
     }
 
     private bool IsObstacle(EntryCar playerCar)

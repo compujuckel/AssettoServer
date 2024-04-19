@@ -33,7 +33,7 @@ public class ReplayCommandModule : ACModuleBase
     [Command("replay_id")]
     public void SaveReplayId(int seconds, byte sessionId)
     {
-        var filename = $"replay_{DateTime.Now.ToString("yyyyMMdd'T'HHmmss")}_{sessionId}.acreplay";
+        var filename = $"replay_{DateTime.Now:yyyyMMdd'T'HHmmss}_{sessionId}.acreplay";
 
         using (var t = Operation.Time("Writing replay {0}", filename))
         {

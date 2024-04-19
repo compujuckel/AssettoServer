@@ -8,7 +8,7 @@ public class ReplayConfiguration
     public int MaxSegmentSizeKilobytes { get; set; } = 10_000;
     public int SegmentTargetSeconds { get; set; } = 30;
     public int ReplayDurationSeconds { get; set; } = 60;
-    public int RefreshRateHz { get; set; } = 12;
+    public int RefreshRateHz { get; set; } = 10;
 
     [YamlIgnore] public int MinSegmentSizeBytes => MinSegmentSizeKilobytes * 1000;
     [YamlIgnore] public int MaxSegmentSizeBytes => MaxSegmentSizeKilobytes * 1000;

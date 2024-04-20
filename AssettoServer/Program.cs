@@ -44,6 +44,9 @@ public static class Program
 
         [Option("plugins-from-workdir", Required = false, HelpText = "Additionally load plugins from working directory")]
         public bool LoadPluginsFromWorkdir { get; set; } = false;
+
+        [Option("verbose", Required = false, HelpText = "Change log level to verbose")]
+        public bool UseVerboseLogging { get; set; } = false;
         
         [Option('r',"use-random-preset", Required = false, HelpText = "Use a random available configuration preset")]
         public bool UseRandomPreset { get; set; } = false;
@@ -91,7 +94,7 @@ public static class Program
         }
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
-        Logging.CreateDefaultLogger(logPrefix, IsContentManager);
+        Logging.CreateDefaultLogger(logPrefix, IsContentManager, options.UseVerboseLogging);
         
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
@@ -111,7 +114,7 @@ public static class Program
         {
             _restartTask = new TaskCompletionSource<StartOptions>();
             using var cts = new CancellationTokenSource();
-            var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, cts.Token);
+            var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, options.UseVerboseLogging, cts.Token);
             var finishedTask = await Task.WhenAny(serverTask, _restartTask.Task);
 
             if (finishedTask == _restartTask.Task)
@@ -140,6 +143,7 @@ public static class Program
         string? preset,
         string? serverCfgPath,
         string? entryListPath,
+        bool useVerboseLogging,
         CancellationToken token = default)
     {
         var configLocations = ConfigurationLocations.FromOptions(preset, serverCfgPath, entryListPath);
@@ -154,7 +158,7 @@ public static class Program
                 && !string.IsNullOrEmpty(config.Extra.LokiSettings.Password))
             {
                 string logPrefix = string.IsNullOrEmpty(preset) ? "log" : preset;
-                Logging.CreateLokiLogger(logPrefix, IsContentManager, preset, config.Extra.LokiSettings);
+                Logging.CreateLokiLogger(logPrefix, IsContentManager, preset, config.Extra.LokiSettings, useVerboseLogging);
             }
             
             if (!string.IsNullOrEmpty(preset))

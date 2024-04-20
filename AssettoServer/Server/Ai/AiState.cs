@@ -450,6 +450,7 @@ public class AiState
                     && Math.Abs(car.Status.Position.Y - Status.Position.Y) < 1.5 
                     && HasObstacleToSide(car.Status, indicators))
                 {
+                    Log.Verbose("AI junction blocked by player {Player} ({SessionId})", car.Client.Name, car.SessionId);
                     return false;
                 }
             }
@@ -463,12 +464,14 @@ public class AiState
                         && Math.Abs(aiState.Status.Position.Y - Status.Position.Y) < 1.5 
                         && HasObstacleToSide(aiState.Status, indicators))
                     {
+                        Log.Verbose("AI junction blocked by AI");
                         return false;
                     }
                 }
             }
         }
-        
+
+        Log.Verbose("AI can use junction");
         return true;
     }
 

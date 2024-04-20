@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Utils;
@@ -41,7 +42,7 @@ public class CSPServerExtraOptions
         }
     }
 
-    internal string GenerateWelcomeMessage(ACTcpClient client)
+    internal async Task<string> GenerateWelcomeMessageAsync(ACTcpClient client)
     {
         var sb = new StringBuilder();
         sb.Append(WelcomeMessage);
@@ -53,15 +54,15 @@ public class CSPServerExtraOptions
         
         sb.AppendLine(ExtraOptions);
         sb.AppendLine(_configuration.CSPExtraOptions);
-        CSPServerExtraOptionsSending?.Invoke(client, new CSPServerExtraOptionsSendingEventArgs { Builder = sb });
+        await CSPServerExtraOptionsSending.InvokeAsync(client, new CSPServerExtraOptionsSendingEventArgs { Builder = sb });
         var extraOptions = sb.ToString();
 
         var encodedWelcomeMessage = CSPServerExtraOptionsParser.Encode(welcomeMessage, extraOptions);
 
         if (_configuration.Extra.DebugWelcomeMessage)
         {
-            File.WriteAllText(Path.Join(_configuration.BaseFolder, $"debug_welcome.{client.SessionId}.txt"), encodedWelcomeMessage);
-            File.WriteAllText(Path.Join(_configuration.BaseFolder, $"debug_csp_extra_options.{client.SessionId}.ini"), extraOptions);
+            await File.WriteAllTextAsync(Path.Join(_configuration.BaseFolder, $"debug_welcome.{client.SessionId}.txt"), encodedWelcomeMessage);
+            await File.WriteAllTextAsync(Path.Join(_configuration.BaseFolder, $"debug_csp_extra_options.{client.SessionId}.ini"), extraOptions);
         }
 
         if (encodedWelcomeMessage.Length > 2039 && client.CSPVersion is null or < CSPVersion.V0_1_77)

@@ -81,6 +81,8 @@ public partial class ACExtraConfiguration : ObservableObject
     public ushort RconPort { get; init; } = 0;
     [YamlMember(Description = "Dump contents of welcome message and CSP extra options to a file. For debug purposes only.", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool DebugWelcomeMessage { get; init; } = false;
+    [YamlMember(Description = "Server scripts for this user group will be loaded locally and script checksums disabled. For debug purposes only.", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    public string? DebugScriptUserGroup { get; init; }
     [YamlMember(Description = "Force clients to use track params (coordinates, time zone) specified on the server. CSP 0.1.79+ required")]
     public bool ForceServerTrackParams { get; init; } = false;
     [YamlMember(Description = "Allow cars to have multiple data checksums. Instead of a single checksummed data.acd, you can have multiple data*.acd files in the car folder and players can join with any of these files")]

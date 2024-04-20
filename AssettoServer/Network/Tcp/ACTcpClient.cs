@@ -768,13 +768,13 @@ public class ACTcpClient : IClient
         _ = Task.Run(SendFirstUpdateAsync);
     }
 
-    private Task SendFirstUpdateAsync()
+    private async Task SendFirstUpdateAsync()
     {
         try
         {
             var connectedCars = _entryCarManager.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
 
-            SendPacket(new WelcomeMessage { Message = _cspServerExtraOptions.GenerateWelcomeMessage(this) });
+            SendPacket(new WelcomeMessage { Message = await _cspServerExtraOptions.GenerateWelcomeMessageAsync(this) });
 
             _weatherManager.SendWeather(this);
 
@@ -823,7 +823,7 @@ public class ACTcpClient : IClient
             if (ChecksumStatus == ChecksumStatus.Failed)
             {
                 KickForFailedChecksum();
-                return Task.CompletedTask;
+                return;
             }
 
             if (ChecksumStatus == ChecksumStatus.Pending)
@@ -845,8 +845,6 @@ public class ACTcpClient : IClient
         {
             Log.Error(ex, "Error sending first update to {ClientName}", Name);
         }
-
-        return Task.CompletedTask;
     }
     
     private void KickForFailedChecksum() => _ = _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} failed the checksum check and has been kicked.");

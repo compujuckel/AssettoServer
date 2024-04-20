@@ -25,7 +25,7 @@ public class WelcomeMessageSendingEventArgs : EventArgs
     public required StringBuilder Builder { get; init; }
 }
 
-public class CSPServerExtraOptionsSendingEventArgs : EventArgs
+public class CSPServerExtraOptionsSendingEventArgs : DeferredEventArgs
 {
     public required StringBuilder Builder { get; init; }
 }

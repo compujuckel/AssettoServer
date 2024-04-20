@@ -179,7 +179,8 @@ public class HttpController : ControllerBase
             Description = _configuration.Extra.ServerDescription,
             Grip = _weatherManager.CurrentWeather.TrackGrip * 100,
             Features = _cspFeatureManager.Features.Keys,
-            PoweredBy = _cache.PoweredBy
+            PoweredBy = _cache.PoweredBy,
+            Extensions = _cache.Extensions
         };
         
         return responseObj;

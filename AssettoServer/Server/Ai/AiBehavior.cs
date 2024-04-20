@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using AssettoServer.Network.Http;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
@@ -24,6 +25,7 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly AiSpline _spline;
+    private readonly HttpInfoCache _httpInfoCache;
     //private readonly EntryCar.Factory _entryCarFactory;
 
     private readonly JunctionEvaluator _junctionEvaluator;
@@ -39,12 +41,13 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         IHostApplicationLifetime applicationLifetime,
         //EntryCar.Factory entryCarFactory,
         CSPServerScriptProvider serverScriptProvider, 
-        AiSpline spline) : base(applicationLifetime)
+        AiSpline spline, HttpInfoCache httpInfoCache) : base(applicationLifetime)
     {
         _sessionManager = sessionManager;
         _configuration = configuration;
         _entryCarManager = entryCarManager;
         _spline = spline;
+        _httpInfoCache = httpInfoCache;
         _junctionEvaluator = new JunctionEvaluator(spline, false);
         //_entryCarFactory = entryCarFactory;
 
@@ -472,8 +475,20 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         }
     }
 
+    private void SetHttpDetailsExtensions()
+    {
+        _httpInfoCache.Extensions.Add("aiTraffic", new Dictionary<string, List<byte>>
+        {
+            { "none", _entryCarManager.EntryCars.Where(c => c.AiMode == AiMode.None).Select(c => c.SessionId).ToList() },
+            { "auto", _entryCarManager.EntryCars.Where(c => c.AiMode == AiMode.Auto).Select(c => c.SessionId).ToList() },
+            { "fixed", _entryCarManager.EntryCars.Where(c => c.AiMode == AiMode.Fixed).Select(c => c.SessionId).ToList() }
+        });
+    }
+
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        SetHttpDetailsExtensions();
+        
         _ = UpdateAsync(stoppingToken);
         _ = ObstacleDetectionAsync(stoppingToken);
 

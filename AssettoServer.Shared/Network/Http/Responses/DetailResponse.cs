@@ -41,6 +41,9 @@ public class DetailResponse : InfoResponse
     public IEnumerable<string>? Features { get; set; }
     [JsonPropertyName("loadingImageUrl")]
     public string? LoadingImageUrl { get; set; }
+
+    [JsonPropertyName("extensions")]
+    public Dictionary<string, object>? Extensions { get; set; }
 }
 
 public class DetailResponseAssists

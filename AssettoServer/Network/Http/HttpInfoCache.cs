@@ -26,6 +26,7 @@ public class HttpInfoCache : CriticalBackgroundService, IAssettoServerAutostart
     public string PoweredBy { get; }
     public DetailResponseAssists Assists { get; }
     public IReadOnlyList<string> Country { get; private set; } = null!;
+    public Dictionary<string, object> Extensions { get; } = [];
 
     public HttpInfoCache(ACServerConfiguration configuration, EntryCarManager entryCarManager, IHostApplicationLifetime lifetime, GeoParamsManager geoParamsManager) : base(lifetime)
     {

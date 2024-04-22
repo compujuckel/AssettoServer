@@ -479,7 +479,6 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     {
         _httpInfoCache.Extensions.Add("aiTraffic", new Dictionary<string, List<byte>>
         {
-            { "none", _entryCarManager.EntryCars.Where(c => c.AiMode == AiMode.None).Select(c => c.SessionId).ToList() },
             { "auto", _entryCarManager.EntryCars.Where(c => c.AiMode == AiMode.Auto).Select(c => c.SessionId).ToList() },
             { "fixed", _entryCarManager.EntryCars.Where(c => c.AiMode == AiMode.Fixed).Select(c => c.SessionId).ToList() }
         });

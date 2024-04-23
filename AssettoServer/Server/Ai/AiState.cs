@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
-using AssettoServer.Server.Ai.Configuration;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Configuration.Extra;
@@ -440,7 +439,7 @@ public class AiState
     
     private bool CanUseJunction(CarStatusFlags indicators)
     {
-        var maxDistance = Math.Pow(_configuration.Extra.AiParams.LaneWidthMeters * 1.4, 2);
+        var maxDistance = Math.Pow(_configuration.Extra.AiParams.LaneWidthMeters * 1.5, 2);
         var ignorePlayer = ShouldIgnorePlayerObstacles();
         foreach (var car in _entryCarManager.EntryCars)
         {
@@ -450,7 +449,7 @@ public class AiState
                     && Math.Abs(car.Status.Position.Y - Status.Position.Y) < 1.5 
                     && HasObstacleToSide(car.Status, indicators))
                 {
-                    Log.Verbose("AI junction blocked by player {Player} ({SessionId})", car.Client.Name, car.SessionId);
+                    Log.Verbose("AI ({AI}) junction ({$Indicators}) blocked by player {Player} ({SessionId})", EntryCar.AiName, indicators, car.Client.Name, car.SessionId);
                     return false;
                 }
             }
@@ -464,14 +463,14 @@ public class AiState
                         && Math.Abs(aiState.Status.Position.Y - Status.Position.Y) < 1.5 
                         && HasObstacleToSide(aiState.Status, indicators))
                     {
-                        Log.Verbose("AI junction blocked by AI");
+                        Log.Verbose("AI ({AI}) junction ({$Indicators}) blocked by AI", EntryCar.AiName, indicators);
                         return false;
                     }
                 }
             }
         }
 
-        Log.Verbose("AI can use junction");
+        Log.Verbose("AI ({AI}) can use junction ({$Indicators})", EntryCar.AiName, indicators);
         return true;
     }
 

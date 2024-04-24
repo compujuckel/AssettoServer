@@ -39,7 +39,7 @@ public class DynamicTrafficDensity : CriticalBackgroundService
     {
         if (_configuration.Server.TimeOfDayMultiplier == 0)
         {
-            throw new ConfigurationException("TIME_OF_DAY_MULT must be greater than 0");
+            throw new ConfigurationException("TIME_OF_DAY_MULT in server_cfg.ini must be greater than 0");
         }
         
         while (!stoppingToken.IsCancellationRequested)

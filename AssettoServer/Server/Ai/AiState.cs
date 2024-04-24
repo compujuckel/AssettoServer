@@ -463,7 +463,7 @@ public class AiState
                         && Math.Abs(aiState.Status.Position.Y - Status.Position.Y) < 1.5 
                         && HasObstacleToSide(aiState.Status, indicators))
                     {
-                        Log.Verbose("AI ({AI}) junction ({$Indicators}) blocked by AI", EntryCar.AiName, indicators);
+                        Log.Verbose("AI ({AI}) junction ({$Indicators}) blocked by AI ({RemoteAI})", EntryCar.AiName, indicators, aiState.EntryCar.AiName);
                         return false;
                     }
                 }
@@ -478,8 +478,8 @@ public class AiState
     {
         return indicators switch
         { 
-            var i when i.HasFlag(CarStatusFlags.IndicateLeft) => GetAngleToCar(car) is > 45 and < 135,
-            var i when i.HasFlag(CarStatusFlags.IndicateRight) => GetAngleToCar(car) is > 225 and < 315,
+            var i when i.HasFlag(CarStatusFlags.IndicateLeft) => GetAngleToCar(car) is > 225 and < 315,
+            var i when i.HasFlag(CarStatusFlags.IndicateRight) => GetAngleToCar(car) is > 45 and < 135,
             _ => false
         };
     }
@@ -613,6 +613,7 @@ public class AiState
         }
     }
 
+    /// <returns>0 is the rear <br/> Angle is counterclockwise</returns>
     public float GetAngleToCar(CarStatus car)
     {
         float challengedAngle = (float) (Math.Atan2(Status.Position.X - car.Position.X, Status.Position.Z - car.Position.Z) * 180 / Math.PI);

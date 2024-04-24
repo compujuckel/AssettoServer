@@ -37,6 +37,11 @@ public class DynamicTrafficDensity : CriticalBackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (_configuration.Server.TimeOfDayMultiplier == 0)
+        {
+            throw new ConfigurationException("TIME_OF_DAY_MULT must be greater than 0");
+        }
+        
         while (!stoppingToken.IsCancellationRequested)
         {
             try

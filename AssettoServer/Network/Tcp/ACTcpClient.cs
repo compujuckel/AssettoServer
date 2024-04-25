@@ -129,6 +129,11 @@ public class ACTcpClient : IClient
     public event EventHandler<ACTcpClient, LapCompletedEventArgs>? LapCompleted;
 
     /// <summary>
+    /// Fires when a client has completed a sector
+    /// </summary>
+    public event EventHandler<ACTcpClient, SectorSplitEventArgs>? SectorSplit;
+
+    /// <summary>
     /// Fires before sending the car list response
     /// </summary>
     public event EventHandler<ACTcpClient, CarListResponseSendingEventArgs>? CarListResponseSending;
@@ -744,6 +749,7 @@ public class ACTcpClient : IClient
             Cuts = sectorPacket.Cuts
         };
         _entryCarManager.BroadcastPacket(packet);
+        SectorSplit?.Invoke(this, new SectorSplitEventArgs(packet));
     }
 
     private void OnLapCompletedMessageReceived(PacketReader reader)

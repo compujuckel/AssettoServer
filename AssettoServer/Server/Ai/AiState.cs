@@ -216,7 +216,7 @@ public class AiState
         {
             progress -= _currentVecLength;
                 
-            if (!_junctionEvaluator.TryNext(CurrentSplinePointId, out var nextPointId)
+            if (!_junctionEvaluator.TryNext(CurrentSplinePointId, out var nextPointId, 1, _nextJunctionId >= 0)
                 || !_junctionEvaluator.TryNext(nextPointId, out var nextNextPointId))
             {
                 return false;

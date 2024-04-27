@@ -356,6 +356,11 @@ public class AiState
                     _nextJunctionId = point.JunctionStartId;
                     junctionFound = true;
                 }
+                else
+                {
+                    _indicator = 0;
+                    _nextJunctionId = -1;
+                }
             }
 
             if (closestAiState == null)

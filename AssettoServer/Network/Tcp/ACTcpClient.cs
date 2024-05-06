@@ -154,7 +154,7 @@ public class ACTcpClient : IClient
             var endpoint = (IPEndPoint)_client.TcpClient.Client.RemoteEndPoint!;
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientName", _client.Name));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientSteamId", _client.Guid));
-            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientIpAddress", _useGdprMode ? endpoint.Address.ToGdprString() : endpoint.Address.ToString()));
+            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientIpAddress", endpoint.Address.ToGdprString(_useGdprMode)));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientPort", endpoint.Port));
             if (_client.HardwareIdentifier.HasValue)
             {
@@ -339,7 +339,7 @@ public class ACTcpClient : IClient
                     Guid = handshakeRequest.Guid;
                     HashedGuid = IdFromGuid(Guid);
 
-                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, _configuration.Extra.EnableGdprMode ? ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.ToGdprString() : TcpClient.Client.RemoteEndPoint?.ToString(), handshakeRequest.RequestedCar);
+                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.ToGdprString(_configuration.Extra.EnableGdprMode), handshakeRequest.RequestedCar);
 
                     List<string> cspFeatures;
                     if (!string.IsNullOrEmpty(handshakeRequest.Features))
@@ -910,7 +910,7 @@ public class ACTcpClient : IClient
             
             if (!string.IsNullOrEmpty(Name))
             {
-                Logger.Debug("Disconnecting {ClientName} ({ClientSteamId} - {ClientIpEndpoint})", Name, Guid, _configuration.Extra.EnableGdprMode ? ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.ToGdprString() : TcpClient.Client.RemoteEndPoint?.ToString());
+                Logger.Debug("Disconnecting {ClientName} ({ClientSteamId} - {ClientIpEndpoint})", Name, Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.ToGdprString(_configuration.Extra.EnableGdprMode));
                 Disconnecting?.Invoke(this, EventArgs.Empty);
             }
 

@@ -5,17 +5,19 @@ namespace AssettoServer.Shared.Utils;
 
 public static class IPAddressExtensions
 {
-    public static string ToGdprString(this IPAddress ip)
+    public static string ToGdprString(this IPAddress ip, bool useGdpr)
     {
+        if (!useGdpr)
+            return ip.ToString();
+        
         var gdprIp = ip.GetAddressBytes();
-
         gdprIp[3] = 0;
         
         return new IPAddress(gdprIp).ToString();
     }
     
-    public static string ToGdprString(this IPEndPoint ip)
+    public static string ToGdprString(this IPEndPoint ip, bool useGdpr)
     {
-        return $"{ip.Address.ToGdprString()}:{ip.Port}";
+        return $"{ip.Address.ToGdprString(useGdpr)}:{ip.Port}";
     }
 }

@@ -189,11 +189,10 @@ public class AdminModule : ACModuleBase
         Reply($"{player.Name}'s lights {(forceLights ? "will" : "will not")} be forced on.");
     }
 
-    [RequireExplicitAssignment]
     [Command("whois")]
     public void WhoIs(ACTcpClient player)
     {
-        Reply($"IP: {(_configuration.Extra.EnableGdprMode ? ((IPEndPoint?)player.TcpClient.Client.RemoteEndPoint)?.ToGdprString() : ((IPEndPoint?)player.TcpClient.Client.RemoteEndPoint)?.ToString())}");
+        Reply($"IP: {((IPEndPoint?)player.TcpClient.Client.RemoteEndPoint)?.ToGdprString(_configuration.Extra.EnableGdprMode)}");
         Reply($"Profile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {player.EntryCar.Ping}ms");
         Reply($"Position: {player.EntryCar.Status.Position}\nVelocity: {(int)(player.EntryCar.Status.Velocity.Length() * 3.6)}kmh");
         if (player.OwnerGuid.HasValue && player.Guid != player.OwnerGuid)

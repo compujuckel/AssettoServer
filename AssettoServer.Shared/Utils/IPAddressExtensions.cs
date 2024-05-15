@@ -5,19 +5,19 @@ namespace AssettoServer.Shared.Utils;
 
 public static class IPAddressExtensions
 {
-    public static string ToGdprString(this IPAddress ip, bool useGdpr)
+    public static string ToPrivacyString(this IPAddress ip, bool usePrivacyMode)
     {
-        if (!useGdpr)
+        if (!usePrivacyMode)
             return ip.ToString();
         
-        var gdprIp = ip.GetAddressBytes();
-        gdprIp[3] = 0;
+        var privacyIp = ip.GetAddressBytes();
+        privacyIp[3] = 0;
         
-        return new IPAddress(gdprIp).ToString();
+        return new IPAddress(privacyIp).ToString();
     }
     
-    public static string ToGdprString(this IPEndPoint ip, bool useGdpr)
+    public static string ToPrivacyString(this IPEndPoint ip, bool usePrivacyMode)
     {
-        return $"{ip.Address.ToGdprString(useGdpr)}:{ip.Port}";
+        return $"{ip.Address.ToPrivacyString(usePrivacyMode)}:{ip.Port}";
     }
 }

@@ -92,7 +92,7 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "List of URLs for custom loading screen images. A random image will be picked from this list. Requires CSP 0.2.0+ and a recent version of Content Manager")]
     public List<string>? LoadingImageUrls { get; set; }
     [YamlMember(Description = "Anonymize player IPs in outputs")]
-    public bool EnableGdprMode { get; init; } = true;
+    public bool EnablePrivacyMode { get; init; } = true;
     [YamlMember(Description = "Name and path of file-based user groups")]
     public Dictionary<string, string> UserGroups { get; init; } = new()
     {

@@ -46,6 +46,11 @@ public class EntryCarManager
     /// Fires when a player has disconnected.
     /// </summary>
     public event EventHandler<ACTcpClient, EventArgs>? ClientDisconnected;
+    
+    /// <summary>
+    /// Fires when a player has authorized for admin permissions.
+    /// </summary>
+    public event EventHandler<ACTcpClient, EventArgs>? ClientAdminAuthorized;
 
     public EntryCarManager(ACServerConfiguration configuration, EntryCar.Factory entryCarFactory, IBlacklistService blacklist, IAdminService adminService, Lazy<OpenSlotFilterChain> openSlotFilterChain)
     {
@@ -144,6 +149,11 @@ public class EntryCarManager
         {
             _connectSemaphore.Release();
         }
+    }
+
+    internal void SendAdminAuthorized(ACTcpClient client)
+    {
+        ClientAdminAuthorized?.Invoke(client, EventArgs.Empty);
     }
 
     public void BroadcastPacket<TPacket>(TPacket packet, ACTcpClient? sender = null) where TPacket : IOutgoingNetworkPacket

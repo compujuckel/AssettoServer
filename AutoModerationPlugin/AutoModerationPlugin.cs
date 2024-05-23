@@ -59,11 +59,17 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
         {
             _entryCarManager.ClientConnected += (sender, _) => sender.FirstUpdateSent += OnFirstUpdateSent;
         }
+        _entryCarManager.ClientAdminAuthorized += OnAdminAuthorized;
     }
 
     private void OnFirstUpdateSent(ACTcpClient sender, EventArgs args)
     {
         _instances[sender.SessionId].SetActive();
+    }
+
+    private void OnAdminAuthorized(ACTcpClient sender, EventArgs args)
+    {
+        _instances[sender.SessionId].AdminReset();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

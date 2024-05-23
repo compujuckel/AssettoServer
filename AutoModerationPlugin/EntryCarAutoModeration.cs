@@ -65,7 +65,7 @@ public class EntryCarAutoModeration
         _sessionManager = sessionManager;
         _serverConfiguration = serverConfiguration;
         _aiSpline = aiSpline;
-        _entryCar.ResetInvoked += OnResetInvoked;
+        _entryCar.ResetInvoked += (_, _) => Reset();
         if (_configuration.AfkPenalty is { Enabled: true, Behavior: AfkPenaltyBehavior.MinimumSpeed })
         {
             _entryCar.PositionUpdateReceived += OnPositionUpdateReceived;
@@ -85,7 +85,7 @@ public class EntryCarAutoModeration
         }
     }
 
-    private void OnResetInvoked(EntryCar sender, EventArgs args)
+    private void Reset()
     {
         HasSentAfkWarning = false;
         SetActive();
@@ -106,6 +106,15 @@ public class EntryCarAutoModeration
         HasSentBlockingRoadWarning = false;
         
         CurrentFlags = 0;
+    }
+
+    internal void AdminReset()
+    {
+        Reset();
+        if (_serverConfiguration.Extra.EnableClientMessages)
+        {
+            _entryCar.Client?.SendPacket(new AutoModerationFlags { Flags = 0 });
+        }
     }
 
     public void Update()

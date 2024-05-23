@@ -95,6 +95,16 @@ public class LapCompletedEventArgs : EventArgs
     }
 }
 
+public class SectorSplitEventArgs : EventArgs
+{
+    public SectorSplitOutgoing Packet { get; }
+    
+    public SectorSplitEventArgs(SectorSplitOutgoing packet)
+    {
+        Packet = packet;
+    }
+}
+
 public class CarListResponseSendingEventArgs : EventArgs
 {
     public CarListResponse Packet { get; }

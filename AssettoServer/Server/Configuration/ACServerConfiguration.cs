@@ -277,7 +277,7 @@ public partial class ACServerConfiguration
 
         if (Extra.AiParams.MaxAiTargetCount == 0)
         {
-            Extra.AiParams.MaxAiTargetCount = EntryList.Cars.Count(c => c.AiMode == AiMode.None) * Extra.AiParams.AiPerPlayerTargetCount;
+            Extra.AiParams.MaxAiTargetCount = EntryList.Cars.Count(c => c.AiMode != AiMode.Fixed) * Extra.AiParams.AiPerPlayerTargetCount;
         }
         
         var filteredServerName = ServerDetailsIdRegex().Replace(Server.Name, "");
@@ -328,6 +328,13 @@ public partial class ACServerConfiguration
             {
                 throw new ConfigurationParsingException(configPath, ex);
             }
+        }
+
+        if (Extra.MandatoryClientSecurityLevel > 0 
+            && loader.LoadedPlugins.All(plugin => plugin.Name != "ClientSecurityPlugin"))
+        {
+            Log.Information("{PluginName} not installed, setting {PropertyName} to {Value}", "ClientSecurityPlugin", "MandatoryClientSecurityLevel", 0);
+            Extra.MandatoryClientSecurityLevel = 0;
         }
 
         // Throw exception only after default plugin configs have been written

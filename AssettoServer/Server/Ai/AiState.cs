@@ -216,7 +216,7 @@ public class AiState
         {
             progress -= _currentVecLength;
                 
-            if (!_junctionEvaluator.TryNext(CurrentSplinePointId, out var nextPointId)
+            if (!_junctionEvaluator.TryNext(CurrentSplinePointId, out var nextPointId, 1, _nextJunctionId >= 0)
                 || !_junctionEvaluator.TryNext(nextPointId, out var nextNextPointId))
             {
                 return false;
@@ -350,11 +350,16 @@ public class AiState
                 ref readonly var jct = ref junctions[point.JunctionStartId];
                 
                 var indicator = _junctionEvaluator.WillTakeJunction(point.JunctionStartId) ? jct.IndicateWhenTaken : jct.IndicateWhenNotTaken;
-                if (indicator != 0)
+                if (indicator != 0 && CanUseJunction(indicator))
                 {
                     _indicator = indicator;
                     _nextJunctionId = point.JunctionStartId;
                     junctionFound = true;
+                }
+                else
+                {
+                    _indicator = 0;
+                    _nextJunctionId = -1;
                 }
             }
 
@@ -435,6 +440,53 @@ public class AiState
         }
 
         return (null, float.MaxValue);
+    }
+    
+    private bool CanUseJunction(CarStatusFlags indicators)
+    {
+        var maxDistance = Math.Pow(_configuration.Extra.AiParams.LaneWidthMeters * 1.5, 2);
+        var ignorePlayer = ShouldIgnorePlayerObstacles();
+        foreach (var car in _entryCarManager.EntryCars)
+        {
+            if (!ignorePlayer && car.Client?.HasSentFirstUpdate == true)
+            {
+                if (Vector3.DistanceSquared(car.Status.Position, Status.Position) < maxDistance 
+                    && Math.Abs(car.Status.Position.Y - Status.Position.Y) < 1.5 
+                    && HasObstacleToSide(car.Status, indicators))
+                {
+                    Log.Verbose("AI ({AI}) junction ({$Indicators}) blocked by player {Player} ({SessionId})", EntryCar.AiName, indicators, car.Client.Name, car.SessionId);
+                    return false;
+                }
+            }
+            else if (car.AiControlled)
+            {
+                foreach (var aiState in car.LastSeenAiState)
+                {
+                    if (aiState == null || aiState == this) continue;
+
+                    if (Vector3.DistanceSquared(aiState.Status.Position, Status.Position) < maxDistance 
+                        && Math.Abs(aiState.Status.Position.Y - Status.Position.Y) < 1.5 
+                        && HasObstacleToSide(aiState.Status, indicators))
+                    {
+                        Log.Verbose("AI ({AI}) junction ({$Indicators}) blocked by AI ({RemoteAI})", EntryCar.AiName, indicators, aiState.EntryCar.AiName);
+                        return false;
+                    }
+                }
+            }
+        }
+
+        Log.Verbose("AI ({AI}) can use junction ({$Indicators})", EntryCar.AiName, indicators);
+        return true;
+    }
+
+    private bool HasObstacleToSide(CarStatus car, CarStatusFlags indicators)
+    {
+        return indicators switch
+        { 
+            var i when i.HasFlag(CarStatusFlags.IndicateLeft) => GetAngleToCar(car) is > 225 and < 315,
+            var i when i.HasFlag(CarStatusFlags.IndicateRight) => GetAngleToCar(car) is > 45 and < 135,
+            _ => false
+        };
     }
 
     private bool IsObstacle(EntryCar playerCar)
@@ -566,6 +618,7 @@ public class AiState
         }
     }
 
+    /// <returns>0 is the rear <br/> Angle is counterclockwise</returns>
     public float GetAngleToCar(CarStatus car)
     {
         float challengedAngle = (float) (Math.Atan2(Status.Position.X - car.Position.X, Status.Position.Z - car.Position.Z) * 180 / Math.PI);

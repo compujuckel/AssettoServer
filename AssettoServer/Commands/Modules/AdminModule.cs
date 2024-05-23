@@ -4,6 +4,7 @@ using AssettoServer.Server.Weather;
 using Qmmands;
 using System;
 using System.Globalization;
+using System.Net;
 using System.Numerics;
 using System.Threading.Tasks;
 using AssettoServer.Server;
@@ -12,6 +13,7 @@ using AssettoServer.Server.Weather.Implementation;
 using AssettoServer.Server.Whitelist;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
+using AssettoServer.Shared.Utils;
 using AssettoServer.Shared.Weather;
 using JetBrains.Annotations;
 
@@ -190,7 +192,8 @@ public class AdminModule : ACModuleBase
     [Command("whois")]
     public void WhoIs(ACTcpClient player)
     {
-        Reply($"IP: {(player.TcpClient.Client.RemoteEndPoint as System.Net.IPEndPoint)?.Address}\nProfile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {player.EntryCar.Ping}ms");
+        Reply($"IP: {((IPEndPoint?)player.TcpClient.Client.RemoteEndPoint)?.ToPrivacyString(_configuration.Extra.EnablePrivacyMode)}");
+        Reply($"Profile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {player.EntryCar.Ping}ms");
         Reply($"Position: {player.EntryCar.Status.Position}\nVelocity: {(int)(player.EntryCar.Status.Velocity.Length() * 3.6)}kmh");
         if (player.OwnerGuid.HasValue && player.Guid != player.OwnerGuid)
         {

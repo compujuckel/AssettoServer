@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
@@ -37,6 +38,19 @@ public class DynamicTrafficDensity : CriticalBackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (_configuration.Server.TimeOfDayMultiplier == 0 )
+        {
+            throw new ConfigurationException("TIME_OF_DAY_MULT in server_cfg.ini must be greater than 0");
+        }
+
+        foreach (var wfxParam in _configuration.Server.Weathers.Where(w => w.WeatherFxParams.TimeMultiplier.HasValue))
+        {
+            if (wfxParam.WeatherFxParams.TimeMultiplier == 0)
+            {
+                throw new ConfigurationException($"Weather '{wfxParam.Graphics}' must have a 'mult' greater than 0");
+            }
+        }
+        
         while (!stoppingToken.IsCancellationRequested)
         {
             try

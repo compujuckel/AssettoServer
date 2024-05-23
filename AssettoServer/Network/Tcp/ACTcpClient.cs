@@ -24,6 +24,7 @@ using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Shared.Network.Packets.Shared;
+using AssettoServer.Shared.Utils;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using Qommon.Collections.Specialized;
@@ -128,6 +129,11 @@ public class ACTcpClient : IClient
     public event EventHandler<ACTcpClient, LapCompletedEventArgs>? LapCompleted;
 
     /// <summary>
+    /// Fires when a client has completed a sector
+    /// </summary>
+    public event EventHandler<ACTcpClient, SectorSplitEventArgs>? SectorSplit;
+
+    /// <summary>
     /// Fires before sending the car list response
     /// </summary>
     public event EventHandler<ACTcpClient, CarListResponseSendingEventArgs>? CarListResponseSending;
@@ -135,10 +141,12 @@ public class ACTcpClient : IClient
     private class ACTcpClientLogEventEnricher : ILogEventEnricher
     {
         private readonly ACTcpClient _client;
+        private readonly bool _usePrivacyMode;
 
-        public ACTcpClientLogEventEnricher(ACTcpClient client)
+        public ACTcpClientLogEventEnricher(ACTcpClient client, bool usePrivacyMode)
         {
             _client = client;
+            _usePrivacyMode = usePrivacyMode;
         }
             
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
@@ -146,7 +154,7 @@ public class ACTcpClient : IClient
             var endpoint = (IPEndPoint)_client.TcpClient.Client.RemoteEndPoint!;
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientName", _client.Name));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientSteamId", _client.Guid));
-            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientIpAddress", endpoint.Address.ToString()));
+            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientIpAddress", endpoint.Address.ToPrivacyString(_usePrivacyMode)));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientPort", endpoint.Port));
             if (_client.HardwareIdentifier.HasValue)
             {
@@ -173,7 +181,7 @@ public class ACTcpClient : IClient
         UdpServer = udpServer;
         Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
-            .Enrich.With(new ACTcpClientLogEventEnricher(this))
+            .Enrich.With(new ACTcpClientLogEventEnricher(this, configuration.Extra.EnablePrivacyMode))
             .WriteTo.Logger(Log.Logger)
             .CreateLogger();
 
@@ -331,7 +339,7 @@ public class ACTcpClient : IClient
                     Guid = handshakeRequest.Guid;
                     HashedGuid = IdFromGuid(Guid);
 
-                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, TcpClient.Client.RemoteEndPoint?.ToString(), handshakeRequest.RequestedCar);
+                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.ToPrivacyString(_configuration.Extra.EnablePrivacyMode), handshakeRequest.RequestedCar);
 
                     List<string> cspFeatures;
                     if (!string.IsNullOrEmpty(handshakeRequest.Features))
@@ -741,6 +749,7 @@ public class ACTcpClient : IClient
             Cuts = sectorPacket.Cuts
         };
         _entryCarManager.BroadcastPacket(packet);
+        SectorSplit?.Invoke(this, new SectorSplitEventArgs(packet));
     }
 
     private void OnLapCompletedMessageReceived(PacketReader reader)
@@ -899,7 +908,7 @@ public class ACTcpClient : IClient
             
             if (!string.IsNullOrEmpty(Name))
             {
-                Logger.Debug("Disconnecting {ClientName} ({$ClientIpEndpoint})", Name, TcpClient.Client.RemoteEndPoint);
+                Logger.Debug("Disconnecting {ClientName} ({ClientSteamId} - {ClientIpEndpoint})", Name, Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.ToPrivacyString(_configuration.Extra.EnablePrivacyMode));
                 Disconnecting?.Invoke(this, EventArgs.Empty);
             }
 

@@ -24,7 +24,7 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "List of DLC App IDs that are required to join. Steam auth must be enabled. Possible values: https://steamdb.info/app/244210/dlc/")]
     public List<int> ValidateDlcOwnership { get; init; } = [];
     [YamlMember(Description = "Enable protection against cheats/hacks. 0 = No protection. 1 = Block all public cheats as of 2023-11-18 (ClientSecurityPlugin and CSP 0.2.0+ required)")]
-    public int MandatoryClientSecurityLevel { get; init; }
+    public int MandatoryClientSecurityLevel { get; internal set; }
     [YamlMember(Description = "Force headlights on for all cars")]
     public bool ForceLights { get; set; }
     [YamlMember(Description = "Enable usage of /resetcar to teleport the player to the closest spline point. Requires CSP v0.2.3-preview47 or later")]
@@ -93,6 +93,8 @@ public partial class ACExtraConfiguration : ObservableObject
     public bool? EnableUPnP { get; init; }
     [YamlMember(Description = "List of URLs for custom loading screen images. A random image will be picked from this list. Requires CSP 0.2.0+ and a recent version of Content Manager")]
     public List<string>? LoadingImageUrls { get; set; }
+    [YamlMember(Description = "Anonymize player IPs in outputs")]
+    public bool EnablePrivacyMode { get; init; } = true;
     [YamlMember(Description = "Name and path of file-based user groups")]
     public Dictionary<string, string> UserGroups { get; init; } = new()
     {

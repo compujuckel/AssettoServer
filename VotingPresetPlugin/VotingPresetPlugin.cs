@@ -6,6 +6,7 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Services;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using VotingPresetPlugin.Preset;
@@ -52,6 +53,12 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
         _votePresets = presetConfigurationManager.VotingPresetTypes;
         _adminPresets = presetConfigurationManager.AllPresetTypes;
         
+        if (acServerConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_1_80_p475)
+        {
+            throw new ConfigurationException(
+                "VotingPresetPlugin needs a minimum required CSP version of 0.1.80-preview475 (2635)");
+        }
+        
         _presetManager.SetPreset(new PresetData(presetConfigurationManager.CurrentConfiguration.ToPresetType(), null)
         {
             IsInit = true,
@@ -65,9 +72,9 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
                 .GetManifestResourceStream("VotingPresetPlugin.lua.reconnectclient.lua")!);
             var reconnectScript = streamReader.ReadToEnd();
             scriptProvider.AddScript(reconnectScript, "reconnectclient.lua");
+            
+            cspFeatureManager.Add(new CSPFeature { Name = "FREQUENT_TRACK_CHANGES" });
         }
-        
-        cspFeatureManager.Add(new CSPFeature { Name = "FREQUENT_TRACK_CHANGES" });
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

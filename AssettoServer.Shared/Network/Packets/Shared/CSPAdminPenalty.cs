@@ -33,7 +33,7 @@ public class CSPAdminPenalty : IIncomingNetworkPacket, IOutgoingNetworkPacket
         writer.Write(CarIndex);
         writer.Write(PenaltyArgument);
         
-        writer.WriteString(Message, Encoding.UTF8, 64);
+        writer.WriteStringFixed(Message, Encoding.UTF8, 64);
         writer.Write(Signature);
     }
 }

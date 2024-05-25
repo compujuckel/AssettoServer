@@ -10,19 +10,18 @@ public class PresetConfiguration
     [YamlMember(Description = "The name that is displayed when a vote is going on or the preset is changing")]
     public string Name { get; set; } = "<Please change me>";
 
-    [YamlMember(Description = "Is this preset part of the voting, Admins can still change to this track.")]
-    public bool VotingEnabled { get; set; } = true;
+    [YamlMember(Description = "Whether only admins should be able to change to this preset")]
+    public bool AdminOnly { get; set; } = false;
     
     
-    [YamlIgnore] public string PresetFolder { get; set; } = "";
     [YamlIgnore] public string Path { get; set; } = "";
     
-    public bool Equals(PresetConfiguration compare) => PresetFolder == compare.PresetFolder;
+    public bool Equals(PresetConfiguration compare) => Path == compare.Path;
 
     public PresetType ToPresetType() => new PresetType
         {
             Name = Name,
-            PresetFolder = PresetFolder
+            PresetFolder = Path
         };
     
     public static PresetConfiguration FromFile(string path)
@@ -31,8 +30,7 @@ public class PresetConfiguration
         var deserializer = new DeserializerBuilder().Build();
         var cfg = deserializer.Deserialize<VotingPresetConfiguration>(reader).Meta;
 
-        cfg.Path = path;
-        cfg.PresetFolder = System.IO.Path.GetDirectoryName(path)!;
+        cfg.Path = System.IO.Path.GetDirectoryName(path)!;
         
         return cfg;
     }

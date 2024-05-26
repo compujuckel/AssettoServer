@@ -817,9 +817,6 @@ public class ACTcpClient : IClient
             if (_configuration.DrsZones.Zones.Count > 0)
                 batched.Packets.Add(new DrsZonesUpdate { Zones = _configuration.DrsZones.Zones });
 
-            LapCompletedOutgoing entryListLapData = CreateLapCompletedPacket(0xFF, 0, 0);
-            batched.Packets.Add(entryListLapData);
-
             if (_configuration.Extra.EnableClientMessages)
             {
                 batched.Packets.Add(new CSPHandshakeIn
@@ -850,7 +847,7 @@ public class ACTcpClient : IClient
                 });
             }
 
-            _entryCarManager.BroadcastPacket(entryListLapData);
+            _entryCarManager.BroadcastPacket(CreateLapCompletedPacket(0xFF, 0, 0));
             FirstUpdateSent?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)

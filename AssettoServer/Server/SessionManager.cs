@@ -81,40 +81,40 @@ public class SessionManager : CriticalBackgroundService
                 switch (CurrentSession.Configuration.Type)
                 {
                     case SessionType.Qualifying or SessionType.Practice:
+                    {
+                        if (CurrentSession is { SessionOverFlag: true, HasSentRaceOverPacket: false })
                         {
-                            if (CurrentSession is { SessionOverFlag: true, HasSentRaceOverPacket: false })
-                            {
-                                CalcOverTime();
-                                CurrentSession.EndTimeMilliseconds = 60_000 * CurrentSession.Configuration.Time + CurrentSession.StartTimeMilliseconds;
-                                if (ServerTimeMilliseconds - CurrentSession.EndTimeMilliseconds > CurrentSession.OverTimeMilliseconds)
-                                    SendSessionOver();
-                            }
-
-                            if (CurrentSession.HasSentRaceOverPacket
-                                && ServerTimeMilliseconds > _configuration.Server.ResultScreenTime * 1000L + CurrentSession.OverTimeMilliseconds)
-                            {
-                                NextSession();
-                            }
-
-                            break;
+                            CalcOverTime();
+                            CurrentSession.EndTimeMilliseconds = 60_000 * CurrentSession.Configuration.Time + CurrentSession.StartTimeMilliseconds;
+                            if (ServerTimeMilliseconds - CurrentSession.EndTimeMilliseconds > CurrentSession.OverTimeMilliseconds)
+                                SendSessionOver();
                         }
+
+                        if (CurrentSession.HasSentRaceOverPacket
+                            && ServerTimeMilliseconds > _configuration.Server.ResultScreenTime * 1000L + CurrentSession.OverTimeMilliseconds)
+                        {
+                            NextSession();
+                        }
+
+                        break;
+                    }
                     case SessionType.Race:
+                    {
+                        if (CurrentSession is { EndTimeMilliseconds: not 0L, HasSentRaceOverPacket: false })
                         {
-                            if (CurrentSession is { EndTimeMilliseconds: not 0L, HasSentRaceOverPacket: false })
-                            {
-                                CalcOverTime();
-                                if (ServerTimeMilliseconds - CurrentSession.EndTimeMilliseconds > CurrentSession.OverTimeMilliseconds)
-                                    SendSessionOver();
-                            }
-
-                            if (CurrentSession.HasSentRaceOverPacket
-                                && ServerTimeMilliseconds > _configuration.Server.ResultScreenTime * 1000L + CurrentSession.OverTimeMilliseconds)
-                            {
-                                NextSession();
-                            }
-
-                            break;
+                            CalcOverTime();
+                            if (ServerTimeMilliseconds - CurrentSession.EndTimeMilliseconds > CurrentSession.OverTimeMilliseconds)
+                                SendSessionOver();
                         }
+
+                        if (CurrentSession.HasSentRaceOverPacket
+                            && ServerTimeMilliseconds > _configuration.Server.ResultScreenTime * 1000L + CurrentSession.OverTimeMilliseconds)
+                        {
+                            NextSession();
+                        }
+
+                        break;
+                    }
                 }
 
                 SendSessionStart();

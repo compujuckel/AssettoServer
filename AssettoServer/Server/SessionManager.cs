@@ -31,19 +31,19 @@ public class SessionManager : CriticalBackgroundService
     public SessionState CurrentSession { get; private set; } = null!;
 
     public long ServerTimeMilliseconds => _timeSource.ElapsedMilliseconds;
-    
+
     public bool IsOpen => CurrentSession.Configuration.IsOpen switch
     {
         IsOpenMode.Open => true,
         IsOpenMode.CloseAtStart => !CurrentSession.IsStarted,
-        _  => false,
+        _ => false,
     };
-    
+
     /// <summary>
     /// Fires when a new session is started
     /// </summary>
     public event EventHandler<SessionManager, SessionChangedEventArgs>? SessionChanged;
-    
+
     public SessionManager(ACServerConfiguration configuration,
         Func<SessionConfiguration, SessionState> sessionStateFactory,
         EntryCarManager entryCarManager,
@@ -54,12 +54,14 @@ public class SessionManager : CriticalBackgroundService
         _sessionStateFactory = sessionStateFactory;
         _entryCarManager = entryCarManager;
         _weatherManager = weatherManager;
+
+        _entryCarManager.ClientConnected += InitializeEntryCarResult;
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _timeSource.Start();
         NextSession();
-        
+
         await LoopAsync(stoppingToken);
     }
 
@@ -79,40 +81,40 @@ public class SessionManager : CriticalBackgroundService
                 switch (CurrentSession.Configuration.Type)
                 {
                     case SessionType.Qualifying or SessionType.Practice:
-                    {
-                        if (CurrentSession is { SessionOverFlag: true, HasSentRaceOverPacket: false })
                         {
-                            CalcOverTime();
-                            CurrentSession.EndTimeMilliseconds = 60_000 * CurrentSession.Configuration.Time + CurrentSession.StartTimeMilliseconds;
-                            if (ServerTimeMilliseconds - CurrentSession.EndTimeMilliseconds > CurrentSession.OverTimeMilliseconds)
-                                SendSessionOver();
+                            if (CurrentSession is { SessionOverFlag: true, HasSentRaceOverPacket: false })
+                            {
+                                CalcOverTime();
+                                CurrentSession.EndTimeMilliseconds = 60_000 * CurrentSession.Configuration.Time + CurrentSession.StartTimeMilliseconds;
+                                if (ServerTimeMilliseconds - CurrentSession.EndTimeMilliseconds > CurrentSession.OverTimeMilliseconds)
+                                    SendSessionOver();
+                            }
+
+                            if (CurrentSession.HasSentRaceOverPacket
+                                && ServerTimeMilliseconds > _configuration.Server.ResultScreenTime * 1000L + CurrentSession.OverTimeMilliseconds)
+                            {
+                                NextSession();
+                            }
+
+                            break;
                         }
-                        
-                        if (CurrentSession.HasSentRaceOverPacket
-                            && ServerTimeMilliseconds > _configuration.Server.ResultScreenTime * 1000L + CurrentSession.OverTimeMilliseconds)
-                        {
-                            NextSession();
-                        }
-                        
-                        break;
-                    }
                     case SessionType.Race:
-                    {
-                        if (CurrentSession is { EndTimeMilliseconds: not 0L, HasSentRaceOverPacket: false })
                         {
-                            CalcOverTime();
-                            if (ServerTimeMilliseconds - CurrentSession.EndTimeMilliseconds > CurrentSession.OverTimeMilliseconds)
-                                SendSessionOver();
+                            if (CurrentSession is { EndTimeMilliseconds: not 0L, HasSentRaceOverPacket: false })
+                            {
+                                CalcOverTime();
+                                if (ServerTimeMilliseconds - CurrentSession.EndTimeMilliseconds > CurrentSession.OverTimeMilliseconds)
+                                    SendSessionOver();
+                            }
+
+                            if (CurrentSession.HasSentRaceOverPacket
+                                && ServerTimeMilliseconds > _configuration.Server.ResultScreenTime * 1000L + CurrentSession.OverTimeMilliseconds)
+                            {
+                                NextSession();
+                            }
+
+                            break;
                         }
-                        
-                        if (CurrentSession.HasSentRaceOverPacket
-                            && ServerTimeMilliseconds > _configuration.Server.ResultScreenTime * 1000L + CurrentSession.OverTimeMilliseconds)
-                        {
-                            NextSession();
-                        }
-                            
-                        break;
-                    }
                 }
 
                 SendSessionStart();
@@ -123,21 +125,21 @@ public class SessionManager : CriticalBackgroundService
             }
         }
     }
-    
+
     public bool OnLapCompleted(ACTcpClient client, LapCompletedIncoming lap)
     {
         int timestamp = (int)ServerTimeMilliseconds;
 
         var entryCarResult = CurrentSession.Results?[client.SessionId] ?? throw new InvalidOperationException("Current session does not have results set");
-        
+
         if (entryCarResult.HasCompletedLastLap)
         {
             Log.Debug("Lap rejected by {ClientName}, already finished", client.Name);
             return false;
         }
 
-        if (CurrentSession.Configuration.Type == SessionType.Race 
-            && entryCarResult.NumLaps >= CurrentSession.Configuration.Laps 
+        if (CurrentSession.Configuration.Type == SessionType.Race
+            && entryCarResult.NumLaps >= CurrentSession.Configuration.Laps
             && !CurrentSession.Configuration.IsTimedRace)
         {
             Log.Debug("Lap rejected by {ClientName}, race over", client.Name);
@@ -151,7 +153,7 @@ public class SessionManager : CriticalBackgroundService
             entryCarResult.LastLap = lap.LapTime;
             entryCarResult.NumLaps++;
             entryCarResult.TotalTime = (uint)(CurrentSession.SessionTimeMilliseconds - client.EntryCar.Ping / 2);
-            
+
             if (lap.LapTime < entryCarResult.BestLap)
             {
                 entryCarResult.BestLap = lap.LapTime;
@@ -223,18 +225,18 @@ public class SessionManager : CriticalBackgroundService
                 entryCarResult.HasCompletedLastLap = true;
             }
             else switch (entryCarResult.HasCompletedLastLap)
-            {
-                case false:
-                    if (CurrentSession.EndTimeMilliseconds == 0)
-                        CurrentSession.EndTimeMilliseconds = timestamp;
-                    entryCarResult.HasCompletedLastLap = true;
-                    break;
-                case true when CurrentSession.EndTimeMilliseconds == 0:
-                    return true;
-                case true:
-                    entryCarResult.HasCompletedLastLap = true;
-                    break;
-            }
+                {
+                    case false:
+                        if (CurrentSession.EndTimeMilliseconds == 0)
+                            CurrentSession.EndTimeMilliseconds = timestamp;
+                        entryCarResult.HasCompletedLastLap = true;
+                        break;
+                    case true when CurrentSession.EndTimeMilliseconds == 0:
+                        return true;
+                    case true:
+                        entryCarResult.HasCompletedLastLap = true;
+                        break;
+                }
 
             return true;
         }
@@ -244,28 +246,28 @@ public class SessionManager : CriticalBackgroundService
 
         entryCarResult.HasCompletedLastLap = true;
         return false;
-    } 
-    
+    }
+
     private bool IsSessionOver()
     {
         if (CurrentSession.Configuration.Infinite)
         {
             return false;
         }
-        
+
         if (CurrentSession.Configuration.Type == SessionType.Booking)
         {
             // TODO Currently unused, maybe for later, when i care about sessions without pickup mode :shrug:
             return CurrentSession.TimeLeftMilliseconds == 0;
         }
-        
+
         if (ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds)
         {
             return false;
         }
 
         var connectedCount = _entryCarManager.EntryCars.Count(e => e.Client != null);
-        
+
         if (CurrentSession.Configuration.Type != SessionType.Race)
         {
             return false;
@@ -275,7 +277,7 @@ public class SessionManager : CriticalBackgroundService
         {
             return true;
         }
-        
+
         if (CurrentSession.Configuration.IsOpen != IsOpenMode.CloseAtStart)
         {
             return connectedCount == 0;
@@ -307,7 +309,7 @@ public class SessionManager : CriticalBackgroundService
             var overTimeMilliseconds = _configuration.Server.RaceOverTime * 1000L;
             if (CurrentSession.OverTimeMilliseconds == 0)
                 CurrentSession.OverTimeMilliseconds = overTimeMilliseconds;
-            
+
             if (CurrentSession.OverTimeMilliseconds == overTimeMilliseconds)
             {
                 if (_entryCarManager.EntryCars.Where(c => c.Client is { HasSentFirstUpdate: true })
@@ -325,20 +327,34 @@ public class SessionManager : CriticalBackgroundService
 
             if (_entryCarManager.EntryCars
                 .Where(c => c.Client is { HasSentFirstUpdate: true })
-                .Any(car => CurrentSession.Results?[car.SessionId] is { HasCompletedLastLap: false } 
+                .Any(car => CurrentSession.Results?[car.SessionId] is { HasCompletedLastLap: false }
                             && car.Status.Velocity.LengthSquared() > 5))
             {
                 return;
             }
         }
-        
+
         CurrentSession.OverTimeMilliseconds = 1;
+    }
+
+    private void InitializeEntryCarResult(ACTcpClient client, EventArgs? eventArgs)
+    {
+        EntryCarResult currentCarResult = CurrentSession.Results[client.SessionId];
+
+        if (currentCarResult.Guid != client.Guid)
+        {
+            CurrentSession.Results[client.SessionId] = new EntryCarResult()
+            {
+                Guid = client.Guid,
+                Name = client.Name,
+            };
+        }
     }
 
     public void SetSession(int sessionId)
     {
         // TODO reset sun angle
-        
+
         var previousSession = CurrentSession;
         Dictionary<byte, EntryCarResult>? previousSessionResults = CurrentSession?.Results; // breaks with CurrentSession.Result don't believe the IDE
 
@@ -349,6 +365,10 @@ public class SessionManager : CriticalBackgroundService
         foreach (var entryCar in _entryCarManager.EntryCars)
         {
             CurrentSession.Results?.Add(entryCar.SessionId, new EntryCarResult());
+            if (entryCar.Client != null)
+            {
+                InitializeEntryCarResult(entryCar.Client, null);
+            }
             entryCar.Reset();
         }
 
@@ -413,7 +433,7 @@ public class SessionManager : CriticalBackgroundService
         // StallSessionSwitch
         if (_entryCarManager.EntryCars.Any(c => c.Client is { HasSentFirstUpdate: false }))
             return false;
-        
+
 
         SetSession(CurrentSessionIndex);
         return true;
@@ -424,7 +444,7 @@ public class SessionManager : CriticalBackgroundService
         // StallSessionSwitch
         if (_entryCarManager.EntryCars.Any(c => c.Client is { HasSentFirstUpdate: false }))
             return false;
-        
+
         MustInvertGrid = false;
         if (_configuration.Sessions.Count - 1 == CurrentSessionIndex)
         {
@@ -487,7 +507,7 @@ public class SessionManager : CriticalBackgroundService
     {
         if (ServerTimeMilliseconds >= CurrentSession.StartTimeMilliseconds + 5000
             && ServerTimeMilliseconds - CurrentSession.LastRaceStartUpdateMilliseconds <= 1000) return;
-        
+
         foreach (var car in _entryCarManager.EntryCars.Where(c => c.Client is { HasSentFirstUpdate: true }))
         {
             car.Client?.SendPacketUdp(new RaceStart()
@@ -500,7 +520,7 @@ public class SessionManager : CriticalBackgroundService
 
         CurrentSession.LastRaceStartUpdateMilliseconds = ServerTimeMilliseconds;
     }
-    
+
     private void SendSessionOver()
     {
         if (CurrentSession.Results != null)
@@ -510,7 +530,7 @@ public class SessionManager : CriticalBackgroundService
                 PickupMode = true,
                 Results = CurrentSession.Results
             });
-        
+
         CurrentSession.HasSentRaceOverPacket = true;
         CurrentSession.OverTimeMilliseconds = ServerTimeMilliseconds;
     }

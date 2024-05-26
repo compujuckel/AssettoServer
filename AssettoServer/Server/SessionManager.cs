@@ -55,7 +55,7 @@ public class SessionManager : CriticalBackgroundService
         _entryCarManager = entryCarManager;
         _weatherManager = weatherManager;
 
-        _entryCarManager.ClientConnected += InitializeEntryCarResult;
+        _entryCarManager.ClientConnected += OnClientConnected;
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -337,19 +337,24 @@ public class SessionManager : CriticalBackgroundService
         CurrentSession.OverTimeMilliseconds = 1;
     }
 
-    private void InitializeEntryCarResult(ACTcpClient client, EventArgs? eventArgs)
+    private EntryCarResult InitializeEntryCarResult(ACTcpClient client)
+    {
+        return new EntryCarResult()
+        {
+            Guid = client.Guid,
+            Name = client.Name,
+            Team = client.Team,
+            NationCode = client.NationCode,
+        };
+    }
+
+    private void OnClientConnected(ACTcpClient client, EventArgs? eventArgs)
     {
         EntryCarResult currentCarResult = CurrentSession.Results[client.SessionId];
 
         if (currentCarResult.Guid != client.Guid)
         {
-            CurrentSession.Results[client.SessionId] = new EntryCarResult()
-            {
-                Guid = client.Guid,
-                Name = client.Name,
-                Team = client.Team,
-                NationCode = client.NationCode,
-            };
+            CurrentSession.Results[client.SessionId] = InitializeEntryCarResult(client);
         }
     }
 
@@ -369,7 +374,7 @@ public class SessionManager : CriticalBackgroundService
             CurrentSession.Results?.Add(entryCar.SessionId, new EntryCarResult());
             if (entryCar.Client != null)
             {
-                InitializeEntryCarResult(entryCar.Client, null);
+                OnClientConnected(entryCar.Client, null);
             }
             entryCar.Reset();
         }

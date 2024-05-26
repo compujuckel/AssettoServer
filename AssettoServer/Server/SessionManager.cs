@@ -225,18 +225,18 @@ public class SessionManager : CriticalBackgroundService
                 entryCarResult.HasCompletedLastLap = true;
             }
             else switch (entryCarResult.HasCompletedLastLap)
-                {
-                    case false:
-                        if (CurrentSession.EndTimeMilliseconds == 0)
-                            CurrentSession.EndTimeMilliseconds = timestamp;
-                        entryCarResult.HasCompletedLastLap = true;
-                        break;
-                    case true when CurrentSession.EndTimeMilliseconds == 0:
-                        return true;
-                    case true:
-                        entryCarResult.HasCompletedLastLap = true;
-                        break;
-                }
+            {
+                case false:
+                    if (CurrentSession.EndTimeMilliseconds == 0)
+                        CurrentSession.EndTimeMilliseconds = timestamp;
+                    entryCarResult.HasCompletedLastLap = true;
+                    break;
+                case true when CurrentSession.EndTimeMilliseconds == 0:
+                    return true;
+                case true:
+                    entryCarResult.HasCompletedLastLap = true;
+                    break;
+            }
 
             return true;
         }

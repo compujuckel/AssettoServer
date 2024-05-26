@@ -868,7 +868,8 @@ public class ACTcpClient : IClient
             throw new ArgumentNullException(nameof(_sessionManager.CurrentSession.Results));
 
         var laps = _sessionManager.CurrentSession.Results
-            .OrderBy(result => result.Value.Name, new CustomStringComparer())
+            .OrderBy(result => string.IsNullOrEmpty(result.Value.Name) || !char.IsLetterOrDigit(result.Value.Name[0]))
+            .ThenBy(result => result.Value.Name)
             .Select(result => new LapCompletedOutgoing.CompletedLap
             {
                 SessionId = result.Key,

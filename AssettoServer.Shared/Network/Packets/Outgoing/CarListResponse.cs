@@ -20,8 +20,8 @@ public class CarListResponse : IOutgoingNetworkPacket
             writer.WriteUTF8String(car.Model);
             writer.WriteUTF8String(car.Skin);
             writer.WriteUTF8String(CarResults[car.SessionId].Name);
-            writer.WriteUTF8String(car.Client?.Team);
-            writer.WriteUTF8String(car.Client?.NationCode);
+            writer.WriteUTF8String(CarResults[car.SessionId].Team);
+            writer.WriteUTF8String(CarResults[car.SessionId].NationCode);
             writer.Write(car.IsSpectator);
             writer.Write(car.Status.DamageZoneLevel);
         }

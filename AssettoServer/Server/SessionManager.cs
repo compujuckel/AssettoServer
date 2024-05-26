@@ -343,7 +343,7 @@ public class SessionManager : CriticalBackgroundService
         {
             Guid = client.Guid,
             Name = client.Name,
-            Team = client.Team,
+            Team = client.Team ?? "",
             NationCode = client.NationCode,
         };
     }

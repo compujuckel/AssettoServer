@@ -337,16 +337,15 @@ public class SessionManager : CriticalBackgroundService
         CurrentSession.OverTimeMilliseconds = 1;
     }
 
-    private EntryCarResult InitializeEntryCarResult(ACTcpClient client)
-    {
-        return new EntryCarResult()
+    private EntryCarResult InitializeEntryCarResult(ACTcpClient client) => 
+        new EntryCarResult()
         {
             Guid = client.Guid,
             Name = client.Name,
             Team = client.Team ?? "",
             NationCode = client.NationCode,
         };
-    }
+
 
     private void OnClientConnected(ACTcpClient client, EventArgs? eventArgs)
     {

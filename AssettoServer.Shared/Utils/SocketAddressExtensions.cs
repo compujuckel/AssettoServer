@@ -1,8 +1,7 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Reflection;
 
-namespace AssettoServer.Utils;
+namespace AssettoServer.Shared.Utils;
 
 public static class SocketAddressExtensions
 {

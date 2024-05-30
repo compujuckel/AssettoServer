@@ -15,7 +15,7 @@ using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Network.Packets.UdpPlugin;
 using AssettoServer.Shared.Services;
-using AssettoServer.Utils;
+using AssettoServer.Shared.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using ClientEvent = AssettoServer.Shared.Network.Packets.UdpPlugin.ClientEvent;

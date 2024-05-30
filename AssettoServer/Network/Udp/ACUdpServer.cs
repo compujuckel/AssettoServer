@@ -12,7 +12,7 @@ using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Services;
-using AssettoServer.Utils;
+using AssettoServer.Shared.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 

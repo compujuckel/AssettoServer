@@ -5,9 +5,9 @@ namespace ReplayPlugin.Utils;
 
 public static class BinaryWriterExtensions
 {
-    public static void WriteStruct<T>(this BinaryWriter writer, T value) where T : unmanaged
+    public static void WriteStruct<T>(this BinaryWriter writer, in T value) where T : unmanaged
     {
-        writer.Write(MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value, 1)));
+        writer.Write(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(in value, 1)));
     }
 
     public static void WriteACString(this BinaryWriter writer, string? str)

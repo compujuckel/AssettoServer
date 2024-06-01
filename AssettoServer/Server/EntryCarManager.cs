@@ -226,21 +226,24 @@ public class EntryCarManager
             var driverOptions = CSPDriverOptions.Parse(entry.Skin);
             var aiMode = _configuration.Extra.EnableAi ? entry.AiMode : AiMode.None;
 
-            EntryCars[i] = _entryCarFactory(entry.Model, entry.Skin, (byte)i);
-            EntryCars[i].SpectatorMode = entry.SpectatorMode;
-            EntryCars[i].Ballast = entry.Ballast;
-            EntryCars[i].Restrictor = entry.Restrictor;
-            EntryCars[i].FixedSetup = entry.FixedSetup;
-            EntryCars[i].DriverOptionsFlags = driverOptions;
-            EntryCars[i].AiMode = aiMode;
-            EntryCars[i].AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange);
-            EntryCars[i].AiControlled = aiMode != AiMode.None;
-            EntryCars[i].NetworkDistanceSquared = MathF.Pow(_configuration.Extra.NetworkBubbleDistance, 2);
-            EntryCars[i].OutsideNetworkBubbleUpdateRateMs = 1000 / _configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
+            var car = _entryCarFactory(entry.Model, entry.Skin, (byte)i);
+            car.SpectatorMode = entry.SpectatorMode;
+            car.Ballast = entry.Ballast;
+            car.Restrictor = entry.Restrictor;
+            car.FixedSetup = entry.FixedSetup;
+            car.DriverOptionsFlags = driverOptions;
+            car.AiMode = aiMode;
+            car.AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange);
+            car.AiControlled = aiMode != AiMode.None;
+            car.NetworkDistanceSquared = MathF.Pow(_configuration.Extra.NetworkBubbleDistance, 2);
+            car.OutsideNetworkBubbleUpdateRateMs = 1000 / _configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
+            car.LegalTyres = entry.LegalTyres ?? _configuration.Server.LegalTyres;
             if (!string.IsNullOrWhiteSpace(entry.Guid))
             {
-                EntryCars[i].AllowedGuids = entry.Guid.Split(';').Select(ulong.Parse).ToList();
+                car.AllowedGuids = entry.Guid.Split(';').Select(ulong.Parse).ToList();
             }
+
+            EntryCars[i] = car;
         }
     }
 }

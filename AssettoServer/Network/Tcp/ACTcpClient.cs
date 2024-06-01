@@ -430,7 +430,7 @@ public class ACTcpClient : IClient
                             ChecksumCount = (byte)checksums.Count,
                             ChecksumPaths = checksums.Select(c => c.Key),
                             CurrentTime = 0, // Ignored by AC
-                            LegalTyres = cfg.LegalTyres,
+                            LegalTyres = EntryCar.LegalTyres,
                             RandomSeed = _configuration.RandomSeed,
                             SessionCount = (byte)_configuration.Sessions.Count,
                             Sessions = _configuration.Sessions,

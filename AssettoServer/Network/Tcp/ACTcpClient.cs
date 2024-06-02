@@ -141,12 +141,12 @@ public class ACTcpClient : IClient
     private class ACTcpClientLogEventEnricher : ILogEventEnricher
     {
         private readonly ACTcpClient _client;
-        private readonly bool _usePrivacyMode;
+        private readonly bool _redactIpAddresses;
 
-        public ACTcpClientLogEventEnricher(ACTcpClient client, bool usePrivacyMode)
+        public ACTcpClientLogEventEnricher(ACTcpClient client, bool redactIpAddresses)
         {
             _client = client;
-            _usePrivacyMode = usePrivacyMode;
+            _redactIpAddresses = redactIpAddresses;
         }
             
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
@@ -154,7 +154,7 @@ public class ACTcpClient : IClient
             var endpoint = (IPEndPoint)_client.TcpClient.Client.RemoteEndPoint!;
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientName", _client.Name));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientSteamId", _client.Guid));
-            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientIpAddress", endpoint.Address.ToPrivacyString(_usePrivacyMode)));
+            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientIpAddress", endpoint.Address.Redact(_redactIpAddresses)));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientPort", endpoint.Port));
             if (_client.HardwareIdentifier.HasValue)
             {
@@ -181,7 +181,7 @@ public class ACTcpClient : IClient
         UdpServer = udpServer;
         Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
-            .Enrich.With(new ACTcpClientLogEventEnricher(this, configuration.Extra.EnablePrivacyMode))
+            .Enrich.With(new ACTcpClientLogEventEnricher(this, configuration.Extra.RedactIpAddresses))
             .WriteTo.Logger(Log.Logger)
             .CreateLogger();
 
@@ -339,7 +339,7 @@ public class ACTcpClient : IClient
                     Guid = handshakeRequest.Guid;
                     HashedGuid = IdFromGuid(Guid);
 
-                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.ToPrivacyString(_configuration.Extra.EnablePrivacyMode), handshakeRequest.RequestedCar);
+                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.Redact(_configuration.Extra.RedactIpAddresses), handshakeRequest.RequestedCar);
 
                     List<string> cspFeatures;
                     if (!string.IsNullOrEmpty(handshakeRequest.Features))
@@ -908,7 +908,7 @@ public class ACTcpClient : IClient
             
             if (!string.IsNullOrEmpty(Name))
             {
-                Logger.Debug("Disconnecting {ClientName} ({ClientSteamId} - {ClientIpEndpoint})", Name, Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.ToPrivacyString(_configuration.Extra.EnablePrivacyMode));
+                Logger.Debug("Disconnecting {ClientName} ({ClientSteamId} - {ClientIpEndpoint})", Name, Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.Redact(_configuration.Extra.RedactIpAddresses));
                 Disconnecting?.Invoke(this, EventArgs.Empty);
             }
 

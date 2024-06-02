@@ -1,11 +1,10 @@
 ﻿using System.Net;
-using System.Net.Sockets;
 
 namespace AssettoServer.Shared.Utils;
 
 public static class IPAddressExtensions
 {
-    public static string ToPrivacyString(this IPAddress ip, bool usePrivacyMode)
+    public static string Redact(this IPAddress ip, bool usePrivacyMode)
     {
         if (!usePrivacyMode)
             return ip.ToString();
@@ -16,8 +15,8 @@ public static class IPAddressExtensions
         return new IPAddress(privacyIp).ToString();
     }
     
-    public static string ToPrivacyString(this IPEndPoint ip, bool usePrivacyMode)
+    public static string Redact(this IPEndPoint ip, bool usePrivacyMode)
     {
-        return $"{ip.Address.ToPrivacyString(usePrivacyMode)}:{ip.Port}";
+        return $"{ip.Address.Redact(usePrivacyMode)}:{ip.Port}";
     }
 }

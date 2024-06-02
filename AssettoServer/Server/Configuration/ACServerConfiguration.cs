@@ -333,7 +333,7 @@ public partial class ACServerConfiguration
         if (Extra.MandatoryClientSecurityLevel > 0 
             && loader.LoadedPlugins.All(plugin => plugin.Name != "ClientSecurityPlugin"))
         {
-            Log.Information("{PluginName} not installed, setting {PropertyName} to {Value}", "ClientSecurityPlugin", "MandatoryClientSecurityLevel", 0);
+            Log.Warning("ClientSecurityPlugin not installed, setting MandatoryClientSecurityLevel to 0");
             Extra.MandatoryClientSecurityLevel = 0;
         }
 

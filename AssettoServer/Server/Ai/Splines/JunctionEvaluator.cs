@@ -33,7 +33,7 @@ public class JunctionEvaluator
         return count > 0 ? Next(pointId, count) : Previous(pointId, -count);
     }
 
-    public int Next(int pointId, int count = 1, bool? forceTakeJunction = null)
+    public int Next(int pointId, int count = 1)
     {
         var points = _spline.Points;
         var junctions = _spline.Junctions;
@@ -45,7 +45,7 @@ public class JunctionEvaluator
             {
                 var junctionId = point.JunctionStartId;
 
-                bool result = forceTakeJunction ?? WillTakeJunction(junctionId);
+                bool result = WillTakeJunction(junctionId);
                 pointId = result ? junctions[junctionId].EndPointId : point.NextId;
             }
             else
@@ -57,9 +57,9 @@ public class JunctionEvaluator
         return pointId;
     }
 
-    public bool TryNext(int pointId, out int nextPointId, int count = 1, bool? forceTakeJunction = null)
+    public bool TryNext(int pointId, out int nextPointId, int count = 1)
     {
-        nextPointId = Next(pointId, count, forceTakeJunction);
+        nextPointId = Next(pointId, count);
         return nextPointId >= 0;
     }
 

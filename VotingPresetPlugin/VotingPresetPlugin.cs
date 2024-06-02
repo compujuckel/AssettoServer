@@ -53,10 +53,9 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
         _votePresets = presetConfigurationManager.VotingPresetTypes;
         _adminPresets = presetConfigurationManager.AllPresetTypes;
         
-        if (acServerConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_1_80_p475)
+        if (acServerConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_0)
         {
-            throw new ConfigurationException(
-                "VotingPresetPlugin needs a minimum required CSP version of 0.1.80-preview475 (2635)");
+            throw new ConfigurationException("VotingPresetPlugin needs a minimum required CSP version of 0.2.0 (2651)");
         }
         
         _presetManager.SetPreset(new PresetData(presetConfigurationManager.CurrentConfiguration.ToPresetType(), null)

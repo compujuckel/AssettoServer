@@ -59,7 +59,7 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
         {
             _entryCarManager.ClientConnected += (sender, _) => sender.FirstUpdateSent += OnFirstUpdateSent;
         }
-        _entryCarManager.ClientAdminAuthorized += OnAdminAuthorized;
+        _entryCarManager.ClientConnected += (sender, _) => sender.AdminAuthorized += OnAdminAuthorized;
     }
 
     private void OnFirstUpdateSent(ACTcpClient sender, EventArgs args)

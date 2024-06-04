@@ -16,11 +16,15 @@ namespace AssettoServer.Commands.Modules;
 public class GeneralModule : ACModuleBase
 {
     private readonly WeatherManager _weatherManager;
+    private readonly EntryCarManager _entryCarManager;
     private readonly ACServerConfiguration _configuration;
 
-    public GeneralModule(WeatherManager weatherManager, ACServerConfiguration configuration)
+    public GeneralModule(WeatherManager weatherManager, 
+        EntryCarManager entryCarManager,
+        ACServerConfiguration configuration)
     {
         _weatherManager = weatherManager;
+        _entryCarManager = entryCarManager;
         _configuration = configuration;
     }
 
@@ -47,6 +51,7 @@ public class GeneralModule : ACModuleBase
         if (_configuration.Server.CheckAdminPassword(password))
         {
             Client!.IsAdministrator = true;
+            Client!.SendAdminAuthorized();
             Reply("You are now Admin for this server");
         }
         else

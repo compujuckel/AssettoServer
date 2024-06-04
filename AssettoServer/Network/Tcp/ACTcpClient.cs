@@ -137,6 +137,11 @@ public class ACTcpClient : IClient
     /// Fires before sending the car list response
     /// </summary>
     public event EventHandler<ACTcpClient, CarListResponseSendingEventArgs>? CarListResponseSending;
+    
+    /// <summary>
+    /// Fires when a player has authorized for admin permissions.
+    /// </summary>
+    public event EventHandler<ACTcpClient, EventArgs>? AdminAuthorized;
 
     private class ACTcpClientLogEventEnricher : ILogEventEnricher
     {
@@ -944,6 +949,11 @@ public class ACTcpClient : IClient
             Velocity = velocity,
             Target = SessionId
         });
+    }
+
+    internal void SendAdminAuthorized()
+    {
+        AdminAuthorized?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>

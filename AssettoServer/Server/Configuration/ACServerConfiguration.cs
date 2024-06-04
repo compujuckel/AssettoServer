@@ -90,6 +90,9 @@ public partial class ACServerConfiguration
         {
             CSPTrackOptions = parsedTrackOptions;
         }
+        if (CSPTrackOptions.MinimumCSPVersion.HasValue)
+            Log.Debug("Using minimum required CSP Version {Version}", CSPTrackOptions.MinimumCSPVersion.Value);
+        
         FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : $"{Server.Track}-{Server.TrackConfig}";
         DrsZones = LoadDrsZones(locations.DrsZonePath(CSPTrackOptions.Track, Server.TrackConfig), Extra.EnableGlobalDrs);
         

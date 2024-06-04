@@ -108,6 +108,15 @@ public class EntryCarAutoModeration
         CurrentFlags = 0;
     }
 
+    internal void AdminReset()
+    {
+        OnResetInvoked(_entryCar, EventArgs.Empty);
+        if (_serverConfiguration.Extra.EnableClientMessages)
+        {
+            _entryCar.Client?.SendPacket(new AutoModerationFlags { Flags = 0 });
+        }
+    }
+
     public void Update()
     {
         var client = _entryCar.Client;

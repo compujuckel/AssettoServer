@@ -16,7 +16,7 @@ public class PresetConfigurationManager
     public PresetConfigurationManager(VotingPresetConfiguration votingPresetConfiguration, ACServerConfiguration acServerConfiguration)
     {
         CurrentConfiguration = votingPresetConfiguration.Meta;
-        CurrentConfiguration.PresetFolder = acServerConfiguration.BaseFolder;
+        CurrentConfiguration.Path = acServerConfiguration.BaseFolder;
 
         var configs = new List<PresetConfiguration>();
         var directories = Directory.GetDirectories("presets");
@@ -49,14 +49,24 @@ public class PresetConfigurationManager
 
             configs.Add(PresetConfiguration.FromFile(pluginCfgPath));
         }
-
+        
+        if (configs.Count < 2)
+        {
+            throw new ConfigurationException(
+                "VotingPresetPlugin needs a minimum of 2 presets");
+        }
+        
         AllConfigurations = configs;
-        VotingConfigurations = configs.Where(c => c.VotingEnabled).ToList();
+        VotingConfigurations = configs.Where(c => !c.AdminOnly).ToList();
 
         AllPresetTypes = AllConfigurations.Select(x => x.ToPresetType()).ToList();
         VotingPresetTypes = VotingConfigurations.Select(x => x.ToPresetType()).ToList();
         
         Log.Information("Number of presets loaded: {PresetCount}", configs.Count);
+        foreach (var preset in configs)
+        {
+            Log.Information("Loaded {PresetName} ({PresetPath})", preset.Name, preset.Path);
+        }
     }
 
     private ulong HashEntryList(string path)

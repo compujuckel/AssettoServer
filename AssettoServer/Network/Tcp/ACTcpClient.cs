@@ -141,7 +141,7 @@ public class ACTcpClient : IClient
     /// <summary>
     /// Fires when a player has authorized for admin permissions.
     /// </summary>
-    public event EventHandler<ACTcpClient, EventArgs>? AdminAuthorized;
+    public event EventHandler<ACTcpClient, EventArgs>? LoggedInAsAdministrator;
 
     private class ACTcpClientLogEventEnricher : ILogEventEnricher
     {
@@ -951,9 +951,12 @@ public class ACTcpClient : IClient
         });
     }
 
-    internal void SendAdminAuthorized()
+    internal void LoginAsAdministrator()
     {
-        AdminAuthorized?.Invoke(this, EventArgs.Empty);
+        if (IsAdministrator) return;
+        
+        IsAdministrator = true;
+        LoggedInAsAdministrator?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>

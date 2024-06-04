@@ -50,8 +50,7 @@ public class GeneralModule : ACModuleBase
     {
         if (_configuration.Server.CheckAdminPassword(password))
         {
-            Client!.IsAdministrator = true;
-            Client!.SendAdminAuthorized();
+            Client!.LoginAsAdministrator();
             Reply("You are now Admin for this server");
         }
         else

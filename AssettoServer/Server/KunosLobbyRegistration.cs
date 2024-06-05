@@ -36,7 +36,6 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         try
         {
             await RegisterToLobbyWithRetryAsync(stoppingToken);
-            Log.Information("Lobby registration successful");
         }
         catch (TaskCanceledException) { }
         catch (KunosLobbyException ex) when (ex.Message == "ERROR,INVALID SERVER,CHECK YOUR PORT FORWARDING SETTINGS")
@@ -151,6 +150,8 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         {
             throw new KunosLobbyException(body);
         }
+        
+        Log.Information("Lobby registration successful");
     }
 
     private async Task PingLobbyWithRetryAsync(CancellationToken token)

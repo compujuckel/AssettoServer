@@ -35,7 +35,7 @@ public class KunosLobbyRegistration : CriticalBackgroundService
 
         try
         {
-            await RegisterToLobbyAsync(stoppingToken);
+            await RegisterToLobbyWithRetryAsync(stoppingToken);
             Log.Information("Lobby registration successful");
         }
         catch (TaskCanceledException) { }
@@ -59,7 +59,7 @@ public class KunosLobbyRegistration : CriticalBackgroundService
                     .Handle<KunosLobbyException>()
                     .Or<HttpRequestException>()
                     .WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(attempt * 10))
-                    .ExecuteAsync(PingLobbyAsync, stoppingToken);
+                    .ExecuteAsync(PingLobbyWithRetryAsync, stoppingToken);
             }
             catch (TaskCanceledException) { }
             catch (Exception ex)
@@ -85,10 +85,24 @@ public class KunosLobbyRegistration : CriticalBackgroundService
                   """, _configuration.Server.UdpPort, _configuration.Server.TcpPort, _configuration.Server.HttpPort, localIp, routerIp != null ? $"http://{routerIp}/" : "unknown");
     }
 
-    private async Task RegisterToLobbyAsync(CancellationToken token)
+    private async Task RegisterToLobbyWithRetryAsync(CancellationToken token)
+    {
+        try
+        {
+            await RegisterToLobbyAsync("http://93.57.10.21/lobby.ashx/register", token);
+        }
+        catch (HttpRequestException ex)
+        {
+            Log.Warning(ex, "Exception querying first lobby server, trying second server in 10 seconds...");
+            await Task.Delay(TimeSpan.FromSeconds(10), token);
+            await RegisterToLobbyAsync("http://lobby.assettocorsa.net/lobby.ashx/register", token);
+        }
+    }
+
+    private async Task RegisterToLobbyAsync(string url, CancellationToken token)
     {
         var cfg = _configuration.Server;
-        var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/register");
+        var builder = new UriBuilder(url);
         var queryParams = HttpUtility.ParseQueryString(builder.Query);
 
         string cars = string.Join(',', _entryCarManager.EntryCars.Select(c => c.Model).Distinct());
@@ -128,6 +142,9 @@ public class KunosLobbyRegistration : CriticalBackgroundService
 
         Log.Information("Registering server to lobby...");
         HttpResponseMessage response = await _httpClient.GetAsync(builder.ToString(), token);
+        
+        response.EnsureSuccessStatusCode();
+        
         string body = await response.Content.ReadAsStringAsync(token);
 
         if (!body.StartsWith("OK"))
@@ -136,9 +153,23 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         }
     }
 
-    private async Task PingLobbyAsync(CancellationToken token)
+    private async Task PingLobbyWithRetryAsync(CancellationToken token)
     {
-        var builder = new UriBuilder("http://93.57.10.21/lobby.ashx/ping");
+        try
+        {
+            await PingLobbyAsync("http://93.57.10.21/lobby.ashx/ping", token);
+        }
+        catch (HttpRequestException ex)
+        {
+            Log.Warning(ex, "Exception querying first lobby server, trying second server in 10 seconds...");
+            await Task.Delay(TimeSpan.FromSeconds(10), token);
+            await PingLobbyAsync("http://lobby.assettocorsa.net/lobby.ashx/ping", token);
+        }
+    }
+
+    private async Task PingLobbyAsync(string url, CancellationToken token)
+    {
+        var builder = new UriBuilder(url);
         var queryParams = HttpUtility.ParseQueryString(builder.Query);
         
         queryParams["session"] = ((int)_sessionManager.CurrentSession.Configuration.Type).ToString();
@@ -150,6 +181,9 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         builder.Query = queryParams.ToString();
         
         HttpResponseMessage response = await _httpClient.GetAsync(builder.ToString(), token);
+
+        response.EnsureSuccessStatusCode();
+        
         string body = await response.Content.ReadAsStringAsync(token);
 
         if (!body.StartsWith("OK"))
@@ -157,7 +191,7 @@ public class KunosLobbyRegistration : CriticalBackgroundService
             if (body is "ERROR - RESTART YOUR SERVER TO REGISTER WITH THE LOBBY" 
                 or "ERROR,SERVER NOT REGISTERED WITH LOBBY - PLEASE RESTART")
             {
-                await RegisterToLobbyAsync(token);
+                await RegisterToLobbyWithRetryAsync(token);
             }
             else
             {

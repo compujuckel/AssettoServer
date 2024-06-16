@@ -15,7 +15,8 @@ public class FastTravelPlugin : CriticalBackgroundService, IAssettoServerAutosta
 {
     private readonly AiSpline _aiSpline;
 
-    public FastTravelPlugin(ACServerConfiguration configuration,
+    public FastTravelPlugin(FastTravelConfiguration configuration,
+        ACServerConfiguration serverConfiguration,
         CSPServerScriptProvider scriptProvider,
         CSPClientMessageTypeManager cspClientMessageTypeManager,
         IHostApplicationLifetime applicationLifetime,
@@ -23,13 +24,18 @@ public class FastTravelPlugin : CriticalBackgroundService, IAssettoServerAutosta
     {
         _aiSpline = aiSpline ?? throw new ConfigurationException("FastTravelPlugin does not work with AI traffic disabled");
         
-        if (configuration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_3)
+        if (configuration.RequireCollisionDisable && serverConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_3_p211)
         {
-            throw new ConfigurationException("FastTravelPlugin needs a minimum required CSP version of 0.2.3 (3044)");
+            throw new ConfigurationException("FastTravelPlugin needs a minimum required CSP version of 0.2.3-preview211 (2974)");
         }
         
+        if (!configuration.RequireCollisionDisable && serverConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_0)
+        {
+            throw new ConfigurationException("FastTravelPlugin needs a minimum required CSP version of 0.2.0 (2651)");
+        }
+
         // Include Client Reconnection Script
-        if (!configuration.Extra.EnableClientMessages)
+        if (!serverConfiguration.Extra.EnableClientMessages)
         {
             throw new ConfigurationException("FastTravelPlugin requires ClientMessages to be enabled");
         }

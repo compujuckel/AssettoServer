@@ -3,7 +3,7 @@ using Autofac;
 
 namespace FastTravelPlugin;
 
-public class FastTravelModule : AssettoServerModule
+public class FastTravelModule : AssettoServerModule<FastTravelConfiguration>
 {
     protected override void Load(ContainerBuilder builder)
     {

@@ -26,7 +26,7 @@ public class CSPClientMessageHandler
         
         cspClientMessageTypeManager.RegisterOnlineEvent<CollisionUpdatePacket>(OnCollisionUpdate);
         cspClientMessageTypeManager.RegisterOnlineEvent<TeleportCarPacket>(OnTeleportCar);
-        cspClientMessageTypeManager.RegisterOnlineEvent<RequestResetPacket>((client, _) => { OnResetCar(client); });
+        cspClientMessageTypeManager.RegisterOnlineEvent<RequestResetPacket>(OnResetCar);
     }
     
     public void OnCSPClientMessageUdp(ACTcpClient sender, PacketReader reader)
@@ -200,7 +200,7 @@ public class CSPClientMessageHandler
         }
     }
 
-    private void OnResetCar(ACTcpClient sender)
+    private void OnResetCar(ACTcpClient sender, RequestResetPacket packet)
     {
         if (_configuration.Extra.EnableCarReset)
             sender.EntryCar.TryResetPosition();

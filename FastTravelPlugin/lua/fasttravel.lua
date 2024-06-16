@@ -489,12 +489,7 @@ function inputCheck()
                 if hoverMark >= 0 then
                     teleportExec(mapTargetPos, rot)
                 else
-                    setTimeout(function()
-                        local pos_final = mapTargetPos
-                        local rot_final = vec3(1, 0, 0)
-
-                        fastTravelEvent({ position = pos, direction = vec3(0, 0, 0) })
-                    end, 0)
+                    fastTravelEvent({ position = pos, direction = vec3(0, 0, 0) })
                 end
             end
         end

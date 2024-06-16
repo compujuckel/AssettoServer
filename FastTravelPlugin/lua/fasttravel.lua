@@ -1,5 +1,5 @@
---c1xtz: written by Tsuka1427, teleport location translated and adjusted by C1XTZ
---c1xtz: comments are all from Tsuka, unless they start with "c1xtz:"
+--c1xtz: original script writen by Tsuka1427
+--c1xtz: comments are from Tsuka, unless they start with "c1xtz:"
 --thisguyStan: my comments start with "thisguyStan:" :D
 
 --thisguyStan: changed these paths to use the assettoserver instance
@@ -10,7 +10,8 @@ local supportAPI_collision = physics.disableCarCollisions ~= nil
 local supportAPI_matrix = ac.getPatchVersionCode() >= 3037
 local trackCompassOffset = 24 -- for SRP
 
---c1xtz: read teleports from server options, uses only one position per group, requires `POINT_<num>_TYPE = PA/ST` to be added to the first position of a group in csp_extra_options.ini to show up as parking area or (train)station.
+--c1xtz: read teleports from server options, uses only first position of a group, requires `POINT_<num>_TYPE = PA/ST` to be added to the first position of a group in csp_extra_options.ini to show up as parking area or (train)station.
+--c1xtz: additional custom types can be created as long as a corresponding "mapicon_<type>.png" is in the images folder. example: "POINT_1_TYPE = GS" & "mapicon_gs.png" for a gas station type.
 local extraOptions = ac.INIConfig.onlineExtras()
 local teleports, encountered = {}, {}
 
@@ -153,7 +154,11 @@ local function projectPoint(position)
         local proj = mat4x4.perspective(math.rad(mapCamera.fov), screenSize.x / screenSize.y, 10, 30000)
         screenPos = posToViewSpace(view:mul(proj), position)
     else
-        screenPos = render.projectPoint(position, render.ProjectFace.Center)
+        if ac.getPatchVersionCode() >= 2735 then --c1xtz: added this for compatibility with 0.2.0
+            screenPos = render.projectPoint(position, render.ProjectFace.Center)
+        else
+            screenPos = render.projectPoint(position)
+        end
     end
     return screenPos
 end

@@ -878,12 +878,9 @@ public class ACTcpClient : IClient
                 LapTime = _sessionManager.CurrentSession.Configuration.Type == SessionType.Race ? result.Value.TotalTime : result.Value.BestLap,
                 NumLaps = (ushort)result.Value.NumLaps,
                 HasCompletedLastLap = (byte)(result.Value.HasCompletedLastLap ? 1 : 0),
-                RacePos = 0,
-            });
-
-        laps = _sessionManager.CurrentSession.Configuration.Type == SessionType.Race
-            ? laps.OrderBy(lap => lap.RacePos)
-            : laps.OrderBy(lap => lap.LapTime); // TODO wrong for race sessions?
+                RacePos = (byte)result.Value.RacePos,
+            })
+            .OrderBy(lap => lap.LapTime);
 
         return new LapCompletedOutgoing
         {

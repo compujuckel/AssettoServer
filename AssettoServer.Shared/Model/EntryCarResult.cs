@@ -12,4 +12,15 @@ public class EntryCarResult
     public uint TotalTime { get; set; } = 0;
     public uint LastLap { get; set; } = 999999999;
     public bool HasCompletedLastLap { get; set; } = false;
+    public uint RacePos { get; set; } = 0;
+
+    public EntryCarResult(IClient? client)
+    {
+        if (client == null) return;
+        
+        Guid = client.Guid;
+        Name = client.Name ?? "";
+        Team = client.Team ?? "";
+        NationCode = client.NationCode ?? "";
+    }
 }

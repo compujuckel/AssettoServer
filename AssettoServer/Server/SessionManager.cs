@@ -165,6 +165,13 @@ public class SessionManager : CriticalBackgroundService
                 CurrentSession.LeaderLapCount = entryCarResult.NumLaps;
             }
 
+            if (CurrentSession.Configuration.Type == SessionType.Race)
+            {
+                entryCarResult.RacePos = (uint) CurrentSession.Results
+                    .Where(car => car.Key != client.SessionId && car.Value.TotalTime > 0)
+                    .Count(car => car.Value.TotalTime <= entryCarResult.TotalTime);
+            }
+
             if (CurrentSession.SessionOverFlag)
             {
                 if (CurrentSession.Configuration is { Type: SessionType.Race, IsTimedRace: true })
@@ -337,24 +344,10 @@ public class SessionManager : CriticalBackgroundService
         CurrentSession.OverTimeMilliseconds = 1;
     }
 
-    private EntryCarResult InitializeEntryCarResult(ACTcpClient client) => 
-        new EntryCarResult()
-        {
-            Guid = client.Guid,
-            Name = client.Name,
-            Team = client.Team ?? "",
-            NationCode = client.NationCode,
-        };
-
-
-    private void OnClientConnected(ACTcpClient client, EventArgs? eventArgs)
+    private void OnClientConnected(ACTcpClient client, EventArgs eventArgs)
     {
-        EntryCarResult currentCarResult = CurrentSession.Results[client.SessionId];
-
-        if (currentCarResult.Guid != client.Guid)
-        {
-            CurrentSession.Results[client.SessionId] = InitializeEntryCarResult(client);
-        }
+        if (CurrentSession.Results?[client.SessionId].Guid != client.Guid)
+            CurrentSession.Results![client.SessionId] = new EntryCarResult(client);
     }
 
     public void SetSession(int sessionId)
@@ -370,17 +363,13 @@ public class SessionManager : CriticalBackgroundService
 
         foreach (var entryCar in _entryCarManager.EntryCars)
         {
-            CurrentSession.Results?.Add(entryCar.SessionId, new EntryCarResult());
-            if (entryCar.Client != null)
-            {
-                OnClientConnected(entryCar.Client, null);
-            }
+            CurrentSession.Results?.Add(entryCar.SessionId, new EntryCarResult(entryCar.Client));
             entryCar.Reset();
         }
 
         var sessionLength = CurrentSession.Configuration switch
         {
-            { Infinite: true } => $"Infinite",
+            { Infinite: true } => "Infinite",
             { IsTimedRace: false } => $"{CurrentSession.Configuration.Laps} laps",
             _ => $"{CurrentSession.Configuration.Time} minutes"
         };

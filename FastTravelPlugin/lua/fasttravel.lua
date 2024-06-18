@@ -1,35 +1,34 @@
 --c1xtz: original script writen by Tsuka1427
---c1xtz: comments are from Tsuka, unless they start with "c1xtz:"
---thisguyStan: my comments start with "thisguyStan:" :D
+--c1xtz: comments are from Tsuka, unless they start with 'c1xtz:'
+--thisguyStan: my comments start with 'thisguyStan:' :D
 
 --thisguyStan: changed these paths to use the assettoserver instance
-local baseUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP() .. "/fasttravel/"
+local baseUrl = 'http://' .. ac.getServerIP() .. ':' .. ac.getServerPortHTTP() .. '/fasttravel/'
 
 local supportAPI_physics = physics.setGentleStop ~= nil
 local supportAPI_collision = physics.disableCarCollisions ~= nil
 local supportAPI_matrix = ac.getPatchVersionCode() >= 3037
 local trackCompassOffset = 24 -- for SRP
 
---c1xtz: read teleports from server options, uses only first position of a group, requires `POINT_<num>_TYPE = PA/ST` to be added to the first position of a group in csp_extra_options.ini to show up as parking area or (train)station.
---c1xtz: additional custom types can be created as long as a corresponding "mapicon_<type>.png" is in the images folder. example: "POINT_1_TYPE = GS" & "mapicon_gs.png" for a gas station type.
+--c1xtz: read teleports from server options, requires 'POINT_<num>_TYPE = PA/ST' to be added to the teleports in csp_extra_options.ini to not show up as the default.
+--c1xtz: additional custom types can be created as long as a corresponding 'mapicon_<type>.png' is in the images folder. example: 'POINT_1_TYPE = GS' & 'mapicon_gs.png' for a gas station type.
+--c1xtz: points inside of group inherite the type of the point before, meaning if 'POINT_1_TYPE = PA' and POINT_2 is not specifically given a type, it will inherit the PA type from point 1.
+--c1xtz: this makes it possible to have multiple types per group, although only the first point per unique type is shown (see tpdrawing:)
 local extraOptions = ac.INIConfig.onlineExtras()
-local teleports, encountered = {}, {}
+local onlineTeleports, encounteredTypes = {}, {}
+local defaultType = 'sp'
 
 for _, points in extraOptions:iterateValues('TELEPORT_DESTINATIONS', 'POINT') do
     if points:match('_POS$') then
-        local groupName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub("_POS$", "_GROUP"), "")
+        local pointName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', ''), '')
+        local groupName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_GROUP'), '')
         local position = extraOptions:get('TELEPORT_DESTINATIONS', points, vec3())
-        local heading = tonumber(extraOptions:get('TELEPORT_DESTINATIONS', points:gsub("_POS$", "_HEADING"), 0))
-        local typeName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub("_POS$", "_TYPE"), "sp"):lower()
-
-        if not encountered[groupName] then
-            table.insert(teleports, { typeName, groupName, position, heading })
-            encountered[groupName] = true
-        end
+        local heading = tonumber(extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_HEADING'), 0))
+        local typeName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_TYPE'), ''):lower()
+        if typeName == '' then typeName = encounteredTypes[groupName] or defaultType else encounteredTypes[groupName] = typeName end
+        table.insert(onlineTeleports, { typeName, groupName, position, heading, pointName })
     end
 end
-
-local setMark = teleports
 
 local sim = ac.getSim()
 local screenSize = vec2(sim.windowWidth, sim.windowHeight)
@@ -37,7 +36,7 @@ if sim.isVRMode then
     screenSize = screenSize * 0.6
 end
 local screenOffset = ((vec2(sim.windowWidth, sim.windowHeight) - screenSize) * 0.5)
-local trackMapImage = baseUrl .. "map.png"
+local trackMapImage = baseUrl .. 'map.png'
 ui.decodeImage(trackMapImage)
 local trackMapImageSize = vec2(981, 1440)
 if ui.isImageReady(trackMapImage) then
@@ -49,7 +48,7 @@ mapShot:setClippingPlanes(10, 30000)
 
 local mapFullShot = ac.GeometryShot(ac.findNodes('sceneRoot:yes'), screenSize, 1, false)
 
-local roadsNode = ac.findNodes('trackRoot:yes'):findMeshes("{ ?road?, ?ROAD? }")
+local roadsNode = ac.findNodes('trackRoot:yes'):findMeshes('{ ?road?, ?ROAD? }')
 local roadsShot = ac.GeometryShot(roadsNode, screenSize, 1, false)
 roadsShot:setShadersType(render.ShadersType.Simplified)
 roadsShot:setAmbientColor(rgbm(100, 100, 100, 1))
@@ -97,13 +96,13 @@ local function ease_in_out(estimate, start, change, duration)
 end
 
 local disabledCollisionEvent = ac.OnlineEvent({
-    ac.StructItem.key("disabledCollisionEvent"),
-    disabled = ac.StructItem.boolean()
-},
+        ac.StructItem.key('disabledCollisionEvent'),
+        disabled = ac.StructItem.boolean()
+    },
     function(sender, data)
         if sender == nil then return end
         if sender.index == 0 then return end
-        ac.log(string.format("%s collision: [%d]%s", (data.disabled and "disabled" or "enabled"), sender.index, ac.getDriverName(sender.index)))
+        ac.log(string.format('%s collision: [%d]%s', (data.disabled and 'disabled' or 'enabled'), sender.index, ac.getDriverName(sender.index)))
         if supportAPI_collision then physics.disableCarCollisions(sender.index, data.disabled) end
     end)
 
@@ -198,7 +197,7 @@ function script.drawUI(dt)
             lastPlayersPos[i] = carState.position:clone()
         end
 
-        ui.transparentWindow("mapScreen", screenOffset, screenSize, function()
+        ui.transparentWindow('mapScreen', screenOffset, screenSize, function()
             local sim = ac.getSim()
             local mp = ui.mousePos() - screenOffset
             if 4 < sim.timeHours and sim.timeHours < 18 then
@@ -242,16 +241,21 @@ function script.drawUI(dt)
                             hoverCSP = screenPos
                         end
                         ui.beginRotation()
-                        ui.drawImage(baseUrl .. "cursor_player.png", screenPos - vec2(40, 40), screenPos + vec2(40, 40))
+                        ui.drawImage(baseUrl .. 'cursor_player.png', screenPos - vec2(40, 40), screenPos + vec2(40, 40))
                         ui.endRotation(90 - carState.compass + trackCompassOffset)
                     end
                 end
             end
 
             hoverMark = -1
-            for i = 1, #setMark do
-                if setMark[i][1] == "sp" and mapZoom == #mapZoomValue then goto continue end
-                local screenPos = projectPoint(setMark[i][3])
+            --c1xtz: tpdrawing: only shows first point of a unique type per group (hope this makes sense)
+            local displayedPoints = {}
+            for i, teleports in ipairs(onlineTeleports) do
+                local pointType, group = teleports[1], teleports[2]
+                if pointType == defaultType and mapZoom == #mapZoomValue then goto continue end
+                displayedPoints[group] = displayedPoints[group] or {}
+                if displayedPoints[group][pointType] then goto continue end
+                local screenPos = projectPoint(teleports[3])
                 if 0 < screenPos.x and screenPos.x < 1 and 0 < screenPos.y and screenPos.y < 1 then
                     screenPos = screenPos * screenSize
                     if mp > screenPos - vec2(30, 30) and mp < screenPos + vec2(30, 30) and hoverMark == -1 then
@@ -259,7 +263,8 @@ function script.drawUI(dt)
                         hoverCID = -1
                         hoverCSP = screenPos
                     end
-                    ui.drawImage(baseUrl .. "mapicon_" .. setMark[i][1] .. ".png", screenPos - vec2(40, 40), screenPos + vec2(40, 40))
+                    displayedPoints[group][pointType] = true
+                    ui.drawImage(baseUrl .. 'mapicon_' .. pointType .. '.png', screenPos - vec2(40, 40), screenPos + vec2(40, 40))
                 end
                 ::continue::
             end
@@ -277,19 +282,23 @@ function script.drawUI(dt)
                     ui.endOutline(rgb.colors.black, 0.5) --c1xtz: added outline to make text more readable
                     ui.popDWriteFont()
                 else
-                    nametag = setMark[hoverMark][2]
+                    nametag = onlineTeleports[hoverMark][2]
+                    --c1xtz: added the name of the teleport point
+                    ui.beginOutline()
+                    ui.dwriteDrawText(onlineTeleports[hoverMark][5], 18, nametag_pos + vec2(0, 30), rgbm(1, 1, 1, 1))
+                    ui.endOutline(rgb.colors.black, 0.5)
                 end
                 ui.pushDWriteFont('Segoe UI;Weight=Bold')
                 ui.beginOutline()                  --c1xtz: added outline to make text more readable
                 ui.dwriteDrawText(nametag, 20, nametag_pos, rgbm(1, 1, 1, 1))
                 ui.endOutline(rgb.colors.black, 1) --c1xtz: added outline to make text more readable
                 ui.popDWriteFont()
-                ui.drawImage(baseUrl .. "cursor_ch.png", hoverCSP - vec2(40, 40), hoverCSP + vec2(40, 40))
+                ui.drawImage(baseUrl .. 'cursor_ch.png', hoverCSP - vec2(40, 40), hoverCSP + vec2(40, 40))
             else
                 if teleportAvailable then
-                    ui.drawImage(baseUrl .. "cursor_std.png", mp - vec2(40, 40), mp + vec2(40, 40))
+                    ui.drawImage(baseUrl .. 'cursor_std.png', mp - vec2(40, 40), mp + vec2(40, 40))
                 else
-                    ui.drawImage(baseUrl .. "cursor_ng.png", mp - vec2(40, 40), mp + vec2(40, 40))
+                    ui.drawImage(baseUrl .. 'cursor_ng.png', mp - vec2(40, 40), mp + vec2(40, 40))
                 end
             end
         end)
@@ -297,7 +306,7 @@ function script.drawUI(dt)
         local opacity = math.sin(sim.gameTime * 5) / 2 + 0.5
         ui.pushDWriteFont('Segoe UI;Weight=Bold')
         ui.beginOutline()                  --c1xtz: added outline to make text more readable
-        ui.dwriteDrawText("Press M key to FastTravel", 20, vec2(sim.windowWidth, sim.windowHeight) * vec2(0.1, 0.9), rgbm(1, 1, 1, opacity))
+        ui.dwriteDrawText('Press M key to FastTravel', 20, vec2(sim.windowWidth, sim.windowHeight) * vec2(0.1, 0.9), rgbm(1, 1, 1, opacity))
         ui.endOutline(rgb.colors.black, 1) --c1xtz: added outline to make text more readable
         ui.popDWriteFont()
     end
@@ -364,19 +373,19 @@ function teleportExec(pos, rot)
 end
 
 local fastTravelEvent = ac.OnlineEvent(
-{
-    ac.StructItem.key("AS_FastTravel"),
-    position = ac.StructItem.vec3(),
-    direction = ac.StructItem.vec3()
-}, function(sender, message)
-    if sender ~= nil then
-        --print('Failed to load: ' .. err)
-        teleportExec(mapTargetPos, vec3(1, 0, 0))
-        return
-    end
+    {
+        ac.StructItem.key('AS_FastTravel'),
+        position = ac.StructItem.vec3(),
+        direction = ac.StructItem.vec3()
+    }, function(sender, message)
+        if sender ~= nil then
+            --print('Failed to load: ' .. err)
+            teleportExec(mapTargetPos, vec3(1, 0, 0))
+            return
+        end
 
-    teleportExec(message.position, message.direction)
-end)
+        teleportExec(message.position, message.direction)
+    end)
 
 function inputCheck()
     local sim = ac.getSim()
@@ -438,7 +447,7 @@ function inputCheck()
             elseif hoverCID >= 0 then
                 mapTargetPos = ac.getCar(hoverCID).position
             elseif hoverMark >= 0 then
-                mapTargetPos = setMark[hoverMark][3]
+                mapTargetPos = onlineTeleports[hoverMark][3]
             elseif mpr ~= nil then
                 mapTargetPos = mpr
             else
@@ -471,8 +480,8 @@ function inputCheck()
         teleportAvailable = false
         if hoverMark >= 0 then
             teleportAvailable = true
-            pos = setMark[hoverMark][3]
-            rot = mat4x4.rotation(math.rad(setMark[hoverMark][4] - 90 + trackCompassOffset), vec3(0, 1, 0)).side
+            pos = onlineTeleports[hoverMark][3]
+            rot = mat4x4.rotation(math.rad(onlineTeleports[hoverMark][4] - 90 + trackCompassOffset), vec3(0, 1, 0)).side
         elseif ac.hasTrackSpline() and false then
             local splineNorm = ac.worldCoordinateToTrackProgress(mpr)
             local splinePos = ac.trackProgressToWorldCoordinate(splineNorm)

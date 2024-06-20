@@ -167,9 +167,13 @@ public class SessionManager : CriticalBackgroundService
 
             if (CurrentSession.Configuration.Type == SessionType.Race)
             {
-                entryCarResult.RacePos = (uint) CurrentSession.Results
-                    .Where(car => car.Key != client.SessionId && car.Value.TotalTime > 0)
-                    .Count(car => car.Value.TotalTime <= entryCarResult.TotalTime);
+                foreach (var res in CurrentSession.Results
+                             .OrderByDescending(car => car.Value.NumLaps)
+                             .ThenBy(car => car.Value.TotalTime)
+                             .Select((x, i) => new { Car = x, Index = i }) )
+                {
+                    res.Car.Value.RacePos = (uint)res.Index;
+                }
             }
 
             if (CurrentSession.SessionOverFlag)

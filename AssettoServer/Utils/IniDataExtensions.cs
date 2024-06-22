@@ -31,6 +31,8 @@ public static class IniDataExtensions
 
             if (!string.IsNullOrEmpty(iniFieldValue))
             {
+                iniFieldValue = iniFieldValue.Split(" ;")[0].TrimEnd();
+                
                 Log.Verbose("{Section}.{Key}={Value}", iniFieldAttribute.Section ?? section, iniFieldAttribute.Key, iniFieldValue);
                 
                 try

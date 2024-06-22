@@ -51,6 +51,7 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
             server.RuleFor(s => s.FuelConsumptionRate).GreaterThanOrEqualTo(0);
             server.RuleFor(s => s.MechanicalDamageRate).GreaterThanOrEqualTo(0);
             server.RuleFor(s => s.TyreConsumptionRate).GreaterThanOrEqualTo(0);
+            server.RuleFor(s => s.InvertedGridPositions).GreaterThanOrEqualTo((short)0);
             server.RuleFor(s => s.LegalTyres).NotNull();
             server.RuleFor(s => s.WelcomeMessagePath).NotNull();
             server.RuleFor(s => s.TimeOfDayMultiplier).GreaterThanOrEqualTo(0);

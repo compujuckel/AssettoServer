@@ -395,6 +395,7 @@ public class SessionManager : CriticalBackgroundService
         // TODO dynamic track
         // TODO weather
 
+        int invertedCount = 0;
         if (previousSessionResults == null)
         {
             CurrentSession.Grid = _entryCarManager.EntryCars;
@@ -409,7 +410,7 @@ public class SessionManager : CriticalBackgroundService
             if (MustInvertGrid)
             {
                 var inverted = previousSessionResults
-                    .Take(5)
+                    .Take(_configuration.Server.InvertedGridPositions)
                     .OrderByDescending(result => result.Value.BestLap)
                     .Select(result => _entryCarManager.EntryCars[result.Key])
                     .ToList();
@@ -420,12 +421,14 @@ public class SessionManager : CriticalBackgroundService
                 }
 
                 Log.Information("Inverted {Slots} grid slots", inverted.Count);
+
+                invertedCount = inverted.Count;
             }
 
             CurrentSession.Grid = grid;
         }
 
-        SessionChanged?.Invoke(this, new SessionChangedEventArgs(previousSession, CurrentSession));
+        SessionChanged?.Invoke(this, new SessionChangedEventArgs(previousSession, CurrentSession, invertedCount));
         SendCurrentSession();
 
         Log.Information("Switching session to id {Id}", sessionId);

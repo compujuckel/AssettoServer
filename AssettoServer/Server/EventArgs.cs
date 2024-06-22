@@ -61,11 +61,13 @@ public class SessionChangedEventArgs : EventArgs
 {
     public SessionState? PreviousSession { get; }
     public SessionState NextSession { get; }
+    public int InvertedGridSlots { get; }
 
-    public SessionChangedEventArgs(SessionState? previousSession, SessionState nextSession)
+    public SessionChangedEventArgs(SessionState? previousSession, SessionState nextSession, int invertedGridSlots)
     {
         PreviousSession = previousSession;
         NextSession = nextSession;
+        InvertedGridSlots = invertedGridSlots;
     }
 }
 

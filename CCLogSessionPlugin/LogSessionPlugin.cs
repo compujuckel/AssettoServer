@@ -6,6 +6,7 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
@@ -18,6 +19,7 @@ public class LogSessionPlugin : CriticalBackgroundService, IAssettoServerAutosta
 {
     private List<LogSessionPlayer> PlayerData { get; set; } = [];
     private List<LogSessionPlayer> DisconnectedPlayerData { get; set; } = [];
+    private int CurrentSessionGridInverted { get; set; } = 0;
     
     private readonly List<EntryCarLogSession> _instances = [];
     private readonly CCLogSessionConfiguration _configuration;
@@ -98,13 +100,25 @@ public class LogSessionPlugin : CriticalBackgroundService, IAssettoServerAutosta
         var data = new LogSessionData
         {
             ServerId = _configuration.ServerId,
-            Track = _serverConfiguration.Server.Track,
+            Track = _serverConfiguration.CSPTrackOptions.Track,
             TrackConfig = _serverConfiguration.Server.TrackConfig,
             SessionType = (int)args.PreviousSession.Configuration.Type,
-            ReverseGrid = 0, // TODO
+            ReverseGrid = CurrentSessionGridInverted,
             Reason = "SessionEnd",
             Players = PlayerData,
         };
+
+        if (_serverConfiguration.CSPTrackOptions.MinimumCSPVersion != null)
+        {
+            data.MinCSPVersion = _serverConfiguration.CSPTrackOptions.MinimumCSPVersion;
+        }
+
+        if (args.PreviousSession.Configuration.Type == SessionType.Race && args.PreviousSession.Grid != null)
+        {
+            data.Grid = args.PreviousSession.Grid.Select(car => new LogSessionGrid(car)).ToList();
+        }
+
+        CurrentSessionGridInverted = args.InvertedGridSlots;
 
         _ = SendData(_configuration.ApiUrlSessionEnd, data);
 
@@ -118,13 +132,23 @@ public class LogSessionPlugin : CriticalBackgroundService, IAssettoServerAutosta
         var data = new LogSessionData
         {
             ServerId = _configuration.ServerId,
-            Track = _serverConfiguration.Server.Track,
+            Track = _serverConfiguration.CSPTrackOptions.Track,
             TrackConfig = _serverConfiguration.Server.TrackConfig,
             SessionType = (int)_sessionManager.CurrentSession.Configuration.Type,
-            ReverseGrid = 0, // TODO
+            ReverseGrid = CurrentSessionGridInverted,
             Reason = "PlayerLeave",
             Players = DisconnectedPlayerData,
         };
+
+        if (_serverConfiguration.CSPTrackOptions.MinimumCSPVersion != null)
+        {
+            data.MinCSPVersion = _serverConfiguration.CSPTrackOptions.MinimumCSPVersion;
+        }
+
+        if (_sessionManager.CurrentSession.Configuration.Type == SessionType.Race && _sessionManager.CurrentSession.Grid != null)
+        {
+            data.Grid = _sessionManager.CurrentSession.Grid.Select(car => new LogSessionGrid(car)).ToList();
+        }
 
         _ = SendData(_configuration.ApiUrlPlayerDisconnect, data);
 

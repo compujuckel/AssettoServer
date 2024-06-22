@@ -23,6 +23,7 @@ public class LogSessionPlugin : CriticalBackgroundService, IAssettoServerAutosta
     private readonly CCLogSessionConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
     private readonly SessionManager _sessionManager;
+    private readonly ACServerConfiguration _serverConfiguration;
     private readonly Func<EntryCar, EntryCarLogSession> _entryCarLogSessionFactory;
     private readonly HttpClient _httpClient;
 
@@ -36,6 +37,7 @@ public class LogSessionPlugin : CriticalBackgroundService, IAssettoServerAutosta
     {
         _entryCarManager = entryCarManager;
         _sessionManager = sessionManager;
+        _serverConfiguration = serverConfiguration;
         _entryCarLogSessionFactory = entryCarLogSessionFactory;
         _configuration = configuration;
 
@@ -96,6 +98,8 @@ public class LogSessionPlugin : CriticalBackgroundService, IAssettoServerAutosta
         var data = new LogSessionData
         {
             ServerId = _configuration.ServerId,
+            Track = _serverConfiguration.Server.Track,
+            TrackConfig = _serverConfiguration.Server.TrackConfig,
             SessionType = (int)args.PreviousSession.Configuration.Type,
             ReverseGrid = 0, // TODO
             Reason = "SessionEnd",
@@ -114,6 +118,8 @@ public class LogSessionPlugin : CriticalBackgroundService, IAssettoServerAutosta
         var data = new LogSessionData
         {
             ServerId = _configuration.ServerId,
+            Track = _serverConfiguration.Server.Track,
+            TrackConfig = _serverConfiguration.Server.TrackConfig,
             SessionType = (int)_sessionManager.CurrentSession.Configuration.Type,
             ReverseGrid = 0, // TODO
             Reason = "PlayerLeave",

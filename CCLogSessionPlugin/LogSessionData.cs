@@ -5,6 +5,8 @@ namespace LogSessionPlugin;
 public class LogSessionData
 {
     public int ServerId { get; set; }
+    public required string Track { get; set; }
+    public required string TrackConfig { get; set; }
     public int SessionType { get; set; }
     public int ReverseGrid { get; set; }
     public required string Reason { get; set; }

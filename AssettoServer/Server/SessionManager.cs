@@ -350,8 +350,12 @@ public class SessionManager : CriticalBackgroundService
 
     private void OnClientConnected(ACTcpClient client, EventArgs eventArgs)
     {
-        if (CurrentSession.Results?[client.SessionId].Guid != client.Guid)
-            CurrentSession.Results![client.SessionId] = new EntryCarResult(client);
+        var currentResult = CurrentSession.Results;
+        
+        if (currentResult != null && currentResult[client.SessionId].Guid != client.Guid)
+        {
+            currentResult[client.SessionId] = new EntryCarResult(client);
+        }    
     }
 
     public void SetSession(int sessionId)

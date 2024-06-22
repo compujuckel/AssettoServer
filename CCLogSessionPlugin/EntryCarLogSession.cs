@@ -1,4 +1,6 @@
-﻿using AssettoServer.Server;
+﻿using System.Numerics;
+using AssettoServer.Server;
+using AssettoServer.Shared.Network.Packets.Incoming;
 
 namespace LogSessionPlugin;
 
@@ -18,6 +20,19 @@ public class EntryCarLogSession
         _entryCar = entryCar;
         _sessionManager = sessionManager;
         _entryCar.ResetInvoked += OnResetInvoked;
+        _entryCar.PositionUpdateReceived += OnPositionUpdateReceived;
+    }
+
+    private void OnPositionUpdateReceived(EntryCar sender, in PositionUpdateIn args)
+    {
+        if (CurrentPlayer == null
+            || CurrentPlayer.SteamId == 0
+            || args.Velocity == Vector3.Zero) return;
+        var distance = (_entryCar.Status.Position - args.Position).Length();
+        
+        if (distance > args.Velocity.Length() * 2) return;
+    
+        CurrentPlayer.Distance += distance;
     }
 
     private void OnResetInvoked(EntryCar sender, EventArgs args)

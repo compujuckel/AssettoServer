@@ -20,7 +20,7 @@ public class LogSessionPlayer
     public string Model { get; set; }
     public int FinalRacePosition { get; set; } = -1;
     public bool Dnf => FinalRacePosition == -1;
-    public int Distance { get; set; } = 0;
+    public double Distance { get; set; } = 0;
     public double MaxSpeed { get; set; } = 0;
     public long StartTime { get; set; } = 0;
     public long EndTime { get; set; } = 0;

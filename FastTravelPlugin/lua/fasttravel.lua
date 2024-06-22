@@ -36,7 +36,7 @@ if sim.isVRMode then
     screenSize = screenSize * 0.6
 end
 local screenOffset = ((vec2(sim.windowWidth, sim.windowHeight) - screenSize) * 0.5)
-local trackMapImage = baseUrl .. 'map.png'
+local trackMapImage = ac.getFolder(ac.FolderID.ContentTracks) .. '/' .. ac.getTrackFullID('/') .. '/map.png' --c1xtz: local track image instead of 'map.png'
 ui.decodeImage(trackMapImage)
 local trackMapImageSize = vec2(981, 1440)
 if ui.isImageReady(trackMapImage) then
@@ -222,8 +222,12 @@ function script.drawUI(dt)
                 local map_size = trackMapImageSize * map_mult
                 local screen_center = screenSize / 2
                 local map_offset = vec2(screen_center.x - map_size.x / 2, screen_center.y - map_size.y / 2)
-                map_opacity = mapTargetEstimate > 0.2 and math.applyLag(map_opacity, 0.5, 0.8, dt) or 0
+                map_opacity = mapTargetEstimate > 0.2 and math.applyLag(map_opacity, 0.25, 0.8, dt) or 0
+                ui.setShadingOffset(1, 1, 2, 0) --c1xtz: this makes sure that the track image is actually white
+                ui.beginOutline()
                 ui.drawImage(trackMapImage, map_offset, map_size + map_offset, rgbm(1, 1, 1, map_opacity))
+                ui.endOutline(rgbm(1, 1, 1, 1), 2)
+                ui.resetShadingOffset()
             else
                 map_opacity = 0
             end

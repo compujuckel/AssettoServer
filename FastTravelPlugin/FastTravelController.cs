@@ -50,11 +50,5 @@ public class FastTravelController : ControllerBase
     {
         return new PhysicalFileResult(Path.Join(FlagsBasePath, "mapicon_st.png"), "image/png");
     }
-    
-    [HttpGet("map.png")]
-    public IActionResult GetMapImage()
-    {
-        return new PhysicalFileResult(Path.Join(FlagsBasePath, "map.png"), "image/png");
-    }
 }
 

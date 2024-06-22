@@ -165,6 +165,17 @@ public class SessionManager : CriticalBackgroundService
                 CurrentSession.LeaderLapCount = entryCarResult.NumLaps;
             }
 
+            if (CurrentSession.Configuration.Type == SessionType.Race)
+            {
+                foreach (var res in CurrentSession.Results
+                             .OrderByDescending(car => car.Value.NumLaps)
+                             .ThenBy(car => car.Value.TotalTime)
+                             .Select((x, i) => new { Car = x, Index = i }) )
+                {
+                    res.Car.Value.RacePos = (uint)res.Index;
+                }
+            }
+
             if (CurrentSession.SessionOverFlag)
             {
                 if (CurrentSession.Configuration is { Type: SessionType.Race, IsTimedRace: true })
@@ -337,24 +348,14 @@ public class SessionManager : CriticalBackgroundService
         CurrentSession.OverTimeMilliseconds = 1;
     }
 
-    private EntryCarResult InitializeEntryCarResult(ACTcpClient client) => 
-        new EntryCarResult()
-        {
-            Guid = client.Guid,
-            Name = client.Name,
-            Team = client.Team ?? "",
-            NationCode = client.NationCode,
-        };
-
-
-    private void OnClientConnected(ACTcpClient client, EventArgs? eventArgs)
+    private void OnClientConnected(ACTcpClient client, EventArgs eventArgs)
     {
-        EntryCarResult currentCarResult = CurrentSession.Results[client.SessionId];
-
-        if (currentCarResult.Guid != client.Guid)
+        var currentResult = CurrentSession.Results;
+        
+        if (currentResult != null && currentResult[client.SessionId].Guid != client.Guid)
         {
-            CurrentSession.Results[client.SessionId] = InitializeEntryCarResult(client);
-        }
+            currentResult[client.SessionId] = new EntryCarResult(client);
+        }    
     }
 
     public void SetSession(int sessionId)
@@ -370,17 +371,13 @@ public class SessionManager : CriticalBackgroundService
 
         foreach (var entryCar in _entryCarManager.EntryCars)
         {
-            CurrentSession.Results?.Add(entryCar.SessionId, new EntryCarResult());
-            if (entryCar.Client != null)
-            {
-                OnClientConnected(entryCar.Client, null);
-            }
+            CurrentSession.Results?.Add(entryCar.SessionId, new EntryCarResult(entryCar.Client));
             entryCar.Reset();
         }
 
         var sessionLength = CurrentSession.Configuration switch
         {
-            { Infinite: true } => $"Infinite",
+            { Infinite: true } => "Infinite",
             { IsTimedRace: false } => $"{CurrentSession.Configuration.Laps} laps",
             _ => $"{CurrentSession.Configuration.Time} minutes"
         };
@@ -398,6 +395,7 @@ public class SessionManager : CriticalBackgroundService
         // TODO dynamic track
         // TODO weather
 
+        int invertedCount = 0;
         if (previousSessionResults == null)
         {
             CurrentSession.Grid = _entryCarManager.EntryCars;
@@ -412,7 +410,7 @@ public class SessionManager : CriticalBackgroundService
             if (MustInvertGrid)
             {
                 var inverted = previousSessionResults
-                    .Take(5)
+                    .Take(_configuration.Server.InvertedGridPositions)
                     .OrderByDescending(result => result.Value.BestLap)
                     .Select(result => _entryCarManager.EntryCars[result.Key])
                     .ToList();
@@ -423,12 +421,14 @@ public class SessionManager : CriticalBackgroundService
                 }
 
                 Log.Information("Inverted {Slots} grid slots", inverted.Count);
+
+                invertedCount = inverted.Count;
             }
 
             CurrentSession.Grid = grid;
         }
 
-        SessionChanged?.Invoke(this, new SessionChangedEventArgs(previousSession, CurrentSession));
+        SessionChanged?.Invoke(this, new SessionChangedEventArgs(previousSession, CurrentSession, invertedCount));
         SendCurrentSession();
 
         Log.Information("Switching session to id {Id}", sessionId);

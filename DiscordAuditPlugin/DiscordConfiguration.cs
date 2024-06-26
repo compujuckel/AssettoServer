@@ -18,4 +18,6 @@ public class DiscordConfiguration
     public bool ChatMessageIncludeSteamID { get; init; } = false;
     [YamlMember(Description = "Optional list of SteamIDs whose chat messages should not be forwarded to Discord")]
     public List<ulong>? ChatIgnoreGuids { get; init; } = [];
+    [YamlMember(Description = "Set this to true if player connect and disconnect should be audited")]
+    public bool EnableConnectionAudit { get; init; } = true;
 }

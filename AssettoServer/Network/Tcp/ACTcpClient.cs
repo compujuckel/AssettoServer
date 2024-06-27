@@ -762,7 +762,7 @@ public class ACTcpClient : IClient
     {
         LapCompletedIncoming lapPacket = reader.ReadPacket<LapCompletedIncoming>();
 
-        //_configuration.DynamicTrack.TotalLapCount++; // TODO reset at some point
+        _configuration.Server.DynamicTrack.TotalLapCount++;
         if (_sessionManager.OnLapCompleted(this, lapPacket))
         {
             LapCompletedOutgoing packet = CreateLapCompletedPacket(SessionId, lapPacket.LapTime, lapPacket.Cuts);

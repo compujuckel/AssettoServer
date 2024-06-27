@@ -67,7 +67,8 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
 
             server.RuleFor(s => s.DynamicTrack).NotNull().ChildRules(dynTrack =>
             {
-                dynTrack.RuleFor(d => d.BaseGrip).InclusiveBetween(0, 1);
+                dynTrack.RuleFor(d => d.StartGrip).InclusiveBetween(0, 1);
+                dynTrack.RuleFor(d => d.SessionTransfer).InclusiveBetween(0, 1);
             });
         });
 

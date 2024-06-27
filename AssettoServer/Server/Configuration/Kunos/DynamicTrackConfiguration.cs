@@ -22,6 +22,6 @@ public class DynamicTrackConfiguration
     public float CurrentGrip => LapGain == 0 ? BaseGrip : Math.Min(BaseGrip + GripPerLap * TotalLapCount, 1);
     public void TransferSession()
     {
-        TotalLapCount = (int) (TotalLapCount * SessionTransfer);
+        TotalLapCount *= SessionTransfer;
     }
 }

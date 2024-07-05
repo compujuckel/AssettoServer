@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Reflection;
+using System.Runtime.InteropServices;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
@@ -8,6 +10,7 @@ using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Prometheus;
 using ReplayPlugin.Data;
+using ReplayPlugin.Packets;
 using Serilog;
 
 namespace ReplayPlugin;
@@ -20,21 +23,37 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
     private readonly WeatherManager _weather;
     private readonly ReplayManager _replayManager;
     private readonly Summary _onUpdateTimer;
+    private readonly EntryCarExtraDataManager _extraData;
     
     public ReplayPlugin(IHostApplicationLifetime applicationLifetime,
         EntryCarManager entryCarManager,
         WeatherManager weather,
         SessionManager session,
         ReplayManager replayManager,
-        ReplayConfiguration configuration) : base(applicationLifetime)
+        ReplayConfiguration configuration,
+        CSPServerScriptProvider scriptProvider,
+        CSPClientMessageTypeManager cspClientMessageTypeManager,
+        EntryCarExtraDataManager extraData) : base(applicationLifetime)
     {
         _entryCarManager = entryCarManager;
         _weather = weather;
         _session = session;
         _replayManager = replayManager;
         _configuration = configuration;
+        _extraData = extraData;
 
         _onUpdateTimer = Metrics.CreateSummary("assettoserver_replayplugin_onupdate", "ReplayPlugin.OnUpdate Duration", MetricDefaults.DefaultQuantiles);
+        
+        cspClientMessageTypeManager.RegisterOnlineEvent<UploadDataPacket>(OnUploadData);
+        
+        using var streamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ReplayPlugin.lua.replay.lua")!);
+        scriptProvider.AddScript(streamReader.ReadToEnd(), "replay.lua");
+    }
+
+    private void OnUploadData(ACTcpClient sender, UploadDataPacket packet)
+    {
+        var data = _extraData.Data[packet.CarId];
+        data.WheelPositions = packet.WheelPositions;
     }
 
     private readonly ReplayFrameState _state = new();
@@ -112,6 +131,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
     {
         Log.Debug("ReplayCarFrame size {Size} bytes", Marshal.SizeOf<ReplayCarFrame>());
 
+        _extraData.Initialize(_entryCarManager.EntryCars.Length);
         using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(1000.0 / _configuration.RefreshRateHz));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {

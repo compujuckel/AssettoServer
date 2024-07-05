@@ -26,5 +26,10 @@
             <ExcludeAssets>runtime</ExcludeAssets>
         </ProjectReference>
     </ItemGroup>
+    
+    <ItemGroup>
+        <None Remove="lua\replay.lua" />
+        <EmbeddedResource Include="lua\replay.lua" />
+    </ItemGroup>
 
 </Project>

@@ -4,6 +4,7 @@ using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using Humanizer;
+using JetBrains.Annotations;
 using ReplayPlugin.Data;
 using ReplayPlugin.Utils;
 using Serilog;
@@ -17,18 +18,20 @@ public class ReplayManager
     private readonly EntryCarManager _entryCarManager;
     private readonly WeatherManager _weather;
     private readonly SessionManager _sessionManager;
+    private readonly EntryCarExtraDataManager _extraData;
 
     private readonly ConcurrentQueue<ReplaySegment> _segments = [];
 
     private ReplaySegment _currentSegment;
     
-    public ReplayManager(EntryCarManager entryCarManager, ACServerConfiguration serverConfiguration, WeatherManager weather, SessionManager sessionManager, ReplayConfiguration configuration)
+    public ReplayManager(EntryCarManager entryCarManager, ACServerConfiguration serverConfiguration, WeatherManager weather, SessionManager sessionManager, ReplayConfiguration configuration, EntryCarExtraDataManager extraData)
     {
         _entryCarManager = entryCarManager;
         _serverConfiguration = serverConfiguration;
         _weather = weather;
         _sessionManager = sessionManager;
         _configuration = configuration;
+        _extraData = extraData;
 
         AddSegment();
     }
@@ -74,7 +77,7 @@ public class ReplayManager
     }
 
     public void AddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, TState state,
-        ReplaySegment.ReplayFrameAction<TState> action)
+        [RequireStaticDelegate] ReplaySegment.ReplayFrameAction<TState> action)
     {
         if (!_currentSegment.TryAddFrame(numCarFrames, numAiFrames, numAiMappings, state, action))
         {
@@ -139,7 +142,7 @@ public class ReplayManager
                         if (carFrame.SessionId == i)
                         {
                             foundFrame = true;
-                            carFrame.ToWriter(writer, true);
+                            carFrame.ToWriter(writer, true, _extraData.Data[carFrame.SessionId]);
                         }
 
                         if (carFrame.SessionId == targetSessionId)
@@ -157,14 +160,14 @@ public class ReplayManager
                         if (aiFrame.SessionId == i)
                         {
                             foundFrame = true;
-                            aiFrame.ToWriter(writer, true);
+                            aiFrame.ToWriter(writer, true, _extraData.Data[aiFrame.SessionId]);
                             break;
                         }
                     }
 
                     if (!foundFrame)
                     {
-                        new ReplayCarFrame().ToWriter(writer, false);
+                        new ReplayCarFrame().ToWriter(writer, false, EntryCarExtraData.Empty);
                     }
                 }
             }

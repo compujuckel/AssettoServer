@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http;
 using AssettoServer.Commands;
 using AssettoServer.Commands.Contexts;
@@ -116,6 +117,13 @@ public class Startup
             builder.RegisterType<RconServer>().AsSelf().As<IHostedService>().SingleInstance();
         }
 
+        if (_configuration.GeneratePluginConfigs)
+        {
+            var loader = new ACPluginLoader(_configuration.LoadPluginsFromWorkdir);
+            loader.LoadPlugins(loader.AvailablePlugins.Select(p => p.Key).ToList());
+            _configuration.LoadPluginConfiguration(loader, null);
+        }
+        
         foreach (var plugin in _loader.LoadedPlugins)
         {
             if (plugin.ConfigurationType != null) builder.RegisterType(plugin.ConfigurationType).AsSelf();

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using AssettoServer.Network.Http;
 using AssettoServer.Utils;
 using Autofac.Extensions.DependencyInjection;
 using CommandLine;
@@ -50,6 +49,9 @@ public static class Program
         
         [Option('r',"use-random-preset", Required = false, HelpText = "Use a random available configuration preset")]
         public bool UseRandomPreset { get; set; } = false;
+        
+        [Option('g',"generate-config", Required = false, HelpText = "Generate configuration file for all installed plugins")]
+        public bool GenerateConfigs { get; set; } = false;
     }
 
     private class StartOptions
@@ -61,6 +63,7 @@ public static class Program
 
     public static bool IsContentManager;
     private static bool _loadPluginsFromWorkdir;
+    private static bool _generatePluginConfigs;
     private static TaskCompletionSource<StartOptions> _restartTask = new();
     
     internal static async Task Main(string[] args)
@@ -73,7 +76,8 @@ public static class Program
         if (options == null) return;
 
         _loadPluginsFromWorkdir = options.LoadPluginsFromWorkdir;
-
+        _generatePluginConfigs = options.GenerateConfigs;
+        
         if (IsContentManager)
         {
             Console.OutputEncoding = Encoding.UTF8;
@@ -150,7 +154,7 @@ public static class Program
         
         try
         {
-            var config = new ACServerConfiguration(preset, configLocations, _loadPluginsFromWorkdir);
+            var config = new ACServerConfiguration(preset, configLocations, _loadPluginsFromWorkdir, _generatePluginConfigs);
 
             if (config.Extra.LokiSettings != null
                 && !string.IsNullOrEmpty(config.Extra.LokiSettings.Url)

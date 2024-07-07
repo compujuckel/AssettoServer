@@ -122,12 +122,27 @@ public class ACTcpClient : IClient
     /// There are up to 5 seconds delay before a collision is reported to the server.
     /// </summary>
     public event EventHandler<ACTcpClient, CollisionEventArgs>? Collision;
+    
+    /// <summary>
+    /// Fires when a client has changed tyre compound
+    /// </summary>
+    public event EventHandler<ACTcpClient, TyreCompoundChangeEventArgs>? TyreCompoundChange;
+    
+    /// <summary>
+    /// Fires when a client has received damage
+    /// </summary>
+    public event EventHandler<ACTcpClient, DamageEventArgs>? Damage;
+    
+    /// <summary>
+    /// Fires when a client has used P2P
+    /// </summary>
+    public event EventHandler<ACTcpClient, Push2PassEventArgs>? Push2Pass;
 
     /// <summary>
     /// Fires when a client has completed a lap
     /// </summary>
     public event EventHandler<ACTcpClient, LapCompletedEventArgs>? LapCompleted;
-
+    
     /// <summary>
     /// Fires when a client has completed a sector
     /// </summary>
@@ -644,11 +659,14 @@ public class ACTcpClient : IClient
         DamageUpdateIncoming damageUpdate = reader.ReadPacket<DamageUpdateIncoming>();
         EntryCar.Status.DamageZoneLevel = damageUpdate.DamageZoneLevel;
 
-        _entryCarManager.BroadcastPacket(new DamageUpdate
+        var update = new DamageUpdate
         {
             SessionId = SessionId,
             DamageZoneLevel = damageUpdate.DamageZoneLevel,
-        }, this);
+        };
+        
+        _entryCarManager.BroadcastPacket(update, this);
+        Damage?.Invoke(this, new DamageEventArgs(update));
     }
 
     private void OnTyreCompoundChange(PacketReader reader)
@@ -656,11 +674,14 @@ public class ACTcpClient : IClient
         TyreCompoundChangeRequest compoundChangeRequest = reader.ReadPacket<TyreCompoundChangeRequest>();
         EntryCar.Status.CurrentTyreCompound = compoundChangeRequest.CompoundName;
 
-        _entryCarManager.BroadcastPacket(new TyreCompoundUpdate
+        var update = new TyreCompoundUpdate
         {
             CompoundName = compoundChangeRequest.CompoundName,
             SessionId = SessionId
-        });
+        };
+        
+        _entryCarManager.BroadcastPacket(update);
+        TyreCompoundChange?.Invoke(this, new TyreCompoundChangeEventArgs(update));
     }
 
     private void OnMandatoryPitUpdate(PacketReader reader)
@@ -715,13 +736,16 @@ public class ACTcpClient : IClient
         {
             if (!_configuration.Extra.EnableUnlimitedP2P && EntryCar.Status.P2PCount > 0)
                 EntryCar.Status.P2PCount--;
-
-            _entryCarManager.BroadcastPacket(new P2PUpdate
+            
+            var update = new P2PUpdate
             {
                 Active = push2Pass.Active,
                 P2PCount = EntryCar.Status.P2PCount,
                 SessionId = SessionId
-            });
+            };
+        
+            _entryCarManager.BroadcastPacket(update);
+            Push2Pass?.Invoke(this, new Push2PassEventArgs(update));
         }
     }
 

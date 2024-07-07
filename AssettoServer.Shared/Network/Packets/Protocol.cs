@@ -81,7 +81,8 @@ public enum UdpPluginProtocol : byte
 public enum ClientEventType : byte
 {
     CollisionWithCar       = 0x0A,
-    CollisionWithEnv       = 0x0B
+    CollisionWithEnv       = 0x0B,
+    JumpStartPenalty       = 0x0C
 }
 
 public enum CSPMessageTypeTcp : byte

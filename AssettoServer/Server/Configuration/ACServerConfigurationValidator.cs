@@ -8,6 +8,10 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
     {
         RuleFor(cfg => cfg.Extra).ChildRules(extra =>
         {
+            extra.RuleFor(x => x.UseSteamAuth)
+                .NotEqual(true)
+                .When(x => x.UseGeneratedClientGuids)
+                .WithMessage("Can't use SteamAuth with generated client guids");
             extra.RuleFor(x => x.ValidateDlcOwnership).NotNull();
             extra.RuleFor(x => x.ServerDescription).NotNull();
             extra.RuleFor(x => x.RainTrackGripReductionPercent).InclusiveBetween(0, 0.5);

@@ -334,7 +334,10 @@ public class ACTcpClient : IClient
 
                 if (!HasStartedHandshake)
                 {
-                    HandshakeRequest handshakeRequest = reader.ReadPacket<HandshakeRequest>();
+                    HandshakeRequest handshakeRequest = _configuration.Extra.UseGeneratedClientGuids
+                        ? reader.ReadPacket<HandshakeProRequest>().Convert()
+                        : reader.ReadPacket<HandshakeRequest>();
+                    
                     if (handshakeRequest.Name.Length > 25)
                         handshakeRequest.Name = handshakeRequest.Name.Substring(0, 25);
 

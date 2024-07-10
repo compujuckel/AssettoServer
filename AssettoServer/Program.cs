@@ -1,11 +1,11 @@
-﻿using AssettoServer.Server.Configuration;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using Autofac.Extensions.DependencyInjection;
 using CommandLine;
@@ -28,7 +28,7 @@ public static class Program
 #else
     public static readonly bool IsDebugBuild = false;
 #endif
-    
+
     [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     private class Options
     {
@@ -59,19 +59,20 @@ public static class Program
         public string? Preset { get; init; }
         public string? ServerCfgPath { get; init; }
         public string? EntryListPath { get; init; }
+        public PortOverrides? PortOverrides { get; init; }
     }
 
     public static bool IsContentManager;
     private static bool _loadPluginsFromWorkdir;
     private static bool _generatePluginConfigs;
     private static TaskCompletionSource<StartOptions> _restartTask = new();
-    
+
     internal static async Task Main(string[] args)
     {
         SetupFluentValidation();
         SetupMetrics();
         DetectContentManager();
-        
+
         var options = Parser.Default.ParseArguments<Options>(args).Value;
         if (options == null) return;
 
@@ -85,21 +86,19 @@ public static class Program
         
         if (options.UseRandomPreset)
         {
-        
             var presetsPath = Path.Join(AppContext.BaseDirectory, "presets");
             var presets = Path.Exists(presetsPath) ? 
                 Directory.EnumerateDirectories("presets").Select(Path.GetFileName).OfType<string>().ToArray() : [];
             
             if (presets.Length > 0)
                 options.Preset = presets[Random.Shared.Next(presets.Length)];
-            else 
+            else
                 Log.Warning("Presets directory does not exist or contain any preset");
-                
         }
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
         Logging.CreateDefaultLogger(logPrefix, IsContentManager, options.UseVerboseLogging);
-        
+
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
         if (IsContentManager)
@@ -113,12 +112,12 @@ public static class Program
             ServerCfgPath = options.ServerCfgPath,
             EntryListPath = options.EntryListPath
         };
-        
+
         while (true)
         {
             _restartTask = new TaskCompletionSource<StartOptions>();
             using var cts = new CancellationTokenSource();
-            var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, options.UseVerboseLogging, cts.Token);
+            var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, startOptions.PortOverrides ,options.UseVerboseLogging, cts.Token);
             var finishedTask = await Task.WhenAny(serverTask, _restartTask.Task);
 
             if (finishedTask == _restartTask.Task)
@@ -132,14 +131,19 @@ public static class Program
         }
     }
 
-    public static void RestartServer(string? preset, string? serverCfgPath = null, string? entryListPath = null)
+    public static void RestartServer(
+        string? preset,
+        string? serverCfgPath = null,
+        string? entryListPath = null,
+        PortOverrides? portOverrides = null)
     {
         Log.Information("Initiated in-process server restart");
         _restartTask.SetResult(new StartOptions
         {
             Preset = preset,
             ServerCfgPath = serverCfgPath,
-            EntryListPath = entryListPath
+            EntryListPath = entryListPath,
+            PortOverrides = portOverrides,
         });
     }
 
@@ -147,14 +151,15 @@ public static class Program
         string? preset,
         string? serverCfgPath,
         string? entryListPath,
+        PortOverrides? portOverrides,
         bool useVerboseLogging,
         CancellationToken token = default)
     {
         var configLocations = ConfigurationLocations.FromOptions(preset, serverCfgPath, entryListPath);
-        
+
         try
         {
-            var config = new ACServerConfiguration(preset, configLocations, _loadPluginsFromWorkdir, _generatePluginConfigs);
+            var config = new ACServerConfiguration(preset, configLocations, _loadPluginsFromWorkdir, _generatePluginConfigs, portOverrides);
 
             if (config.Extra.LokiSettings != null
                 && !string.IsNullOrEmpty(config.Extra.LokiSettings.Url)
@@ -192,7 +197,7 @@ public static class Program
                         .UseUrls($"http://0.0.0.0:{config.Server.HttpPort}");
                 })
                 .Build();
-            
+
             await host.RunAsync(token);
         }
         catch (Exception ex)
@@ -239,8 +244,8 @@ public static class Program
         Metrics.ConfigureMeterAdapter(adapterOptions =>
         {
             // Disable a bunch of verbose / unnecessary default metrics
-            adapterOptions.InstrumentFilterPredicate = inst => 
-                inst.Name != "kestrel.active_connections" 
+            adapterOptions.InstrumentFilterPredicate = inst =>
+                inst.Name != "kestrel.active_connections"
                 && inst.Name != "http.server.active_requests"
                 && inst.Name != "kestrel.queued_connections"
                 && inst.Name != "http.server.request.duration"

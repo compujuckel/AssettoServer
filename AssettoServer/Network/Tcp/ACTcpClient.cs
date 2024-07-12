@@ -335,7 +335,6 @@ public class ACTcpClient : IClient
                 if (!HasStartedHandshake)
                 {
                     HandshakeRequest handshakeRequest = reader.ReadPacket<HandshakeRequest>();
-                    
                     if (handshakeRequest.Name.Length > 25)
                         handshakeRequest.Name = handshakeRequest.Name.Substring(0, 25);
 
@@ -345,11 +344,7 @@ public class ACTcpClient : IClient
                     if (handshakeRequest.Guid != 0)
                         Guid = handshakeRequest.Guid;
                     else if (_configuration.Extra.EnableACProSupport)
-                    {
-                        var guid = GuidFromName(Name);
-                        Guid = guid;
-                        handshakeRequest.Guid = guid;
-                    }
+                        Guid = handshakeRequest.Guid = GuidFromName(Name);
                     HashedGuid = IdFromGuid(Guid);
 
                     Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.Redact(_configuration.Extra.RedactIpAddresses), handshakeRequest.RequestedCar);

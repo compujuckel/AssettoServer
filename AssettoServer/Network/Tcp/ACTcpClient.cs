@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.IO.Hashing;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -27,7 +28,6 @@ using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Utils;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
-using Qommon.Collections.Specialized;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -334,9 +334,7 @@ public class ACTcpClient : IClient
 
                 if (!HasStartedHandshake)
                 {
-                    HandshakeRequest handshakeRequest = _configuration.Extra.UseGeneratedClientGuids
-                        ? reader.ReadPacket<HandshakeProRequest>().Convert()
-                        : reader.ReadPacket<HandshakeRequest>();
+                    HandshakeRequest handshakeRequest = reader.ReadPacket<HandshakeRequest>();
                     
                     if (handshakeRequest.Name.Length > 25)
                         handshakeRequest.Name = handshakeRequest.Name.Substring(0, 25);
@@ -344,7 +342,14 @@ public class ACTcpClient : IClient
                     Name = handshakeRequest.Name.Trim();
                     Team = handshakeRequest.Team;
                     NationCode = handshakeRequest.Nation;
-                    Guid = handshakeRequest.Guid;
+                    if (handshakeRequest.Guid != 0)
+                        Guid = handshakeRequest.Guid;
+                    else if (_configuration.Extra.EnableACProSupport)
+                    {
+                        var guid = GuidFromName(Name);
+                        Guid = guid;
+                        handshakeRequest.Guid = guid;
+                    }
                     HashedGuid = IdFromGuid(Guid);
 
                     Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.Redact(_configuration.Extra.RedactIpAddresses), handshakeRequest.RequestedCar);
@@ -363,7 +368,9 @@ public class ACTcpClient : IClient
                     AuthFailedResponse? response;
                     if (id != ACServerProtocol.RequestNewConnection || handshakeRequest.ClientVersion != 202)
                         SendPacket(new UnsupportedProtocolResponse());
-                    else if (await _blacklist.IsBlacklistedAsync(handshakeRequest.Guid))
+                    else if (Guid == 0)
+                        SendPacket(new AuthFailedResponse("ACPro is not supported on this server. Consider setting EnableACProSupport to true in the extra_cfg"));
+                    else if (await _blacklist.IsBlacklistedAsync(Guid))
                         SendPacket(new BlacklistedResponse());
                     else if (_configuration.Server.Password?.Length > 0
                              && handshakeRequest.Password != _configuration.Server.Password
@@ -976,5 +983,18 @@ public class ACTcpClient : IClient
     {
         var hash = SHA1.HashData(Encoding.UTF8.GetBytes($"antarcticfurseal{guid}"));
         return Convert.ToHexString(hash).ToLower();
+    }
+    
+    private static ulong GuidFromName(string input)
+    {
+        var hash = new XxHash64();
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
+        hash.Append(stream);
+        var id = hash.GetCurrentHashAsUInt64();
+        
+        // https://developer.valvesoftware.com/wiki/SteamID
+        // Changing most significant bit so there are no collisions with real Steam IDs
+        id |= (ulong)1 << 63;
+        return id;
     }
 }

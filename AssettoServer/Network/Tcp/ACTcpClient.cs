@@ -364,7 +364,7 @@ public class ACTcpClient : IClient
                     if (id != ACServerProtocol.RequestNewConnection || handshakeRequest.ClientVersion != 202)
                         SendPacket(new UnsupportedProtocolResponse());
                     else if (Guid == 0)
-                        SendPacket(new AuthFailedResponse("ACPro is not supported on this server. Consider setting EnableACProSupport to true in the extra_cfg"));
+                        SendPacket(new AuthFailedResponse("Assetto Corsa Pro is not supported on this server. Consider setting EnableACProSupport to true in extra_cfg.yml"));
                     else if (await _blacklist.IsBlacklistedAsync(Guid))
                         SendPacket(new BlacklistedResponse());
                     else if (_configuration.Server.Password?.Length > 0

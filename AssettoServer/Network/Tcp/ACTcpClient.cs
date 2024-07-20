@@ -982,14 +982,8 @@ public class ACTcpClient : IClient
     
     private static ulong GuidFromName(string input)
     {
-        var hash = new XxHash64();
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
-        hash.Append(stream);
-        var id = hash.GetCurrentHashAsUInt64();
-        
         // https://developer.valvesoftware.com/wiki/SteamID
         // Changing most significant bit so there are no collisions with real Steam IDs
-        id |= (ulong)1 << 63;
-        return id;
+        return XxHash64.HashToUInt64(Encoding.UTF8.GetBytes(input)) | (ulong)1 << 63;
     }
 }

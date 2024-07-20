@@ -124,6 +124,11 @@ public class ACTcpClient : IClient
     public event EventHandler<ACTcpClient, CollisionEventArgs>? Collision;
 
     /// <summary>
+    /// Fires when a client received a penalty.
+    /// </summary>
+    public event EventHandler<ACTcpClient, EventArgs>? JumpStartPenalty;
+
+    /// <summary>
     /// Fires when a client has completed a lap
     /// </summary>
     public event EventHandler<ACTcpClient, LapCompletedEventArgs>? LapCompleted;
@@ -551,16 +556,25 @@ public class ACTcpClient : IClient
         {
             EntryCar? targetCar = null;
 
-            if (evt.Type == ClientEventType.CollisionWithCar)
+            switch (evt.Type)
             {
-                targetCar = _entryCarManager.EntryCars[evt.TargetSessionId];
-                Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and {TargetCarName} ({TargetCarSessionId}), rel. speed {Speed:F0}km/h",
-                    Name, EntryCar.SessionId, targetCar.Client?.Name ?? targetCar.AiName, targetCar.SessionId, evt.Speed);
-            }
-            else
-            {
-                Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and environment, rel. speed {Speed:F0}km/h",
-                    Name, EntryCar.SessionId, evt.Speed);
+                case ClientEventType.CollisionWithCar:
+                    targetCar = _entryCarManager.EntryCars[evt.TargetSessionId];
+                    Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and {TargetCarName} ({TargetCarSessionId}), rel. speed {Speed:F0}km/h",
+                        Name, EntryCar.SessionId, targetCar.Client?.Name ?? targetCar.AiName, targetCar.SessionId, evt.Speed);
+                    break;
+                case ClientEventType.CollisionWithEnv:
+                    Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and environment, rel. speed {Speed:F0}km/h",
+                        Name, EntryCar.SessionId, evt.Speed);
+                    break;
+                case ClientEventType.JumpStartPenalty:
+                    Logger.Information("Penalty for {CarName} ({CarSessionId})", Name, EntryCar.SessionId);
+                    _entryCarManager.BroadcastPacket(new JumpStartPenalty
+                    {
+                        SessionId = SessionId
+                    });
+                    JumpStartPenalty?.Invoke(this, EventArgs.Empty);
+                    continue;
             }
 
             Collision?.Invoke(this, new CollisionEventArgs(targetCar, evt.Speed, evt.Position, evt.RelPosition));

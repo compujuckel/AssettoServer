@@ -2,6 +2,7 @@
 using AssettoServer.Server;
 using Qmmands;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace AssettoServer.Commands.TypeParsers;
@@ -22,6 +23,12 @@ public class ACClientTypeParser : TypeParser<ACTcpClient>
             && car.Client != null)
         {
             return TypeParserResult<ACTcpClient>.Successful(car.Client);
+        }
+        
+        if (ulong.TryParse(value, out ulong guid)
+            && _entryCarManager.ConnectedCars.FirstOrDefault(x => x.Value.Client?.Guid == guid) is { Value.Client: not null } guidCar)
+        {
+            return TypeParserResult<ACTcpClient>.Successful(guidCar.Value.Client);
         }
 
         ACTcpClient? exactMatch = null;

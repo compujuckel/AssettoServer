@@ -87,6 +87,36 @@ public class CollisionEventArgs : EventArgs
     }
 }
 
+public class TyreCompoundChangeEventArgs : EventArgs
+{
+    public TyreCompoundUpdate Packet { get; }
+    
+    public TyreCompoundChangeEventArgs(TyreCompoundUpdate packet)
+    {
+        Packet = packet;
+    }
+}
+
+public class DamageEventArgs : EventArgs
+{
+    public DamageUpdate Packet { get; }
+    
+    public DamageEventArgs(DamageUpdate packet)
+    {
+        Packet = packet;
+    }
+}
+
+public class Push2PassEventArgs : EventArgs
+{
+    public P2PUpdate Packet { get; }
+    
+    public Push2PassEventArgs(P2PUpdate packet)
+    {
+        Packet = packet;
+    }
+}
+
 public class LapCompletedEventArgs : EventArgs
 {
     public LapCompletedOutgoing Packet { get; }

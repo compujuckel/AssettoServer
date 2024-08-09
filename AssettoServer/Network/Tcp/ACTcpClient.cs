@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.IO.Hashing;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -27,7 +28,6 @@ using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Utils;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
-using Qommon.Collections.Specialized;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -361,7 +361,10 @@ public class ACTcpClient : IClient
                     Name = handshakeRequest.Name.Trim();
                     Team = handshakeRequest.Team;
                     NationCode = handshakeRequest.Nation;
-                    Guid = handshakeRequest.Guid;
+                    if (handshakeRequest.Guid != 0)
+                        Guid = handshakeRequest.Guid;
+                    else if (_configuration.Extra.EnableACProSupport)
+                        Guid = handshakeRequest.Guid = GuidFromName(Name);
                     HashedGuid = IdFromGuid(Guid);
 
                     Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.Redact(_configuration.Extra.RedactIpAddresses), handshakeRequest.RequestedCar);
@@ -380,7 +383,9 @@ public class ACTcpClient : IClient
                     AuthFailedResponse? response;
                     if (id != ACServerProtocol.RequestNewConnection || handshakeRequest.ClientVersion != 202)
                         SendPacket(new UnsupportedProtocolResponse());
-                    else if (await _blacklist.IsBlacklistedAsync(handshakeRequest.Guid))
+                    else if (Guid == 0)
+                        SendPacket(new AuthFailedResponse("Assetto Corsa Pro is not supported on this server. Consider setting EnableACProSupport to true in extra_cfg.yml"));
+                    else if (await _blacklist.IsBlacklistedAsync(Guid))
                         SendPacket(new BlacklistedResponse());
                     else if (_configuration.Server.Password?.Length > 0
                              && handshakeRequest.Password != _configuration.Server.Password
@@ -1011,5 +1016,12 @@ public class ACTcpClient : IClient
     {
         var hash = SHA1.HashData(Encoding.UTF8.GetBytes($"antarcticfurseal{guid}"));
         return Convert.ToHexString(hash).ToLower();
+    }
+    
+    private static ulong GuidFromName(string input)
+    {
+        // https://developer.valvesoftware.com/wiki/SteamID
+        // Changing most significant bit so there are no collisions with real Steam IDs
+        return XxHash64.HashToUInt64(Encoding.UTF8.GetBytes(input)) | (ulong)1 << 63;
     }
 }

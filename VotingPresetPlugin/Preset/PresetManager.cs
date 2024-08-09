@@ -16,7 +16,7 @@ public class PresetManager : CriticalBackgroundService
     
     private const string RestartKickReason = "SERVER RESTART FOR TRACK CHANGE (won't take long)";
 
-    public PresetManager(ACServerConfiguration acServerConfiguration, 
+    public PresetManager(ACServerConfiguration acServerConfiguration,
         EntryCarManager entryCarManager,
         IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
@@ -30,7 +30,7 @@ public class PresetManager : CriticalBackgroundService
     {
         CurrentPreset = preset;
         _presetChangeRequested = true;
-        
+
         if (!CurrentPreset.IsInit)
             _ = UpdatePreset();
     }
@@ -60,10 +60,10 @@ public class PresetManager : CriticalBackgroundService
         if (CurrentPreset.UpcomingType != null && !CurrentPreset.Type!.Equals(CurrentPreset.UpcomingType!))
         {
             Log.Information("Preset change to \'{Name}\' initiated", CurrentPreset.UpcomingType!.Name);
-            
+
             // Notify about restart
             Log.Information("Restarting server");
-    
+
             if (_acServerConfiguration.Extra.EnableClientMessages)
             {
                 // Reconnect clients
@@ -76,14 +76,21 @@ public class PresetManager : CriticalBackgroundService
                 _entryCarManager.BroadcastPacket(new CSPKickBanMessageOverride { Message = RestartKickReason });
                 _entryCarManager.BroadcastPacket(new KickCar { SessionId = 255, Reason = KickReason.Kicked });
             }
-        
+
             var preset = new DirectoryInfo(CurrentPreset.UpcomingType!.PresetFolder).Name;
-        
+
             // Restart the server
             var sleep = (CurrentPreset.TransitionDuration - 1) * 1000;
             await Task.Delay(sleep);
-        
-            Program.RestartServer(preset);
+
+            Program.RestartServer(
+                preset,
+                portOverrides: new PortOverrides
+                {
+                    TcpPort = _acServerConfiguration.Server.TcpPort,
+                    UdpPort = _acServerConfiguration.Server.UdpPort,
+                    HttpPort =  _acServerConfiguration.Server.HttpPort
+                });
         }
     }
 }

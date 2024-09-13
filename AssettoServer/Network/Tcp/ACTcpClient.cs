@@ -922,8 +922,16 @@ public class ACTcpClient : IClient
                 NumLaps = (ushort)result.Value.NumLaps,
                 HasCompletedLastLap = (byte)(result.Value.HasCompletedLastLap ? 1 : 0),
                 RacePos = (byte)result.Value.RacePos,
-            })
-            .OrderBy(lap => lap.LapTime);
+            });
+    
+        if (_sessionManager.CurrentSession.Configuration.Type == SessionType.Race)
+        {
+            laps = laps.OrderByDescending(lap => lap.NumLaps).ThenBy(lap => lap.LapTime); // LapTime should be TotalTime for Race sessions
+        }
+        else
+        {
+            laps = laps.OrderBy(lap => lap.LapTime);
+        }
 
         return new LapCompletedOutgoing
         {

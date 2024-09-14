@@ -778,7 +778,7 @@ public class ACTcpClient : IClient
             PageIndex = carListRequest.PageIndex,
             EntryCarsCount = carsInPage.Count,
             EntryCars = carsInPage,
-            CarResults = _sessionManager.CurrentSession.Results,
+            CarResults = _sessionManager.CurrentSession.Results ?? new Dictionary<byte, EntryCarResult>(),
         };
 
         CarListResponseSending?.Invoke(this, new CarListResponseSendingEventArgs(carListResponse));

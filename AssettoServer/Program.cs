@@ -98,7 +98,7 @@ public static class Program
         }
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
-        Logging.CreateDefaultLogger(logPrefix, IsContentManager, options.UseVerboseLogging);
+        Logging.CreateLogger(logPrefix, IsContentManager, options.Preset, options.UseVerboseLogging);
         
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
@@ -156,14 +156,8 @@ public static class Program
         {
             var config = new ACServerConfiguration(preset, configLocations, _loadPluginsFromWorkdir, _generatePluginConfigs);
 
-            if (config.Extra.LokiSettings != null
-                && !string.IsNullOrEmpty(config.Extra.LokiSettings.Url)
-                && !string.IsNullOrEmpty(config.Extra.LokiSettings.Login)
-                && !string.IsNullOrEmpty(config.Extra.LokiSettings.Password))
-            {
-                string logPrefix = string.IsNullOrEmpty(preset) ? "log" : preset;
-                Logging.CreateLokiLogger(logPrefix, IsContentManager, preset, config.Extra.LokiSettings, useVerboseLogging);
-            }
+            string logPrefix = string.IsNullOrEmpty(preset) ? "log" : preset;
+            Logging.CreateLogger(logPrefix, IsContentManager, preset, useVerboseLogging, config.Extra.RedactIpAddresses, config.Extra.LokiSettings);
             
             if (!string.IsNullOrEmpty(preset))
             {

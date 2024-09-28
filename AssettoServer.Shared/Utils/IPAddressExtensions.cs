@@ -4,9 +4,9 @@ namespace AssettoServer.Shared.Utils;
 
 public static class IPAddressExtensions
 {
-    public static string Redact(this IPAddress ip, bool usePrivacyMode)
+    public static string Redact(this IPAddress ip, bool redact)
     {
-        if (!usePrivacyMode)
+        if (!redact)
             return ip.ToString();
         
         var privacyIp = ip.GetAddressBytes();
@@ -15,8 +15,8 @@ public static class IPAddressExtensions
         return new IPAddress(privacyIp).ToString();
     }
     
-    public static string Redact(this IPEndPoint ip, bool usePrivacyMode)
+    public static string Redact(this IPEndPoint ip, bool redact)
     {
-        return $"{ip.Address.Redact(usePrivacyMode)}:{ip.Port}";
+        return $"{ip.Address.Redact(redact)}:{ip.Port}";
     }
 }

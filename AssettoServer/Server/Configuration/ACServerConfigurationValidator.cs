@@ -8,6 +8,10 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
     {
         RuleFor(cfg => cfg.Extra).ChildRules(extra =>
         {
+            extra.RuleFor(x => x.UseSteamAuth)
+                .NotEqual(true)
+                .When(x => x.EnableACProSupport)
+                .WithMessage("Can't use SteamAuth with ACPro support enabled");
             extra.RuleFor(x => x.ValidateDlcOwnership).NotNull();
             extra.RuleFor(x => x.ServerDescription).NotNull();
             extra.RuleFor(x => x.RainTrackGripReductionPercent).InclusiveBetween(0, 0.5);
@@ -67,7 +71,8 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
 
             server.RuleFor(s => s.DynamicTrack).NotNull().ChildRules(dynTrack =>
             {
-                dynTrack.RuleFor(d => d.BaseGrip).InclusiveBetween(0, 1);
+                dynTrack.RuleFor(d => d.StartGrip).InclusiveBetween(0, 1);
+                dynTrack.RuleFor(d => d.SessionTransfer).InclusiveBetween(0, 1);
             });
         });
 

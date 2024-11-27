@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.IO.Hashing;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -27,7 +28,6 @@ using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Utils;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
-using Qommon.Collections.Specialized;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -122,12 +122,32 @@ public class ACTcpClient : IClient
     /// There are up to 5 seconds delay before a collision is reported to the server.
     /// </summary>
     public event EventHandler<ACTcpClient, CollisionEventArgs>? Collision;
+    
+    /// <summary>
+    /// Fires when a client has changed tyre compound
+    /// </summary>
+    public event EventHandler<ACTcpClient, TyreCompoundChangeEventArgs>? TyreCompoundChange;
+    
+    /// <summary>
+    /// Fires when a client has received damage
+    /// </summary>
+    public event EventHandler<ACTcpClient, DamageEventArgs>? Damage;
+    
+    /// <summary>
+    /// Fires when a client has used P2P
+    /// </summary>
+    public event EventHandler<ACTcpClient, Push2PassEventArgs>? Push2Pass;
+
+    /// <summary>
+    /// Fires when a client received a penalty.
+    /// </summary>
+    public event EventHandler<ACTcpClient, EventArgs>? JumpStartPenalty;
 
     /// <summary>
     /// Fires when a client has completed a lap
     /// </summary>
     public event EventHandler<ACTcpClient, LapCompletedEventArgs>? LapCompleted;
-
+    
     /// <summary>
     /// Fires when a client has completed a sector
     /// </summary>
@@ -341,7 +361,10 @@ public class ACTcpClient : IClient
                     Name = handshakeRequest.Name.Trim();
                     Team = handshakeRequest.Team;
                     NationCode = handshakeRequest.Nation;
-                    Guid = handshakeRequest.Guid;
+                    if (handshakeRequest.Guid != 0)
+                        Guid = handshakeRequest.Guid;
+                    else if (_configuration.Extra.EnableACProSupport)
+                        Guid = handshakeRequest.Guid = GuidFromName(Name);
                     HashedGuid = IdFromGuid(Guid);
 
                     Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, ((IPEndPoint?)TcpClient.Client.RemoteEndPoint)?.Redact(_configuration.Extra.RedactIpAddresses), handshakeRequest.RequestedCar);
@@ -360,7 +383,9 @@ public class ACTcpClient : IClient
                     AuthFailedResponse? response;
                     if (id != ACServerProtocol.RequestNewConnection || handshakeRequest.ClientVersion != 202)
                         SendPacket(new UnsupportedProtocolResponse());
-                    else if (await _blacklist.IsBlacklistedAsync(handshakeRequest.Guid))
+                    else if (Guid == 0)
+                        SendPacket(new AuthFailedResponse("Assetto Corsa Pro is not supported on this server. Consider setting EnableACProSupport to true in extra_cfg.yml"));
+                    else if (await _blacklist.IsBlacklistedAsync(Guid))
                         SendPacket(new BlacklistedResponse());
                     else if (_configuration.Server.Password?.Length > 0
                              && handshakeRequest.Password != _configuration.Server.Password
@@ -551,16 +576,25 @@ public class ACTcpClient : IClient
         {
             EntryCar? targetCar = null;
 
-            if (evt.Type == ClientEventType.CollisionWithCar)
+            switch (evt.Type)
             {
-                targetCar = _entryCarManager.EntryCars[evt.TargetSessionId];
-                Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and {TargetCarName} ({TargetCarSessionId}), rel. speed {Speed:F0}km/h",
-                    Name, EntryCar.SessionId, targetCar.Client?.Name ?? targetCar.AiName, targetCar.SessionId, evt.Speed);
-            }
-            else
-            {
-                Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and environment, rel. speed {Speed:F0}km/h",
-                    Name, EntryCar.SessionId, evt.Speed);
+                case ClientEventType.CollisionWithCar:
+                    targetCar = _entryCarManager.EntryCars[evt.TargetSessionId];
+                    Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and {TargetCarName} ({TargetCarSessionId}), rel. speed {Speed:F0}km/h",
+                        Name, EntryCar.SessionId, targetCar.Client?.Name ?? targetCar.AiName, targetCar.SessionId, evt.Speed);
+                    break;
+                case ClientEventType.CollisionWithEnv:
+                    Logger.Information("Collision between {SourceCarName} ({SourceCarSessionId}) and environment, rel. speed {Speed:F0}km/h",
+                        Name, EntryCar.SessionId, evt.Speed);
+                    break;
+                case ClientEventType.JumpStartPenalty:
+                    Logger.Information("Penalty for {CarName} ({CarSessionId})", Name, EntryCar.SessionId);
+                    _entryCarManager.BroadcastPacket(new JumpStartPenalty
+                    {
+                        SessionId = SessionId
+                    });
+                    JumpStartPenalty?.Invoke(this, EventArgs.Empty);
+                    continue;
             }
 
             Collision?.Invoke(this, new CollisionEventArgs(targetCar, evt.Speed, evt.Position, evt.RelPosition));
@@ -644,11 +678,14 @@ public class ACTcpClient : IClient
         DamageUpdateIncoming damageUpdate = reader.ReadPacket<DamageUpdateIncoming>();
         EntryCar.Status.DamageZoneLevel = damageUpdate.DamageZoneLevel;
 
-        _entryCarManager.BroadcastPacket(new DamageUpdate
+        var update = new DamageUpdate
         {
             SessionId = SessionId,
             DamageZoneLevel = damageUpdate.DamageZoneLevel,
-        }, this);
+        };
+        
+        _entryCarManager.BroadcastPacket(update, this);
+        Damage?.Invoke(this, new DamageEventArgs(update));
     }
 
     private void OnTyreCompoundChange(PacketReader reader)
@@ -656,11 +693,14 @@ public class ACTcpClient : IClient
         TyreCompoundChangeRequest compoundChangeRequest = reader.ReadPacket<TyreCompoundChangeRequest>();
         EntryCar.Status.CurrentTyreCompound = compoundChangeRequest.CompoundName;
 
-        _entryCarManager.BroadcastPacket(new TyreCompoundUpdate
+        var update = new TyreCompoundUpdate
         {
             CompoundName = compoundChangeRequest.CompoundName,
             SessionId = SessionId
-        });
+        };
+        
+        _entryCarManager.BroadcastPacket(update);
+        TyreCompoundChange?.Invoke(this, new TyreCompoundChangeEventArgs(update));
     }
 
     private void OnMandatoryPitUpdate(PacketReader reader)
@@ -715,13 +755,16 @@ public class ACTcpClient : IClient
         {
             if (!_configuration.Extra.EnableUnlimitedP2P && EntryCar.Status.P2PCount > 0)
                 EntryCar.Status.P2PCount--;
-
-            _entryCarManager.BroadcastPacket(new P2PUpdate
+            
+            var update = new P2PUpdate
             {
                 Active = push2Pass.Active,
                 P2PCount = EntryCar.Status.P2PCount,
                 SessionId = SessionId
-            });
+            };
+        
+            _entryCarManager.BroadcastPacket(update);
+            Push2Pass?.Invoke(this, new Push2PassEventArgs(update));
         }
     }
 
@@ -735,7 +778,7 @@ public class ACTcpClient : IClient
             PageIndex = carListRequest.PageIndex,
             EntryCarsCount = carsInPage.Count,
             EntryCars = carsInPage,
-            CarResults = _sessionManager.CurrentSession.Results,
+            CarResults = _sessionManager.CurrentSession.Results ?? new Dictionary<byte, EntryCarResult>(),
         };
 
         CarListResponseSending?.Invoke(this, new CarListResponseSendingEventArgs(carListResponse));
@@ -762,7 +805,7 @@ public class ACTcpClient : IClient
     {
         LapCompletedIncoming lapPacket = reader.ReadPacket<LapCompletedIncoming>();
 
-        //_configuration.DynamicTrack.TotalLapCount++; // TODO reset at some point
+        _configuration.Server.DynamicTrack.TotalLapCount++;
         if (_sessionManager.OnLapCompleted(this, lapPacket))
         {
             LapCompletedOutgoing packet = CreateLapCompletedPacket(SessionId, lapPacket.LapTime, lapPacket.Cuts);
@@ -973,5 +1016,12 @@ public class ACTcpClient : IClient
     {
         var hash = SHA1.HashData(Encoding.UTF8.GetBytes($"antarcticfurseal{guid}"));
         return Convert.ToHexString(hash).ToLower();
+    }
+    
+    private static ulong GuidFromName(string input)
+    {
+        // https://developer.valvesoftware.com/wiki/SteamID
+        // Changing most significant bit so there are no collisions with real Steam IDs
+        return XxHash64.HashToUInt64(Encoding.UTF8.GetBytes(input)) | (ulong)1 << 63;
     }
 }

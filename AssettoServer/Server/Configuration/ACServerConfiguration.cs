@@ -33,6 +33,7 @@ public partial class ACServerConfiguration
     [YamlIgnore] public string? CSPExtraOptions { get; }
     [YamlIgnore] public string BaseFolder { get; }
     [YamlIgnore] public bool LoadPluginsFromWorkdir { get; }
+    [YamlIgnore] public bool GeneratePluginConfigs { get; }
     [YamlIgnore] public int RandomSeed { get; } = Random.Shared.Next();
     [YamlIgnore] public string? Preset { get; }
     [YamlIgnore] public DrsZones DrsZones { get; }    
@@ -52,11 +53,12 @@ public partial class ACServerConfiguration
      *
      * When "entryListPath" is set, it takes precedence and entry_list.ini will be loaded from the specified path.
      */
-    public ACServerConfiguration(string? preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir)
+    public ACServerConfiguration(string? preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir, bool generatePluginConfigs)
     {
         Preset = preset;
         BaseFolder = locations.BaseFolder;
         LoadPluginsFromWorkdir = loadPluginsFromWorkdir;
+        GeneratePluginConfigs = generatePluginConfigs;
         Server = LoadServerConfiguration(locations.ServerCfgPath);
         EntryList = LoadEntryList(locations.EntryListPath);
         Setups = LoadSetups();
@@ -299,7 +301,7 @@ public partial class ACServerConfiguration
         }
     }
 
-    internal void LoadPluginConfiguration(ACPluginLoader loader, ContainerBuilder builder)
+    internal void LoadPluginConfiguration(ACPluginLoader loader, ContainerBuilder? builder)
     {
         foreach (var plugin in loader.LoadedPlugins)
         {
@@ -312,7 +314,7 @@ public partial class ACServerConfiguration
                 ReferenceConfigurationHelper.WriteReferenceConfiguration(plugin.ReferenceConfigurationFileName,
                     schemaPath, plugin.ReferenceConfiguration, plugin.Name);
                 
-                if (File.Exists(configPath))
+                if (File.Exists(configPath) && builder != null)
                 {
                     var deserializer = new DeserializerBuilder().Build();
                     using var file = File.OpenText(configPath);

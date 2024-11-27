@@ -128,7 +128,7 @@ public class WeatherManager : CriticalBackgroundService
             RainIntensity = weatherType.RainIntensity,
             RainWater = weatherType.RainWater,
             RainWetness = weatherType.RainWetness,
-            TrackGrip = _configuration.Server.DynamicTrack.BaseGrip
+            TrackGrip = _configuration.Server.DynamicTrack.CurrentGrip
         });
 
         return true;
@@ -225,7 +225,7 @@ public class WeatherManager : CriticalBackgroundService
                     }
                 }
                 
-                _rainHelper.Update(CurrentWeather, _configuration.Server.DynamicTrack.BaseGrip, _configuration.Extra.RainTrackGripReductionPercent, _timeSource.ServerTimeMilliseconds - lastTimeUpdate);
+                _rainHelper.Update(CurrentWeather, _configuration.Server.DynamicTrack.CurrentGrip, _configuration.Extra.RainTrackGripReductionPercent, _timeSource.ServerTimeMilliseconds - lastTimeUpdate);
                 _weatherImplementation.SendWeather(CurrentWeather, CurrentDateTime);
                 lastTimeUpdate = _timeSource.ServerTimeMilliseconds;
             }

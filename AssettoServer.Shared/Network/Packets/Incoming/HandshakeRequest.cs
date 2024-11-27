@@ -15,7 +15,8 @@ public struct HandshakeRequest : IIncomingNetworkPacket
     public void FromReader(PacketReader reader)
     {
         ClientVersion = reader.Read<ushort>();
-        Guid = ulong.Parse(reader.ReadUTF8String());
+        if (ulong.TryParse(reader.ReadUTF8String(), out var guid))
+            Guid = guid;
         Name = reader.ReadUTF32String();
         Team = reader.ReadUTF8String();
         Nation = reader.ReadUTF8String();

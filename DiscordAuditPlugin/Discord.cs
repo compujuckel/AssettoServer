@@ -33,6 +33,11 @@ public class Discord
 
             entryCarManager.ClientKicked += OnClientKicked;
             entryCarManager.ClientBanned += OnClientBanned;
+            if (_configuration.EnableConnectionAudit)
+            {
+                entryCarManager.ClientConnected += OnClientConnected;
+                entryCarManager.ClientDisconnected += OnClientDisconnected;
+            }
         }
         
         if (!string.IsNullOrEmpty(_configuration.ChatUrl))
@@ -44,6 +49,52 @@ public class Discord
 
             chatService.MessageReceived += OnChatMessageReceived;
         }
+    }
+
+    private void OnClientConnected(ACTcpClient sender, EventArgs args)
+    {
+        Task.Run(async () =>
+        {
+            try
+            {
+                await AuditHook!.SendAsync(PrepareAuditMessage(
+                    ":fire: Player connected",
+                    _serverNameSanitized,
+                    sender.Guid, 
+                    sender.Name,
+                    null,
+                    Color.Green,
+                    null
+                ));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error in Discord webhook");
+            }
+        });
+    }
+
+    private void OnClientDisconnected(ACTcpClient sender, EventArgs args)
+    {
+        Task.Run(async () =>
+        {
+            try
+            {
+                await AuditHook!.SendAsync(PrepareAuditMessage(
+                    ":checkered_flag: Player disconnected",
+                    _serverNameSanitized,
+                    sender.Guid, 
+                    sender.Name,
+                    null,
+                    Color.Green,
+                    null
+                ));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error in Discord webhook");
+            }
+        });
     }
 
     private void OnClientBanned(ACTcpClient sender, ClientAuditEventArgs args)

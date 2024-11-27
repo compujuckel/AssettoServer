@@ -19,6 +19,8 @@ public partial class ACExtraConfiguration : ObservableObject
     public uint? MinimumCSPVersion { get; init; } = CSPVersion.V0_1_77;
     [YamlMember(Description = "Enable Steam ticket validation. Requires CSP 0.1.75+ and a recent version of Content Manager")]
     public bool UseSteamAuth { get; init; } = false;
+    [YamlMember(Description = "Enable generation of Guid from name instead of SteamID. Required for ACPro", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    public bool EnableACProSupport { get; init; } = false;
     [YamlMember(Description = "Steam Web API key for Steam authentication. You only need this on platforms that don't support Steam natively (e.g. ARM64)", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public string? SteamWebApiKey { get; init; }
     [YamlMember(Description = "List of DLC App IDs that are required to join. Steam auth must be enabled. Possible values: https://steamdb.info/app/244210/dlc/")]

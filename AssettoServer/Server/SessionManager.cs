@@ -392,7 +392,7 @@ public class SessionManager : CriticalBackgroundService
             IsLastRaceInverted = false;
         }
 
-        // TODO dynamic track
+        _configuration.Server.DynamicTrack.TransferSession();
         // TODO weather
 
         int invertedCount = 0;

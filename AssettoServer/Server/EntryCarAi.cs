@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Numerics;
-using System.Threading;
+using System.Runtime.InteropServices;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration.Extra;
@@ -49,8 +49,8 @@ public partial class EntryCar
     public int? MaxAiSafetyDistanceMetersSquared { get; set; }
     public List<LaneSpawnBehavior>? AiAllowedLanes { get; set; }
     public float TyreDiameterMeters { get; set; }
-    private readonly List<AiState> _aiStates = new List<AiState>();
-    private readonly ReaderWriterLockSlim _aiStatesLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+    private readonly List<AiState> _aiStates = [];
+    private Span<AiState> AiStatesSpan => CollectionsMarshal.AsSpan(_aiStates);
     
     private readonly Func<EntryCar, AiState> _aiStateFactory;
     private readonly AiSpline? _spline;
@@ -126,140 +126,95 @@ public partial class EntryCar
 
     public void RemoveUnsafeStates()
     {
-        _aiStatesLock.EnterReadLock();
-        try
+        foreach (var aiState in AiStatesSpan)
         {
-            for (var i = 0; i < _aiStates.Count; i++)
-            {
-                var aiState = _aiStates[i];
-                if (!aiState.Initialized) continue;
+            if (!aiState.Initialized) continue;
 
-                for (var j = 0; j < _aiStates.Count; j++)
+            foreach (var targetAiState in AiStatesSpan)
+            {
+                if (aiState != targetAiState
+                    && targetAiState.Initialized
+                    && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < _configuration.Extra.AiParams.MinStateDistanceSquared
+                    && (_configuration.Extra.AiParams.TwoWayTraffic || Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0))
                 {
-                    var targetAiState = _aiStates[j];
-                    if (aiState != targetAiState
-                        && targetAiState.Initialized
-                        && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < _configuration.Extra.AiParams.MinStateDistanceSquared
-                        && (_configuration.Extra.AiParams.TwoWayTraffic || Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0))
-                    {
-                        aiState.Despawn();
-                        Logger.Verbose("Removed close state from AI {SessionId}", SessionId);
-                    }
+                    aiState.Despawn();
+                    Logger.Verbose("Removed close state from AI {SessionId}", SessionId);
                 }
             }
-        }
-        finally
-        {
-            _aiStatesLock.ExitReadLock();
         }
     }
 
     public void AiUpdate()
     {
-        _aiStatesLock.EnterReadLock();
-        try
+        foreach (var aiState in AiStatesSpan)
         {
-            foreach (var aiState in _aiStates)
-            {
-                aiState.Update();
-            }
-        }
-        finally
-        {
-            _aiStatesLock.ExitReadLock();
+            aiState.Update();
         }
     }
 
     public void AiObstacleDetection()
     {
-        _aiStatesLock.EnterReadLock();
-        try
+        foreach (var aiState in AiStatesSpan)
         {
-            for (var i = 0; i < _aiStates.Count; i++)
-            {
-                var aiState = _aiStates[i];
-                aiState.DetectObstacles();
-            }
-        }
-        finally
-        {
-            _aiStatesLock.ExitReadLock();
+            aiState.DetectObstacles();
         }
     }
 
     public AiState? GetBestStateForPlayer(CarStatus playerStatus)
     {
-        _aiStatesLock.EnterReadLock();
-        try
+        AiState? bestState = null;
+        float minDistance = float.MaxValue;
+
+        foreach (var aiState in AiStatesSpan)
         {
-            AiState? bestState = null;
-            float minDistance = float.MaxValue;
+            if (!aiState.Initialized) continue;
 
-            for (var i = 0; i < _aiStates.Count; i++)
+            float distance = Vector3.DistanceSquared(aiState.Status.Position, playerStatus.Position);
+
+            if (_configuration.Extra.AiParams.TwoWayTraffic)
             {
-                var aiState = _aiStates[i];
-                if (!aiState.Initialized) continue;
-
-                float distance = Vector3.DistanceSquared(aiState.Status.Position, playerStatus.Position);
-
-                if (_configuration.Extra.AiParams.TwoWayTraffic)
+                if (distance < minDistance)
                 {
-                    if (distance < minDistance)
-                    {
-                        bestState = aiState;
-                        minDistance = distance;
-                    }
-                }
-                else
-                {
-                    bool isBestSameDirection = bestState != null && Vector3.Dot(bestState.Status.Velocity, playerStatus.Velocity) > 0;
-                    bool isCandidateSameDirection = Vector3.Dot(aiState.Status.Velocity, playerStatus.Velocity) > 0;
-                    bool isPlayerFastEnough = playerStatus.Velocity.LengthSquared() > 1;
-                    bool isTieBreaker = minDistance < _configuration.Extra.AiParams.MinStateDistanceSquared &&
-                                        distance < _configuration.Extra.AiParams.MinStateDistanceSquared &&
-                                        isPlayerFastEnough;
-
-                    // Tie breaker: Multiple close states, so take the one with min distance and same direction
-                    if ((isTieBreaker && isCandidateSameDirection && (distance < minDistance || !isBestSameDirection))
-                        || (!isTieBreaker && distance < minDistance))
-                    {
-                        bestState = aiState;
-                        minDistance = distance;
-                    }
+                    bestState = aiState;
+                    minDistance = distance;
                 }
             }
+            else
+            {
+                bool isBestSameDirection = bestState != null && Vector3.Dot(bestState.Status.Velocity, playerStatus.Velocity) > 0;
+                bool isCandidateSameDirection = Vector3.Dot(aiState.Status.Velocity, playerStatus.Velocity) > 0;
+                bool isPlayerFastEnough = playerStatus.Velocity.LengthSquared() > 1;
+                bool isTieBreaker = minDistance < _configuration.Extra.AiParams.MinStateDistanceSquared &&
+                                    distance < _configuration.Extra.AiParams.MinStateDistanceSquared &&
+                                    isPlayerFastEnough;
 
-            return bestState;
+                // Tie breaker: Multiple close states, so take the one with min distance and same direction
+                if ((isTieBreaker && isCandidateSameDirection && (distance < minDistance || !isBestSameDirection))
+                    || (!isTieBreaker && distance < minDistance))
+                {
+                    bestState = aiState;
+                    minDistance = distance;
+                }
+            }
         }
-        finally
-        {
-            _aiStatesLock.ExitReadLock();
-        }
+
+        return bestState;
     }
 
     public bool IsPositionSafe(int pointId)
     {
         ArgumentNullException.ThrowIfNull(_spline);
-        
-        _aiStatesLock.EnterReadLock();
-        try
-        {
-            var ops = _spline.Operations;
+
+        var ops = _spline.Operations;
             
-            for (var i = 0; i < _aiStates.Count; i++)
-            {
-                var aiState = _aiStates[i];
-                if (aiState.Initialized 
-                    && Vector3.DistanceSquared(aiState.Status.Position, ops.Points[pointId].Position) < aiState.SafetyDistanceSquared
-                    && ops.IsSameDirection(aiState.CurrentSplinePointId, pointId))
-                {
-                    return false;
-                }
-            }
-        }
-        finally
+        foreach (var aiState in AiStatesSpan)
         {
-            _aiStatesLock.ExitReadLock();
+            if (aiState.Initialized 
+                && Vector3.DistanceSquared(aiState.Status.Position, ops.Points[pointId].Position) < aiState.SafetyDistanceSquared
+                && ops.IsSameDirection(aiState.CurrentSplinePointId, pointId))
+            {
+                return false;
+            }
         }
 
         return true;
@@ -269,23 +224,15 @@ public partial class EntryCar
     {
         AiState? closestState = null;
         float minDistanceSquared = float.MaxValue;
-
-        _aiStatesLock.EnterReadLock();
-        try
+        
+        foreach (var aiState in AiStatesSpan)
         {
-            foreach (var aiState in _aiStates)
+            float distanceSquared = Vector3.DistanceSquared(position, aiState.Status.Position);
+            if (distanceSquared < minDistanceSquared)
             {
-                float distanceSquared = Vector3.DistanceSquared(position, aiState.Status.Position);
-                if (distanceSquared < minDistanceSquared)
-                {
-                    closestState = aiState;
-                    minDistanceSquared = distanceSquared;
-                }
+                closestState = aiState;
+                minDistanceSquared = distanceSquared;
             }
-        }
-        finally
-        {
-            _aiStatesLock.ExitReadLock();
         }
 
         return (closestState, minDistanceSquared);
@@ -293,73 +240,49 @@ public partial class EntryCar
 
     public void GetInitializedStates(List<AiState> initializedStates, List<AiState>? uninitializedStates = null)
     {
-        _aiStatesLock.EnterReadLock();
-        try
+        foreach (var aiState in AiStatesSpan)
         {
-            for (int i = 0; i < _aiStates.Count; i++)
+            if (aiState.Initialized)
             {
-                if (_aiStates[i].Initialized)
-                {
-                    initializedStates.Add(_aiStates[i]);
-                }
-                else
-                {
-                    uninitializedStates?.Add(_aiStates[i]);
-                }
+                initializedStates.Add(aiState);
             }
-        }
-        finally
-        {
-            _aiStatesLock.ExitReadLock();
+            else
+            {
+                uninitializedStates?.Add(aiState);
+            }
         }
     }
     
     public bool CanSpawnAiState(Vector3 spawnPoint, AiState aiState)
     {
-        _aiStatesLock.EnterUpgradeableReadLock();
-        try
+        // Remove state if AI slot overbooking was reduced
+        if (_aiStates.IndexOf(aiState) >= TargetAiStateCount)
         {
-            // Remove state if AI slot overbooking was reduced
-            if (_aiStates.IndexOf(aiState) >= TargetAiStateCount)
+            aiState.Dispose();
+            _aiStates.Remove(aiState);
+
+            Logger.Verbose("Removed state of Traffic {SessionId} due to overbooking reduction", SessionId);
+
+            if (_aiStates.Count == 0)
             {
-                _aiStatesLock.EnterWriteLock();
-                try
-                {
-                    aiState.Despawn();
-                    _aiStates.Remove(aiState);
-                }
-                finally
-                {
-                    _aiStatesLock.ExitWriteLock();
-                }
+                Logger.Verbose("Traffic {SessionId} has no states left, disconnecting", SessionId);
+                _entryCarManager.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
+            }
 
-                Logger.Verbose("Removed state of Traffic {SessionId} due to overbooking reduction", SessionId);
+            return false;
+        }
 
-                if (_aiStates.Count == 0)
-                {
-                    Logger.Verbose("Traffic {SessionId} has no states left, disconnecting", SessionId);
-                    _entryCarManager.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
-                }
+        foreach (var state in AiStatesSpan)
+        {
+            if (state == aiState || !state.Initialized) continue;
 
+            if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < _configuration.Extra.AiParams.StateSpawnDistanceSquared)
+            {
                 return false;
             }
-
-            foreach (var state in _aiStates)
-            {
-                if (state == aiState || !state.Initialized) continue;
-
-                if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < _configuration.Extra.AiParams.StateSpawnDistanceSquared)
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
-        finally
-        {
-            _aiStatesLock.ExitUpgradeableReadLock();
-        }
+
+        return true;
     }
 
     public void SetAiControl(bool aiControlled)
@@ -411,54 +334,30 @@ public partial class EntryCar
 
     public void SetAiOverbooking(int count)
     {
-        _aiStatesLock.EnterUpgradeableReadLock();
-        try
+        if (AiMaxOverbooking.HasValue)
         {
-            if (AiMaxOverbooking.HasValue)
-            {
-                count = Math.Min(count, AiMaxOverbooking.Value);
-            }
-
-            if (count > _aiStates.Count)
-            {
-                _aiStatesLock.EnterWriteLock();
-                try
-                {
-                    int newAis = count - _aiStates.Count;
-                    for (int i = 0; i < newAis; i++)
-                    {
-                        _aiStates.Add(_aiStateFactory(this));
-                    }
-                }
-                finally
-                {
-                    _aiStatesLock.ExitWriteLock();
-                }
-            }
-
-            TargetAiStateCount = count;
+            count = Math.Min(count, AiMaxOverbooking.Value);
         }
-        finally
+
+        if (count > _aiStates.Count)
         {
-            _aiStatesLock.ExitUpgradeableReadLock();
+            int newAis = count - _aiStates.Count;
+            for (int i = 0; i < newAis; i++)
+            {
+                _aiStates.Add(_aiStateFactory(this));
+            }
         }
+
+        TargetAiStateCount = count;
     }
 
     private void AiReset()
     {
-        _aiStatesLock.EnterWriteLock();
-        try
+        foreach (var state in AiStatesSpan)
         {
-            foreach (var state in _aiStates)
-            {
-                state.Despawn();
-            }
-            _aiStates.Clear();
-            _aiStates.Add(_aiStateFactory(this));
+            state.Despawn();
         }
-        finally
-        {
-            _aiStatesLock.ExitWriteLock();
-        }
+        _aiStates.Clear();
+        _aiStates.Add(_aiStateFactory(this));
     }
 }

@@ -12,6 +12,8 @@ internal static class Logging
 {
     internal static void CreateLogger(string logPrefix, bool isContentManager, string? preset, bool useVerboseLogging, bool redactIpAddresses = false, LokiSettings? lokiSettings = null)
     {
+        Log.CloseAndFlush();
+        
         if (lokiSettings?.IsValid() == true)
         {
             CreateLokiLogger(logPrefix, isContentManager, preset, lokiSettings, useVerboseLogging, redactIpAddresses);

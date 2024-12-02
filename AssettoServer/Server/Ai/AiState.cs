@@ -15,7 +15,7 @@ using SunCalcNet.Model;
 
 namespace AssettoServer.Server.Ai;
 
-public class AiState
+public class AiState : IDisposable
 {
     public CarStatus Status { get; } = new();
     public bool Initialized { get; private set; }
@@ -106,6 +106,17 @@ public class AiState
         _junctionEvaluator = new JunctionEvaluator(spline);
 
         _lastTick = _sessionManager.ServerTimeMilliseconds;
+    }
+
+    ~AiState()
+    {
+        Despawn();
+    }
+    
+    public void Dispose()
+    {
+        Despawn();
+        GC.SuppressFinalize(this);
     }
 
     public void Despawn()

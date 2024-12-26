@@ -78,11 +78,8 @@ public static class Program
         _loadPluginsFromWorkdir = options.LoadPluginsFromWorkdir;
         _generatePluginConfigs = options.GenerateConfigs;
         
-        if (IsContentManager)
-        {
-            Console.OutputEncoding = Encoding.UTF8;
-        }
-        
+        Console.OutputEncoding = Encoding.UTF8;
+                
         if (options.UseRandomPreset)
         {
         

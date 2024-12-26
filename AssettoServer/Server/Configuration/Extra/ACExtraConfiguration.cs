@@ -114,6 +114,9 @@ public partial class ACExtraConfiguration : ObservableObject
     public List<string>? CorsAllowedOrigins { get; init; }
     [YamlMember(Description = "Allow a user group to execute specific admin commands")]
     public List<UserGroupCommandPermissions>? UserGroupCommandPermissions { get; init; }
+
+    [YamlMember(Description = "Enable custom physics for cars and tracks. Requires CSP 0.1.77+")]
+    public bool UseCustomPhysics { get; init; } = false;
     
     public AiParams AiParams { get; init; } = new();
     

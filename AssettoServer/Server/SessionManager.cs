@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
@@ -12,8 +14,10 @@ using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Services;
+using AssettoServer.Shared.Network.Packets;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using System.Globalization;
 
 namespace AssettoServer.Server;
 
@@ -24,6 +28,7 @@ public class SessionManager : CriticalBackgroundService
     private readonly Stopwatch _timeSource = new();
     private readonly EntryCarManager _entryCarManager;
     private readonly Lazy<WeatherManager> _weatherManager;
+    private readonly string _resultFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "results");
 
     public int CurrentSessionIndex { get; private set; } = -1;
     public bool IsLastRaceInverted { get; private set; } = false;
@@ -67,7 +72,7 @@ public class SessionManager : CriticalBackgroundService
 
     private async Task LoopAsync(CancellationToken token)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
 
         while (await timer.WaitForNextTickAsync(token))
         {
@@ -76,6 +81,7 @@ public class SessionManager : CriticalBackgroundService
                 if (IsSessionOver())
                 {
                     NextSession();
+                    // continue;
                 }
 
                 switch (CurrentSession.Configuration.Type)
@@ -108,9 +114,18 @@ public class SessionManager : CriticalBackgroundService
                         }
 
                         if (CurrentSession.HasSentRaceOverPacket
-                            && ServerTimeMilliseconds > _configuration.Server.ResultScreenTime * 1000L + CurrentSession.OverTimeMilliseconds)
+                            && ServerTimeMilliseconds > _configuration.Server.ResultScreenTime * 1000L + CurrentSession.OverTimeMilliseconds && _configuration.Server.Loop)
                         {
+                            
                             NextSession();
+                        }
+
+                        if (CurrentSession.HasSentRaceOverPacket
+                            && ServerTimeMilliseconds > _configuration.Server.ResultScreenTime * 1000L + CurrentSession.OverTimeMilliseconds && !_configuration.Server.Loop)
+                        {
+                            // TODO: Exit
+                            Log.Information("Exiting server (In Async Loop)");
+                            Environment.Exit(0);
                         }
 
                         break;
@@ -146,40 +161,76 @@ public class SessionManager : CriticalBackgroundService
             return false;
         }
 
-        Log.Information("Lap completed by {ClientName}, {NumCuts} cuts, laptime {LapTime}", client.Name, lap.Cuts, TimeSpan.FromMilliseconds(lap.LapTime).ToString(@"mm\:ss\.ffff"));
+        Log.Information("Lap completed: SessionId={SessionId}, Name={ClientName}, Cuts:{NumCuts}, Laptime={LapTime}, Sectors={SectorTime}, TyreCompound={TyreCompound}", client.SessionId, client.Name, lap.Cuts, TimeSpan.FromMilliseconds(lap.LapTime).ToString(@"mm\:ss\.ffff"), lap.Splits?.ToList() ?? new List<uint>(), client.EntryCar.Status.CurrentTyreCompound);
+        
+        // Find the DriverName from the EntryCar
+        var driverName = _entryCarManager.EntryCars.FirstOrDefault(e => e.SessionId == client.SessionId)?.DriverName ?? client.Name;
+
+        // Add lap information
+        CurrentSession.Laps.Add(new LapInfo
+        {
+            DriverName = driverName,
+            DriverGuid = client.Guid,
+            CarId = client.SessionId,
+            CarModel = client.EntryCar.Model,
+            CarSkin = client.EntryCar.Skin,
+            Timestamp = ServerTimeMilliseconds,
+            LapNumber = entryCarResult.NumLaps,
+            LapTime = lap.LapTime,
+            Sectors = lap.Splits?.ToList() ?? new List<uint>(),
+            Cuts = lap.Cuts,
+            BallastKG = (int)client.EntryCar.Ballast,
+            Tyre = client.EntryCar.Status.CurrentTyreCompound ?? "",
+            Restrictor = (int)client.EntryCar.Restrictor
+        });
 
         if (CurrentSession.Configuration.Type == SessionType.Race || lap.Cuts == 0)
         {
+            // Update lap information
             entryCarResult.LastLap = lap.LapTime;
             entryCarResult.NumLaps++;
             entryCarResult.TotalTime = (uint)(CurrentSession.SessionTimeMilliseconds - client.EntryCar.Ping / 2);
 
+            // Update best lap if applicable
             if (lap.LapTime < entryCarResult.BestLap)
             {
                 entryCarResult.BestLap = lap.LapTime;
             }
 
+            // Update leader lap count
             var oldLeaderLapCount = CurrentSession.LeaderLapCount;
             if (entryCarResult.NumLaps > CurrentSession.LeaderLapCount)
             {
                 CurrentSession.LeaderLapCount = entryCarResult.NumLaps;
             }
 
+            // Update race positions based on laps and total time
             if (CurrentSession.Configuration.Type == SessionType.Race)
             {
                 foreach (var res in CurrentSession.Results
-                             .OrderByDescending(car => car.Value.NumLaps)
-                             .ThenBy(car => car.Value.TotalTime)
-                             .Select((x, i) => new { Car = x, Index = i }) )
+                                .OrderByDescending(car => car.Value.NumLaps)
+                                .ThenBy(car => car.Value.TotalTime)
+                                .Select((x, i) => new { Car = x, Index = i }) )
+                {
+                    res.Car.Value.RacePos = (uint)res.Index;
+                }
+            }else if(CurrentSession.Configuration.Type == SessionType.Qualifying || CurrentSession.Configuration.Type == SessionType.Practice){
+                // Update race positions based on best lap
+                foreach (var res in CurrentSession.Results
+                                .OrderBy(car => car.Value.BestLap)
+                                .Select((x, i) => new { Car = x, Index = i }) )
                 {
                     res.Car.Value.RacePos = (uint)res.Index;
                 }
             }
 
+            // Check if the session is over
             if (CurrentSession.SessionOverFlag)
             {
+                Log.Debug("===RACE OVER===");
                 if (CurrentSession.Configuration is { Type: SessionType.Race, IsTimedRace: true })
                 {
+                    // Handle timed race logic
                     if (_configuration.Server.HasExtraLap)
                     {
                         if (entryCarResult.NumLaps <= oldLeaderLapCount)
@@ -201,20 +252,30 @@ public class SessionManager : CriticalBackgroundService
                     }
                     else if (entryCarResult.NumLaps <= oldLeaderLapCount)
                     {
+                        Log.Debug("Race Over: EntryCarResult.NumLaps({NumLaps}) <= oldLeaderLapCount({OldLeaderLapCount})",  entryCarResult.NumLaps, oldLeaderLapCount);
                         entryCarResult.HasCompletedLastLap = CurrentSession.LeaderHasCompletedLastLap;
                     }
                     else
                     {
+                        Log.Debug("Race Over: LeaderHasCompletedLastLap set to true");
+                        Log.Debug("Race Over: EntryCarResult.NumLaps: {NumLaps}, oldLeaderLapCount: {OldLeaderLapCount}",  entryCarResult.NumLaps, oldLeaderLapCount);
                         CurrentSession.LeaderHasCompletedLastLap = true;
                         entryCarResult.HasCompletedLastLap = true;
                     }
                 }
                 else
                 {
+                    // For lap-based races
                     entryCarResult.HasCompletedLastLap = true;
                 }
             }
 
+            if (CurrentSession.Configuration.Type == SessionType.Race && CurrentSession.Configuration.IsTimedRace && CurrentSession.LeaderHasCompletedLastLap)
+            {
+                entryCarResult.HasCompletedLastLap = true;
+            }
+
+            // Additional session over conditions based on session type
             if (CurrentSession.Configuration.Type != SessionType.Race)
             {
                 if (CurrentSession.EndTimeMilliseconds != 0)
@@ -259,6 +320,84 @@ public class SessionManager : CriticalBackgroundService
         return false;
     }
 
+    public bool OnClientEvent(ACTcpClient client, ClientEvent.SingleClientEvent evt)
+    {
+        if (evt.Type == ClientEventType.CollisionWithCar)
+        {
+            
+            var targetCar = _entryCarManager.EntryCars[evt.TargetSessionId];
+            CurrentSession.Events.Add(new EventInfo
+            {
+                Type = "COLLISION_WITH_CAR",
+                CarId = client.SessionId,
+                Driver = new {
+                    Name = client.Name,
+                    Guid = client.Guid.ToString(),
+                    Team = client.Team,
+                    Nation = client.NationCode,
+                    GuidsList = new[] { client.Guid.ToString() }
+                },
+                OtherCarId = targetCar.SessionId,
+                OtherDriver = new {
+                    Name = targetCar.Client?.Name,
+                    Guid = targetCar.Client?.Guid.ToString(),
+                    Team = targetCar.Client?.Team,
+                    Nation = targetCar.Client?.NationCode,
+                    GuidsList = new[] { targetCar.Client?.Guid.ToString() }
+                },
+                ImpactSpeed = evt.Speed,
+                WorldPosition = new {
+                    X = evt.Position.X,
+                    Y = evt.Position.Y,
+                    Z = evt.Position.Z
+                },
+                RelPosition = new {
+                    X = evt.RelPosition.X,
+                    Y = evt.RelPosition.Y,
+                    Z = evt.RelPosition.Z
+                },
+                Time = ServerTimeMilliseconds
+            });
+        }
+        else if (evt.Type == ClientEventType.CollisionWithEnv)
+        {
+            CurrentSession.Events.Add(new EventInfo
+            {
+                Type = "COLLISION_WITH_ENV",
+                CarId = client.SessionId,
+                Driver = new {
+                    Name = client.Name,
+                    Guid = client.Guid.ToString(),
+                    Team = client.Team,
+                    Nation = client.NationCode,
+                    GuidsList = new[] { client.Guid.ToString() }
+                },
+                OtherCarId = -1,
+                OtherDriver = new {
+                    Name = "",
+                    Team = "",
+                    Nation = "",
+                    Guid = "",
+                    GuidsList = new List<string>()
+                },
+                ImpactSpeed = evt.Speed,
+                WorldPosition = new {
+                    X = evt.Position.X,
+                    Y = evt.Position.Y,
+                    Z = evt.Position.Z
+                },
+                RelPosition = new {
+                    X = evt.RelPosition.X,
+                    Y = evt.RelPosition.Y,
+                    Z = evt.RelPosition.Z
+                },
+                Time = ServerTimeMilliseconds
+            });
+        }
+        
+        return true;
+    }
+
     private bool IsSessionOver()
     {
         if (CurrentSession.Configuration.Infinite)
@@ -284,10 +423,10 @@ public class SessionManager : CriticalBackgroundService
             return false;
         }
 
-        if (CurrentSession.Configuration.IsOpen == IsOpenMode.Closed && connectedCount < 2)
-        {
-            return true;
-        }
+        // if (CurrentSession.Configuration.IsOpen == IsOpenMode.Closed && connectedCount < 2)
+        // {
+        //     return true;
+        // }
 
         if (CurrentSession.Configuration.IsOpen != IsOpenMode.CloseAtStart)
         {
@@ -318,14 +457,18 @@ public class SessionManager : CriticalBackgroundService
         if (CurrentSession.Configuration.Type == SessionType.Race)
         {
             var overTimeMilliseconds = _configuration.Server.RaceOverTime * 1000L;
-            if (CurrentSession.OverTimeMilliseconds == 0)
+            if (CurrentSession.OverTimeMilliseconds == 0){
                 CurrentSession.OverTimeMilliseconds = overTimeMilliseconds;
+                Log.Debug("CurrentSession.OverTimeMilliseconds set to {OverTimeMilliseconds}", overTimeMilliseconds);
+            }
+                
 
             if (CurrentSession.OverTimeMilliseconds == overTimeMilliseconds)
             {
                 if (_entryCarManager.EntryCars.Where(c => c.Client is { HasSentFirstUpdate: true })
                     .Any(car => CurrentSession.Results?[car.SessionId] is { HasCompletedLastLap: false }))
                 {
+                    // Log.Debug("There are still cars that have not completed the last lap.");
                     return;
                 }
             }
@@ -347,21 +490,33 @@ public class SessionManager : CriticalBackgroundService
 
         CurrentSession.OverTimeMilliseconds = 1;
     }
-
     private void OnClientConnected(ACTcpClient client, EventArgs eventArgs)
     {
-        var currentResult = CurrentSession.Results;
+        Log.Debug("Client connected: SessionId={SessionId}, Name={Name}, Guid={Guid}, Model={Model}, Skin={Skin}",
+            client.SessionId,
+            client.Name,
+            client.Guid,
+            client.EntryCar?.Model,
+            client.EntryCar?.Skin);
+
+        // var currentResult = CurrentSession.Results;
         
-        if (currentResult != null && currentResult[client.SessionId].Guid != client.Guid)
+        if (CurrentSession.Results != null && CurrentSession.Results[client.SessionId].Guid != client.Guid)
         {
-            currentResult[client.SessionId] = new EntryCarResult(client);
+            // if LockEntryList is true, then we need to check if the GUID is in the entry list and if it is, then we need to update the name
+            if(_configuration.Server.LockedEntryList){
+                var entryCar = _entryCarManager.EntryCars[client.SessionId];
+                if(entryCar != null && entryCar.Client != null && entryCar.Client.Guid == client.Guid){
+                    client.Name = entryCar.DriverName;
+                }
+            }
+
+            CurrentSession.Results[client.SessionId] = new EntryCarResult(client);
         }    
     }
 
     public void SetSession(int sessionId)
     {
-        // TODO reset sun angle
-
         var previousSession = CurrentSession;
         Dictionary<byte, EntryCarResult>? previousSessionResults = CurrentSession?.Results; // breaks with CurrentSession.Result don't believe the IDE
 
@@ -369,10 +524,49 @@ public class SessionManager : CriticalBackgroundService
         CurrentSession.Results = new Dictionary<byte, EntryCarResult>();
         CurrentSession.StartTimeMilliseconds = ServerTimeMilliseconds;
 
-        foreach (var entryCar in _entryCarManager.EntryCars)
+        // Set Sun Angle by time
+        if(CurrentSession.Configuration.StartTime != null)
         {
-            CurrentSession.Results?.Add(entryCar.SessionId, new EntryCarResult(entryCar.Client));
-            entryCar.Reset();
+            if (DateTime.TryParseExact(CurrentSession.Configuration.StartTime, "H:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime))
+            {
+                _weatherManager.Value.SetTime((int)dateTime.TimeOfDay.TotalSeconds);
+            }
+            else
+            {
+                Log.Warning("Invalid time format. Example: 15:31");
+            }
+        }
+
+        
+        if(_configuration.Server.LockedEntryList){
+
+            for (byte entryCarIndex = 0; entryCarIndex < _configuration.EntryList.Cars.Count; entryCarIndex++)
+            {
+                var car = _configuration.EntryList.Cars[entryCarIndex];
+                var entryCar = _entryCarManager.EntryCars[entryCarIndex];
+                if (entryCar != null)
+                {
+                    if (!string.IsNullOrEmpty(car.Guid) && ulong.TryParse(car.Guid, out ulong guidValue))
+                    {
+                        CurrentSession.Results.Add(entryCar.SessionId, new EntryCarResult(entryCar.Client)
+                        {
+                            Name = car.DriverName ?? "",
+                            Guid = guidValue
+                        });
+                    }
+                    else
+                    {
+                        Log.Warning("You have locked the entry list, but a car has an invalid or missing GUID. Entry list will be ignored: {CarId}", entryCar.SessionId);
+                        // Log.Warning("Car with model {Model} and skin {Skin} has invalid or missing GUID: {Guid}. CarId: {CarId}", car.Model, car.Skin, car.Guid, entryCar.SessionId);
+                    }
+                }
+            }
+        }else{
+            foreach (var entryCar in _entryCarManager.EntryCars)
+            {
+                CurrentSession.Results?.Add(entryCar.SessionId, new EntryCarResult(entryCar.Client));
+                entryCar.Reset();
+            }
         }
 
         var sessionLength = CurrentSession.Configuration switch
@@ -404,6 +598,8 @@ public class SessionManager : CriticalBackgroundService
         {
             var grid = previousSessionResults
                 .OrderBy(result => result.Value.BestLap)
+                .ThenBy(result => result.Value.TotalTime)
+                .ThenBy(result => result.Key)
                 .Select(result => _entryCarManager.EntryCars[result.Key])
                 .ToList();
 
@@ -460,7 +656,13 @@ public class SessionManager : CriticalBackgroundService
             }
             else if (CurrentSession.Configuration.Type != SessionType.Race || _configuration.Server.InvertedGridPositions == 0 || IsLastRaceInverted)
             {
-                // TODO exit
+                // Save results before exiting if they haven't been saved yet
+                if (CurrentSession.Results != null && !CurrentSession.HasSentRaceOverPacket)
+                {
+                    SaveSessionResultsAsync().Wait();
+                }
+                Log.Information("Exiting server (NextSession)");
+                Environment.Exit(0);
             }
 
             if (CurrentSession.Configuration.Type == SessionType.Race && _configuration.Server.InvertedGridPositions != 0)
@@ -529,15 +731,194 @@ public class SessionManager : CriticalBackgroundService
 
     private void SendSessionOver()
     {
-        if (CurrentSession.Results != null)
+        // if (CurrentSession.HasSentRaceOverPacket)
+        // {
+        //     return; // Ensure we only send the race over packet once
+        // }
+
+        if (CurrentSession.Results != null){
+            // Debug logging for session results
+            Log.Debug("Session Over");
+            Log.Debug("Results:");
+            // CurrentSession.Results = new Dictionary<byte, EntryCarResult>(
+            //     CurrentSession.Results.OrderBy(kvp => kvp.Value.RacePos)
+            //                           .ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
+            // );
+
+            foreach (var kvp in CurrentSession.Results)
+            {
+                Log.Debug("Car ID: {CarId}, Driver: {DriverName}, Position: {Position}, Laps: {Laps}, Best Lap: {BestLap}, Total Time: {TotalTime}",
+                    kvp.Key,
+                    kvp.Value.Name,
+                    kvp.Value.RacePos,
+                    kvp.Value.NumLaps,
+                    TimeSpan.FromMilliseconds(kvp.Value.BestLap).ToString(@"mm\:ss\.fff"),
+                    TimeSpan.FromMilliseconds(kvp.Value.TotalTime).ToString(@"hh\:mm\:ss\.fff"));
+            }
+
+            
+
             _entryCarManager.BroadcastPacket(new RaceOver
             {
                 IsRace = CurrentSession.Configuration.Type == SessionType.Race,
                 PickupMode = true,
                 Results = CurrentSession.Results
             });
+            SaveSessionResultsAsync().Wait();
+        }
 
         CurrentSession.HasSentRaceOverPacket = true;
         CurrentSession.OverTimeMilliseconds = ServerTimeMilliseconds;
+        Log.Information("Race over packet sent at {Time}", DateTime.Now);
+    }
+
+    private async Task SaveSessionResultsAsync()
+    {
+        try
+        {
+            Log.Information("Saving session results");
+            if (CurrentSession.Results == null || CurrentSession.Laps.Count == 0)
+            {
+                Log.Information("Skipping result save: no laps recorded.");
+                return;
+            }
+
+            if (!Directory.Exists(_resultFolderPath))
+            {
+                Directory.CreateDirectory(_resultFolderPath);
+            }
+
+            var fileName = $"{DateTime.Now:yyyyMMdd_HHmmss}_{CurrentSession.Configuration.Name?.ToUpper()}.json";
+            var filePath = Path.Combine(_resultFolderPath, fileName);
+
+            List<object> cars;
+            List<object> result;
+
+            if (_configuration.Server.LockedEntryList)
+            {
+                cars = _configuration.EntryList.Cars.Select((car, index) =>
+                {
+                    var entryCar = _entryCarManager.EntryCars[index];
+                    return new
+                    {
+                        CarId = entryCar.SessionId,
+                        Driver = new
+                        {
+                            Name = car.DriverName ?? "",
+                            Team = car.Team ?? "",
+                            Nation = entryCar.Client?.NationCode ?? "",
+                            Guid = car.Guid ?? "",
+                            GuidsList = !string.IsNullOrEmpty(car.Guid) ? new[] { car.Guid } : new string[0]
+                        },
+                        Model = car.Model,
+                        Skin = car.Skin ?? "",
+                        BallastKG = (int)entryCar.Ballast,
+                        Restrictor = entryCar.Restrictor,
+                        isSpectator = entryCar.IsSpectator,
+                    };
+                }).Cast<object>().ToList();
+
+                result = CurrentSession.Results.Values.Select((result, index) =>
+                {
+                    var car = _configuration.EntryList.Cars.FirstOrDefault(c => c.Guid == result.Guid.ToString());
+    
+                    return new
+                    {
+                        DriverName = car?.DriverName,
+                        DriverGuid = result.Guid.ToString(),
+                        CarId = index,
+                        CarModel = car?.Model ?? "",
+                        Skin = car?.Skin ?? "",
+                        BestLap = result.BestLap,
+                        TotalTime = result.TotalTime,
+                        // Position = CurrentSession.Configuration.Type == SessionType.Race ? result.RacePos + 1 : (uint)index + 1,
+                        Position = result.RacePos + 1,
+                        Laps = result.NumLaps,
+                        BallastKG = car != null ? (int)car.Ballast : 0,
+                        Restrictor = car?.Restrictor ?? 0,
+                        isSpectator = car?.SpectatorMode ?? 0
+                    };
+                }).OrderBy(r => r.Position).Cast<object>().ToList();
+            }
+            else
+            {
+                cars = _entryCarManager.EntryCars.Select((car, index) =>
+                {
+                    return new
+                    {
+                        CarId = car.SessionId,
+                        Driver = new
+                        {
+                            Name = car.Client?.Name ?? car.LatestClient?.Name ?? "",
+                            Team = car.Client?.Team ?? car.LatestClient?.Team ?? "",
+                            Nation = car.Client?.NationCode ?? car.LatestClient?.NationCode ?? "",
+                            Guid = car.Client?.Guid.ToString() ?? car.LatestClient?.Guid.ToString() ?? "",
+                            GuidsList = new[] { car.Client?.Guid.ToString() ?? car.LatestClient?.Guid.ToString() ?? "" }
+                        },
+                        Model = car?.Model ?? "",
+                        Skin = car?.Skin ?? "",
+                        BallastKG = car != null ? (int)car.Ballast : 0,
+                        Restrictor = car?.Restrictor ?? 0,
+                        isSpectator = car?.IsSpectator ?? false
+                    };
+                }).Cast<object>().ToList();
+
+                result = _entryCarManager.EntryCars.Select((car, index) =>
+                {
+                    var result = CurrentSession.Results[car.SessionId];
+                    return new
+                    {
+                        DriverName = car.Client?.Name ?? car.LatestClient?.Name ?? "",
+                        DriverGuid = car.Client?.Guid.ToString() ?? car.LatestClient?.Guid.ToString() ?? "",
+                        CarId = car.SessionId,
+                        CarModel = car.Model ?? "",
+                        BestLap = result.BestLap,
+                        TotalTime = result.TotalTime,
+                        // Position = CurrentSession.Configuration.Type == SessionType.Race ? result.RacePos + 1 : (uint)index + 1,
+                        Position = result.RacePos + 1,
+                        Laps = result.NumLaps,
+                        BallastKG = car != null ? (int)car.Ballast : 0,
+                        Restrictor = car?.Restrictor ?? 0,
+                        isSpectator = car?.IsSpectator ?? false
+                    };
+                }).OrderBy(r => r.Position).Cast<object>().ToList();
+            }
+
+            var lapDetails = CurrentSession.Laps.Select(lap => new
+            {
+                lap.DriverName,
+                DriverGuid = lap.DriverGuid.ToString(),
+                lap.CarId,
+                lap.CarModel,
+                lap.Timestamp,
+                lap.LapNumber,
+                lap.LapTime,
+                Sectors = lap.Sectors ?? new List<uint>(),
+                lap.Cuts,
+                lap.BallastKG,
+                lap.Tyre,
+                lap.Restrictor
+            }).ToList();
+            
+            var resultData = new
+            {
+                TrackName = _configuration.Server.Track,
+                TrackConfig = _configuration.Server.TrackConfig,
+                Type = CurrentSession.Configuration.Type.ToString().ToUpper(),
+                Cars = cars,
+                Result = result,
+                Laps = lapDetails,
+                Events = CurrentSession.Events.ToList() ?? null
+            };
+
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(resultData, jsonOptions));
+            Log.Information("Session completed, saving json file: results/{FileName}", fileName);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error saving session results");
+        }
     }
 }
+

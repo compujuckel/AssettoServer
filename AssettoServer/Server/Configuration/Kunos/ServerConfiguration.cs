@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using AssettoServer.Utils;
 using IniParser;
 using IniParser.Model;
@@ -30,6 +31,7 @@ public class ServerConfiguration
     [IniField("SERVER", "RACE_EXTRA_LAP")] public bool HasExtraLap { get; set; }
     [IniField("SERVER", "QUALIFY_MAX_WAIT_PERC")] public ushort QualifyMaxWait { get; init; } = 120;
     [IniField("SERVER", "REVERSED_GRID_RACE_POSITIONS")] public short InvertedGridPositions { get; init; }
+    [IniField("SERVER", "LOCKED_ENTRY_LIST")] public bool LockedEntryList { get; init; }
     [IniField("SERVER", "RACE_GAS_PENALTY_DISABLED")] public bool IsGasPenaltyDisabled { get; init; }
     [IniField("SERVER", "FORCE_VIRTUAL_MIRROR")] public bool IsVirtualMirrorForced { get; init; }
     [IniField("SERVER", "REGISTER_TO_LOBBY")] public bool RegisterToLobby { get; init; }
@@ -61,7 +63,7 @@ public class ServerConfiguration
     public static ServerConfiguration FromFile(string path)
     {
         var parser = new FileIniDataParser();
-        IniData data = parser.ReadFile(path);
+        IniData data = parser.ReadFile(path,  Encoding.UTF8);
         return data.DeserializeObject<ServerConfiguration>();
     }
 

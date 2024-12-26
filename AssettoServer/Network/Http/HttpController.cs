@@ -12,6 +12,8 @@ using AssettoServer.Shared.Network.Http.Responses;
 using AssettoServer.Shared.Weather;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using System.Collections.Generic;
 
 namespace AssettoServer.Network.Http;
 
@@ -103,9 +105,10 @@ public class HttpController : ControllerBase
             {
                 Model = ec.Model,
                 Skin = ec.Skin,
-                IsEntryList = isAdmin || _openSlotFilter.IsSlotOpen(ec, ulongGuid),
-                DriverName = ec.Client?.Name,
-                DriverTeam = ec.Client?.Team,
+                IsEntryList = ec.Guid != null,
+                IsRequestedGUID = isAdmin || _openSlotFilter.IsSlotOpen(ec, ulongGuid),
+                DriverName = ec.DriverName ?? ec.Client?.Name,
+                DriverTeam = ec.Team ?? ec.Client?.Team,
                 IsConnected = ec.Client != null
             }),
             Features = _cspFeatureManager.Features.Keys
@@ -154,16 +157,18 @@ public class HttpController : ControllerBase
                 {
                     Model = ec.Model,
                     Skin = ec.Skin,
-                    IsEntryList = isAdmin || _openSlotFilter.IsSlotOpen(ec, ulongGuid),
-                    DriverName = ec.Client?.Name,
-                    DriverTeam = ec.Client?.Team,
+                    IsEntryList = ec.Guid != null,
+                    IsRequestedGUID = isAdmin || _openSlotFilter.IsSlotOpen(ec, ulongGuid),
+                    DriverName = ec.DriverName ?? ec.Client?.Name,
+                    DriverTeam = ec.Team ?? ec.Client?.Team,
                     DriverNation = ec.Client?.NationCode,
                     IsConnected = ec.Client != null,
                     ID = ec.Client?.HashedGuid
                 })
             },
             Until = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + _sessionManager.CurrentSession.TimeLeftMilliseconds / 1000,
-            Content = await _contentProvider.GetContentAsync(ulongGuid),
+            // Content = await _contentProvider.GetContentAsync(ulongGuid),
+            Content = await GenerateContentConfiguration(ulongGuid),
             TrackBase = _configuration.Server.Track,
             City = _geoParamsManager.GeoParams.City,
             Frequency = _configuration.Server.RefreshRateHz,
@@ -191,4 +196,47 @@ public class HttpController : ControllerBase
     {
         return scriptId < _serverScriptProvider.Scripts.Count ? _serverScriptProvider.Scripts[scriptId]() : NotFound();
     }
+    private async Task<CMContentConfiguration> GenerateContentConfiguration(ulong ulongGuid)
+    {
+        if(_configuration.WrapperParams?.UseURLDownload == true)
+        {
+            return await _contentProvider.GetContentAsync(ulongGuid) ?? new CMContentConfiguration();
+        }
+
+        Dictionary<string, CMContentEntryCar>? cars = null;
+        if(_configuration.WrapperParams?.CarDirectDownload == true)
+        {
+            cars = _entryCarManager.EntryCars
+                .GroupBy(car => car.Model)
+                .ToDictionary(
+                    group => group.Key,
+                group => new CMContentEntryCar
+                {
+                    File = $"{group.Key}.zip"
+                }
+            );
+        }
+
+        CMContentEntryVersionized? track = null;
+        if(_configuration.WrapperParams?.TrackDirectDownload == true)
+        {
+            var cleanTrack = _configuration.Server.Track.Substring(_configuration.Server.Track.LastIndexOf('/') + 1);
+            track = new CMContentEntryVersionized
+            {
+                File = $"{cleanTrack}.zip"
+            };
+        }
+
+        if(cars == null && track == null)
+        {
+            return new CMContentConfiguration();
+        }
+
+        return new CMContentConfiguration
+        {
+            Cars = cars,
+            Track = track
+        };
+    }
+
 }

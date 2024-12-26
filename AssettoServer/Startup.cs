@@ -94,6 +94,7 @@ public class Startup
         builder.RegisterType<HttpInfoCache>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         builder.RegisterType<DefaultCMContentProvider>().As<ICMContentProvider>().SingleInstance();
         builder.RegisterType<CommandService>().AsSelf().SingleInstance();
+        builder.RegisterType<ContentManagerInitializer>().AsSelf().As<IHostedService>().SingleInstance();
 
         if (_configuration.Extra.EnableLegacyPluginInterface)
         {

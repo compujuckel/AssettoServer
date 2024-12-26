@@ -6,6 +6,7 @@ using System.Text;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
 namespace AssettoServer.Network.Http;
 
@@ -24,11 +25,50 @@ public class ContentManagerController : ControllerBase
     public IActionResult GetCarZip(string carId, string? password = null)
     {
         if (!ValidatePassword(password)) return Unauthorized();
-        if (_configuration.ContentConfiguration?.Cars == null 
-            || !_configuration.ContentConfiguration.Cars.TryGetValue(carId, out var car)
-            || car.File == null) return NotFound();
+        // if (_configuration.ContentConfiguration?.Cars == null 
+        //     || !_configuration.ContentConfiguration.Cars.TryGetValue(carId, out var car)
+        //     || car.File == null) return NotFound();
 
-        return CreateFileDownload(car.File);
+        // return CreateFileDownload(car.File);
+
+
+        // Rewrite the code to use the existing car data in `content` folder, zip it and return it, by following the instructions
+        // 1. check if the car file exists in the `content/cars` folder
+        // 2. if it exists, zip it
+        // 3. return the zip file
+        string carPath = Path.Combine("content", "cars", carId);
+        if (!Directory.Exists(carPath)) return NotFound();
+        string zipPath = Path.Combine("content", "cars", $"{carId}.zip");
+        try
+        {
+            if (!System.IO.File.Exists(zipPath))
+            {
+                using (var zipArchive = System.IO.Compression.ZipFile.Open(zipPath, System.IO.Compression.ZipArchiveMode.Create))
+                {
+                    string[] files = Directory.GetFiles(carPath, "*", SearchOption.AllDirectories);
+                    foreach (string file in files)
+                    {
+                        string relativePath = file.Substring(carPath.Length + 1);
+                        var entry = zipArchive.CreateEntry(Path.Combine(carId, relativePath));
+                        if (entry != null)
+                        {
+                            using (var entryStream = entry.Open())
+                            using (var fileStream = System.IO.File.OpenRead(file))
+                            {
+                                fileStream.CopyTo(entryStream);
+                            }
+                        }
+                    }
+                }
+            }
+            return CreateFileDownload(zipPath);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating or sending zip file for car {carId}: {ex.Message}");
+            return StatusCode(500, "Error processing zip file");
+        }
+        
     }
 
     [HttpGet("/content/skin/{carId}/{skinId}")]
@@ -50,9 +90,64 @@ public class ContentManagerController : ControllerBase
     public IActionResult GetTrackZip(string? password = null)
     {
         if (!ValidatePassword(password)) return Unauthorized();
-        if (_configuration.ContentConfiguration?.Track?.File == null) return NotFound();
+        // if (_configuration.ContentConfiguration?.Track?.File == null) return NotFound();
+        // return CreateFileDownload(_configuration.ContentConfiguration.Track.File);
 
-        return CreateFileDownload(_configuration.ContentConfiguration.Track.File);
+        string track = _configuration.Server.Track.Substring(_configuration.Server.Track.LastIndexOf('/') + 1);
+
+        string trackPath;
+        string zipPath;
+
+        string regularTrackPath = Path.Combine("content", "tracks", track);
+        string cspTrackPath = Path.Combine("content", "tracks", "csp", track);
+
+        if (Directory.Exists(regularTrackPath))
+        {
+            trackPath = regularTrackPath;
+            zipPath = Path.Combine("content", "tracks", $"{track}.zip");
+        }
+        else if (Directory.Exists(cspTrackPath))
+        {
+            trackPath = cspTrackPath;
+            zipPath = Path.Combine("content", "tracks", "csp", $"{track}.zip");
+        }
+
+        else
+        {
+            Log.Warning($"Track folder not found for {track}");
+            return NotFound();
+        }
+
+        
+        try
+        {
+            if (!System.IO.File.Exists(zipPath))
+            {
+                using (var zipArchive = System.IO.Compression.ZipFile.Open(zipPath, System.IO.Compression.ZipArchiveMode.Create))
+                {
+                    string[] files = Directory.GetFiles(trackPath, "*", SearchOption.AllDirectories);
+                    foreach (string file in files)
+                    {
+                        string relativePath = file.Substring(trackPath.Length + 1);
+                        var entry = zipArchive.CreateEntry(Path.Combine(track, relativePath));
+                        if (entry != null)
+                        {
+                            using (var entryStream = entry.Open())
+                            using (var fileStream = System.IO.File.OpenRead(file))
+                            {
+                                fileStream.CopyTo(entryStream);
+                            }
+                        }
+                    }
+                }
+            }
+            return CreateFileDownload(zipPath);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating or sending zip file for track {track}: {ex.Message}");
+            return StatusCode(500, "Error processing zip file");
+        }
     }
 
     private FileStreamResult CreateFileDownload(string path)

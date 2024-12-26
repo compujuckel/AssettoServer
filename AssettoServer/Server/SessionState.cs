@@ -25,6 +25,7 @@ public class SessionState
                                                                     && SessionTimeMilliseconds > Configuration.Time * 60_000,
         { Type: SessionType.Race, IsTimedRace: true } => SessionTimeMilliseconds > Configuration.Time * 60_000 &&
                                                          EndTimeMilliseconds == 0,
+        { Type: SessionType.Race, IsTimedRace: false } => LeaderLapCount >= Configuration.Laps,
         _ => false
     };
 
@@ -33,6 +34,8 @@ public class SessionState
     public long LastRaceStartUpdateMilliseconds { get; set; }
     public Dictionary<byte, EntryCarResult>? Results { get; set; }
     public IEnumerable<IEntryCar<IClient>>? Grid { get; set; }
+    public List<LapInfo> Laps { get; } = new List<LapInfo>();
+    public List<EventInfo> Events { get; set; } = new List<EventInfo>();
 
     private readonly SessionManager _timeSource;
 

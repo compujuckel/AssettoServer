@@ -40,6 +40,7 @@ public class ACTcpClient : IClient
     public ILogger Logger { get; }
     public byte SessionId { get; set; }
     public string? Name { get; set; }
+    public string? EntryName { get; set; }
     public string? Team { get; private set; }
     public string? NationCode { get; private set; }
     public bool IsAdministrator { get; internal set; }
@@ -86,6 +87,8 @@ public class ACTcpClient : IClient
     private readonly OpenSlotFilterChain _openSlotFilter;
     private readonly CSPClientMessageHandler _clientMessageHandler;
     private readonly VoteManager _voteManager;
+
+    private readonly Dictionary<int, DateTime> _lastJumpStartPenaltyTime = new();
 
     /// <summary>
     /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
@@ -399,6 +402,10 @@ public class ACTcpClient : IClient
                         SendPacket(new AuthFailedResponse("Missing CSP features. Please update CSP and/or Content Manager."));
                     else if ((response = await _openSlotFilter.ShouldAcceptConnectionAsync(this, handshakeRequest)).HasValue)
                         SendPacket(response.Value);
+                    else if (_configuration.Server.LockedEntryList && !_configuration.EntryList.Cars.Any(car => car.Guid == Guid.ToString())){
+                        Logger.Warning("Client {ClientName} with GUID {ClientGuid} not in locked entry list. Disconnecting.", Name, Guid);
+                        SendPacket(new AuthFailedResponse("You are not in the entry list for this server."));
+                    }
                     else if (!await _entryCarManager.TrySecureSlotAsync(this, handshakeRequest))
                         SendPacket(new NoSlotsAvailableResponse());
                     else
@@ -572,8 +579,10 @@ public class ACTcpClient : IClient
     {
         using var clientEvent = reader.ReadPacket<ClientEvent>();
 
+
         foreach (var evt in clientEvent.ClientEvents)
         {
+            _sessionManager.OnClientEvent(this, evt);
             EntryCar? targetCar = null;
 
             switch (evt.Type)
@@ -588,11 +597,22 @@ public class ACTcpClient : IClient
                         Name, EntryCar.SessionId, evt.Speed);
                     break;
                 case ClientEventType.JumpStartPenalty:
+                    // Implement a cooldown to prevent spamming jump start penalty broadcasts
+                    if (_lastJumpStartPenaltyTime.TryGetValue(SessionId, out var lastTime) && 
+                        (DateTime.UtcNow - lastTime).TotalSeconds < 5)
+                    {
+                        // Ignore if less than 5 seconds since last broadcast for this SessionId
+                        return;
+                    }
                     Logger.Information("Penalty for {CarName} ({CarSessionId})", Name, EntryCar.SessionId);
+
+                    _lastJumpStartPenaltyTime[SessionId] = DateTime.UtcNow;
+
                     _entryCarManager.BroadcastPacket(new JumpStartPenalty
                     {
                         SessionId = SessionId
                     });
+
                     JumpStartPenalty?.Invoke(this, EventArgs.Empty);
                     continue;
             }
@@ -642,10 +662,12 @@ public class ACTcpClient : IClient
         {
             ChecksumPassed?.Invoke(this, EventArgs.Empty);
 
+            var driverName = _entryCarManager.EntryCars[SessionId].DriverName;
+
             _entryCarManager.BroadcastPacket(new CarConnected
             {
                 SessionId = SessionId,
-                Name = Name,
+                Name = driverName ?? Name,
                 Nation = NationCode
             }, this);
         }
@@ -692,7 +714,7 @@ public class ACTcpClient : IClient
     {
         TyreCompoundChangeRequest compoundChangeRequest = reader.ReadPacket<TyreCompoundChangeRequest>();
         EntryCar.Status.CurrentTyreCompound = compoundChangeRequest.CompoundName;
-
+        Log.Information("{DriverName} ({SessionId}) changed tyre compound to {CompoundName}", Name, SessionId, compoundChangeRequest.CompoundName);
         var update = new TyreCompoundUpdate
         {
             CompoundName = compoundChangeRequest.CompoundName,
@@ -789,7 +811,7 @@ public class ACTcpClient : IClient
     {
         SectorSplitIncoming sectorPacket = reader.ReadPacket<SectorSplitIncoming>();
 
-        // acServer only forwards, no processing
+        // acServer only forwards, no processing, maybe?
         SectorSplitOutgoing packet = new SectorSplitOutgoing
         {
             SessionId = SessionId,
@@ -808,6 +830,35 @@ public class ACTcpClient : IClient
         _configuration.Server.DynamicTrack.TotalLapCount++;
         if (_sessionManager.OnLapCompleted(this, lapPacket))
         {
+
+            // Debug logging for lap completion
+            Log.Debug("Lap completed: SessionId={SessionId}, Name={Name}, NumLap={NumLap}, HasCompletedLastLap={HasCompletedLastLap}, LapTime={LapTime}, Cuts={Cuts}, Splits={Splits}",
+                SessionId,
+                Name,
+                _sessionManager.CurrentSession.Results?[SessionId]?.NumLaps,
+                _sessionManager.CurrentSession.Results?[SessionId]?.HasCompletedLastLap,
+                TimeSpan.FromMilliseconds(lapPacket.LapTime).ToString(@"mm\:ss\.ffff"),
+                lapPacket.Cuts,
+                string.Join(", ", lapPacket.Splits?.Select(s => TimeSpan.FromMilliseconds(s).ToString(@"mm\:ss\.ffff")) ?? Array.Empty<string>()));
+
+            // Display all entries in CurrentSession.Results
+            if (_sessionManager.CurrentSession.Results != null)
+            {
+                Log.Debug("===LAP COMPLETED===");
+                foreach (var entry in _sessionManager.CurrentSession.Results)
+                {
+                    Log.Debug("SessionId={SessionId}, Name={Name}, NumLaps={NumLaps}, BestLap={BestLap}, LastLap={LastLap}, TotalTime={TotalTime}, HasCompletedLastLap={HasCompletedLastLap}",
+                        entry.Key,
+                        entry.Value.Name,
+                        entry.Value.NumLaps,
+                        TimeSpan.FromMilliseconds(entry.Value.BestLap).ToString(@"mm\:ss\.ffff"),
+                        TimeSpan.FromMilliseconds(entry.Value.LastLap).ToString(@"mm\:ss\.ffff"),
+                        TimeSpan.FromMilliseconds(entry.Value.TotalTime).ToString(@"mm\:ss\.ffff"),
+                        entry.Value.HasCompletedLastLap);
+                }
+                Log.Debug("===LAP COMPLETED===");
+            }
+
             LapCompletedOutgoing packet = CreateLapCompletedPacket(SessionId, lapPacket.LapTime, lapPacket.Cuts);
             _entryCarManager.BroadcastPacket(packet);
             LapCompleted?.Invoke(this, new LapCompletedEventArgs(packet));
@@ -913,8 +964,9 @@ public class ACTcpClient : IClient
             throw new ArgumentNullException(nameof(_sessionManager.CurrentSession.Results));
 
         var laps = _sessionManager.CurrentSession.Results
-            .OrderBy(result => string.IsNullOrEmpty(result.Value.Name))
-            .ThenBy(result => result.Value.Name)
+            .OrderBy(result => result.Key)
+            // .OrderBy(result => string.IsNullOrEmpty(result.Value.Name))
+            // .ThenBy(result => result.Value.Name)
             .Select(result => new LapCompletedOutgoing.CompletedLap
             {
                 SessionId = result.Key,

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using AssettoServer.Utils;
 using IniParser;
 using IniParser.Model;
@@ -31,7 +32,7 @@ public class EntryList
     public static EntryList FromFile(string path)
     {
         var parser = new FileIniDataParser();
-        IniData data = parser.ReadFile(path);
+        IniData data = parser.ReadFile(path, Encoding.UTF8);
         var res = data.DeserializeObject<EntryList>();
 
         int skippedIndex = -1;

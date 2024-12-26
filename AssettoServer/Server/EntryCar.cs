@@ -21,6 +21,7 @@ namespace AssettoServer.Server;
 public partial class EntryCar : IEntryCar<ACTcpClient>
 { 
     public ACTcpClient? Client { get; internal set; }
+    public ACTcpClient? LatestClient { get; internal set; }
     public CarStatus Status { get; private set; } = new CarStatus();
 
     public bool ForceLights { get; internal set; }
@@ -35,18 +36,22 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public ushort Ping { get; internal set; }
     public DriverOptionsFlags DriverOptionsFlags { get; internal set; }
     public string LegalTyres { get; set; } = "";
-
-    public bool IsSpectator { get; internal set; }
+    public bool IsSpectator { get; internal set; } = false;
+    public string Guid { get; internal set; } = "";
+    public string DriverName { get; internal set; } = "";
+    public string Team { get; internal set; } = "";
     public string Model { get; }
     public string Skin { get; }
     public int SpectatorMode { get; internal set; }
-    public float Ballast { get; internal set; }
-    public int Restrictor { get; internal set; }
+    public float Ballast { get; internal set; } = 0;
+    public int Restrictor { get; internal set; } = 0;
     public string? FixedSetup { get; internal set; }
     public List<ulong> AllowedGuids { get; internal set; } = new();
         
     public float NetworkDistanceSquared { get; internal set; }
     public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }
+
+    public bool IsValidLap { get; set; }
 
     internal long[] OtherCarsLastSentUpdateTime { get; }
     internal EntryCar? TargetCar { get; set; }
@@ -128,6 +133,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         {
             P2PCount = (short)(_configuration.Extra.EnableUnlimitedP2P ? 99 : 15),
             MandatoryPit = _configuration.Server.PitWindowStart < _configuration.Server.PitWindowEnd,
+            CurrentTyreCompound = Status.CurrentTyreCompound
         };
         TargetCar = null;
         
@@ -142,6 +148,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
             MandatoryPit = Status.MandatoryPit,
             SessionId = SessionId
         });
+
     }
 
     internal void SetActive()

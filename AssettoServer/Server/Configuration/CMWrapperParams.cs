@@ -13,4 +13,13 @@ public class CMWrapperParams
     
     [JsonPropertyName("downloadPasswordOnly")]
     public bool DownloadPasswordOnly { get; set; }
+
+    [JsonPropertyName("carDirectDownload")]
+    public bool CarDirectDownload { get; set; } = false;
+
+    [JsonPropertyName("trackDirectDownload")]
+    public bool TrackDirectDownload { get; set; } = false;
+
+    [JsonPropertyName("useURLDownload")]
+    public bool UseURLDownload { get; set; } = false;
 }

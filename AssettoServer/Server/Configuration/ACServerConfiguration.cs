@@ -83,9 +83,10 @@ public partial class ACServerConfiguration
             CSPTrackOptions = new CSPTrackOptions
             {
                 Track = parsedTrackOptions.Track,
-                Flags = parsedTrackOptions.Flags,
+                Flags = Extra.UseCustomPhysics ? (TrackOptionsFlags)('H' - CSPTrackOptions.FlagsOffset) : parsedTrackOptions.Flags,
                 MinimumCSPVersion = Extra.MinimumCSPVersion
             };
+            
             Server.Track = CSPTrackOptions.ToString();
         }
         else
@@ -97,6 +98,9 @@ public partial class ACServerConfiguration
         {
             Log.Debug("Using minimum required CSP Version {Version}", CSPTrackOptions.MinimumCSPVersion.Value);
         }
+
+        Log.Debug($"Use Custom Physics: {Extra.UseCustomPhysics}");
+        Log.Debug($"Used Flags: {CSPTrackOptions.Flags}");
 
         FullTrackName = string.IsNullOrEmpty(Server.TrackConfig) ? Server.Track : $"{Server.Track}-{Server.TrackConfig}";
         DrsZones = LoadDrsZones(locations.DrsZonePath(CSPTrackOptions.Track, Server.TrackConfig), Extra.EnableGlobalDrs);

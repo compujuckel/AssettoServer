@@ -12,7 +12,7 @@ public partial class CSPTrackOptions
     [GeneratedRegex(@"^csp\/(\d+)\/\.\.(?:\/(\w+)\/\.\.)?\/(.+)$")]
     private static partial Regex TrackOptionsRegex();
 
-    private const int FlagsOffset = 65; // 'A'
+    public const int FlagsOffset = 65; // 'A'
 
     public static CSPTrackOptions Parse(string track)
     {

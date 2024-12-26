@@ -13,6 +13,7 @@ public class SessionConfiguration : Session
     [IniField("WAIT_TIME")] public uint WaitTime { get; set; }
     [IniField("IS_OPEN")] public IsOpenMode IsOpen { get; set; } = IsOpenMode.Open;
     [IniField("INFINITE")] public bool Infinite { get; set; }
+    [IniField("START_TIME")] public string? StartTime { get; set; }
     public bool IsTimedRace => Time > 0 && Laps == 0;
 }
 

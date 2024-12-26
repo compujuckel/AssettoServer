@@ -76,7 +76,7 @@ public partial class ChatService
     
     private void OnChatMessageReceived(ACTcpClient sender, ChatMessageEventArgs args)
     {
-        if (!CommandUtilities.HasPrefix(args.ChatMessage.Message, '/', out string commandStr))
+        if (!CommandUtilities.HasPrefix(args.ChatMessage.Message, '/', out string commandStr) || args.ChatMessage.Message.StartsWith("/RP", StringComparison.OrdinalIgnoreCase))
         {
             var outArgs = new ChatEventArgs(args.ChatMessage.Message);
             MessageReceived?.Invoke(sender, outArgs);

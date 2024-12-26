@@ -37,7 +37,7 @@ public class ConfigurationLocations
             EntryListPath = entryListPath,
             ExtraCfgPath = Path.Join(baseFolder, "extra_cfg.yml"),
             CSPExtraOptionsPath = Path.Join(baseFolder, "csp_extra_options.ini"),
-            CMContentJsonPath = Path.Join(baseFolder, "cm_content", "content.json"),
+            CMContentJsonPath = Path.Join(baseFolder, "cm_content.json"),
             CMWrapperParamsPath = Path.Join(baseFolder, "cm_wrapper_params.json")
         };
     }

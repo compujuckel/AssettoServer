@@ -186,11 +186,17 @@ public class EntryCarManager
                 bool isAdmin = await _adminService.IsAdminAsync(handshakeRequest.Guid);
 
                 if (entryCar.Client == null
-                    && handshakeRequest.RequestedCar == entryCar.Model
+                    && (!_configuration.Server.LockedEntryList ? handshakeRequest.RequestedCar == entryCar.Model : true)
                     && (isAdmin || _openSlotFilterChain.Value.IsSlotOpen(entryCar, handshakeRequest.Guid)))
                 {
+                    client.EntryName = _configuration.Server.LockedEntryList ? entryCar.DriverName : null;
+                    client.Name = _configuration.Server.LockedEntryList ? (entryCar.DriverName ?? client.Name) : client.Name;
+
+                    Log.Information("TrySecureSlot: {ClientName} is trying to connect with GUID {ClientGuid} and requested car {RequestedCar}", client.Name, handshakeRequest.Guid, handshakeRequest.RequestedCar);
+
                     entryCar.Reset();
                     entryCar.Client = client;
+                    entryCar.LatestClient = client;
                     client.EntryCar = entryCar;
                     client.SessionId = entryCar.SessionId;
                     client.IsConnected = true;
@@ -218,32 +224,38 @@ public class EntryCarManager
 
     internal void Initialize()
     {
-        EntryCars = new EntryCar[Math.Min(_configuration.Server.MaxClients, _configuration.EntryList.Cars.Count)];
-        Log.Information("Loaded {Count} cars", EntryCars.Length);
-        for (int i = 0; i < EntryCars.Length; i++)
-        {
-            var entry = _configuration.EntryList.Cars[i];
-            var driverOptions = CSPDriverOptions.Parse(entry.Skin);
-            var aiMode = _configuration.Extra.EnableAi ? entry.AiMode : AiMode.None;
-
-            var car = _entryCarFactory(entry.Model, entry.Skin, (byte)i);
-            car.SpectatorMode = entry.SpectatorMode;
-            car.Ballast = entry.Ballast;
-            car.Restrictor = entry.Restrictor;
-            car.FixedSetup = entry.FixedSetup;
-            car.DriverOptionsFlags = driverOptions;
-            car.AiMode = aiMode;
-            car.AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange);
-            car.AiControlled = aiMode != AiMode.None;
-            car.NetworkDistanceSquared = MathF.Pow(_configuration.Extra.NetworkBubbleDistance, 2);
-            car.OutsideNetworkBubbleUpdateRateMs = 1000 / _configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
-            car.LegalTyres = entry.LegalTyres ?? _configuration.Server.LegalTyres;
-            if (!string.IsNullOrWhiteSpace(entry.Guid))
+            EntryCars = new EntryCar[Math.Min(_configuration.Server.MaxClients, _configuration.EntryList.Cars.Count)];
+            Log.Information("Loaded {Count} cars", EntryCars.Length);
+            for (int i = 0; i < EntryCars.Length; i++)
             {
-                car.AllowedGuids = entry.Guid.Split(';').Select(ulong.Parse).ToList();
-            }
+                var entry = _configuration.EntryList.Cars[i];
+                var driverOptions = CSPDriverOptions.Parse(entry.Skin);
+                var aiMode = _configuration.Extra.EnableAi ? entry.AiMode : AiMode.None;
+                
+                var car = _entryCarFactory(entry.Model, entry.Skin, (byte)i);
+                car.Guid = entry.Guid;
+                car.DriverName = entry.DriverName ?? "";
+                car.Team = entry.Team ?? "";
+                car.SpectatorMode = entry.SpectatorMode;
+                car.Ballast = entry.Ballast;
+                car.Restrictor = entry.Restrictor;
+                car.FixedSetup = entry.FixedSetup;
+                car.DriverOptionsFlags = driverOptions;
+                car.AiMode = aiMode;
+                car.AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange);
+                car.AiControlled = aiMode != AiMode.None;
+                car.NetworkDistanceSquared = MathF.Pow(_configuration.Extra.NetworkBubbleDistance, 2);
+                car.OutsideNetworkBubbleUpdateRateMs = 1000 / _configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
+                car.LegalTyres = entry.LegalTyres ?? _configuration.Server.LegalTyres;
+                if (!string.IsNullOrWhiteSpace(entry.Guid))
+                {
+                    car.AllowedGuids = entry.Guid.Split(';').Select(ulong.Parse).ToList();
+                }
 
-            EntryCars[i] = car;
-        }
+                Log.Information("Car {Index}: Model={Model}, Skin={Skin}, Driver={Driver}, Team={Team}, AI={AI}, Ballast={Ballast}, Restrictor={Restrictor}", 
+                    i, car.Model, car.Skin, car.DriverName, car.Team, car.AiControlled, car.Ballast, car.Restrictor);
+
+                EntryCars[i] = car;
+            }
     }
 }

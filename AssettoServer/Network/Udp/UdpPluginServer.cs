@@ -344,7 +344,9 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
     private void SendEndSession()
     {
         // TODO usually includes http link to result.json
-        SendPacket(new EndSession());
+        SendPacket(new EndSession {
+            ReportJsonFilename = "http://localhost:8080/result.json"
+        });
     }
     
     private void SendSessionInfo(short sessionId, bool isNew)

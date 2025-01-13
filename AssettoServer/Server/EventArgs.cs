@@ -61,11 +61,13 @@ public class SessionChangedEventArgs : EventArgs
 {
     public SessionState? PreviousSession { get; }
     public SessionState NextSession { get; }
+    public int InvertedGridSlots { get; }
 
-    public SessionChangedEventArgs(SessionState? previousSession, SessionState nextSession)
+    public SessionChangedEventArgs(SessionState? previousSession, SessionState nextSession, int invertedGridSlots)
     {
         PreviousSession = previousSession;
         NextSession = nextSession;
+        InvertedGridSlots = invertedGridSlots;
     }
 }
 
@@ -82,6 +84,36 @@ public class CollisionEventArgs : EventArgs
         Speed = speed;
         Position = position;
         RelPosition = relPosition;
+    }
+}
+
+public class TyreCompoundChangeEventArgs : EventArgs
+{
+    public TyreCompoundUpdate Packet { get; }
+    
+    public TyreCompoundChangeEventArgs(TyreCompoundUpdate packet)
+    {
+        Packet = packet;
+    }
+}
+
+public class DamageEventArgs : EventArgs
+{
+    public DamageUpdate Packet { get; }
+    
+    public DamageEventArgs(DamageUpdate packet)
+    {
+        Packet = packet;
+    }
+}
+
+public class Push2PassEventArgs : EventArgs
+{
+    public P2PUpdate Packet { get; }
+    
+    public Push2PassEventArgs(P2PUpdate packet)
+    {
+        Packet = packet;
     }
 }
 

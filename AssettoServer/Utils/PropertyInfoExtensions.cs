@@ -39,7 +39,7 @@ internal static class PropertyInfoExtensions
             }
             else
             {
-                object? parsedValue = propertyType.GetMethod("Parse", new[] { typeof(string) })!.Invoke(null, new object?[] { value });
+                object? parsedValue = propertyType.GetMethod("Parse", [typeof(string)])!.Invoke(null, [value]);
 
                 if (percent && parsedValue != null)
                 {

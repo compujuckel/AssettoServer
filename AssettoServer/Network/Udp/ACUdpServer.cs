@@ -143,11 +143,14 @@ public class ACUdpServer : CriticalBackgroundService
                 }
                 else if (packetId == ACServerProtocol.PositionUpdate)
                 {
+                    // Pass checksum first before sending first update + welcome message.
+                    // Plugins might rely on checksums to generate CSP extra options
+                    if (client.ChecksumStatus != ChecksumStatus.Succeeded) return;
+                    
                     if (!client.HasSentFirstUpdate)
                         client.SendFirstUpdate();
                     
-                    if (client.ChecksumStatus != ChecksumStatus.Succeeded
-                        || client.SecurityLevel < _configuration.Extra.MandatoryClientSecurityLevel) return;
+                    if (client.SecurityLevel < _configuration.Extra.MandatoryClientSecurityLevel) return;
 
                     car.UpdatePosition(packetReader.Read<PositionUpdateIn>());
                 }

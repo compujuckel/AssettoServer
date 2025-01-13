@@ -1,4 +1,6 @@
-﻿namespace ReplayPlugin.Data;
+﻿using JetBrains.Annotations;
+
+namespace ReplayPlugin.Data;
 
 public class ReplaySegment
 {
@@ -19,7 +21,7 @@ public class ReplaySegment
 
     public delegate void ReplayFrameAction<in TState>(ref ReplayFrame frame, TState arg);
 
-    public bool TryAddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, TState state, ReplayFrameAction<TState> action)
+    public bool TryAddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, TState state, [RequireStaticDelegate] ReplayFrameAction<TState> action)
     {
         var size = ReplayFrame.GetSize(numCarFrames, numAiFrames, numAiMappings);
 

@@ -40,7 +40,7 @@ public static partial class CrashReportHelper
         }
         
         Directory.CreateDirectory("crash");
-        var filename = $"crash_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.txt";
+        var filename = $"crash_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
         var result = template.Render(new
         {
             Timestamp = DateTime.Now.ToString("g"),

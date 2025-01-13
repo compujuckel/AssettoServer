@@ -23,9 +23,9 @@ public struct ClientEvent : IIncomingNetworkPacket, IDisposable
             {
                 Type = type,
                 TargetSessionId = type == ClientEventType.CollisionWithCar ? reader.Read<byte>() : (byte)0,
-                Speed = reader.Read<float>(),
-                Position = reader.Read<Vector3>(),
-                RelPosition = reader.Read<Vector3>()
+                Speed = type == ClientEventType.JumpStartPenalty ? 0 : reader.Read<float>(),
+                Position = type == ClientEventType.JumpStartPenalty ? Vector3.Zero : reader.Read<Vector3>(),
+                RelPosition = type == ClientEventType.JumpStartPenalty ? Vector3.Zero : reader.Read<Vector3>()
             };
         }
     }

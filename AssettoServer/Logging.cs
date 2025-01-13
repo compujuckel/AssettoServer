@@ -1,5 +1,7 @@
 ﻿using AssettoServer.Server.Configuration.Extra;
+using AssettoServer.Utils;
 using Serilog;
+using Serilog.Enrichers.Sensitive;
 using Serilog.Events;
 using Serilog.Sinks.Grafana.Loki;
 using Serilog.Templates;
@@ -8,14 +10,23 @@ namespace AssettoServer;
 
 internal static class Logging
 {
-    internal static void CreateDefaultLogger(string logPrefix, bool isContentManager, bool useVerboseLogging)
+    internal static void CreateLogger(string logPrefix, bool isContentManager, string? preset, bool useVerboseLogging, bool redactIpAddresses = false, LokiSettings? lokiSettings = null)
     {
-        Log.Logger = BaseLoggerConfiguration(logPrefix, isContentManager, useVerboseLogging).CreateLogger();
+        Log.CloseAndFlush();
+        
+        if (lokiSettings?.IsValid() == true)
+        {
+            CreateLokiLogger(logPrefix, isContentManager, preset, lokiSettings, useVerboseLogging, redactIpAddresses);
+        }
+        else
+        {
+            Log.Logger = BaseLoggerConfiguration(logPrefix, isContentManager, useVerboseLogging, redactIpAddresses).CreateLogger();
+        }
     }
 
-    internal static void CreateLokiLogger(string logPrefix, bool isContentManager, string? preset, LokiSettings lokiSettings, bool useVerboseLogging)
+    private static void CreateLokiLogger(string logPrefix, bool isContentManager, string? preset, LokiSettings lokiSettings, bool useVerboseLogging, bool redactIpAddresses)
     {
-        Log.Logger = BaseLoggerConfiguration(logPrefix, isContentManager, useVerboseLogging)
+        Log.Logger = BaseLoggerConfiguration(logPrefix, isContentManager, useVerboseLogging, redactIpAddresses)
             .Enrich.FromLogContext()
             .Enrich.WithMachineName()
             .Enrich.WithProperty("Preset", preset ?? "")
@@ -27,19 +38,30 @@ internal static class Logging
                 },
                 useInternalTimestamp: true,
                 textFormatter: new LokiJsonTextFormatter(),
-                propertiesAsLabels: new[] { "MachineName", "Preset" })
+                propertiesAsLabels: ["MachineName", "Preset"])
             .CreateLogger();
     }
 
-    private static LoggerConfiguration BaseLoggerConfiguration(string logPrefix, bool isContentManager, bool useVerboseLogging)
+    private static LoggerConfiguration BaseLoggerConfiguration(string logPrefix, bool isContentManager, bool useVerboseLogging, bool redactIpAddresses)
     {
         var loggerConfiguration = new LoggerConfiguration()
             .MinimumLevel.Override("AssettoServer.Network.Http.Authentication.ACClientAuthenticationHandler",
                 LogEventLevel.Warning)
             .MinimumLevel.Override("AspNetCore.Authentication.ApiKey.ApiKeyInHeaderHandler", LogEventLevel.Information)
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
-            .WriteTo.Async(a =>
+            .MinimumLevel.Override("Grpc", LogEventLevel.Warning);
+
+        if (redactIpAddresses)
+        {
+            loggerConfiguration.Enrich.WithSensitiveDataMasking(o =>
+            {
+                o.MaskProperties.Add("ClientIpAddress");
+                o.MaskProperties.Add("ClientIpEndpoint");
+                o.MaskingOperators = [new IpAddressMaskingOperator()];
+            });
+        }
+        
+        loggerConfiguration.WriteTo.Async(a =>
             {
                 if (isContentManager)
                 {

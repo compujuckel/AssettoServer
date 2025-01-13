@@ -9,5 +9,6 @@ public class ReplayModule : AssettoServerModule<ReplayConfiguration>
     {
         builder.RegisterType<ReplayPlugin>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         builder.RegisterType<ReplayManager>().AsSelf().SingleInstance();
+        builder.RegisterType<EntryCarExtraDataManager>().AsSelf().SingleInstance();
     }
 }

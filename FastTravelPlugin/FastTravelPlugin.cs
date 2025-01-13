@@ -56,9 +56,7 @@ public class FastTravelPlugin : CriticalBackgroundService, IAssettoServerAutosta
 
         var splinePoint = _aiSpline.Points[splinePointId];
         
-        var direction = splinePoint.NextId < 0
-            ? Vector3.Zero
-            : - _aiSpline.Operations.GetForwardVector(splinePoint.NextId);
+        var direction = - _aiSpline.Operations.GetForwardVector(splinePoint.Id);
         
         client.SendPacket(new FastTravelPacket
         {

@@ -168,7 +168,7 @@ public partial class ACExtraConfiguration : ObservableObject
                     "setcspweather",
                     "setrain"
                 ]
-            }  
+            }
         ],
         AiParams = new AiParams
         {

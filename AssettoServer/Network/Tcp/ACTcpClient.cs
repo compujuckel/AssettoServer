@@ -63,7 +63,8 @@ public class ACTcpClient : IClient
     public InputMethod InputMethod { get; set; }
 
     internal SocketAddress? UdpEndpoint { get; private set; }
-    internal bool SupportsCSPCustomUpdate { get; private set; }
+    public bool HasUdpEndpoint => UdpEndpoint != null;
+    public bool SupportsCSPCustomUpdate { get; private set; }
     public int? CSPVersion { get; private set; }
     internal string ApiKey { get; }
 
@@ -259,7 +260,7 @@ public class ACTcpClient : IClient
         }
     }
 
-    internal void SendPacketUdp<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket
+    public void SendPacketUdp<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket
     {
         if (UdpEndpoint == null) return;
 

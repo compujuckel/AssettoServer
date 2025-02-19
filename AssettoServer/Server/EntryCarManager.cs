@@ -19,7 +19,7 @@ namespace AssettoServer.Server;
 public class EntryCarManager
 {
     public EntryCar[] EntryCars { get; private set; } = [];
-    internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; } = new();
+    public ConcurrentDictionary<int, EntryCar> ConnectedCars { get; } = new();
 
     private readonly ACServerConfiguration _configuration;
     private readonly IBlacklistService _blacklist;

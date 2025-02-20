@@ -18,7 +18,7 @@ public class AiSlotFilter : OpenSlotFilterBase
 
     public override bool IsSlotOpen(EntryCar entryCar, ulong guid)
     {
-        if (entryCar.AiMode == AssettoServer.Server.AiMode.Fixed
+        if (entryCar.AiMode == AiMode.Fixed
             || (_configuration.MaxPlayerCount > 0 && _entryCarManager.ConnectedCars.Count >= _configuration.MaxPlayerCount))
         {
             return false;

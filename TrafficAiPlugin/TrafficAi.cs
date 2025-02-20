@@ -3,6 +3,7 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
@@ -15,16 +16,28 @@ public class TrafficAi : CriticalBackgroundService, IAssettoServerAutostart
 {
     private readonly TrafficAiConfiguration _configuration;
     private readonly ACServerConfiguration _serverConfiguration;
+    private readonly EntryCarManager _entryCarManager;
+    private readonly SessionManager _sessionManager;
+    private readonly Func<EntryCar, EntryCarTrafficAi> _entryCarTrafficAiFactory;
+
+    public readonly List<EntryCarTrafficAi> Instances = [];
 
     public TrafficAi(TrafficAiConfiguration configuration,
         ACServerConfiguration serverConfiguration,
-        ACServer server,
+        EntryCarManager entryCarManager,
+        SessionManager sessionManager,
+        Func<EntryCar, EntryCarTrafficAi> entryCarTrafficAiFactory,
         CSPClientMessageTypeManager cspClientMessageTypeManager,
         IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
         _serverConfiguration = serverConfiguration;
+        _entryCarManager = entryCarManager;
+        _sessionManager = sessionManager;
+        _entryCarTrafficAiFactory = entryCarTrafficAiFactory;
 
+        _configuration.ApplyConfigurationFixes(_serverConfiguration);
+        
         if (_configuration.EnableCarReset)
         {
             if (!_serverConfiguration.Extra.EnableClientMessages || _serverConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_3_p47)
@@ -35,24 +48,55 @@ public class TrafficAi : CriticalBackgroundService, IAssettoServerAutostart
             cspClientMessageTypeManager.RegisterOnlineEvent<RequestResetPacket>((client, _) => { OnResetCar(client); });
         }
 
+        _entryCarManager.ClientConnected += (sender, _) =>
+        {
+            if (_configuration.HideAiCars)
+            {
+                sender.FirstUpdateSent += OnFirstUpdateSentHideCars;
+            }
+            sender.HandshakeAccepted += OnHandshakeAccepted;
+        };
+    }
 
-        server.Update += MainLoop;
+    private void OnHandshakeAccepted(ACTcpClient sender, HandshakeAcceptedEventArgs args)
+    {
+        // Gracefully despawn AI cars
+        GetAiCarBySessionId(sender.SessionId).SetAiOverbooking(0);
+    }
+
+    private void OnFirstUpdateSentHideCars(ACTcpClient sender, EventArgs args)
+    {
+        sender.SendPacket(new CSPCarVisibilityUpdate
+        {
+            SessionId = sender.SessionId,
+            Visible = sender.EntryCar.AiControlled ? CSPCarVisibility.Invisible : CSPCarVisibility.Visible
+        });
     }
 
     private void OnResetCar(ACTcpClient sender)
     {
         if (_configuration.EnableCarReset)
-            sender.EntryCar.TryResetPosition();
+            GetAiCarBySessionId(sender.SessionId).TryResetPosition();
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        Log.Debug("Sample plugin autostart called");
-        return Task.CompletedTask;
-    }
+    public EntryCarTrafficAi GetAiCarBySessionId(byte sessionId)
+        => Instances.First(x => x.EntryCar.SessionId == sessionId);
 
-    private void MainLoop(ACServer server, EventArgs args)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        
+        foreach (var car in _entryCarManager.EntryCars)
+        {
+            var entry = _serverConfiguration.EntryList.Cars[car.SessionId];
+            
+            if (_configuration.AutoAssignTrafficCars && entry.Model.Contains("traffic"))
+            {
+                entry.AiMode = AiMode.Fixed;
+            }
+            
+            car.AiMode = entry.AiMode;
+            car.AiControlled = entry.AiMode != AiMode.None;
+            
+            Instances.Add(_entryCarTrafficAiFactory(car));
+        }
     }
 }

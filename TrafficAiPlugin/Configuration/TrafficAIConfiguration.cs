@@ -1,4 +1,5 @@
-﻿using AssettoServer.Server.Configuration;
+﻿using AssettoServer.Server;
+using AssettoServer.Server.Configuration;
 using CommunityToolkit.Mvvm.ComponentModel;
 using JetBrains.Annotations;
 using YamlDotNet.Serialization;
@@ -142,4 +143,17 @@ public partial class TrafficAiConfiguration : ObservableObject, IValidateConfigu
     [YamlIgnore] public float RightLaneOffsetMs => RightLaneOffsetKph / 3.6f;
     [YamlIgnore] public int IgnoreObstaclesAfterMilliseconds => IgnoreObstaclesAfterSeconds * 1000;
     [YamlIgnore] public int AiBehaviorUpdateIntervalMilliseconds => 1000 / AiBehaviorUpdateIntervalHz;
+
+    internal void ApplyConfigurationFixes(ACServerConfiguration serverConfiguration)
+    {
+        if (AiPerPlayerTargetCount == 0)
+        {
+            AiPerPlayerTargetCount = serverConfiguration.EntryList.Cars.Count(c => c.AiMode != AiMode.None);
+        }
+
+        if (MaxAiTargetCount == 0)
+        {
+            MaxAiTargetCount = serverConfiguration.EntryList.Cars.Count(c => c.AiMode != AiMode.Fixed) * AiPerPlayerTargetCount;
+        }
+    }
 }

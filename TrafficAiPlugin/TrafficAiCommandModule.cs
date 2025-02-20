@@ -16,18 +16,23 @@ public class TrafficAiCommandModule : ACModuleBase
     private readonly ACServerConfiguration _serverConfiguration;
     private readonly TrafficAiConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
-    
-    public TrafficAiCommandModule(ACServerConfiguration serverConfiguration, TrafficAiConfiguration configuration, EntryCarManager entryCarManager)
+    private readonly TrafficAi _trafficAi;
+
+    public TrafficAiCommandModule(ACServerConfiguration serverConfiguration,
+        TrafficAiConfiguration configuration,
+        EntryCarManager entryCarManager,
+        TrafficAi trafficAi)
     {
         _serverConfiguration = serverConfiguration;
         _configuration = configuration;
         _entryCarManager = entryCarManager;
+        _trafficAi = trafficAi;
     }
 
     [Command("setaioverbooking")]
     public void SetAiOverbooking(int count)
     {
-        foreach (var aiCar in _entryCarManager.EntryCars.Where(car => car.AiControlled && car.Client == null))
+        foreach (var aiCar in _trafficAi.Instances.Where(car => car.EntryCar is { AiControlled: true, Client: null }))
         {
             aiCar.SetAiOverbooking(count);
         }
@@ -40,7 +45,7 @@ public class TrafficAiCommandModule : ACModuleBase
         if (_serverConfiguration.Extra is { EnableClientMessages: true, MinimumCSPVersion: >= CSPVersion.V0_2_3_p47 } &&
             _configuration.EnableCarReset)
         {
-            Reply(Client!.EntryCar.TryResetPosition()
+            Reply(_trafficAi.GetAiCarBySessionId(Client!.SessionId).TryResetPosition()
                 ? "Position successfully reset"
                 : "Couldn't reset position");
         }

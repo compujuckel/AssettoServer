@@ -1,28 +1,24 @@
 ﻿using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using AssettoServer.Server;
+using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Outgoing;
+using AssettoServer.Shared.Network.Packets.Shared;
+using Grpc.Core;
+using TrafficAIPlugin.Configuration;
+using TrafficAIPlugin.Splines;
 
 namespace TrafficAIPlugin;
 
-public enum AiMode
-{
-    None,
-    Auto,
-    Fixed
-}
-
 public class EntryCarTrafficAi
 {
-    public bool AiControlled { get; set; }
-    public AiMode AiMode { get; set; }
     public int TargetAiStateCount { get; private set; } = 1;
     public byte[] LastSeenAiSpawn { get; }
     public byte[] AiPakSequenceIds { get; }
     public AiState?[] LastSeenAiState { get; }
-    public string? AiName { get; private set; }
-    public bool AiEnableColorChanges { get; set; } = false;
+    public bool AiEnableColorChanges => EntryCar.DriverOptionsFlags.HasFlag(DriverOptionsFlags.AllowColorChange);
     public int AiIdleEngineRpm { get; set; } = 800;
     public int AiMaxEngineRpm { get; set; } = 3000;
     public float AiAcceleration { get; set; }
@@ -47,35 +43,69 @@ public class EntryCarTrafficAi
     private readonly List<AiState> _aiStates = [];
     private Span<AiState> AiStatesSpan => CollectionsMarshal.AsSpan(_aiStates);
     
-    private readonly Func<EntryCar, AiState> _aiStateFactory;
-    private readonly AiSpline? _spline;
+    private readonly Func<EntryCarTrafficAi, AiState> _aiStateFactory;
+    private readonly TrafficAi _trafficAi;
+
+    public readonly EntryCar EntryCar;
+    
+    private readonly ACServerConfiguration _serverConfiguration;
+    private readonly TrafficAiConfiguration _configuration;
+    private readonly EntryCarManager _entryCarManager;
+    private readonly SessionManager _sessionManager;
+    private readonly AiSpline _aiSpline;
+
+    public EntryCarTrafficAi(EntryCar entryCar,
+        TrafficAiConfiguration configuration,
+        EntryCarManager entryCarManager,
+        SessionManager sessionManager,
+        ACServerConfiguration serverConfiguration,
+        Func<EntryCarTrafficAi, AiState> aiStateFactory,
+        TrafficAi trafficAi,
+        AiSpline aiSpline)
+    {
+        EntryCar = entryCar;
+        _configuration = configuration;
+        _entryCarManager = entryCarManager;
+        _sessionManager = sessionManager;
+        _serverConfiguration = serverConfiguration;
+        _aiStateFactory = aiStateFactory;
+        _trafficAi = trafficAi;
+        _aiSpline = aiSpline;
+            
+        
+        AiPakSequenceIds = new byte[entryCarManager.EntryCars.Length];
+        LastSeenAiState = new AiState[entryCarManager.EntryCars.Length];
+        LastSeenAiSpawn = new byte[entryCarManager.EntryCars.Length];
+        
+        AiInit();
+    }
 
     private void AiInit()
     {
-        AiName = $"{_configuration.Extra.AiParams.NamePrefix} {SessionId}";
+        EntryCar.AiName = $"{_configuration.NamePrefix} {EntryCar.SessionId}";
         SetAiOverbooking(0);
 
-        _configuration.Extra.AiParams.PropertyChanged += OnConfigReload;
+        _configuration.PropertyChanged += OnConfigReload;
         OnConfigReload(_configuration, new PropertyChangedEventArgs(string.Empty));
     }
 
     private void OnConfigReload(object? sender, PropertyChangedEventArgs args)
     {
-        AiSplineHeightOffsetMeters = _configuration.Extra.AiParams.SplineHeightOffsetMeters;
-        AiAcceleration = _configuration.Extra.AiParams.DefaultAcceleration;
-        AiDeceleration = _configuration.Extra.AiParams.DefaultDeceleration;
-        AiCorneringSpeedFactor = _configuration.Extra.AiParams.CorneringSpeedFactor;
-        AiCorneringBrakeDistanceFactor = _configuration.Extra.AiParams.CorneringBrakeDistanceFactor;
-        AiCorneringBrakeForceFactor = _configuration.Extra.AiParams.CorneringBrakeForceFactor;
-        TyreDiameterMeters = _configuration.Extra.AiParams.TyreDiameterMeters;
-        AiMinSpawnProtectionTimeMilliseconds = _configuration.Extra.AiParams.MinSpawnProtectionTimeMilliseconds;
-        AiMaxSpawnProtectionTimeMilliseconds = _configuration.Extra.AiParams.MaxSpawnProtectionTimeMilliseconds;
-        AiMinCollisionStopTimeMilliseconds = _configuration.Extra.AiParams.MinCollisionStopTimeMilliseconds;
-        AiMaxCollisionStopTimeMilliseconds = _configuration.Extra.AiParams.MaxCollisionStopTimeMilliseconds;
+        AiSplineHeightOffsetMeters = _configuration.SplineHeightOffsetMeters;
+        AiAcceleration = _configuration.DefaultAcceleration;
+        AiDeceleration = _configuration.DefaultDeceleration;
+        AiCorneringSpeedFactor = _configuration.CorneringSpeedFactor;
+        AiCorneringBrakeDistanceFactor = _configuration.CorneringBrakeDistanceFactor;
+        AiCorneringBrakeForceFactor = _configuration.CorneringBrakeForceFactor;
+        TyreDiameterMeters = _configuration.TyreDiameterMeters;
+        AiMinSpawnProtectionTimeMilliseconds = _configuration.MinSpawnProtectionTimeMilliseconds;
+        AiMaxSpawnProtectionTimeMilliseconds = _configuration.MaxSpawnProtectionTimeMilliseconds;
+        AiMinCollisionStopTimeMilliseconds = _configuration.MinCollisionStopTimeMilliseconds;
+        AiMaxCollisionStopTimeMilliseconds = _configuration.MaxCollisionStopTimeMilliseconds;
 
-        foreach (var carOverrides in _configuration.Extra.AiParams.CarSpecificOverrides)
+        foreach (var carOverrides in _configuration.CarSpecificOverrides)
         {
-            if (carOverrides.Model == Model)
+            if (carOverrides.Model == EntryCar.Model)
             {
                 if (carOverrides.SplineHeightOffsetMeters.HasValue)
                     AiSplineHeightOffsetMeters = carOverrides.SplineHeightOffsetMeters.Value;
@@ -129,11 +159,11 @@ public class EntryCarTrafficAi
             {
                 if (aiState != targetAiState
                     && targetAiState.Initialized
-                    && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < _configuration.Extra.AiParams.MinStateDistanceSquared
-                    && (_configuration.Extra.AiParams.TwoWayTraffic || Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0))
+                    && Vector3.DistanceSquared(aiState.Status.Position, targetAiState.Status.Position) < _configuration.MinStateDistanceSquared
+                    && (_configuration.TwoWayTraffic || Vector3.Dot(aiState.Status.Velocity, targetAiState.Status.Velocity) > 0))
                 {
                     aiState.Despawn();
-                    Logger.Verbose("Removed close state from AI {SessionId}", SessionId);
+                    EntryCar.Logger.Verbose("Removed close state from AI {SessionId}", EntryCar.SessionId);
                 }
             }
         }
@@ -166,7 +196,7 @@ public class EntryCarTrafficAi
 
             float distance = Vector3.DistanceSquared(aiState.Status.Position, playerStatus.Position);
 
-            if (_configuration.Extra.AiParams.TwoWayTraffic)
+            if (_configuration.TwoWayTraffic)
             {
                 if (distance < minDistance)
                 {
@@ -179,8 +209,8 @@ public class EntryCarTrafficAi
                 bool isBestSameDirection = bestState != null && Vector3.Dot(bestState.Status.Velocity, playerStatus.Velocity) > 0;
                 bool isCandidateSameDirection = Vector3.Dot(aiState.Status.Velocity, playerStatus.Velocity) > 0;
                 bool isPlayerFastEnough = playerStatus.Velocity.LengthSquared() > 1;
-                bool isTieBreaker = minDistance < _configuration.Extra.AiParams.MinStateDistanceSquared &&
-                                    distance < _configuration.Extra.AiParams.MinStateDistanceSquared &&
+                bool isTieBreaker = minDistance < _configuration.MinStateDistanceSquared &&
+                                    distance < _configuration.MinStateDistanceSquared &&
                                     isPlayerFastEnough;
 
                 // Tie breaker: Multiple close states, so take the one with min distance and same direction
@@ -198,9 +228,9 @@ public class EntryCarTrafficAi
 
     public bool IsPositionSafe(int pointId)
     {
-        ArgumentNullException.ThrowIfNull(_spline);
+        ArgumentNullException.ThrowIfNull(_aiSpline);
 
-        var ops = _spline.Operations;
+        var ops = _aiSpline.Operations;
             
         foreach (var aiState in AiStatesSpan)
         {
@@ -256,12 +286,12 @@ public class EntryCarTrafficAi
             aiState.Dispose();
             _aiStates.Remove(aiState);
 
-            Logger.Verbose("Removed state of Traffic {SessionId} due to overbooking reduction", SessionId);
+            EntryCar.Logger.Verbose("Removed state of Traffic {SessionId} due to overbooking reduction", EntryCar.SessionId);
 
             if (_aiStates.Count == 0)
             {
-                Logger.Verbose("Traffic {SessionId} has no states left, disconnecting", SessionId);
-                _entryCarManager.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
+                EntryCar.Logger.Verbose("Traffic {SessionId} has no states left, disconnecting", EntryCar.SessionId);
+                _entryCarManager.BroadcastPacket(new CarDisconnected { SessionId = EntryCar.SessionId });
             }
 
             return false;
@@ -271,7 +301,7 @@ public class EntryCarTrafficAi
         {
             if (state == aiState || !state.Initialized) continue;
 
-            if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < _configuration.Extra.AiParams.StateSpawnDistanceSquared)
+            if (Vector3.DistanceSquared(spawnPoint, state.Status.Position) < _configuration.StateSpawnDistanceSquared)
             {
                 return false;
             }
@@ -282,48 +312,46 @@ public class EntryCarTrafficAi
 
     public void SetAiControl(bool aiControlled)
     {
-        if (AiControlled != aiControlled)
+        if (EntryCar.AiControlled == aiControlled) return;
+        
+        EntryCar.AiControlled = aiControlled;
+        if (EntryCar.AiControlled)
         {
-            AiControlled = aiControlled;
+            EntryCar.Logger.Debug("Slot {SessionId} is now controlled by AI", EntryCar.SessionId);
 
-            if (AiControlled)
+            AiReset();
+            _entryCarManager.BroadcastPacket(new CarConnected
             {
-                Logger.Debug("Slot {SessionId} is now controlled by AI", SessionId);
-
-                AiReset();
-                _entryCarManager.BroadcastPacket(new CarConnected
+                SessionId = EntryCar.SessionId,
+                Name = EntryCar.AiName
+            });
+            if (_configuration.HideAiCars)
+            {
+                _entryCarManager.BroadcastPacket(new CSPCarVisibilityUpdate
                 {
-                    SessionId = SessionId,
-                    Name = AiName
+                    SessionId = EntryCar.SessionId,
+                    Visible = CSPCarVisibility.Invisible
                 });
-                if (_configuration.Extra.AiParams.HideAiCars)
-                {
-                    _entryCarManager.BroadcastPacket(new CSPCarVisibilityUpdate
-                    {
-                        SessionId = SessionId,
-                        Visible = CSPCarVisibility.Invisible
-                    });
-                }
             }
-            else
+        }
+        else
+        {
+            EntryCar.Logger.Debug("Slot {SessionId} is no longer controlled by AI", EntryCar.SessionId);
+            if (_aiStates.Count > 0)
             {
-                Logger.Debug("Slot {SessionId} is no longer controlled by AI", SessionId);
-                if (_aiStates.Count > 0)
-                {
-                    _entryCarManager.BroadcastPacket(new CarDisconnected { SessionId = SessionId });
-                }
-
-                if (_configuration.Extra.AiParams.HideAiCars)
-                {
-                    _entryCarManager.BroadcastPacket(new CSPCarVisibilityUpdate
-                    {
-                        SessionId = SessionId,
-                        Visible = CSPCarVisibility.Visible
-                    });
-                }
-
-                AiReset();
+                _entryCarManager.BroadcastPacket(new CarDisconnected { SessionId = EntryCar.SessionId });
             }
+
+            if (_configuration.HideAiCars)
+            {
+                _entryCarManager.BroadcastPacket(new CSPCarVisibilityUpdate
+                {
+                    SessionId = EntryCar.SessionId,
+                    Visible = CSPCarVisibility.Visible
+                });
+            }
+
+            AiReset();
         }
     }
 
@@ -354,5 +382,125 @@ public class EntryCarTrafficAi
         }
         _aiStates.Clear();
         _aiStates.Add(_aiStateFactory(this));
+    }
+
+    public bool TryResetPosition()
+    {
+        if (_sessionManager.ServerTimeMilliseconds < _sessionManager.CurrentSession.StartTimeMilliseconds + 20_000 
+            || (_sessionManager.ServerTimeMilliseconds > _sessionManager.CurrentSession.EndTimeMilliseconds
+                && _sessionManager.CurrentSession.EndTimeMilliseconds > 0))
+            return false;
+
+        var (splinePointId, _) = _aiSpline.WorldToSpline(EntryCar.Status.Position);
+
+        var splinePoint = _aiSpline.Points[splinePointId];
+        
+        var position = splinePoint.Position;
+        var direction = - _aiSpline.Operations.GetForwardVector(splinePoint.NextId);
+        
+        EntryCar.Client?.SendCollisionUpdatePacket(false);
+        
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(500);
+        
+            EntryCar.Client?.SendTeleportCarPacket(position, direction);
+            await Task.Delay(10000);
+        
+            EntryCar.Client?.SendCollisionUpdatePacket(true);
+        });
+    
+        EntryCar.Logger.Information("Reset position for {Player} ({SessionId})",EntryCar.Client?.Name, EntryCar.Client?.SessionId);
+        return true;
+    }
+    
+    public bool GetPositionUpdateForCar(EntryCar toCar, out PositionUpdateOut positionUpdateOut)
+    {
+        CarStatus targetCarStatus;
+        var toTargetCar = toCar.TargetCar;
+        if (toTargetCar != null)
+        {
+            var toTargetCarAi = _trafficAi.GetAiCarBySessionId(toTargetCar.SessionId);
+            if (toTargetCar.AiControlled && toTargetCarAi.LastSeenAiState[toCar.SessionId] != null)
+            {
+                targetCarStatus = toTargetCarAi.LastSeenAiState[toCar.SessionId]!.Status;
+            }
+            else
+            {
+                targetCarStatus = toTargetCar.Status;
+            }
+        }
+        else
+        {
+            targetCarStatus = toCar.Status;
+        }
+
+        CarStatus status;
+        if (EntryCar.AiControlled)
+        {
+            var aiState = GetBestStateForPlayer(targetCarStatus);
+
+            if (aiState == null)
+            {
+                positionUpdateOut = default;
+                return false;
+            }
+
+            if (LastSeenAiState[toCar.SessionId] != aiState
+                || LastSeenAiSpawn[toCar.SessionId] != aiState.SpawnCounter)
+            {
+                LastSeenAiState[toCar.SessionId] = aiState;
+                LastSeenAiSpawn[toCar.SessionId] = aiState.SpawnCounter;
+
+                if (AiEnableColorChanges)
+                {
+                    toCar.Client?.SendPacket(new CSPCarColorUpdate
+                    {
+                        SessionId = EntryCar.SessionId,
+                        Color = aiState.Color
+                    });
+                }
+            }
+
+            status = aiState.Status;
+        }
+        else
+        {
+            status = EntryCar.Status;
+        }
+
+        float distanceSquared = Vector3.DistanceSquared(status.Position, targetCarStatus.Position);
+        if (EntryCar.TargetCar != null || distanceSquared > EntryCar.NetworkDistanceSquared)
+        {
+            if ((_sessionManager.ServerTimeMilliseconds - EntryCar.OtherCarsLastSentUpdateTime[toCar.SessionId]) < EntryCar.OutsideNetworkBubbleUpdateRateMs)
+            {
+                positionUpdateOut = default;
+                return false;
+            }
+
+            EntryCar.OtherCarsLastSentUpdateTime[toCar.SessionId] = _sessionManager.ServerTimeMilliseconds;
+        }
+
+        positionUpdateOut = new PositionUpdateOut(EntryCar.SessionId,
+            EntryCar.AiControlled ? AiPakSequenceIds[toCar.SessionId]++ : status.PakSequenceId,
+            (uint)(status.Timestamp - toCar.TimeOffset),
+            EntryCar.Ping,
+            status.Position,
+            status.Rotation,
+            status.Velocity,
+            status.TyreAngularSpeed[0],
+            status.TyreAngularSpeed[1],
+            status.TyreAngularSpeed[2],
+            status.TyreAngularSpeed[3],
+            status.SteerAngle,
+            status.WheelAngle,
+            status.EngineRpm,
+            status.Gear,
+            (_serverConfiguration.Extra.ForceLights || EntryCar.ForceLights)
+                ? status.StatusFlag | CarStatusFlags.LightsOn
+                : status.StatusFlag,
+            status.PerformanceDelta,
+            status.Gas);
+        return true;
     }
 }

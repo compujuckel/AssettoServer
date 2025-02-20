@@ -9,7 +9,6 @@
         <DebugType>embedded</DebugType>
         <PublishDir>..\out-$(RuntimeIdentifier)\plugins\$(MSBuildProjectName)\</PublishDir>
         <PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
-        <RootNamespace>TrafficAIPlugin</RootNamespace>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -28,4 +27,11 @@
       </ProjectReference>
     </ItemGroup>
 
+
+    <ItemGroup>
+        <None Remove="lua\ai_debug.lua" />
+        <EmbeddedResource Include="lua\ai_debug.lua" />
+        <None Remove="lua\resetcar.lua" />
+        <EmbeddedResource Include="lua\resetcar.lua" />
+    </ItemGroup>
 </Project>

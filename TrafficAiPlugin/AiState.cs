@@ -42,7 +42,7 @@ public class AiState : IDisposable
     public Color Color { get; private set; }
     public byte SpawnCounter { get; private set; }
     public float ClosestAiObstacleDistance { get; private set; }
-    public AssettoServer.Server.EntryCar EntryCar { get; }
+    public EntryCarTrafficAi EntryCarAi { get; }
 
     private const float WalkingSpeed = 10 / 3.6f;
 
@@ -95,7 +95,7 @@ public class AiState : IDisposable
         Color.FromArgb(18, 46, 43)
     ];
 
-    public AiState(EntryCar entryCar,
+    public AiState(EntryCarTrafficAi entryCarAi,
         SessionManager sessionManager,
         WeatherManager weatherManager,
         ACServerConfiguration serverConfiguration,
@@ -103,7 +103,7 @@ public class AiState : IDisposable
         EntryCarManager entryCarManager,
         AiSpline spline)
     {
-        EntryCar = entryCar;
+        EntryCarAi = entryCarAi;
         _sessionManager = sessionManager;
         _weatherManager = weatherManager;
         _serverConfiguration = serverConfiguration;
@@ -174,12 +174,12 @@ public class AiState : IDisposable
             maxDist = overrides.MaxAiSafetyDistanceSquared;
         }
         
-        if (EntryCar.MinAiSafetyDistanceMetersSquared.HasValue)
-            minDist = EntryCar.MinAiSafetyDistanceMetersSquared.Value;
-        if (EntryCar.MaxAiSafetyDistanceMetersSquared.HasValue)
-            maxDist = EntryCar.MaxAiSafetyDistanceMetersSquared.Value;
+        if (EntryCarAi.MinAiSafetyDistanceMetersSquared.HasValue)
+            minDist = EntryCarAi.MinAiSafetyDistanceMetersSquared.Value;
+        if (EntryCarAi.MaxAiSafetyDistanceMetersSquared.HasValue)
+            maxDist = EntryCarAi.MaxAiSafetyDistanceMetersSquared.Value;
 
-        SpawnProtectionEnds = _sessionManager.ServerTimeMilliseconds + Random.Shared.Next(EntryCar.AiMinSpawnProtectionTimeMilliseconds, EntryCar.AiMaxSpawnProtectionTimeMilliseconds);
+        SpawnProtectionEnds = _sessionManager.ServerTimeMilliseconds + Random.Shared.Next(EntryCarAi.AiMinSpawnProtectionTimeMilliseconds, EntryCarAi.AiMaxSpawnProtectionTimeMilliseconds);
         SafetyDistanceSquared = Random.Shared.Next((int)Math.Round(minDist * (1.0f / _configuration.TrafficDensity)),
             (int)Math.Round(maxDist * (1.0f / _configuration.TrafficDensity)));
         _stoppedForCollisionUntil = 0;
@@ -286,7 +286,7 @@ public class AiState : IDisposable
         if (!IsKeepingSafetyDistances(in spawnPoint, previousAi, nextAi))
             return false;
 
-        return EntryCar.CanSpawnAiState(spawnPoint.Position, this);
+        return EntryCarAi.CanSpawnAiState(spawnPoint.Position, this);
     }
 
     private bool IsKeepingSafetyDistances(in SplinePoint spawnPoint, AiState? previousAi, AiState? nextAi)
@@ -294,8 +294,8 @@ public class AiState : IDisposable
         if (previousAi != null)
         {
             var distance = MathF.Max(0, Vector3.Distance(spawnPoint.Position, previousAi.Status.Position)
-                           - previousAi.EntryCar.VehicleLengthPreMeters
-                           - EntryCar.VehicleLengthPostMeters);
+                           - previousAi.EntryCarAi.VehicleLengthPreMeters
+                           - EntryCarAi.VehicleLengthPostMeters);
 
             var distanceSquared = distance * distance;
             if (distanceSquared < previousAi.SafetyDistanceSquared || distanceSquared < SafetyDistanceSquared)
@@ -305,8 +305,8 @@ public class AiState : IDisposable
         if (nextAi != null)
         {
             var distance = MathF.Max(0, Vector3.Distance(spawnPoint.Position, nextAi.Status.Position)
-                                        - nextAi.EntryCar.VehicleLengthPostMeters
-                                        - EntryCar.VehicleLengthPreMeters);
+                                        - nextAi.EntryCarAi.VehicleLengthPostMeters
+                                        - EntryCarAi.VehicleLengthPreMeters);
 
             var distanceSquared = distance * distance;
             if (distanceSquared < nextAi.SafetyDistanceSquared || distanceSquared < SafetyDistanceSquared)
@@ -319,9 +319,9 @@ public class AiState : IDisposable
     private bool IsAllowedLaneCount(int spawnPointId)
     {
         var laneCount = _spline.GetLanes(spawnPointId).Length;
-        if (EntryCar.MinLaneCount.HasValue && laneCount < EntryCar.MinLaneCount.Value)
+        if (EntryCarAi.MinLaneCount.HasValue && laneCount < EntryCarAi.MinLaneCount.Value)
             return false;
-        if (EntryCar.MaxLaneCount.HasValue && laneCount > EntryCar.MaxLaneCount.Value)
+        if (EntryCarAi.MaxLaneCount.HasValue && laneCount > EntryCarAi.MaxLaneCount.Value)
             return false;
         
         return true;
@@ -330,11 +330,11 @@ public class AiState : IDisposable
     private bool IsAllowedLane(in SplinePoint spawnPoint)
     {
         var isAllowedLane = true;
-        if (EntryCar.AiAllowedLanes != null)
+        if (EntryCarAi.AiAllowedLanes != null)
         {
-            isAllowedLane = (EntryCar.AiAllowedLanes.Contains(LaneSpawnBehavior.Middle) && spawnPoint.LeftId >= 0 && spawnPoint.RightId >= 0)
-                            || (EntryCar.AiAllowedLanes.Contains(LaneSpawnBehavior.Left) && spawnPoint.LeftId < 0)
-                            || (EntryCar.AiAllowedLanes.Contains(LaneSpawnBehavior.Right) && spawnPoint.RightId < 0);
+            isAllowedLane = (EntryCarAi.AiAllowedLanes.Contains(LaneSpawnBehavior.Middle) && spawnPoint.LeftId >= 0 && spawnPoint.RightId >= 0)
+                            || (EntryCarAi.AiAllowedLanes.Contains(LaneSpawnBehavior.Left) && spawnPoint.LeftId < 0)
+                            || (EntryCarAi.AiAllowedLanes.Contains(LaneSpawnBehavior.Right) && spawnPoint.RightId < 0);
         }
 
         return isAllowedLane;
@@ -345,7 +345,7 @@ public class AiState : IDisposable
         var points = _spline.Points;
         var junctions = _spline.Junctions;
         
-        float maxBrakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed, EntryCar.AiDeceleration) * 2 + 20;
+        float maxBrakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed, EntryCarAi.AiDeceleration) * 2 + 20;
         AiState? closestAiState = null;
         float closestAiStateDistance = float.MaxValue;
         bool junctionFound = false;
@@ -384,18 +384,18 @@ public class AiState : IDisposable
                 {
                     closestAiState = slowest;
                     closestAiStateDistance = MathF.Max(0, Vector3.Distance(Status.Position, closestAiState.Status.Position)
-                                                          - EntryCar.VehicleLengthPreMeters
-                                                          - closestAiState.EntryCar.VehicleLengthPostMeters);
+                                                          - EntryCarAi.VehicleLengthPreMeters
+                                                          - closestAiState.EntryCarAi.VehicleLengthPostMeters);
                 }
             }
 
-            float maxCorneringSpeedSquared = PhysicsUtils.CalculateMaxCorneringSpeedSquared(point.Radius, EntryCar.AiCorneringSpeedFactor);
+            float maxCorneringSpeedSquared = PhysicsUtils.CalculateMaxCorneringSpeedSquared(point.Radius, EntryCarAi.AiCorneringSpeedFactor);
             if (maxCorneringSpeedSquared < currentSpeedSquared)
             {
                 float maxCorneringSpeed = MathF.Sqrt(maxCorneringSpeedSquared);
                 float brakingDistance = PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - maxCorneringSpeed,
-                                            EntryCar.AiDeceleration * EntryCar.AiCorneringBrakeForceFactor)
-                                        * EntryCar.AiCorneringBrakeDistanceFactor;
+                                            EntryCarAi.AiDeceleration * EntryCarAi.AiCorneringBrakeForceFactor)
+                                        * EntryCarAi.AiCorneringBrakeDistanceFactor;
 
                 if (brakingDistance > distanceTravelled)
                 {
@@ -528,7 +528,7 @@ public class AiState : IDisposable
             }
 
             if ((playerSpeed < CurrentSpeed || playerSpeed == 0)
-                && playerObstacle.distance < PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - playerSpeed, EntryCar.AiDeceleration) * 2 + 20)
+                && playerObstacle.distance < PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - playerSpeed, EntryCarAi.AiDeceleration) * 2 + 20)
             {
                 targetSpeed = Math.Max(WalkingSpeed, playerSpeed);
                 hasObstacle = true;
@@ -538,7 +538,7 @@ public class AiState : IDisposable
         {
             float closestTargetSpeed = Math.Min(splineLookahead.ClosestAiState.CurrentSpeed, splineLookahead.ClosestAiState.TargetSpeed);
             if ((closestTargetSpeed < CurrentSpeed || splineLookahead.ClosestAiState.CurrentSpeed == 0)
-                && splineLookahead.ClosestAiStateDistance < PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - closestTargetSpeed, EntryCar.AiDeceleration) * 2 + 20)
+                && splineLookahead.ClosestAiStateDistance < PhysicsUtils.CalculateBrakingDistance(CurrentSpeed - closestTargetSpeed, EntryCarAi.AiDeceleration) * 2 + 20)
             {
                 targetSpeed = Math.Max(WalkingSpeed, closestTargetSpeed);
                 hasObstacle = true;
@@ -553,34 +553,34 @@ public class AiState : IDisposable
             _stoppedForObstacleSince = _sessionManager.ServerTimeMilliseconds;
             _obstacleHonkStart = _stoppedForObstacleSince + Random.Shared.Next(3000, 7000);
             _obstacleHonkEnd = _obstacleHonkStart + Random.Shared.Next(500, 1500);
-            Log.Verbose("AI {SessionId} stopped for obstacle", EntryCar.SessionId);
+            Log.Verbose("AI {SessionId} stopped for obstacle", EntryCarAi.EntryCar.SessionId);
         }
         else if (CurrentSpeed > 0 && _stoppedForObstacle)
         {
             _stoppedForObstacle = false;
-            Log.Verbose("AI {SessionId} no longer stopped for obstacle", EntryCar.SessionId);
+            Log.Verbose("AI {SessionId} no longer stopped for obstacle", EntryCarAi.EntryCar.SessionId);
         }
         else if (_stoppedForObstacle && _sessionManager.ServerTimeMilliseconds - _stoppedForObstacleSince > _configuration.IgnoreObstaclesAfterMilliseconds)
         {
             _ignoreObstaclesUntil = _sessionManager.ServerTimeMilliseconds + 10_000;
-            Log.Verbose("AI {SessionId} ignoring obstacles until {IgnoreObstaclesUntil}", EntryCar.SessionId, _ignoreObstaclesUntil);
+            Log.Verbose("AI {SessionId} ignoring obstacles until {IgnoreObstaclesUntil}", EntryCarAi.EntryCar.SessionId, _ignoreObstaclesUntil);
         }
 
-        float deceleration = EntryCar.AiDeceleration;
+        float deceleration = EntryCarAi.AiDeceleration;
         if (!hasObstacle)
         {
-            deceleration *= EntryCar.AiCorneringBrakeForceFactor;
+            deceleration *= EntryCarAi.AiCorneringBrakeForceFactor;
         }
         
         MaxSpeed = maxSpeed;
-        SetTargetSpeed(targetSpeed, deceleration, EntryCar.AiAcceleration);
+        SetTargetSpeed(targetSpeed, deceleration, EntryCarAi.AiAcceleration);
     }
 
     public void StopForCollision()
     {
         if (!ShouldIgnorePlayerObstacles())
         {
-            _stoppedForCollisionUntil = _sessionManager.ServerTimeMilliseconds + Random.Shared.Next(EntryCar.AiMinCollisionStopTimeMilliseconds, EntryCar.AiMaxCollisionStopTimeMilliseconds);
+            _stoppedForCollisionUntil = _sessionManager.ServerTimeMilliseconds + Random.Shared.Next(EntryCarAi.AiMinCollisionStopTimeMilliseconds, EntryCarAi.AiMaxCollisionStopTimeMilliseconds);
         }
     }
 
@@ -617,7 +617,7 @@ public class AiState : IDisposable
 
     private void SetTargetSpeed(float speed)
     {
-        SetTargetSpeed(speed, EntryCar.AiDeceleration, EntryCar.AiAcceleration);
+        SetTargetSpeed(speed, EntryCarAi.AiDeceleration, EntryCarAi.AiAcceleration);
     }
 
     public void Update()
@@ -645,7 +645,7 @@ public class AiState : IDisposable
         float moveMeters = (dt / 1000.0f) * CurrentSpeed;
         if (!Move(_currentVecProgress + moveMeters) || !_junctionEvaluator.TryNext(CurrentSplinePointId, out var nextPoint))
         {
-            Log.Debug("Car {SessionId} reached spline end, despawning", EntryCar.SessionId);
+            Log.Debug("Car {SessionId} reached spline end, despawning", EntryCarAi.EntryCar.SessionId);
             Despawn();
             return;
         }
@@ -663,11 +663,11 @@ public class AiState : IDisposable
             Z = ops.GetCamber(CurrentSplinePointId, _currentVecProgress / _currentVecLength)
         };
 
-        float tyreAngularSpeed = GetTyreAngularSpeed(CurrentSpeed, EntryCar.TyreDiameterMeters);
+        float tyreAngularSpeed = GetTyreAngularSpeed(CurrentSpeed, EntryCarAi.TyreDiameterMeters);
         byte encodedTyreAngularSpeed =  (byte) (Math.Clamp(MathF.Round(MathF.Log10(tyreAngularSpeed + 1.0f) * 20.0f) * Math.Sign(tyreAngularSpeed), -100.0f, 154.0f) + 100.0f);
 
         Status.Timestamp = _sessionManager.ServerTimeMilliseconds;
-        Status.Position = smoothPos.Position with { Y = smoothPos.Position.Y + EntryCar.AiSplineHeightOffsetMeters };
+        Status.Position = smoothPos.Position with { Y = smoothPos.Position.Y + EntryCarAi.AiSplineHeightOffsetMeters };
         Status.Rotation = rotation;
         Status.Velocity = smoothPos.Tangent * CurrentSpeed;
         Status.SteerAngle = 127;
@@ -676,7 +676,7 @@ public class AiState : IDisposable
         Status.TyreAngularSpeed[1] = encodedTyreAngularSpeed;
         Status.TyreAngularSpeed[2] = encodedTyreAngularSpeed;
         Status.TyreAngularSpeed[3] = encodedTyreAngularSpeed;
-        Status.EngineRpm = (ushort)MathUtils.Lerp(EntryCar.AiIdleEngineRpm, EntryCar.AiMaxEngineRpm, CurrentSpeed / _configuration.MaxSpeedMs);
+        Status.EngineRpm = (ushort)MathUtils.Lerp(EntryCarAi.AiIdleEngineRpm, EntryCarAi.AiMaxEngineRpm, CurrentSpeed / _configuration.MaxSpeedMs);
         Status.StatusFlag = GetLights(_configuration.EnableDaytimeLights, _weatherManager.CurrentSunPosition, _randomTwilight)
                             | CarStatusFlags.HighBeamsOff
                             | (_sessionManager.ServerTimeMilliseconds < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)

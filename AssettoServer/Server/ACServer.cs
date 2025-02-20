@@ -207,26 +207,25 @@ public class ACServer : CriticalBackgroundService
                             }
                         }
 
-                        if (fromCar.AiControlled || fromCar.HasUpdateToSend)
+                        if (!fromCar.HasUpdateToSend) continue;
+                        
+                        fromCar.HasUpdateToSend = false;
+
+                        for (int j = 0; j < _entryCarManager.EntryCars.Length; j++)
                         {
-                            fromCar.HasUpdateToSend = false;
+                            var toCar = _entryCarManager.EntryCars[j];
+                            var toClient = toCar.Client;
+                            if (toCar == fromCar 
+                                || toClient == null || !toClient.HasSentFirstUpdate || !toClient.HasUdpEndpoint
+                                || !fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
 
-                            for (int j = 0; j < _entryCarManager.EntryCars.Length; j++)
+                            if (toClient.SupportsCSPCustomUpdate)
                             {
-                                var toCar = _entryCarManager.EntryCars[j];
-                                var toClient = toCar.Client;
-                                if (toCar == fromCar 
-                                    || toClient == null || !toClient.HasSentFirstUpdate || toClient.UdpEndpoint == null
-                                    || !fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
-
-                                if (toClient.SupportsCSPCustomUpdate || fromCar.AiControlled)
-                                {
-                                    positionUpdates[toCar].Add(update);
-                                }
-                                else
-                                {
-                                    toClient.SendPacketUdp(in update);
-                                }
+                                positionUpdates[toCar].Add(update);
+                            }
+                            else
+                            {
+                                toClient.SendPacketUdp(in update);
                             }
                         }
                     }

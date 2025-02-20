@@ -22,6 +22,7 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     private readonly TrafficAiConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
+    private readonly TrafficAi _trafficAi;
     private readonly AiSpline _spline;
     private readonly HttpInfoCache _httpInfoCache;
     //private readonly EntryCar.Factory _entryCarFactory;
@@ -39,13 +40,16 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         EntryCarManager entryCarManager,
         IHostApplicationLifetime applicationLifetime,
         //EntryCar.Factory entryCarFactory,
-        CSPServerScriptProvider serverScriptProvider, 
-        AiSpline spline, HttpInfoCache httpInfoCache) : base(applicationLifetime)
+        CSPServerScriptProvider serverScriptProvider,
+        TrafficAi trafficAi, 
+        AiSpline spline,
+        HttpInfoCache httpInfoCache) : base(applicationLifetime)
     {
         _sessionManager = sessionManager;
         _serverConfiguration = serverConfiguration;
         _configuration = configuration;
         _entryCarManager = entryCarManager;
+        _trafficAi = trafficAi;
         _spline = spline;
         _httpInfoCache = httpInfoCache;
         _junctionEvaluator = new JunctionEvaluator(spline, false);
@@ -53,9 +57,11 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
         if (_configuration.Debug)
         {
-            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Ai.ai_debug.lua")!;
-            serverScriptProvider.AddScript(stream, "ai_debug.lua");
+            using var aiDebugStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("TrafficAiPlugin.lua.ai_debug.lua")!;
+            serverScriptProvider.AddScript(aiDebugStream, "ai_debug.lua");
         }
+        using var resetCarStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("TrafficAiPlugin.lua.resetcar.lua")!;
+        serverScriptProvider.AddScript(resetCarStream, "resetcar.lua");
 
         _updateDurationTimer = Metrics.CreateSummary("assettoserver_aibehavior_update", "AiBehavior.Update Duration", MetricDefaults.DefaultQuantiles);
         _obstacleDetectionDurationTimer = Metrics.CreateSummary("assettoserver_aibehavior_obstacledetection", "AiBehavior.ObstacleDetection Duration", MetricDefaults.DefaultQuantiles);
@@ -72,11 +78,12 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         _sessionManager.SessionChanged += OnSessionChanged;
     }
 
-    private static void OnCollision(ACTcpClient sender, CollisionEventArgs args)
+    private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
     {
         if (args.TargetCar?.AiControlled == true)
         {
-            var targetAiState = args.TargetCar.GetClosestAiState(sender.EntryCar.Status.Position);
+            var target = _trafficAi.GetAiCarBySessionId(args.TargetCar.SessionId);
+            var targetAiState = target.GetClosestAiState(sender.EntryCar.Status.Position);
             if (targetAiState.AiState != null && targetAiState.DistanceSquared < 25 * 25)
             {
                 Task.Delay(Random.Shared.Next(100, 500)).ContinueWith(_ => targetAiState.AiState.StopForCollision());
@@ -86,7 +93,8 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
     private void OnClientChecksumPassed(ACTcpClient sender, EventArgs args)
     {
-        sender.EntryCar.SetAiControl(false);
+        var entryCar = _trafficAi.GetAiCarBySessionId(sender.SessionId);
+        entryCar.SetAiControl(false);
         AdjustOverbooking();
     }
 
@@ -105,7 +113,8 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
                     var entryCar = _entryCarManager.EntryCars[i];
                     if (entryCar.AiControlled)
                     {
-                        entryCar.AiObstacleDetection();
+                        var entryCarAi = _trafficAi.GetAiCarBySessionId(entryCar.SessionId);
+                        entryCarAi.AiObstacleDetection();
                     }
                 }
 
@@ -142,7 +151,8 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
             {
                 if (!car.AiControlled) continue;
 
-                var (aiState, _) = car.GetClosestAiState(player.Status.Position);
+                var carAi = _trafficAi.GetAiCarBySessionId(car.SessionId);
+                var (aiState, _) = carAi.GetClosestAiState(player.Status.Position);
                 if (aiState == null) continue;
 
                 sessionIds.Add(car.SessionId);
@@ -199,8 +209,9 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
             }
             else if (entryCar.AiControlled)
             {
-                entryCar.RemoveUnsafeStates();
-                entryCar.GetInitializedStates(_initializedAiStates, _uninitializedAiStates);
+                var entryCarAi = _trafficAi.GetAiCarBySessionId(entryCar.SessionId);
+                entryCarAi.RemoveUnsafeStates();
+                entryCarAi.GetInitializedStates(_initializedAiStates, _uninitializedAiStates);
             }
             
         }
@@ -351,9 +362,10 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
     private void OnClientDisconnected(ACTcpClient sender, EventArgs args)
     {
-        if (sender.EntryCar.AiMode != AssettoServer.Server.AiMode.None)
+        if (sender.EntryCar.AiMode != AiMode.None)
         {
-            sender.EntryCar.SetAiControl(true);
+            var entryCarAi = _trafficAi.GetAiCarBySessionId(sender.SessionId);
+            entryCarAi.SetAiControl(true);
             AdjustOverbooking();
         }
     }
@@ -393,7 +405,8 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
         {
             var entryCar = _entryCarManager.EntryCars[i];
-            if (entryCar.AiControlled && !entryCar.IsPositionSafe(pointId))
+            var entryCarAi = _trafficAi.GetAiCarBySessionId(entryCar.SessionId);
+            if (entryCar.AiControlled && !entryCarAi.IsPositionSafe(pointId))
             {
                 return false;
             }
@@ -471,7 +484,8 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 
         for (int i = 0; i < aiSlots.Count; i++)
         {
-            aiSlots[i].SetAiOverbooking(i < rest ? overbooking + 1 : overbooking);
+            var entryCarAi = _trafficAi.GetAiCarBySessionId(aiSlots[i].SessionId);
+            entryCarAi.SetAiOverbooking(i < rest ? overbooking + 1 : overbooking);
         }
     }
 
@@ -479,8 +493,8 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     {
         _httpInfoCache.Extensions.Add("aiTraffic", new Dictionary<string, List<byte>>
         {
-            { "auto", _entryCarManager.EntryCars.Where(c => c.AiMode == AssettoServer.Server.AiMode.Auto).Select(c => c.SessionId).ToList() },
-            { "fixed", _entryCarManager.EntryCars.Where(c => c.AiMode == AssettoServer.Server.AiMode.Fixed).Select(c => c.SessionId).ToList() }
+            { "auto", _entryCarManager.EntryCars.Where(c => c.AiMode == AiMode.Auto).Select(c => c.SessionId).ToList() },
+            { "fixed", _entryCarManager.EntryCars.Where(c => c.AiMode == AiMode.Fixed).Select(c => c.SessionId).ToList() }
         });
     }
 

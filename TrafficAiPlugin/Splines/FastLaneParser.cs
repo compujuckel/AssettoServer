@@ -10,12 +10,14 @@ namespace TrafficAIPlugin.Splines;
 
 public class FastLaneParser
 {
-    private readonly ACServerConfiguration _configuration;
+    private readonly ACServerConfiguration _serverConfiguration;
+    private readonly TrafficAiConfiguration _configuration;
 
     private ILogger _logger = Log.Logger;
 
-    public FastLaneParser(ACServerConfiguration configuration)
+    public FastLaneParser(ACServerConfiguration serverConfiguration, TrafficAiConfiguration configuration)
     {
+        _serverConfiguration = serverConfiguration;
         _configuration = configuration;
     }
 
@@ -26,7 +28,7 @@ public class FastLaneParser
             Log.Information("Loading AI spline by {Author}, version {Version}", configuration.Author, configuration.Version);
         }
             
-        if (!string.IsNullOrWhiteSpace(configuration.Track) && Path.GetFileName(_configuration.Server.Track) != configuration.Track)
+        if (!string.IsNullOrWhiteSpace(configuration.Track) && Path.GetFileName(_serverConfiguration.Server.Track) != configuration.Track)
         {
             throw new InvalidOperationException($"Mismatched AI spline, AI spline is for track {configuration.Track}");
         }
@@ -110,7 +112,7 @@ public class FastLaneParser
             throw new InvalidOperationException($"No AI splines found. Please put at least one AI spline fast_lane.ai(p) into {Path.GetFullPath(folder)}");
         }
 
-        return new MutableAiSpline(splines, _configuration.Extra.AiParams.LaneWidthMeters, _configuration.Extra.AiParams.TwoWayTraffic, configuration, _logger);
+        return new MutableAiSpline(splines, _configuration.LaneWidthMeters, _configuration.TwoWayTraffic, configuration, _logger);
     }
 
     private SplinePoint[] FromFileV7(BinaryReader reader, int idOffset)
@@ -209,7 +211,7 @@ public class FastLaneParser
         };
 
         MovingAverage? avg = null;
-        if (_configuration.Extra.AiParams.SmoothCamber)
+        if (_configuration.SmoothCamber)
         {
             avg = new MovingAverage(5);
         }

@@ -2,6 +2,7 @@
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using Serilog;
 using Supercluster.KDTree;
+using TrafficAIPlugin.Configuration;
 
 namespace TrafficAIPlugin.Splines;
 

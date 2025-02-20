@@ -1,0 +1,29 @@
+﻿using AssettoServer.Server;
+using AssettoServer.Server.Configuration;
+using AssettoServer.Server.OpenSlotFilters;
+using TrafficAIPlugin.Configuration;
+
+namespace TrafficAIPlugin;
+
+public class AiSlotFilter : OpenSlotFilterBase
+{
+    private readonly EntryCarManager _entryCarManager;
+    private readonly TrafficAiConfiguration _configuration;
+
+    public AiSlotFilter(EntryCarManager entryCarManager, TrafficAiConfiguration configuration)
+    {
+        _entryCarManager = entryCarManager;
+        _configuration = configuration;
+    }
+
+    public override bool IsSlotOpen(EntryCar entryCar, ulong guid)
+    {
+        if (entryCar.AiMode == AssettoServer.Server.AiMode.Fixed
+            || (_configuration.MaxPlayerCount > 0 && _entryCarManager.ConnectedCars.Count >= _configuration.MaxPlayerCount))
+        {
+            return false;
+        }
+        
+        return base.IsSlotOpen(entryCar, guid);
+    }
+}

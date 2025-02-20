@@ -29,8 +29,6 @@ public partial class ACExtraConfiguration : ObservableObject
     public int MandatoryClientSecurityLevel { get; internal set; }
     [YamlMember(Description = "Force headlights on for all cars")]
     public bool ForceLights { get; set; }
-    [YamlMember(Description = "Enable usage of /resetcar to teleport the player to the closest spline point. Requires CSP v0.2.3-preview47 or later")]
-    public bool EnableCarReset { get; set; } = false;
     [YamlMember(Description = "Enable vanilla server voting for: Session skip; Session restart")]
     public bool EnableSessionVote { get; set; } = true;
     [YamlMember(Description = "Enable vanilla server voting to kick a player")]
@@ -57,8 +55,6 @@ public partial class ACExtraConfiguration : ObservableObject
     public bool LockServerDate { get; set; } = true;
     [YamlMember(Description = "Reduce track grip when the track is wet. This is much worse than proper CSP rain physics but allows you to run clients with public/Patreon CSP at the same time")]
     public double RainTrackGripReductionPercent { get; set; } = 0;
-    [YamlMember(Description = "Enable AI traffic")]
-    public bool EnableAi { get; init; } = false;
     [YamlMember(Description = "Override the country shown in CM. Please do not use this unless the autodetected country is wrong", DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public List<string>? GeoParamsCountryOverride { get; init; } = null;
     [YamlMember(Description = "List of plugins to enable")]
@@ -115,8 +111,6 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Allow a user group to execute specific admin commands")]
     public List<UserGroupCommandPermissions>? UserGroupCommandPermissions { get; init; }
     
-    public AiParams AiParams { get; init; } = new();
-    
     [YamlIgnore] internal bool ContainsObsoletePluginConfiguration { get; private set; }
 
     public void ToFile(string path)
@@ -170,61 +164,5 @@ public partial class ACExtraConfiguration : ObservableObject
                 ]
             }
         ],
-        AiParams = new AiParams
-        {
-            CarSpecificOverrides = [
-                new CarSpecificOverrides
-                {
-                    Model = "my_car_model",
-                    Acceleration = 2.5f,
-                    Deceleration = 8.5f,
-                    AllowedLanes = [LaneSpawnBehavior.Left, LaneSpawnBehavior.Middle, LaneSpawnBehavior.Right],
-                    MaxOverbooking = 1,
-                    CorneringSpeedFactor = 0.5f,
-                    CorneringBrakeDistanceFactor = 3,
-                    CorneringBrakeForceFactor = 0.5f,
-                    EngineIdleRpm = 800,
-                    EngineMaxRpm = 3000,
-                    MaxLaneCount = 2,
-                    MinLaneCount = 1,
-                    TyreDiameterMeters = 0.8f,
-                    SplineHeightOffsetMeters = 0,
-                    VehicleLengthPostMeters = 2,
-                    VehicleLengthPreMeters = 2,
-                    MinAiSafetyDistanceMeters = 20,
-                    MaxAiSafetyDistanceMeters = 25,
-                    MinCollisionStopTimeSeconds = 0,
-                    MaxCollisionStopTimeSeconds = 0,
-                    MinSpawnProtectionTimeSeconds = 30,
-                    MaxSpawnProtectionTimeSeconds = 60
-                }
-            ],
-            LaneCountSpecificOverrides = new Dictionary<int, LaneCountSpecificOverrides>
-            {
-                {
-                    1,
-                    new LaneCountSpecificOverrides
-                    {
-                        MinAiSafetyDistanceMeters = 50,
-                        MaxAiSafetyDistanceMeters = 100
-                    }
-                },
-                {
-                    2,
-                    new LaneCountSpecificOverrides
-                    {
-                        MinAiSafetyDistanceMeters = 40,
-                        MaxAiSafetyDistanceMeters = 80
-                    }
-                }
-            },
-            IgnorePlayerObstacleSpheres = [
-                new Sphere
-                {
-                    Center = new Vector3(0, 0, 0),
-                    RadiusMeters = 50
-                }
-            ]
-        }
     };
 }

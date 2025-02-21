@@ -63,40 +63,6 @@ local apiKeyEvent = ac.OnlineEvent({
     authHeaders["X-Api-Key"] = message.key
 end)
 
-local teleportCarEvent = ac.OnlineEvent({
-    ac.StructItem.key("AS_TeleportCar"),
-    position = ac.StructItem.vec3(),
-    direction = ac.StructItem.vec3(),
-    velocity = ac.StructItem.vec3(),
-    target = ac.StructItem.byte()
-}, function (sender, message)
-    if sender ~= nil then return end
-    ac.debug("teleport_car_position", message.position)
-    ac.debug("teleport_car_direction", message.direction)
-    ac.debug("teleport_car_velocity", message.velocity)
-    
-    physics.setCarPosition(0, message.position, message.direction)
-    physics.setCarVelocity(0, message.velocity)
-end)
-
-local collisionUpdateEvent = ac.OnlineEvent({
-    ac.StructItem.key("AS_CollisionUpdate"),
-    enabled = ac.StructItem.boolean(),
-    target = ac.StructItem.byte()
-}, function (sender, message)
-    ac.debug("collision_update_index", sender.index)
-    ac.debug("collision_update_enabled", message.enabled)
-
-    physics.disableCarCollisions(0, not message.enabled)
-    if sender.index == 0 then
-        for i, c in ac.iterateCars.ordered() do
-            physics.disableCarCollisions(i, not message.enabled)
-        end
-    else
-        physics.disableCarCollisions(sender.index, not message.enabled)
-    end
-end)
-
 apiKeyEvent({ key = "" })
 
 local logoSize = vec2(68, 42)
@@ -286,3 +252,64 @@ end)
 
 local resetCarControl = ac.ControlButton('__EXT_CMD_RESET', nil)
 resetCarControl:onPressed(function() requestResetCarEvent({dummy=0}) end)
+
+local teleportCarEvent = ac.OnlineEvent({
+    ac.StructItem.key("AS_TeleportCar"),
+    position = ac.StructItem.vec3(),
+    direction = ac.StructItem.vec3(),
+    velocity = ac.StructItem.vec3(),
+    target = ac.StructItem.byte()
+}, function (sender, message)
+    if sender ~= nil then return end
+    ac.debug("teleport_car_position", message.position)
+    ac.debug("teleport_car_direction", message.direction)
+    ac.debug("teleport_car_velocity", message.velocity)
+
+    physics.setCarPosition(0, message.position, message.direction)
+    physics.setCarVelocity(0, message.velocity)
+end)
+
+local collisionDisabledSelf = false
+local collisionDisabledCars = {}
+local collisionUpdateEvent = ac.OnlineEvent({
+    ac.StructItem.key("AS_CollisionUpdate"),
+    enabled = ac.StructItem.boolean(),
+    target = ac.StructItem.byte()
+}, function (sender, message)
+    ac.debug("collision_update_target", message.target)
+    ac.debug("collision_update_enabled", message.enabled)
+
+    local target = ac.getCar.serverSlot(message.target)
+    if target.index == 0 then
+        collisionDisabledSelf = not message.enabled
+    else
+        collisionDisabledCars[target.index] = not message.enabled
+    end
+
+end)
+
+function updateCollisions()
+    if collisionDisabledSelf == true then
+        physics.disableCarCollisions(0, true)
+        ac.debug("collision_loop_state", true)
+        return
+    end
+
+    local selfCar = ac.getCar(0)
+    for index, isDisabled in pairs(collisionDisabledCars) do
+        if isDisabled == true then
+            local targetCar = ac.getCar(index)
+            if targetCar.position:distanceSquared(selfCar.position) < 25*25 then
+                physics.disableCarCollisions(0, true)
+                ac.debug("collision_loop_state", true)
+                return
+            end
+        end
+    end
+    physics.disableCarCollisions(0, false)
+    ac.debug("collision_loop_state", false)    
+end
+
+function script.update(dt)
+    updateCollisions()
+end

@@ -1,6 +1,6 @@
-﻿using AssettoServer.Server.Ai;
-using AssettoServer.Shared.Model;
+﻿using AssettoServer.Shared.Model;
 using Microsoft.Extensions.ObjectPool;
+using TrafficAIPlugin;
 
 namespace ReplayPlugin.Data;
 

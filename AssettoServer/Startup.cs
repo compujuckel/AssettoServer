@@ -12,7 +12,6 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
 using AssettoServer.Server.Admin;
-using AssettoServer.Server.Ai;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.Configuration;
@@ -53,7 +52,6 @@ public class Startup
         builder.RegisterInstance(_configuration);
         builder.RegisterInstance(_loader);
         builder.RegisterModule(new WeatherModule(_configuration));
-        builder.RegisterModule(new AiModule(_configuration));
         builder.RegisterType<HttpClient>().AsSelf();
         builder.RegisterType<ACTcpClient>().AsSelf();
         builder.RegisterType<EntryCar>().AsSelf();

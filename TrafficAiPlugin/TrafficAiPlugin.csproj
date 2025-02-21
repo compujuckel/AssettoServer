@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
@@ -17,20 +17,21 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj">
-            <Private>false</Private>
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\AssettoServer\AssettoServer.csproj">
-            <Private>false</Private>
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\TrafficAiPlugin\TrafficAiPlugin.csproj" />
-    </ItemGroup>
-    
-    <ItemGroup>
-        <None Remove="lua\replay.lua" />
-        <EmbeddedResource Include="lua\replay.lua" />
+      <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj">
+          <Private>false</Private>
+          <ExcludeAssets>runtime</ExcludeAssets>
+      </ProjectReference>
+      <ProjectReference Include="..\AssettoServer\AssettoServer.csproj">
+        <Private>false</Private>
+        <ExcludeAssets>runtime</ExcludeAssets>
+      </ProjectReference>
     </ItemGroup>
 
+
+    <ItemGroup>
+        <None Remove="lua\ai_debug.lua" />
+        <EmbeddedResource Include="lua\ai_debug.lua" />
+        <None Remove="lua\resetcar.lua" />
+        <EmbeddedResource Include="lua\resetcar.lua" />
+    </ItemGroup>
 </Project>

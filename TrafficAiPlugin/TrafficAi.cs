@@ -8,6 +8,7 @@ using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using TrafficAiPlugin.Packets;
 using TrafficAiConfiguration = TrafficAIPlugin.Configuration.TrafficAiConfiguration;
 
 namespace TrafficAIPlugin;

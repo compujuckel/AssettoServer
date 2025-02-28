@@ -67,19 +67,19 @@ public class VotingWeather : CriticalBackgroundService, IAssettoServerAutostart
     {
         if (!_votingOpen)
         {
-            client.SendPacket(new ChatMessage { SessionId = 255, Message = "There is no ongoing weather vote." });
+            client.SendChatMessage("There is no ongoing weather vote.");
             return;
         }
 
         if (choice >= _availableWeathers.Count || choice < 0)
         {
-            client.SendPacket(new ChatMessage { SessionId = 255, Message = "Invalid choice." });
+            client.SendChatMessage("Invalid choice.");
             return;
         }
 
         if (_alreadyVoted.Contains(client))
         {
-            client.SendPacket(new ChatMessage { SessionId = 255, Message = "You voted already." });
+            client.SendChatMessage("You voted already.");
             return;
         }
 
@@ -88,7 +88,7 @@ public class VotingWeather : CriticalBackgroundService, IAssettoServerAutostart
         var votedWeather = _availableWeathers[choice];
         votedWeather.Votes++;
 
-        client.SendPacket(new ChatMessage { SessionId = 255, Message = $"Your vote for {votedWeather.Weather} has been counted." });
+        client.SendChatMessage($"Your vote for {votedWeather.Weather} has been counted.");
     }
 
     private async Task UpdateAsync(CancellationToken stoppingToken)

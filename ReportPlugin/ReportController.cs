@@ -33,7 +33,7 @@ public class ReportController : ControllerBase
 
         if (lastReport?.AuditLog.Timestamp > DateTime.UtcNow - TimeSpan.FromSeconds(30))
         {
-            reporterClient.SendPacket(new ChatMessage {SessionId = 255, Message = "Please wait a moment before submitting another replay."});
+            reporterClient.SendChatMessage("Please wait a moment before submitting another replay.");
             return StatusCode(StatusCodes.Status429TooManyRequests);
         }
         
@@ -53,7 +53,7 @@ public class ReportController : ControllerBase
         _plugin.SetLastReplay(reporterClient, report);
 
         reporterClient.Logger.Information("Replay received from {ClientName} ({SessionId}), ID: {Id}", reporterClient.Name, reporterClient.SessionId, guid);
-        reporterClient.SendPacket(new ChatMessage {SessionId = 255, Message = "Replay received.\nUse /report <reason> to submit this replay to moderators."});
+        reporterClient.SendChatMessage("Replay received.\nUse /report <reason> to submit this replay to moderators.");
         
         return Ok();
     }

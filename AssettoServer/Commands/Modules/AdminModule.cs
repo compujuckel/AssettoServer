@@ -101,7 +101,7 @@ public class AdminModule : ACModuleBase
     public void TeleportToPits([Remainder] ACTcpClient player)
     {
         _sessionManager.SendCurrentSession(player);
-        player.SendPacket(new ChatMessage { SessionId = 255, Message = "You have been teleported to the pits." });
+        player.SendChatMessage("You have been teleported to the pits.");
 
         if (player.SessionId != Client?.SessionId)
             Reply($"{player.Name} has been teleported to the pits.");

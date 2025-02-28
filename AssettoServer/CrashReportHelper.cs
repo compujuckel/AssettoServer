@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using AssettoServer.Server.Configuration;
 using Scriban;
+using Serilog;
 
 namespace AssettoServer;
 
@@ -17,6 +18,28 @@ public static partial class CrashReportHelper
         public required string Name { get; init; }
         public string? Type { get; init; }
         public required string Content { get; init; }
+    }
+
+    public static void HandleFatalException(Exception ex)
+    {
+        Log.Fatal(ex, "Fatal exception occurred");
+        string? crashReportPath = null;
+
+        var configLocations = Program.ConfigurationLocations;
+        if (configLocations != null)
+        {
+            try
+            {
+                crashReportPath = GenerateCrashReport(configLocations, ex);
+            }
+            catch (Exception ex2)
+            {
+                Log.Error(ex2, "Error writing crash report");
+            }
+        }
+
+        Log.CloseAndFlush();
+        ExceptionHelper.PrintExceptionHelp(ex, Program.IsContentManager, crashReportPath);
     }
     
     public static string GenerateCrashReport(ConfigurationLocations locations, Exception exception)

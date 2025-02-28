@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Autofac.Extensions.DependencyInjection;
 using CommandLine;
@@ -61,7 +62,9 @@ public static class Program
         public string? EntryListPath { get; init; }
     }
 
-    public static bool IsContentManager;
+    public static bool IsContentManager { get; private set; }
+    public static ConfigurationLocations? ConfigurationLocations { get; private set; }
+    
     private static bool _loadPluginsFromWorkdir;
     private static bool _generatePluginConfigs;
     private static TaskCompletionSource<StartOptions> _restartTask = new();
@@ -100,7 +103,8 @@ public static class Program
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
         Logging.CreateLogger(logPrefix, IsContentManager, options.Preset, options.UseVerboseLogging);
         
-        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += UnhandledException;
+        CriticalBackgroundService.UnhandledException += UnhandledException;
         Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
         if (IsContentManager)
         {
@@ -150,11 +154,11 @@ public static class Program
         bool useVerboseLogging,
         CancellationToken token = default)
     {
-        var configLocations = ConfigurationLocations.FromOptions(preset, serverCfgPath, entryListPath);
+        ConfigurationLocations = ConfigurationLocations.FromOptions(preset, serverCfgPath, entryListPath);
         
         try
         {
-            var config = new ACServerConfiguration(preset, configLocations, _loadPluginsFromWorkdir, _generatePluginConfigs);
+            var config = new ACServerConfiguration(preset, ConfigurationLocations, _loadPluginsFromWorkdir, _generatePluginConfigs);
 
             string logPrefix = string.IsNullOrEmpty(preset) ? "log" : preset;
             Logging.CreateLogger(logPrefix, IsContentManager, preset, useVerboseLogging, config.Extra.RedactIpAddresses, config.Extra.LokiSettings);
@@ -191,26 +195,13 @@ public static class Program
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Error starting server");
-            string? crashReportPath = null;
-            try
-            {
-                crashReportPath = CrashReportHelper.GenerateCrashReport(configLocations, ex);
-            }
-            catch (Exception ex2)
-            {
-                Log.Error(ex2, "Error writing crash report");
-            }
-            await Log.CloseAndFlushAsync();
-            ExceptionHelper.PrintExceptionHelp(ex, IsContentManager, crashReportPath);
+            CrashReportHelper.HandleFatalException(ex);
         }
     }
 
-    private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)
+    private static void UnhandledException(object sender, UnhandledExceptionEventArgs args)
     {
-        Log.Fatal((Exception)args.ExceptionObject, "Unhandled exception occurred");
-        Log.CloseAndFlush();
-        Environment.Exit(1);
+        CrashReportHelper.HandleFatalException((Exception)args.ExceptionObject);
     }
 
     private static void SetupFluentValidation()

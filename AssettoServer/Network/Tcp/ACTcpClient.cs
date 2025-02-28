@@ -259,7 +259,7 @@ public class ACTcpClient : IClient
         }
     }
 
-    internal void SendPacketUdp<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket
+    public void SendPacketUdp<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket
     {
         if (UdpEndpoint == null) return;
 

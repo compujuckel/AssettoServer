@@ -8,4 +8,5 @@ namespace AssettoServer.Network.ClientMessages;
 public class OnlineEventAttribute : Attribute
 {
     public string? Key { get; set; }
+    public bool Udp { get; set; }
 }

@@ -96,8 +96,8 @@ internal static class OnlineEventGenerator
 
     internal static OnlineEventInfo ParseClientMessage(Type messageType)
     {
-        var mainAttr = messageType.GetCustomAttribute<OnlineEventAttribute>();
-        var key = mainAttr?.Key;
+        var mainAttr = messageType.GetCustomAttribute<OnlineEventAttribute>() ?? new OnlineEventAttribute();
+        var key = mainAttr.Key;
 
         var ordered = new List<OnlineEventFieldInfo?>();
         
@@ -158,6 +158,7 @@ internal static class OnlineEventGenerator
         var ret = new OnlineEventInfo
         {
             Key = key,
+            Udp = mainAttr.Udp,
             Fields = reordered,
             Structure = structure,
             PacketType = GenerateKey(structure)
@@ -238,7 +239,7 @@ internal static class OnlineEventGenerator
         emitter.Call(writeByteMethod);
 
         emitter.LoadArgument(1);
-        emitter.LoadConstant((int)CSPMessageTypeTcp.ClientMessage);
+        emitter.LoadConstant(message.Udp ? (int)CSPMessageTypeUdp.ClientMessage : (int)CSPMessageTypeTcp.ClientMessage);
         emitter.Call(writeByteMethod);
         
         emitter.LoadArgument(1);

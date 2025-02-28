@@ -144,5 +144,9 @@
         <EmbeddedResource Include="Assets\server_cfg.ini" />
         <None Remove="Assets\entry_list.ini" />
         <EmbeddedResource Include="Assets\entry_list.ini" />
+        
+        <None Update="wwwroot\**\*">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

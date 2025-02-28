@@ -71,9 +71,7 @@ public class ContentManagerController : ControllerBase
         if (_configuration.Server.Password == null
             || _configuration.WrapperParams is { DownloadPasswordOnly: false }) return true;
 
-        return input != null ?
-            Convert.FromHexString(input)
-                .SequenceEqual(SHA1.HashData(Encoding.UTF8.GetBytes($"tanidolizedhoatzin{_configuration.Server.Password}")))
-            : false;
+        return input != null && Convert.FromHexString(input)
+            .SequenceEqual(SHA1.HashData(Encoding.UTF8.GetBytes($"tanidolizedhoatzin{_configuration.Server.Password}")));
     }
 }

@@ -27,11 +27,20 @@
       </ProjectReference>
     </ItemGroup>
 
-
     <ItemGroup>
         <None Remove="lua\ai_debug.lua" />
         <EmbeddedResource Include="lua\ai_debug.lua" />
         <None Remove="lua\resetcar.lua" />
         <EmbeddedResource Include="lua\resetcar.lua" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <CopyConfigurationJson>true</CopyConfigurationJson>
+    </PropertyGroup>
+    
+    <ItemGroup Condition="'$(CopyConfigurationJson)' == 'true'"> 
+        <None Update="configuration.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

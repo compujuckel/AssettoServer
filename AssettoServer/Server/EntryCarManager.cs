@@ -88,7 +88,7 @@ public class EntryCarManager
         {
             if (broadcastReason != null)
             {
-                BroadcastPacket(new ChatMessage { SessionId = 255, Message = broadcastReason });
+                BroadcastChat(broadcastReason);
             }
 
             if (clientReason != null)
@@ -157,6 +157,9 @@ public class EntryCarManager
             }
         }
     }
+
+    public void BroadcastChat(string message, byte senderId = 255) =>
+        BroadcastPacket(new ChatMessage { SessionId = senderId, Message = message });
         
     public void BroadcastPacketUdp<TPacket>(in TPacket packet, ACTcpClient? sender = null, float? range = null, bool skipSender = true) where TPacket : IOutgoingNetworkPacket
     {

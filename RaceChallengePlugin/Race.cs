@@ -217,7 +217,7 @@ public class Race
             string winnerName = Challenger == Leader ? ChallengerName : ChallengedName;
             string loserName = Challenger == Leader ? ChallengedName : ChallengerName;
 
-            _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = $"{winnerName} just beat {loserName} in a race." });
+            _entryCarManager.BroadcastChat($"{winnerName} just beat {loserName} in a race.");
             Log.Information("{WinnerName} just beat {LoserName} in a race", winnerName, loserName);
         }
     }

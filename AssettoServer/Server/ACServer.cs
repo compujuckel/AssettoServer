@@ -120,7 +120,7 @@ public class ACServer : CriticalBackgroundService
     private void OnApplicationStopping()
     {
         Log.Information("Server shutting down");
-        _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = "*** Server shutting down ***" });
+        _entryCarManager.BroadcastChat("*** Server shutting down ***");
 
         var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var tasks = new List<Task>();

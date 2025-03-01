@@ -49,7 +49,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }
 
     internal long[] OtherCarsLastSentUpdateTime { get; }
-    internal EntryCar? TargetCar { get; set; }
+    public EntryCar? TargetCar { get; set; }
     private long LastFallCheckTime{ get; set; }
 
     /// <summary>

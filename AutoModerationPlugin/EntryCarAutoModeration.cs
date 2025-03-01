@@ -1,7 +1,6 @@
 ﻿using System.Numerics;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Network.Packets.Incoming;
@@ -9,6 +8,8 @@ using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AutoModerationPlugin.Packets;
 using Serilog;
+using TrafficAIPlugin.Configuration;
+using TrafficAIPlugin.Splines;
 
 namespace AutoModerationPlugin;
 
@@ -56,6 +57,7 @@ public class EntryCarAutoModeration
         WeatherManager weatherManager,
         SessionManager sessionManager,
         ACServerConfiguration serverConfiguration,
+        TrafficAiConfiguration? trafficAiConfiguration = null,
         AiSpline? aiSpline = null)
     {
         _entryCar = entryCar;
@@ -71,7 +73,8 @@ public class EntryCarAutoModeration
             _entryCar.PositionUpdateReceived += OnPositionUpdateReceived;
         }
         
-        _laneRadiusSquared = MathF.Pow(_serverConfiguration.Extra.AiParams.LaneWidthMeters / 2.0f * 1.25f, 2);
+        if (trafficAiConfiguration != null)
+            _laneRadiusSquared = MathF.Pow(trafficAiConfiguration.LaneWidthMeters / 2.0f * 1.25f, 2);
     }
 
     private void OnPositionUpdateReceived(EntryCar sender, in PositionUpdateIn positionUpdate)

@@ -26,7 +26,6 @@ public class CSPClientMessageHandler
         
         cspClientMessageTypeManager.RegisterOnlineEvent<CollisionUpdatePacket>(OnCollisionUpdate);
         cspClientMessageTypeManager.RegisterOnlineEvent<TeleportCarPacket>(OnTeleportCar);
-        cspClientMessageTypeManager.RegisterOnlineEvent<RequestResetPacket>((client, _) => { OnResetCar(client); });
     }
     
     public void OnCSPClientMessageUdp(ACTcpClient sender, PacketReader reader)
@@ -198,12 +197,6 @@ public class CSPClientMessageHandler
             sender.Logger.Information("CSP admin penalty received from {ClientName} ({SessionId}): User is not admin", 
                 sender.Name, sender.SessionId);
         }
-    }
-
-    private void OnResetCar(ACTcpClient sender)
-    {
-        if (_configuration.Extra.EnableCarReset)
-            sender.EntryCar.TryResetPosition();
     }
 
     private void OnTeleportCar(ACTcpClient sender, TeleportCarPacket packet)

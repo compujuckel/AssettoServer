@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
@@ -9,6 +8,7 @@ using AssettoServer.Shared.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using TrafficAIPlugin.Splines;
 
 namespace AutoModerationPlugin;
 

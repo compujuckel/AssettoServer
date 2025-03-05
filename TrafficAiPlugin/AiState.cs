@@ -11,6 +11,7 @@ using Serilog;
 using SunCalcNet.Model;
 using TrafficAiPlugin.Configuration;
 using TrafficAiPlugin.Shared;
+using TrafficAiPlugin.Shared.Splines;
 using TrafficAiPlugin.Splines;
 
 namespace TrafficAiPlugin;

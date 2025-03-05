@@ -4,6 +4,7 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using Serilog;
 using TrafficAiPlugin.Configuration;
+using TrafficAiPlugin.Shared.Splines;
 using YamlDotNet.Serialization;
 
 namespace TrafficAiPlugin.Splines;

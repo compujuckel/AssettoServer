@@ -2,7 +2,7 @@
 using AssettoServer.Utils;
 using Serilog;
 
-namespace TrafficAiPlugin.Splines;
+namespace TrafficAiPlugin.Shared.Splines;
 
 public readonly ref struct SplinePointOperations
 {

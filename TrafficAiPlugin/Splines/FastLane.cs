@@ -1,4 +1,6 @@
-﻿namespace TrafficAiPlugin.Splines;
+﻿using TrafficAiPlugin.Shared.Splines;
+
+namespace TrafficAiPlugin.Splines;
 
 public class FastLane
 {

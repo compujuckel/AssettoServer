@@ -8,6 +8,7 @@ using DotNext.Runtime.InteropServices;
 using Serilog;
 using Supercluster.KDTree;
 using TrafficAiPlugin.Shared;
+using TrafficAiPlugin.Shared.Splines;
 
 namespace TrafficAiPlugin.Splines;
 

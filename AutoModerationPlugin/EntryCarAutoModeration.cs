@@ -243,7 +243,7 @@ public class EntryCarAutoModeration
         if (CurrentSplinePointId >= 0
             && CurrentSplinePointDistanceSquared < _laneRadiusSquared
             && _entryCar.Status.Velocity.LengthSquared() > _configuration.WrongWayPenalty.MinimumSpeedMs * _configuration.WrongWayPenalty.MinimumSpeedMs
-            && Vector3.Dot(_aiSpline.GetForwardVector(CurrentSplinePointId), _entryCar.Status.Velocity) < 0)
+            && Vector3.Dot(_aiSpline.Operations.GetForwardVector(CurrentSplinePointId), _entryCar.Status.Velocity) < 0)
         {
             CurrentFlags |= Flags.WrongWay;
             

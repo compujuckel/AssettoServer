@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using Serilog;
 using SerilogTimings;
+using TrafficAiPlugin.Shared.Splines;
 
 namespace TrafficAiPlugin.Splines;
 

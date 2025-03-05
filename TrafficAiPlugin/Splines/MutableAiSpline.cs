@@ -3,6 +3,7 @@ using AssettoServer.Shared.Network.Packets.Outgoing;
 using Serilog;
 using Supercluster.KDTree;
 using TrafficAiPlugin.Configuration;
+using TrafficAiPlugin.Shared.Splines;
 
 namespace TrafficAiPlugin.Splines;
 

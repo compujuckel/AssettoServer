@@ -6,18 +6,18 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
-using Grpc.Core;
-using TrafficAIPlugin.Configuration;
-using TrafficAIPlugin.Splines;
+using TrafficAiPlugin.Configuration;
+using TrafficAiPlugin.Shared;
+using TrafficAiPlugin.Splines;
 
-namespace TrafficAIPlugin;
+namespace TrafficAiPlugin;
 
-public class EntryCarTrafficAi
+public class EntryCarTrafficAi : IEntryCarTrafficAi
 {
     public int TargetAiStateCount { get; private set; } = 1;
     public byte[] LastSeenAiSpawn { get; }
     public byte[] AiPakSequenceIds { get; }
-    public AiState?[] LastSeenAiState { get; }
+    public IAiState?[] LastSeenAiState { get; }
     public bool AiEnableColorChanges => EntryCar.DriverOptionsFlags.HasFlag(DriverOptionsFlags.AllowColorChange);
     public int AiIdleEngineRpm { get; set; } = 800;
     public int AiMaxEngineRpm { get; set; } = 3000;
@@ -46,7 +46,7 @@ public class EntryCarTrafficAi
     private readonly Func<EntryCarTrafficAi, AiState> _aiStateFactory;
     private readonly TrafficAi _trafficAi;
 
-    public readonly EntryCar EntryCar;
+    public EntryCar EntryCar { get; }
     
     private readonly ACServerConfiguration _serverConfiguration;
     private readonly TrafficAiConfiguration _configuration;
@@ -71,7 +71,6 @@ public class EntryCarTrafficAi
         _aiStateFactory = aiStateFactory;
         _trafficAi = trafficAi;
         _aiSpline = aiSpline;
-            
         
         AiPakSequenceIds = new byte[entryCarManager.EntryCars.Length];
         LastSeenAiState = new AiState[entryCarManager.EntryCars.Length];

@@ -3,20 +3,21 @@ using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Plugin;
 using Autofac;
 using Microsoft.Extensions.Hosting;
-using TrafficAIPlugin.Configuration;
-using TrafficAIPlugin.Splines;
+using TrafficAiPlugin.Configuration;
+using TrafficAiPlugin.Shared;
+using TrafficAiPlugin.Splines;
 
-namespace TrafficAIPlugin;
+namespace TrafficAiPlugin;
 
 public class TrafficAiModule : AssettoServerModule<TrafficAiConfiguration>
 {
     
     protected override void Load(ContainerBuilder builder)
     {
-        builder.RegisterType<TrafficAi>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
-        builder.RegisterType<EntryCarTrafficAi>().AsSelf();
+        builder.RegisterType<TrafficAi>().AsSelf().As<IAssettoServerAutostart>().As<ITrafficAi>().SingleInstance();
+        builder.RegisterType<EntryCarTrafficAi>().AsSelf().As<IEntryCarTrafficAi>();
         
-        builder.RegisterType<AiState>().AsSelf();
+        builder.RegisterType<AiState>().AsSelf().As<IAiState>();
 
         builder.RegisterType<AiBehavior>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         builder.RegisterType<TrafficAiUpdater>().AsSelf().SingleInstance().AutoActivate();
@@ -27,7 +28,7 @@ public class TrafficAiModule : AssettoServerModule<TrafficAiConfiguration>
         builder.RegisterType<AiSplineWriter>().AsSelf();
         builder.RegisterType<FastLaneParser>().AsSelf();
         builder.RegisterType<AiSplineLocator>().AsSelf();
-        builder.Register((AiSplineLocator locator) => locator.Locate()).AsSelf().SingleInstance();
+        builder.Register((AiSplineLocator locator) => locator.Locate()).AsSelf().As<IAiSpline>().SingleInstance();
     }
     
     public override object? ReferenceConfiguration => new TrafficAiConfiguration

@@ -2,9 +2,9 @@
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using Serilog;
 using Supercluster.KDTree;
-using TrafficAIPlugin.Configuration;
+using TrafficAiPlugin.Configuration;
 
-namespace TrafficAIPlugin.Splines;
+namespace TrafficAiPlugin.Splines;
 
 public class MutableAiSpline
 {

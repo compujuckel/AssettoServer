@@ -11,10 +11,10 @@ using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Prometheus;
 using Serilog;
-using TrafficAIPlugin.Configuration;
-using TrafficAIPlugin.Splines;
+using TrafficAiPlugin.Configuration;
+using TrafficAiPlugin.Splines;
 
-namespace TrafficAIPlugin;
+namespace TrafficAiPlugin;
 
 public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
 {

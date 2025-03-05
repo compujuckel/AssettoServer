@@ -2,7 +2,7 @@
 using Serilog;
 using SerilogTimings;
 
-namespace TrafficAIPlugin.Splines;
+namespace TrafficAiPlugin.Splines;
 
 public static class AdjacentLaneDetector
 {

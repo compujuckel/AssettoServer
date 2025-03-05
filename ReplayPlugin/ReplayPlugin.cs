@@ -12,7 +12,7 @@ using Prometheus;
 using ReplayPlugin.Data;
 using ReplayPlugin.Packets;
 using Serilog;
-using TrafficAIPlugin;
+using TrafficAiPlugin.Shared;
 
 namespace ReplayPlugin;
 
@@ -25,7 +25,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
     private readonly ReplayManager _replayManager;
     private readonly Summary _onUpdateTimer;
     private readonly EntryCarExtraDataManager _extraData;
-    private readonly TrafficAi? _trafficAi;
+    private readonly ITrafficAi? _trafficAi;
     
     public ReplayPlugin(IHostApplicationLifetime applicationLifetime,
         EntryCarManager entryCarManager,
@@ -36,7 +36,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
         CSPServerScriptProvider scriptProvider,
         CSPClientMessageTypeManager cspClientMessageTypeManager,
         EntryCarExtraDataManager extraData,
-        TrafficAi? trafficAi = null) : base(applicationLifetime)
+        ITrafficAi? trafficAi = null) : base(applicationLifetime)
     {
         _entryCarManager = entryCarManager;
         _weather = weather;
@@ -91,7 +91,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
                     {
                         aiStateId = (short)_state.AiCars.Count;
                         _state.AiStateMapping.Add(aiState, aiStateId);
-                        _state.AiCars.Add((aiState.EntryCarAi.EntryCar.SessionId, aiState.Status));
+                        _state.AiCars.Add((aiState.SessionId, aiState.Status));
                     }
 
                     if (_state.AiFrameMapping.TryGetValue((byte)i, out var aiFrameMappingList))

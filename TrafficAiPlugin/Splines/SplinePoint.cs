@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace TrafficAIPlugin.Splines;
+namespace TrafficAiPlugin.Splines;
 
 [StructLayout(LayoutKind.Sequential, Pack = 4)]
 public struct SplinePoint

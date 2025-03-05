@@ -3,7 +3,7 @@ using AssettoServer.Server.Configuration;
 using Serilog;
 using SerilogTimings;
 
-namespace TrafficAIPlugin.Splines;
+namespace TrafficAiPlugin.Splines;
 
 public class AiSplineLocator
 {

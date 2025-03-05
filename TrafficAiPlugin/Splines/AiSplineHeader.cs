@@ -1,4 +1,4 @@
-﻿namespace TrafficAIPlugin.Splines;
+﻿namespace TrafficAiPlugin.Splines;
 
 public struct AiSplineHeader
 {

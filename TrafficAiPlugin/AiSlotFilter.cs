@@ -1,9 +1,8 @@
 ﻿using AssettoServer.Server;
-using AssettoServer.Server.Configuration;
 using AssettoServer.Server.OpenSlotFilters;
-using TrafficAIPlugin.Configuration;
+using TrafficAiPlugin.Configuration;
 
-namespace TrafficAIPlugin;
+namespace TrafficAiPlugin;
 
 public class AiSlotFilter : OpenSlotFilterBase
 {

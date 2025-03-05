@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace TrafficAIPlugin.Splines;
+namespace TrafficAiPlugin.Splines;
 
 public class JunctionEvaluator
 {

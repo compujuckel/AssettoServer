@@ -7,13 +7,14 @@ using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
-using Serilog;
 using TrafficAiPlugin.Packets;
-using TrafficAiConfiguration = TrafficAIPlugin.Configuration.TrafficAiConfiguration;
+using TrafficAiPlugin.Shared;
 
-namespace TrafficAIPlugin;
+namespace TrafficAiPlugin;
 
-public class TrafficAi : CriticalBackgroundService, IAssettoServerAutostart
+using TrafficAiConfiguration = Configuration.TrafficAiConfiguration;
+
+public class TrafficAi : CriticalBackgroundService, IAssettoServerAutostart, ITrafficAi
 {
     private readonly TrafficAiConfiguration _configuration;
     private readonly ACServerConfiguration _serverConfiguration;
@@ -80,8 +81,17 @@ public class TrafficAi : CriticalBackgroundService, IAssettoServerAutostart
             GetAiCarBySessionId(sender.SessionId).TryResetPosition();
     }
 
-    public EntryCarTrafficAi GetAiCarBySessionId(byte sessionId)
+    // public EntryCarTrafficAi GetAiCarBySessionId(byte sessionId)
+    //     => Instances.First(x => x.EntryCar.SessionId == sessionId);
+
+    IEntryCarTrafficAi ITrafficAi.GetAiCarBySessionId(byte sessionId)
+        => GetAiCarBySessionId(sessionId);
+
+    internal EntryCarTrafficAi GetAiCarBySessionId(byte sessionId)
         => Instances.First(x => x.EntryCar.SessionId == sessionId);
+    
+    public float GetLaneWidthMeters()
+        => _configuration.LaneWidthMeters;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

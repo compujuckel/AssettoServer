@@ -4,9 +4,9 @@ using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using TrafficAIPlugin.Configuration;
+using TrafficAiPlugin.Configuration;
 
-namespace TrafficAIPlugin;
+namespace TrafficAiPlugin;
 
 public class DynamicTrafficDensity : CriticalBackgroundService
 {

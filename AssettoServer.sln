@@ -41,6 +41,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReplayPlugin", "ReplayPlugi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrafficAiPlugin", "TrafficAiPlugin\TrafficAiPlugin.csproj", "{F20A785C-686A-40A4-8821-28627BA6FA48}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrafficAiPlugin.Shared", "TrafficAiPlugin.Shared\TrafficAiPlugin.Shared.csproj", "{18EE29A8-AA8F-47AD-849B-AD5D04C5A069}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -123,6 +125,10 @@ Global
 		{F20A785C-686A-40A4-8821-28627BA6FA48}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F20A785C-686A-40A4-8821-28627BA6FA48}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F20A785C-686A-40A4-8821-28627BA6FA48}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18EE29A8-AA8F-47AD-849B-AD5D04C5A069}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18EE29A8-AA8F-47AD-849B-AD5D04C5A069}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18EE29A8-AA8F-47AD-849B-AD5D04C5A069}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18EE29A8-AA8F-47AD-849B-AD5D04C5A069}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

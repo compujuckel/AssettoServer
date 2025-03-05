@@ -7,10 +7,11 @@ using DotNext.IO.MemoryMappedFiles;
 using DotNext.Runtime.InteropServices;
 using Serilog;
 using Supercluster.KDTree;
+using TrafficAiPlugin.Shared;
 
-namespace TrafficAIPlugin.Splines;
+namespace TrafficAiPlugin.Splines;
 
-public class AiSpline : IDisposable
+public class AiSpline : IAiSpline, IDisposable
 {
     public const int SupportedVersion = 1;
     
@@ -100,4 +101,7 @@ public class AiSpline : IDisposable
         _fileAccessor.Dispose();
         _file.Dispose();
     }
+    
+    public Vector3 GetForwardVector(int pointId) 
+        => Operations.GetForwardVector(pointId);
 }

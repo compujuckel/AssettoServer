@@ -4,7 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using JetBrains.Annotations;
 using YamlDotNet.Serialization;
 
-namespace TrafficAIPlugin.Configuration;
+namespace TrafficAiPlugin.Configuration;
 
 #pragma warning disable CS0657
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]

@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using JetBrains.Annotations;
 
-namespace TrafficAIPlugin.Configuration;
+namespace TrafficAiPlugin.Configuration;
 
 // Use FluentValidation to validate plugin configuration
 [UsedImplicitly]

@@ -9,13 +9,15 @@ using AssettoServer.Utils;
 using JPBotelho;
 using Serilog;
 using SunCalcNet.Model;
-using TrafficAIPlugin.Configuration;
-using TrafficAIPlugin.Splines;
+using TrafficAiPlugin.Configuration;
+using TrafficAiPlugin.Shared;
+using TrafficAiPlugin.Splines;
 
-namespace TrafficAIPlugin;
+namespace TrafficAiPlugin;
 
-public class AiState : IDisposable
+public class AiState : IAiState, IDisposable
 {
+    public byte SessionId => EntryCarAi.EntryCar.SessionId;
     public CarStatus Status { get; } = new();
     public bool Initialized { get; private set; }
 

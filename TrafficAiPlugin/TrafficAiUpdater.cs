@@ -1,16 +1,8 @@
-﻿using AssettoServer.Network.ClientMessages;
-using AssettoServer.Network.Tcp;
-using AssettoServer.Server;
-using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
+﻿using AssettoServer.Server;
 using AssettoServer.Shared.Network.Packets.Outgoing;
-using AssettoServer.Shared.Services;
-using AssettoServer.Utils;
-using Microsoft.Extensions.Hosting;
 using Serilog;
-using TrafficAiConfiguration = TrafficAIPlugin.Configuration.TrafficAiConfiguration;
 
-namespace TrafficAIPlugin;
+namespace TrafficAiPlugin;
 
 public class TrafficAiUpdater
 {

@@ -8,7 +8,7 @@ using AssettoServer.Shared.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using TrafficAIPlugin.Splines;
+using TrafficAiPlugin.Shared;
 
 namespace AutoModerationPlugin;
 
@@ -29,7 +29,7 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
         CSPServerScriptProvider scriptProvider,
         Func<EntryCar, EntryCarAutoModeration> entryCarAutoModerationFactory,
         IHostApplicationLifetime applicationLifetime,
-        AiSpline? aiSpline = null) : base(applicationLifetime)
+        IAiSpline? aiSpline = null) : base(applicationLifetime)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;

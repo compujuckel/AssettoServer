@@ -3,10 +3,10 @@ using System.Numerics;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using Serilog;
-using TrafficAIPlugin.Configuration;
+using TrafficAiPlugin.Configuration;
 using YamlDotNet.Serialization;
 
-namespace TrafficAIPlugin.Splines;
+namespace TrafficAiPlugin.Splines;
 
 public class FastLaneParser
 {

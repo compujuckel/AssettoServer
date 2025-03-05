@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 
-namespace TrafficAIPlugin.Splines;
+namespace TrafficAiPlugin.Splines;
 
 [StructLayout(LayoutKind.Sequential, Pack = 4)]
 public struct SplineJunction

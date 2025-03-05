@@ -5,9 +5,9 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using JetBrains.Annotations;
 using Qmmands;
-using TrafficAIPlugin.Configuration;
+using TrafficAiPlugin.Configuration;
 
-namespace TrafficAIPlugin;
+namespace TrafficAiPlugin;
 
 [RequireAdmin]
 [UsedImplicitly(ImplicitUseKindFlags.Access, ImplicitUseTargetFlags.WithMembers)]

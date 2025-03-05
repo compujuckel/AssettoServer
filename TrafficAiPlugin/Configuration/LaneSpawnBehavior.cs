@@ -1,4 +1,4 @@
-namespace TrafficAIPlugin.Configuration;
+namespace TrafficAiPlugin.Configuration;
 
 public enum LaneSpawnBehavior
 {

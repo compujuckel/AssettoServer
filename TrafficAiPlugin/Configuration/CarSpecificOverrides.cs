@@ -1,7 +1,7 @@
 using JetBrains.Annotations;
 using YamlDotNet.Serialization;
 
-namespace TrafficAIPlugin.Configuration;
+namespace TrafficAiPlugin.Configuration;
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class CarSpecificOverrides

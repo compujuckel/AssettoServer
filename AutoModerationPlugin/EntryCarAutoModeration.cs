@@ -7,9 +7,7 @@ using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AutoModerationPlugin.Packets;
-using Serilog;
-using TrafficAIPlugin.Configuration;
-using TrafficAIPlugin.Splines;
+using TrafficAiPlugin.Shared;
 
 namespace AutoModerationPlugin;
 
@@ -43,7 +41,7 @@ public class EntryCarAutoModeration
 
     private const double NauticalTwilight = -12.0 * Math.PI / 180.0;
     private readonly EntryCar _entryCar;
-    private readonly AiSpline? _aiSpline;
+    private readonly IAiSpline? _aiSpline;
     private readonly ACServerConfiguration _serverConfiguration;
     private readonly AutoModerationConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
@@ -57,8 +55,8 @@ public class EntryCarAutoModeration
         WeatherManager weatherManager,
         SessionManager sessionManager,
         ACServerConfiguration serverConfiguration,
-        TrafficAiConfiguration? trafficAiConfiguration = null,
-        AiSpline? aiSpline = null)
+        ITrafficAi? trafficAi = null,
+        IAiSpline? aiSpline = null)
     {
         _entryCar = entryCar;
         _configuration = configuration;
@@ -73,8 +71,8 @@ public class EntryCarAutoModeration
             _entryCar.PositionUpdateReceived += OnPositionUpdateReceived;
         }
         
-        if (trafficAiConfiguration != null)
-            _laneRadiusSquared = MathF.Pow(trafficAiConfiguration.LaneWidthMeters / 2.0f * 1.25f, 2);
+        if (trafficAi != null)
+            _laneRadiusSquared = MathF.Pow(trafficAi.GetLaneWidthMeters() / 2.0f * 1.25f, 2);
     }
 
     private void OnPositionUpdateReceived(EntryCar sender, in PositionUpdateIn positionUpdate)
@@ -245,7 +243,7 @@ public class EntryCarAutoModeration
         if (CurrentSplinePointId >= 0
             && CurrentSplinePointDistanceSquared < _laneRadiusSquared
             && _entryCar.Status.Velocity.LengthSquared() > _configuration.WrongWayPenalty.MinimumSpeedMs * _configuration.WrongWayPenalty.MinimumSpeedMs
-            && Vector3.Dot(_aiSpline.Operations.GetForwardVector(CurrentSplinePointId), _entryCar.Status.Velocity) < 0)
+            && Vector3.Dot(_aiSpline.GetForwardVector(CurrentSplinePointId), _entryCar.Status.Velocity) < 0)
         {
             CurrentFlags |= Flags.WrongWay;
             

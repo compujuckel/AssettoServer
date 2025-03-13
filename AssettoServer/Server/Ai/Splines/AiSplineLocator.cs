@@ -25,20 +25,20 @@ public class AiSplineLocator
     {
         try
         {
-            return LocateInternal(_configuration.Server.Track);
+            return LocateInternal(_configuration.Server.Track, _configuration.Server.TrackConfig);
         }
         catch (Exception)
         {
             if (_configuration.CSPTrackOptions.MinimumCSPVersion.HasValue)
             {
-                return LocateInternal(_configuration.CSPTrackOptions.Track);
+                return LocateInternal(_configuration.CSPTrackOptions.Track, _configuration.Server.TrackConfig);
             }
 
             throw;
         }
     }
 
-    private AiSpline LocateInternal(string track)
+    private AiSpline LocateInternal(string track, string trackConfig)
     {
         string contentPath = "content";
         const string contentPathCMWorkaround = "content~tmp";
@@ -49,6 +49,13 @@ public class AiSplineLocator
         }
 
         string mapAiBasePath = Path.Join(contentPath, $"tracks/{track}/ai/");
+        if (!string.IsNullOrEmpty(trackConfig)
+            && Path.Join(contentPath, $"tracks/{track}/{trackConfig}/ai/") is var mapAiLayoutPath
+            && Directory.Exists(mapAiLayoutPath))
+        {
+            mapAiBasePath = mapAiLayoutPath;
+        }
+        
         var cacheKey = GenerateCacheKey(mapAiBasePath);
         Directory.CreateDirectory("cache");
         var cachePath = Path.Join("cache", $"{cacheKey}.aic{AiSpline.SupportedVersion}");

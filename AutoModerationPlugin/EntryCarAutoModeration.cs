@@ -154,7 +154,7 @@ public class EntryCarAutoModeration
             if (!HasSentAfkWarning)
             {
                 HasSentAfkWarning = true;
-                client.SendPacket(new ChatMessage { SessionId = 255, Message = "You will be kicked in 1 minute for being AFK." });
+                client.SendChatMessage("You will be kicked in 1 minute for being AFK.");
             }
             else if (afkTime > _configuration.AfkPenalty.DurationMilliseconds)
             {
@@ -182,7 +182,7 @@ public class EntryCarAutoModeration
             else if (!HasSentHighPingWarning && HighPingSeconds > _configuration.HighPingPenalty.DurationSeconds / 2)
             {
                 HasSentHighPingWarning = true;
-                client.SendPacket(new ChatMessage { SessionId = 255, Message = "You have a high ping, please fix your network connection or you will be kicked." });
+                client.SendChatMessage("You have a high ping, please fix your network connection or you will be kicked.");
             }
         }
         else
@@ -225,7 +225,7 @@ public class EntryCarAutoModeration
                 var message = NoLightsPitCount < _configuration.NoLightsPenalty.PitsBeforeKick
                     ? "It is currently night, please turn on your lights or you will be teleported to pits."
                     : "It is currently night, please turn on your lights or you will be kicked.";
-                client.SendPacket(new ChatMessage { SessionId = 255, Message = message });
+                client.SendChatMessage(message);
             }
         }
         else
@@ -266,7 +266,7 @@ public class EntryCarAutoModeration
                 var message = WrongWayPitCount < _configuration.WrongWayPenalty.PitsBeforeKick
                     ? "You are driving the wrong way! Turn around or you will be teleported to pits."
                     : "You are driving the wrong way! Turn around or you will be kicked.";
-                client.SendPacket(new ChatMessage { SessionId = 255, Message = message });
+                client.SendChatMessage(message);
             }
         }
         else
@@ -305,7 +305,7 @@ public class EntryCarAutoModeration
                 var message = BlockingRoadPitCount < _configuration.BlockingRoadPenalty.PitsBeforeKick
                     ? "You are blocking the road! Please move or you will be teleported to pits."
                     : "You are blocking the road! Please move or teleport to pits, or you will be kicked.";
-                client.SendPacket(new ChatMessage { SessionId = 255, Message = message });
+                client.SendChatMessage(message);
             }
         }
         else
@@ -332,6 +332,6 @@ public class EntryCarAutoModeration
     private void TeleportToPits(ACTcpClient player, string reason)
     {
         _sessionManager.SendCurrentSession(player);
-        player.SendPacket(new ChatMessage { SessionId = 255, Message = $"You have been teleported to the pits for {reason}." });
+        player.SendChatMessage($"You have been teleported to the pits for {reason}.");
     }
 }

@@ -999,6 +999,8 @@ public class ACTcpClient : IClient
         });
     }
 
+    public void SendChatMessage(string message, byte senderId = 255) => SendPacket(new ChatMessage { Message = message, SessionId = senderId });
+
     private static string IdFromGuid(ulong guid)
     {
         var hash = SHA1.HashData(Encoding.UTF8.GetBytes($"antarcticfurseal{guid}"));

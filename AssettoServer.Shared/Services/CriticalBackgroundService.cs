@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.Hosting;
-using Serilog;
 
 namespace AssettoServer.Shared.Services;
 
 public abstract class CriticalBackgroundService : IHostedService, IDisposable
 {
+    public static event UnhandledExceptionEventHandler? UnhandledException;
+    
     private readonly CancellationTokenSource _stoppingCts = new();
     private readonly IHostApplicationLifetime _applicationLifetime;
     
@@ -30,7 +31,7 @@ public abstract class CriticalBackgroundService : IHostedService, IDisposable
         {
             if (t.Exception != null)
             {
-                Log.Fatal(t.Exception, "Error executing critical background service");
+                UnhandledException?.Invoke(this, new UnhandledExceptionEventArgs(t.Exception, true));
                 _applicationLifetime.StopApplication();
             }
         }, _stoppingCts.Token);

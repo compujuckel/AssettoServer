@@ -18,6 +18,6 @@ public abstract class BaseCommandContext(
     public virtual void Broadcast(string message)
     {
         Log.Information("Broadcast: {Message}", message);
-        entryEntryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = message });
+        entryEntryCarManager.BroadcastChat(message);
     }
 }

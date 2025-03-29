@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using AssettoServer.Commands;
@@ -29,6 +30,7 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Prometheus;
 using Qmmands;
@@ -185,6 +187,11 @@ public class Startup
         app.UseCors();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            RequestPath = "/static",
+            ServeUnknownFileTypes = true,
+        });
 
         app.UseEndpoints(endpoints =>
         {
@@ -194,6 +201,17 @@ public class Startup
         
         foreach (var plugin in _loader.LoadedPlugins)
         {
+            var wwwrootPath = Path.Combine(plugin.Directory, "wwwroot");
+            if (Directory.Exists(wwwrootPath))
+            {
+                app.UseStaticFiles(new StaticFileOptions
+                {
+                    FileProvider = new PhysicalFileProvider(wwwrootPath),
+                    RequestPath = $"/static/{plugin.Name}",
+                    ServeUnknownFileTypes = true,
+                });
+            }
+            
             plugin.Instance.Configure(app, env);
         }
     }

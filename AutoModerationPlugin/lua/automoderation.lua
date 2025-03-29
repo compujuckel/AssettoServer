@@ -1,4 +1,4 @@
-local baseUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP() .. "/automoderation/"
+local baseUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP() .. "/static/AutoModerationPlugin/"
 
 local flags = {
     NO_LIGHTS = 1,

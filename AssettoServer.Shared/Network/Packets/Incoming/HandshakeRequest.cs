@@ -54,6 +54,7 @@ public struct HandshakeRequest : IIncomingNetworkPacket, IOutgoingNetworkPacket
         if (Features == null) return;
         writer.WriteUTF8String(Features, true);
         if (SessionTicket == null) return;
+        writer.Write((short)SessionTicket.Length);
         writer.WriteBytes(SessionTicket);
     }
 }

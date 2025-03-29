@@ -264,7 +264,7 @@ public class UdpPluginServer : CriticalBackgroundService, IAssettoServerAutostar
                 case UdpPluginProtocol.BroadcastChat:
                 {
                     string message = packetReader.ReadUTF32String();
-                    _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 0xFF, Message = message });
+                    _entryCarManager.BroadcastChat(message);
                     break;
                 }
                 case UdpPluginProtocol.GetSessionInfo:

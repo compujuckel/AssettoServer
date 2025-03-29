@@ -2,12 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
-using AssettoServer.Shared.Network.Packets.Shared;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -24,7 +22,7 @@ public enum AiMode
 public partial class EntryCar : IEntryCar<ACTcpClient>
 { 
     public ACTcpClient? Client { get; internal set; }
-    public CarStatus Status { get; private set; } = new CarStatus();
+    public CarStatus Status { get; private set; } = new();
 
     public bool ForceLights { get; internal set; }
 
@@ -52,7 +50,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }
 
     public long[] OtherCarsLastSentUpdateTime { get; }
-    public EntryCar? TargetCar { get; internal set; }
+    public EntryCar? TargetCar { get; set; }
     private long LastFallCheckTime{ get; set; }
 
     public bool AiControlled { get; set; } = false;
@@ -109,8 +107,34 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
             .Enrich.With(new EntryCarLogEventEnricher(this))
             .WriteTo.Logger(Log.Logger)
             .CreateLogger();
+        
+        _sessionManager.SessionChanged += OnSessionChanged;
     }
 
+    private void OnSessionChanged(SessionManager sender, SessionChangedEventArgs args)
+    {
+        Status = new CarStatus
+        {
+            P2PCount = (short)(_configuration.Extra.EnableUnlimitedP2P ? 99 : 15),
+            MandatoryPit = _configuration.Server.PitWindowStart < _configuration.Server.PitWindowEnd,
+        };
+        
+        Client?.SendPacket(new P2PUpdate
+        {
+            P2PCount = Status.P2PCount,
+            SessionId = SessionId
+        });
+            
+        Client?.SendPacket(new MandatoryPitUpdate
+        {
+            MandatoryPit = Status.MandatoryPit,
+            SessionId = SessionId
+        });
+    }
+
+    /// <summary>
+    /// Only call this function to do a clean reset of this EntryCar, e.g. when a player disconnects
+    /// </summary>
     internal void Reset()
     {
         ResetInvoked?.Invoke(this, EventArgs.Empty);
@@ -129,18 +153,6 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
             MandatoryPit = _configuration.Server.PitWindowStart < _configuration.Server.PitWindowEnd,
         };
         TargetCar = null;
-        
-        Client?.SendPacket(new P2PUpdate
-        {
-            P2PCount = Status.P2PCount,
-            SessionId = SessionId
-        });
-            
-        Client?.SendPacket(new MandatoryPitUpdate
-        {
-            MandatoryPit = Status.MandatoryPit,
-            SessionId = SessionId
-        });
     }
 
     internal void SetActive()

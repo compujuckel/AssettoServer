@@ -372,7 +372,6 @@ public class SessionManager : CriticalBackgroundService
         foreach (var entryCar in _entryCarManager.EntryCars)
         {
             CurrentSession.Results?.Add(entryCar.SessionId, new EntryCarResult(entryCar.Client));
-            entryCar.Reset();
         }
 
         var sessionLength = CurrentSession.Configuration switch

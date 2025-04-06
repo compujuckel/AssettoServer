@@ -1015,7 +1015,7 @@ public class ACTcpClient : IClient
     private static string IdFromGuid(ulong guid)
     {
         var hash = SHA1.HashData(Encoding.UTF8.GetBytes($"antarcticfurseal{guid}"));
-        return Convert.ToHexString(hash).ToLower();
+        return Convert.ToHexStringLower(hash);
     }
     
     private static ulong GuidFromName(string input)

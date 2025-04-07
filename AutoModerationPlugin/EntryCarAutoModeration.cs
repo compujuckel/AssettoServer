@@ -1,14 +1,13 @@
 ﻿using System.Numerics;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AutoModerationPlugin.Packets;
-using Serilog;
+using TrafficAiPlugin.Shared;
 
 namespace AutoModerationPlugin;
 
@@ -42,7 +41,7 @@ public class EntryCarAutoModeration
 
     private const double NauticalTwilight = -12.0 * Math.PI / 180.0;
     private readonly EntryCar _entryCar;
-    private readonly AiSpline? _aiSpline;
+    private readonly IAiSpline? _aiSpline;
     private readonly ACServerConfiguration _serverConfiguration;
     private readonly AutoModerationConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
@@ -56,7 +55,8 @@ public class EntryCarAutoModeration
         WeatherManager weatherManager,
         SessionManager sessionManager,
         ACServerConfiguration serverConfiguration,
-        AiSpline? aiSpline = null)
+        ITrafficAi? trafficAi = null,
+        IAiSpline? aiSpline = null)
     {
         _entryCar = entryCar;
         _configuration = configuration;
@@ -71,7 +71,8 @@ public class EntryCarAutoModeration
             _entryCar.PositionUpdateReceived += OnPositionUpdateReceived;
         }
         
-        _laneRadiusSquared = MathF.Pow(_serverConfiguration.Extra.AiParams.LaneWidthMeters / 2.0f * 1.25f, 2);
+        if (trafficAi != null)
+            _laneRadiusSquared = MathF.Pow(trafficAi.GetLaneWidthMeters() / 2.0f * 1.25f, 2);
     }
 
     private void OnPositionUpdateReceived(EntryCar sender, in PositionUpdateIn positionUpdate)

@@ -17,25 +17,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj">
-            <Private>false</Private>
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\AssettoServer\AssettoServer.csproj">
-            <Private>false</Private>
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\TrafficAiPlugin.Shared\TrafficAiPlugin.Shared.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
+      <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj">
+          <Private>false</Private>
+          <ExcludeAssets>runtime</ExcludeAssets>
+      </ProjectReference>
+      <ProjectReference Include="..\AssettoServer\AssettoServer.csproj">
+        <Private>false</Private>
+        <ExcludeAssets>runtime</ExcludeAssets>
+      </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="lua\automoderation.lua" />
-      <EmbeddedResource Include="lua\automoderation.lua" />
-      <None Update="wwwroot\**\*">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+      <Folder Include="Splines\Configuration\" />
     </ItemGroup>
-
 </Project>

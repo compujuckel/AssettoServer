@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Reflection;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
@@ -37,7 +38,13 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
         _entryCarManager = entryCarManager;
         _entryCarTagModeFactory = entryCarTagModeFactory;
         _sessionFactory = sessionFactory;
-
+        
+        _entryCarManager.ClientConnected += (sender, _) =>
+        {
+            sender.FirstUpdateSent += OnFirstUpdateSent;
+            sender.Collision += OnCollision;
+            sender.Disconnecting += OnDisconnecting;
+        };
 
         if (!acServerConfiguration.Extra.EnableClientMessages)
         {
@@ -53,6 +60,15 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
         RunnerColor = ColorTranslator.FromHtml(_configuration.RunnerColor);
         NeutralColor = ColorTranslator.FromHtml(_configuration.NeutralColor);
     }
+
+    private void OnDisconnecting(ACTcpClient sender, EventArgs args)
+        => Instances[sender.SessionId].OnDisconnecting();
+
+    private void OnFirstUpdateSent(ACTcpClient sender, EventArgs args)
+        => Instances[sender.SessionId].OnFirstUpdateSent();
+
+    private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
+        => Instances[sender.SessionId].OnCollision(args);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

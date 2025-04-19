@@ -20,20 +20,14 @@ public class EntryCarTagMode
         _entryCar = entryCar;
         _entryCarManager = entryCarManager;
         _plugin = plugin;
-        _entryCarManager.ClientConnected += (sender, _) =>
-        {
-            sender.FirstUpdateSent += OnFirstUpdateSent;
-            sender.Collision += OnCollision;
-            sender.Disconnecting += OnDisconnecting;
-        };
     }
 
-    private void OnDisconnecting(ACTcpClient sender, EventArgs args)
+    public void OnDisconnecting()
     {
         UpdateColor(_plugin.NeutralColor, true);
     }
 
-    private void OnFirstUpdateSent(ACTcpClient sender, EventArgs args)
+    public void OnFirstUpdateSent()
     {
         var color = _plugin.CurrentSession is not { HasEnded: true } ? _plugin.RunnerColor :  _plugin.NeutralColor;
         UpdateColor(color);
@@ -44,7 +38,7 @@ public class EntryCarTagMode
         }
     }
 
-    private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
+    public void OnCollision(CollisionEventArgs args)
     {
         if (IsTagged || _plugin.CurrentSession == null || args.TargetCar == null) return;
         

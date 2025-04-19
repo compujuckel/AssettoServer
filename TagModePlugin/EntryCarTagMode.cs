@@ -27,8 +27,11 @@ public class EntryCarTagMode
         UpdateColor(_plugin.NeutralColor, true);
     }
 
-    public void OnFirstUpdateSent()
+    public async Task OnFirstUpdateSent()
     {
+        // the textures seem to not be accessible yet, so wait a bit
+        await Task.Delay(2_500);
+        
         var color = _plugin.CurrentSession is { HasEnded: false } ? _plugin.RunnerColor :  _plugin.NeutralColor;
         UpdateColor(color);
 

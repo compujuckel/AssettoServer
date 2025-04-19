@@ -65,7 +65,7 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
         => Instances[sender.SessionId].OnDisconnecting();
 
     private void OnFirstUpdateSent(ACTcpClient sender, EventArgs args)
-        => Instances[sender.SessionId].OnFirstUpdateSent();
+        => _ = Instances[sender.SessionId].OnFirstUpdateSent();
 
     private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
         => Instances[sender.SessionId].OnCollision(args);

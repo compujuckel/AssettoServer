@@ -1,0 +1,14 @@
+﻿using AssettoServer.Server.Plugin;
+using Autofac;
+
+namespace TagModePlugin;
+
+public class TagModoedModule : AssettoServerModule<TagModeConfiguration>
+{
+    protected override void Load(ContainerBuilder builder)
+    {
+        builder.RegisterType<TagModePlugin>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
+        builder.RegisterType<EntryCarTagMode>().AsSelf();
+        builder.RegisterType<TagSession>().AsSelf();
+    }
+}

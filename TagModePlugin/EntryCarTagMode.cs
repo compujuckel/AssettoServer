@@ -29,7 +29,7 @@ public class EntryCarTagMode
 
     public void OnFirstUpdateSent()
     {
-        var color = _plugin.CurrentSession is not { HasEnded: true } ? _plugin.RunnerColor :  _plugin.NeutralColor;
+        var color = _plugin.CurrentSession is { HasEnded: false } ? _plugin.RunnerColor :  _plugin.NeutralColor;
         UpdateColor(color);
 
         foreach (var car in _plugin.Instances.Values)

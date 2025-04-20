@@ -10,6 +10,8 @@ public class TagModeConfiguration : IValidateConfiguration<TagModeConfigurationV
 {
     [YamlMember(Description = "Should tag sessions be started automatically")]
     public bool EnableLoop { get; init; } = false;
+    [YamlMember(Description = "If this is set to 'true' late joiners will join an active game as a runner. \nIf this is set to 'false' late joiners will join an active game as a tagger")]
+    public bool EnableLateJoinRunner { get; init; } = true;
     [YamlMember(Description = "How long a session last, if all players are tagged, the session also ends")]
     public int SessionDurationMinutes { get; init; } = 5;
     [YamlMember(Description = "How long the pause between sessions is")]

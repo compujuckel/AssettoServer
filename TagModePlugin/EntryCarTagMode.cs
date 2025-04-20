@@ -8,6 +8,7 @@ namespace TagModePlugin;
 public class EntryCarTagMode
 {
     private readonly EntryCarManager _entryCarManager;
+    private readonly TagModeConfiguration _configuration;
     private readonly TagModePlugin _plugin;
     private readonly EntryCar _entryCar;
     public bool IsTagged { get; private set; } = false;
@@ -15,10 +16,11 @@ public class EntryCarTagMode
     public bool IsConnected => _entryCar.Client is { HasSentFirstUpdate: true };
     public Color CurrentColor { get; private set; } = Color.Empty;
 
-    public EntryCarTagMode(EntryCar entryCar, EntryCarManager entryCarManager, TagModePlugin plugin)
+    public EntryCarTagMode(EntryCar entryCar, EntryCarManager entryCarManager, TagModeConfiguration configuration, TagModePlugin plugin)
     {
         _entryCar = entryCar;
         _entryCarManager = entryCarManager;
+        _configuration = configuration;
         _plugin = plugin;
     }
 
@@ -31,9 +33,17 @@ public class EntryCarTagMode
     {
         // the textures seem to not be accessible yet, so wait a bit
         await Task.Delay(2_500);
-        
-        var color = _plugin.CurrentSession is { HasEnded: false } ? _plugin.RunnerColor :  _plugin.NeutralColor;
-        UpdateColor(color);
+
+        var isSessionActive = _plugin.CurrentSession is { HasEnded: false };
+        if (isSessionActive && !_configuration.EnableLateJoinRunner)
+        {
+            SetTagged();
+        }
+        else
+        {
+            var color = isSessionActive ? _plugin.RunnerColor : _plugin.NeutralColor;
+            UpdateColor(color);
+        }
 
         foreach (var car in _plugin.Instances.Values)
         {

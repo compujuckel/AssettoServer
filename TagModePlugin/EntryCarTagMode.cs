@@ -56,11 +56,11 @@ public class EntryCarTagMode
         if (IsTagged || _plugin.CurrentSession == null || args.TargetCar == null) return;
         
         var targetCar = _plugin.CurrentSession.GetCar(args.TargetCar);
+
+        if (!targetCar.IsTagged) return;
         
-        if (targetCar.IsTagged)
-        {
-            SetTagged();
-        }
+        SetTagged();
+        _plugin.CurrentSession.LastCatcher = args.TargetCar;
     }
 
     public void SetTagged(bool val = true)

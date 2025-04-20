@@ -8,6 +8,8 @@ namespace TagModePlugin;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class TagModeConfiguration : IValidateConfiguration<TagModeConfigurationValidator>
 {
+    [YamlMember(Description = "Should a session only end when all runners have been caught.\nIf set to true, the winner of a will be the player that caught the last runner.\nIf set to false, at least one runner was not caught when the time runs out")]
+    public bool EnableEndlessMode { get; init; } = false;
     [YamlMember(Description = "Should tag sessions be started automatically")]
     public bool EnableLoop { get; init; } = false;
     [YamlMember(Description = "If this is set to 'true' late joiners will join an active game as a runner. \nIf this is set to 'false' late joiners will join an active game as a tagger")]

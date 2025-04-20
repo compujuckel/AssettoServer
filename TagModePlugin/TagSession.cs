@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using AssettoServer.Server;
+using Microsoft.Net.Http.Headers;
 using Serilog;
 
 namespace TagModePlugin;
@@ -7,6 +8,7 @@ namespace TagModePlugin;
 public class TagSession
 {
     public EntryCar InitialTagger { get; }
+    public EntryCar LastCatcher { get; set; }
 
     private bool HasStarted { get; set; }
     private bool IsCancelled { get; set; }
@@ -26,7 +28,7 @@ public class TagSession
         TagModePlugin plugin,
         TagModeConfiguration configuration)
     {
-        InitialTagger = initialTagger;
+        InitialTagger = LastCatcher = initialTagger;
         _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
         _plugin = plugin;
@@ -73,12 +75,20 @@ public class TagSession
             _plugin.Instances[InitialTagger.SessionId].SetTagged();
             StartTimeMilliseconds = _sessionManager.ServerTimeMilliseconds;
             
-            while (true)
+            while (!IsCancelled)
             {
-                if (IsCancelled ||
-                    _sessionManager.ServerTimeMilliseconds - StartTimeMilliseconds > _configuration.SessionDurationMilliseconds ||
-                    _plugin.Instances.Where(car => car.Value.IsConnected ).All(car => car.Value.IsTagged))
-                    return;
+                switch (_configuration.EnableEndlessMode)
+                {
+                    case false:
+                        if (_sessionManager.ServerTimeMilliseconds - StartTimeMilliseconds > _configuration.SessionDurationMilliseconds ||
+                              _plugin.Instances.Where(car => car.Value.IsConnected ).All(car => car.Value.IsTagged))
+                            return;
+                        break;
+                    case true:
+                        if (_plugin.Instances.Where(car => car.Value.IsConnected).All(car => car.Value.IsTagged))
+                            return;
+                        break;
+                }
 
                 await Task.Delay(250);
             }
@@ -103,10 +113,21 @@ public class TagSession
         }
         else
         {
-            var winners = _plugin.Instances.Any(car => car.Value is { IsTagged: false, IsConnected: true }) ? "Runners" : "Taggers";
+            switch (_configuration.EnableEndlessMode)
+            {
+                case false:
+                    var winners = _plugin.Instances.Any(car => car.Value is { IsTagged: false, IsConnected: true }) ? "Runners" : "Taggers";
 
-            _entryCarManager.BroadcastChat($"The {winners} just won this game of tag.");
-            Log.Information("The {Winners} just won this game of tag", winners);
+                    _entryCarManager.BroadcastChat($"The {winners} just won this game of tag.");
+                    Log.Information("The {Winners} just won this game of tag", winners);
+                    break;
+                case true:
+                    var winner = LastCatcher.Client?.Name ?? $"Car #{LastCatcher.SessionId}";
+
+                    _entryCarManager.BroadcastChat($"'{winner}' just won this game of tag.");
+                    Log.Information("{Winner} just won this game of tag", winner);
+                    break;
+            }
         }
         
         await Task.Delay(15_000);

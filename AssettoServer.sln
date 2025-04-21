@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30420.98
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssettoServer", "AssettoServer\AssettoServer.csproj", "{7FDA59D8-BF5B-4B50-8F61-37611D087D24}"
 EndProject
@@ -38,6 +38,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CustomCommandPlugin", "CustomCommandPlugin\CustomCommandPlugin.csproj", "{369241FE-2176-4AA6-B44C-0C1A71D5EA25}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReplayPlugin", "ReplayPlugin\ReplayPlugin.csproj", "{85A4319F-EB8C-4CC3-B107-6C319E537EB8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CatMouseTougePlugin", "CatMouseTougePlugin\CatMouseTougePlugin.csproj", "{FD8E7E85-0C25-4A29-92A0-6E22EE960678}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -117,6 +119,10 @@ Global
 		{85A4319F-EB8C-4CC3-B107-6C319E537EB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{85A4319F-EB8C-4CC3-B107-6C319E537EB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{85A4319F-EB8C-4CC3-B107-6C319E537EB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD8E7E85-0C25-4A29-92A0-6E22EE960678}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD8E7E85-0C25-4A29-92A0-6E22EE960678}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD8E7E85-0C25-4A29-92A0-6E22EE960678}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD8E7E85-0C25-4A29-92A0-6E22EE960678}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -23,7 +23,7 @@ public class RaceCommandModule : ACModuleBase
     public async ValueTask AcceptRaceAsync()
     {
         var currentRace = _plugin.GetRace(Client!.EntryCar).CurrentRace;
-        if (currentRace == null)
+        if (currentRace == null || currentRace.Challenger == Client!.EntryCar)
             Reply("You do not have a pending race request.");
         else if (currentRace.HasStarted)
             Reply("This race has already started.");

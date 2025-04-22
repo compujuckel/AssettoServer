@@ -8,7 +8,7 @@ namespace TagModePlugin;
 public class TagSession
 {
     public EntryCar InitialTagger { get; }
-    public EntryCar LastCatcher { get; set; }
+    public EntryCar LastCaught { get; set; }
 
     private bool HasStarted { get; set; }
     private bool IsCancelled { get; set; }
@@ -28,7 +28,7 @@ public class TagSession
         TagModePlugin plugin,
         TagModeConfiguration configuration)
     {
-        InitialTagger = LastCatcher = initialTagger;
+        InitialTagger = LastCaught = initialTagger;
         _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
         _plugin = plugin;
@@ -122,7 +122,7 @@ public class TagSession
                     Log.Information("The {Winners} just won this game of tag", winners);
                     break;
                 case true:
-                    var winner = LastCatcher.Client?.Name ?? $"Car #{LastCatcher.SessionId}";
+                    var winner = LastCaught.Client?.Name ?? $"Car #{LastCaught.SessionId}";
 
                     _entryCarManager.BroadcastChat($"'{winner}' just won this game of tag.");
                     Log.Information("{Winner} just won this game of tag", winner);

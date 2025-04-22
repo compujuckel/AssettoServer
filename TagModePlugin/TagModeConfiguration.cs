@@ -8,7 +8,7 @@ namespace TagModePlugin;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class TagModeConfiguration : IValidateConfiguration<TagModeConfigurationValidator>
 {
-    [YamlMember(Description = "Should a session only end when all runners have been caught.\nIf set to true, the winner of a will be the player that caught the last runner.\nIf set to false, at least one runner was not caught when the time runs out")]
+    [YamlMember(Description = "Should a session only end when all runners have been caught.\nIf set to true, the winner will be the last runner that was caught.\nIf set to false, if at least one runner was not caught when the time runs out, the runners win")]
     public bool EnableEndlessMode { get; init; } = false;
     [YamlMember(Description = "Should tag sessions be started automatically")]
     public bool EnableLoop { get; init; } = false;

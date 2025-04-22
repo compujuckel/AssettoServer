@@ -51,8 +51,11 @@ public class TougeSession
         // Implement touge session logic here
         // Run 2 races.
         // A Race is an object. Similar to the Race object in RaceChallengePlugin
+        // Have to check as well if the players are still connected.
         Race race1 = _raceFactory(Challenger, Challenged);
-        Race race2 = _raceFactory(Challenged, Challenger);
+        await race1.RaceAsync();
+        // Because its important the race is finished before starting the next one.
+        //Race race2 = _raceFactory(Challenged, Challenger);
         // After the first two rounds:
         //  Check if there is the need for a third round
         //  If not, there is a winner. Do elo calcs.

@@ -47,6 +47,8 @@ public class CatMouseTougeCommandModule : ACModuleBase
         else
         {
             Reply("Invite succesfully accepted!");
+            // This currentSession object is shared among the two players.
+            // They both hold a reference to it.
             await currentSession.StartAsync();
         }
     }

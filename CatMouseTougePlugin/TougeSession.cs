@@ -1,6 +1,7 @@
 ﻿
 using AssettoServer.Server;
 using AssettoServer.Shared.Network.Packets.Outgoing;
+using Serilog;
 
 namespace CatMouseTougePlugin;
 
@@ -10,10 +11,6 @@ public class TougeSession
     public EntryCar Challenged { get; }
 
     public bool IsActive { get; private set; }
-    public bool IsChallenger { get; }
-
-    private string ChallengerName { get; }
-    private string ChallengedName { get; }
 
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
@@ -30,9 +27,6 @@ public class TougeSession
         _entryCarManager = entryCarManager;
         _plugin = plugin;
         _raceFactory = raceFactory;
-
-        ChallengerName = Challenger.Client?.Name!;
-        ChallengedName = Challenged.Client?.Name!;
     }
 
     public Task StartAsync()
@@ -48,18 +42,60 @@ public class TougeSession
 
     private async Task TougeSessionAsync()
     {
-        // Implement touge session logic here
-        // Run 2 races.
-        // A Race is an object. Similar to the Race object in RaceChallengePlugin
-        // Have to check as well if the players are still connected.
-        Race race1 = _raceFactory(Challenger, Challenged);
-        await race1.RaceAsync();
-        // Because its important the race is finished before starting the next one.
-        //Race race2 = _raceFactory(Challenged, Challenger);
-        // After the first two rounds:
-        //  Check if there is the need for a third round
-        //  If not, there is a winner. Do elo calcs.
-        //  If yes, start more races until there is a winner.
-        //      Elo calcs
+        try
+        {
+            // Currently there is no time between races to line up or get teleported.
+            // Implement touge session logic here
+            // Run 2 races.
+            // A Race is an object. Similar to the Race object in RaceChallengePlugin
+            // Have to check as well if the players are still connected.
+            Race race1 = _raceFactory(Challenger, Challenged);
+            EntryCar? winner1 = await race1.RaceAsync();
+            // Because its important the race is finished before starting the next one.
+            if (winner1 != null)
+            {
+                Race race2 = _raceFactory(Challenged, Challenger);
+                EntryCar? winner2 = await race2.RaceAsync();
+
+                if (winner2 != null)
+                {
+                    if (winner1 == winner2)
+                    {
+                        // Someone won both rounds so that is the winner.
+                    }
+                    else
+                    {
+                        Race race3 = _raceFactory(Challenger, Challenged);
+                        EntryCar? winner3 = await race3.RaceAsync();
+                        // Winner 3 is the overall winner.
+                    }
+                }
+            }
+
+            // After the first two rounds:
+            //  Check if there is the need for a third round
+            //  If not, there is a winner. Do elo calcs.
+            //  If yes, start more races until there is a winner.
+            //      Elo calcs
+        }
+        catch (Exception ex) 
+        {
+            Log.Error(ex, "Error while running touge session.");
+        }
+        finally
+        {
+            FinishTougeSession();
+        }
+    }
+
+    private void FinishTougeSession()
+    {
+        _plugin.GetSession(Challenger).CurrentSession = null;
+        _plugin.GetSession(Challenged).CurrentSession = null;
+
+        string ChallengedName = Challenged.Client?.Name!;
+        string ChallengerName = Challenger.Client?.Name!;
+
+        _entryCarManager.BroadcastChat($"Race between {ChallengerName} and {ChallengedName} has concluded!");
     }
 }

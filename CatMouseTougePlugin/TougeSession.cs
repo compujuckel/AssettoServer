@@ -1,6 +1,5 @@
 ﻿
 using AssettoServer.Server;
-using AssettoServer.Shared.Network.Packets.Outgoing;
 using Serilog;
 
 namespace CatMouseTougePlugin;

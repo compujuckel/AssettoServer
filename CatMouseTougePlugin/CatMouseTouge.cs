@@ -15,6 +15,8 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     private readonly Func<EntryCar, EntryCarTougeSession> _entryCarTougeSessionFactory;
     private readonly Dictionary<int, EntryCarTougeSession> _instances = [];
 
+    private const string _plugin_folder = "plugins/CatMouseTougePlugin";
+
     public CatMouseTouge(
         CatMouseTougeConfiguration configuration, 
         EntryCarManager entryCarManager, 
@@ -40,6 +42,10 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         var reconnectScript = streamReader.ReadToEnd();
         scriptProvider.AddScript(reconnectScript, "teleport.lua");
 
+        // Setup SQLite database
+        string dbPath = Path.Combine(_plugin_folder, "database.db");
+        InitializeDatabase(dbPath);
+
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -55,5 +61,24 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     }
 
     internal EntryCarTougeSession GetSession(EntryCar entryCar) => _instances[entryCar.SessionId];
+
+    private void InitializeDatabase(string dbPath)
+    {
+        if (!File.Exists(dbPath))
+        {
+            using var connection = new SqliteConnection($"Data Source={dbPath}");
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText =
+            @"
+                    CREATE TABLE EloRatings (
+                        PlayerId INTEGER PRIMARY KEY,
+                        Rating INTEGER,
+                        RacesCompleted INTEGER
+                    );
+            ";
+            command.ExecuteNonQuery();
+        }
+    }
 }
 

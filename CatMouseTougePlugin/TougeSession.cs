@@ -44,11 +44,8 @@ public class TougeSession
     {
         try
         {
-            // Currently there is no time between races to line up or get teleported.
-            // Implement touge session logic here
-            // Run 2 races.
-            // A Race is an object. Similar to the Race object in RaceChallengePlugin
-            // Have to check as well if the players are still connected.
+            EntryCar? overallWinner = null;
+            // Run race 1.
             Race race1 = _raceFactory(Challenger, Challenged);
             EntryCar? winner1 = await race1.RaceAsync();
             // Because its important the race is finished before starting the next one.
@@ -59,24 +56,19 @@ public class TougeSession
 
                 if (winner2 != null)
                 {
-                    if (winner1 == winner2)
+                    if (winner1 != winner2)
                     {
-                        // Someone won both rounds so that is the winner.
+                        Race race3 = _raceFactory(Challenger, Challenged);
+                        overallWinner = await race3.RaceAsync(); // The overall winner.
                     }
                     else
                     {
-                        Race race3 = _raceFactory(Challenger, Challenged);
-                        EntryCar? winner3 = await race3.RaceAsync();
-                        // Winner 3 is the overall winner.
+                        overallWinner = winner1;
                     }
                 }
             }
 
-            // After the first two rounds:
-            //  Check if there is the need for a third round
-            //  If not, there is a winner. Do elo calcs.
-            //  If yes, start more races until there is a winner.
-            //      Elo calcs
+            // Calculate ELO.
         }
         catch (Exception ex) 
         {

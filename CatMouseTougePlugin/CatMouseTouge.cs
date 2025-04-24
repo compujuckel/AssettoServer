@@ -5,6 +5,7 @@ using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Microsoft.Data.Sqlite;
 
 namespace CatMouseTougePlugin;
 
@@ -12,7 +13,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
 {
     private readonly EntryCarManager _entryCarManager;
     private readonly Func<EntryCar, EntryCarTougeSession> _entryCarTougeSessionFactory;
-    private readonly Dictionary<int, EntryCarTougeSession> _instances = new();
+    private readonly Dictionary<int, EntryCarTougeSession> _instances = [];
 
     public CatMouseTouge(
         CatMouseTougeConfiguration configuration, 

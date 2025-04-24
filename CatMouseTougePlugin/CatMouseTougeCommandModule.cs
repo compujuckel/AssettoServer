@@ -1,9 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Numerics;
 using System.Threading.Tasks;
 using AssettoServer.Commands;
 using AssettoServer.Commands.Attributes;
 using AssettoServer.Server;
+using CatMouseTougePlugin.Packets;
 using Qmmands;
+using Scriban.Parsing;
 
 namespace CatMouseTougePlugin;
 
@@ -52,5 +55,18 @@ public class CatMouseTougeCommandModule : ACModuleBase
             // They both hold a reference to it.
             await currentSession.StartAsync();
         }
+    }
+
+    [Command("teleport"), RequireConnectedPlayer]
+    public void Teleport()
+    {
+        // For testing the teleport
+        Reply("Teleporting...");
+
+        Client!.SendPacket(new TeleportPacket
+        {
+            Position = new Vector3(-204.4f, 468.34f, -93.87f),  // Your target position
+            Direction = new Vector3(0.0998f, 0.992f, 0.0784f),  // Forward direction (can be approximate)
+        });
     }
 }

@@ -6,6 +6,7 @@ using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Microsoft.Data.Sqlite;
+using AssettoServer.Network.Tcp;
 
 namespace CatMouseTougePlugin;
 
@@ -15,12 +16,12 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     private readonly Func<EntryCar, EntryCarTougeSession> _entryCarTougeSessionFactory;
     private readonly Dictionary<int, EntryCarTougeSession> _instances = [];
 
-    private const string _plugin_folder = "plugins/CatMouseTougePlugin";
+    private const string dbPath = "plugins/CatMouseTougePlugin/database.db";
 
     public CatMouseTouge(
-        CatMouseTougeConfiguration configuration, 
-        EntryCarManager entryCarManager, 
-        Func<EntryCar, EntryCarTougeSession> entryCarTougeSessionFactory, 
+        CatMouseTougeConfiguration configuration,
+        EntryCarManager entryCarManager,
+        Func<EntryCar, EntryCarTougeSession> entryCarTougeSessionFactory,
         IHostApplicationLifetime applicationLifetime,
         CSPServerScriptProvider scriptProvider,
         ACServerConfiguration serverConfiguration
@@ -33,7 +34,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
 
         if (!serverConfiguration.Extra.EnableClientMessages)
         {
-            throw new ConfigurationException("FastTravelPlugin requires ClientMessages to be enabled");
+            throw new ConfigurationException("CatMouseTougePlugin requires ClientMessages to be enabled");
         }
 
         var luaPath = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "lua", "teleport.lua");
@@ -42,8 +43,6 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         var reconnectScript = streamReader.ReadToEnd();
         scriptProvider.AddScript(reconnectScript, "teleport.lua");
 
-        // Setup SQLite database
-        string dbPath = Path.Combine(_plugin_folder, "database.db");
         InitializeDatabase(dbPath);
 
     }
@@ -56,6 +55,8 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         {
             _instances.Add(entryCar.SessionId, _entryCarTougeSessionFactory(entryCar));
         }
+
+        _entryCarManager.ClientConnected += OnClientConnected;
 
         return Task.CompletedTask;
     }
@@ -71,7 +72,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
             var command = connection.CreateCommand();
             command.CommandText =
             @"
-                    CREATE TABLE EloRatings (
+                    CREATE TABLE Players (
                         PlayerId INTEGER PRIMARY KEY,
                         Rating INTEGER,
                         RacesCompleted INTEGER
@@ -79,6 +80,37 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
             ";
             command.ExecuteNonQuery();
         }
+    }
+
+    private void OnClientConnected(ACTcpClient client, EventArgs args)
+    {
+        // Check if the player is registered in the database
+        ulong clientId = client.Guid;
+
+        // Query the database with clientId.
+        using var connection = new SqliteConnection($"Data Source={dbPath}");
+        connection.Open();
+
+        // First, check if the player exists
+        var checkCommand = connection.CreateCommand();
+        checkCommand.CommandText = "SELECT COUNT(*) FROM Players WHERE PlayerId = @PlayerId";
+        checkCommand.Parameters.AddWithValue("@PlayerId", (long)clientId);
+
+        int playerExists = Convert.ToInt32(checkCommand.ExecuteScalar());
+
+        // If player doesn't exist, add them with default values
+        if (playerExists == 0)
+        {
+            var insertCommand = connection.CreateCommand();
+            insertCommand.CommandText = "INSERT INTO EloRatings (PlayerId, Rating, RacesCompleted) VALUES (@PlayerId, @Rating, @RacesCompleted)";
+            insertCommand.Parameters.AddWithValue("@PlayerId", (long)clientId);
+            insertCommand.Parameters.AddWithValue("@Rating", 1000); // Default ELO rating
+            insertCommand.Parameters.AddWithValue("@RacesCompleted", 0);
+            insertCommand.ExecuteNonQuery();
+
+            client.SendChatMessage("Welcome to the server! Your elo is 1000. Improve it by challenging others to a race.");
+        }
+
     }
 }
 

@@ -27,7 +27,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         ACServerConfiguration serverConfiguration
         ) : base(applicationLifetime)
     {
-        Log.Debug("Starting UkkO's cat mouse touge plugin.!");
+        Log.Debug("Starting UkkO's cat mouse touge plugin!");
 
         _entryCarManager = entryCarManager;
         _entryCarTougeSessionFactory = entryCarTougeSessionFactory;
@@ -49,8 +49,6 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Log.Debug("Cat mouse touge plugin autostart called.");
-
         foreach (var entryCar in _entryCarManager.EntryCars)
         {
             _instances.Add(entryCar.SessionId, _entryCarTougeSessionFactory(entryCar));

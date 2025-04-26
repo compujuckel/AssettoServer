@@ -124,7 +124,7 @@ public class TougeSession
         double effectivePlayerElo = playerElo - carAdvantage * 100;
 
         // Calculate expected outcome (standard ELO formula)
-        double expectedResult = 1.0 / (1.0 + Math.Pow(10.0, (opponentElo - effectivePlayerElo / 400.0)));
+        double expectedResult = 1.0 / (1.0 + Math.Pow(10.0, (opponentElo - effectivePlayerElo) / 400.0));
 
         int maxGain = 32; //Hardcoded for now, later retrieve from cfg.
 

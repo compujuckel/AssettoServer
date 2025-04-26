@@ -1,5 +1,8 @@
 ﻿
+using System.ComponentModel.DataAnnotations;
 using AssettoServer.Server;
+using AssettoServer.Shared.Model;
+using Microsoft.Data.Sqlite;
 using Serilog;
 
 namespace CatMouseTougePlugin;
@@ -66,8 +69,7 @@ public class TougeSession
                     }
                 }
             }
-
-            // Calculate ELO.
+            UpdateElo(overallWinner);
         }
         catch (Exception ex) 
         {
@@ -88,5 +90,82 @@ public class TougeSession
         string ChallengerName = Challenger.Client?.Name!;
 
         _entryCarManager.BroadcastChat($"Race between {ChallengerName} and {ChallengedName} has concluded!");
+    }
+
+    private void UpdateElo(EntryCar? winner)
+    {
+        if (winner == null) return;
+        var loser = (winner == Challenger) ? Challenged : Challenger;
+
+        string winnerId = winner.Client!.Guid.ToString();
+        string loserId = loser.Client!.Guid.ToString();
+
+        int winnerElo = _plugin.GetPlayerElo(winnerId);
+        int loserElo = _plugin.GetPlayerElo(loserId);
+
+        // Actually do elo calcs.
+        int winnerCarRating = 700; //Hardcoded for now, later retrieve from cfg.
+        int loserCarRating = 700;
+
+        int newWinnerElo = CalculateElo(winnerElo, loserElo, winnerCarRating, loserCarRating, true);
+        int newLoserElo = CalculateElo(loserElo, winnerElo, loserCarRating, winnerCarRating, false);
+
+        // Update elo in the database.
+        UpdatePlayerElo(winnerId, newWinnerElo);
+        UpdatePlayerElo(loserId, newLoserElo);
+    }
+
+    private int CalculateElo(int playerElo, int opponentElo, int playerCarRating, int opponentCarRating, bool hasWon)
+    {
+        // Calculate car performance difference factor
+        double carAdvantage = (playerCarRating - opponentCarRating) / 100;
+
+        // Adjust effective ratings based on car performance.
+        double effectivePlayerElo = playerElo - carAdvantage * 100;
+
+        // Calculate expected outcome (standard ELO formula)
+        double expectedResult = 1.0 / (1.0 + Math.Pow(10.0, (opponentElo - effectivePlayerElo / 400.0)));
+
+        int maxGain = 32; //Hardcoded for now, later retrieve from cfg.
+
+        // Calculate base ELO change
+        int result = hasWon ? 1 : 0;
+        double eloChange = maxGain * (result - expectedResult);
+
+        // Apply car performance adjustment to ELO change
+        // If player has better car (positive car_advantage), reduce gains and increase losses
+        // If player has worse car (negative car_advantage), increase gains and reduce losses
+        double carFactor = 1 - (carAdvantage * 0.5);
+
+        // Ensure car_factor is within reasonable bounds (0.5 to 1.5)
+        carFactor = Math.Max(0.5, Math.Min(1.5, carFactor));
+
+        // Apply car factor to elo change.
+        int adjustedEloChange = (int)Math.Round(eloChange * carFactor);
+
+        return playerElo + adjustedEloChange;
+
+    }
+
+    private void UpdatePlayerElo(string playerId, int newElo)
+    {
+        using var connection = new SqliteConnection($"Data Source={_plugin.dbPath}");
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+        UPDATE Players
+        SET Rating = $newRating
+        WHERE PlayerId = $playerId
+    ";
+        command.Parameters.AddWithValue("$newRating", newElo);
+        command.Parameters.AddWithValue("$playerId", playerId);
+
+        int affectedRows = command.ExecuteNonQuery();
+
+        if (affectedRows == 0)
+        {
+            throw new Exception($"Failed to update rating. Player with ID {playerId} not found.");
+        }
     }
 }

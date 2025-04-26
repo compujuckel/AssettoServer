@@ -16,7 +16,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     private readonly Func<EntryCar, EntryCarTougeSession> _entryCarTougeSessionFactory;
     private readonly Dictionary<int, EntryCarTougeSession> _instances = [];
 
-    private const string dbPath = "plugins/CatMouseTougePlugin/database.db";
+    public readonly string dbPath = "plugins/CatMouseTougePlugin/database.db";
 
     public CatMouseTouge(
         CatMouseTougeConfiguration configuration,
@@ -27,7 +27,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         ACServerConfiguration serverConfiguration
         ) : base(applicationLifetime)
     {
-        Log.Debug("UkkO's cat mouse touge plugin called! {Message}", configuration.Message);
+        Log.Debug("Starting UkkO's cat mouse touge plugin.!");
 
         _entryCarManager = entryCarManager;
         _entryCarTougeSessionFactory = entryCarTougeSessionFactory;
@@ -73,7 +73,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
             command.CommandText =
             @"
                     CREATE TABLE Players (
-                        PlayerId INTEGER PRIMARY KEY,
+                        PlayerId TEXT PRIMARY KEY,
                         Rating INTEGER,
                         RacesCompleted INTEGER
                     );
@@ -85,7 +85,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     private void OnClientConnected(ACTcpClient client, EventArgs args)
     {
         // Check if the player is registered in the database
-        ulong clientId = client.Guid;
+        string playerId = client.Guid.ToString();
 
         // Query the database with clientId.
         using var connection = new SqliteConnection($"Data Source={dbPath}");
@@ -94,23 +94,65 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         // First, check if the player exists
         var checkCommand = connection.CreateCommand();
         checkCommand.CommandText = "SELECT COUNT(*) FROM Players WHERE PlayerId = @PlayerId";
-        checkCommand.Parameters.AddWithValue("@PlayerId", (long)clientId);
+        checkCommand.Parameters.AddWithValue("@PlayerId", playerId);
 
         int playerExists = Convert.ToInt32(checkCommand.ExecuteScalar());
 
         // If player doesn't exist, add them with default values
         if (playerExists == 0)
         {
+            Log.Debug("Player does not exist. Adding to database.");
             var insertCommand = connection.CreateCommand();
-            insertCommand.CommandText = "INSERT INTO EloRatings (PlayerId, Rating, RacesCompleted) VALUES (@PlayerId, @Rating, @RacesCompleted)";
-            insertCommand.Parameters.AddWithValue("@PlayerId", (long)clientId);
+            insertCommand.CommandText = "INSERT INTO Players (PlayerId, Rating, RacesCompleted) VALUES (@PlayerId, @Rating, @RacesCompleted)";
+            insertCommand.Parameters.AddWithValue("@PlayerId", playerId);
             insertCommand.Parameters.AddWithValue("@Rating", 1000); // Default ELO rating
             insertCommand.Parameters.AddWithValue("@RacesCompleted", 0);
             insertCommand.ExecuteNonQuery();
 
-            client.SendChatMessage("Welcome to the server! Your elo is 1000. Improve it by challenging others to a race.");
+        }
+        else
+        {
+            Log.Debug("Player already exists in database.");
+            //client.SendChatMessage("Welcome back!");
         }
 
+        client.FirstUpdateSent += OnFirstUpdate;
+
+    }
+
+    private void OnFirstUpdate(ACTcpClient client, EventArgs args)
+    {
+        int elo = 1000; // Default Elo if player not found
+        string playerId = client.Guid.ToString();
+
+        elo = GetPlayerElo(playerId);
+
+        client.SendChatMessage($"Welcome to the server, your touge elo is {elo}. Improve it by racing other players!");
+    }
+
+    public int GetPlayerElo(string playerId)
+    {
+        using var connection = new SqliteConnection($"Data Source={dbPath}");
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+        SELECT Rating
+        FROM Players
+        WHERE PlayerId = $playerId
+    ";
+        command.Parameters.AddWithValue("$playerId", playerId);
+
+        var result = command.ExecuteScalar();
+
+        if (result != null && int.TryParse(result.ToString(), out int rating))
+        {
+            return rating;
+        }
+        else
+        {
+            throw new Exception($"Player with ID {playerId} not found in the database.");
+        }
     }
 }
 

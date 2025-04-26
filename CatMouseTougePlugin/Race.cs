@@ -71,10 +71,9 @@ public class Race
             SendMessage("Race starting soon...");
             await Task.Delay(3000);
 
-            // Maybe reset their current lap so they dont unintentionally set a lap when crossing the finish line again.
             HasStarted = true; // I don't know if this is used anywhere tbh.
 
-            // Make a race countdown.
+            // Race countdown.
             while (!isGo)
             {
                 byte signalStage = 0;
@@ -216,12 +215,7 @@ public class Race
             Direction = _followerStartPos["Direction"],
         });
 
-        // Wait until both cars are at their starting positions
-        // This has to be done differently.
-        // Because if one player teleports a lot earlier, he can start moving
-        // And then the check will keep failing
-        // Just check for both players if they reach the destination once
-        // And when they reached it both the while loop can be broken.
+        // Check if both cars have been teleported to their starting locations.
         bool isLeaderTeleported = false;
         bool isFollowerTeleported = false;
 

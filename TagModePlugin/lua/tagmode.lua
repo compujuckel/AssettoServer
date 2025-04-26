@@ -2,28 +2,24 @@
 local tagModeColorEvent = ac.OnlineEvent(
     { 
         ac.StructItem.key("tagModeColorPacket"), 
-        R = ac.StructItem.byte(),
-        G = ac.StructItem.byte(),
-        B = ac.StructItem.byte(),
-        Target = ac.StructItem.byte(),
+        Color = ac.StructItem.rgbm(),
         Disconnect = ac.StructItem.boolean()
     }, function(sender, message)
-        if sender ~= nil then return end
-
-        local car = ac.getCar.serverSlot(message.Target)
+        -- if sender ~= nil then return end
         
-        local carNode = ac.findNodes('carRoot:' .. car.index)
+        local carNode = ac.findNodes('carRoot:' .. sender.index)
         carNode:resetSkin()
 
         if not message.Disconnect then
-            local color = rgbm(message.R/255, message.G/255, message.B/255, 1)
-            ac.debug("tagModeColor", color)
+            ac.debug("tagModeColor", message.Color)
             carNode -- this filter is probably extremely shit
                 :findMeshes('{ shader:smCarPaint | material:?body? | material:?Body? | material:?BODY? | material:?car_paint? | material:?Car_Paint? | material:?CAR_PAINT? | material:?carpaint? | material:?CarPaint? | material:?carPaint? | material:?CARPAINT? }')
-                :setMaterialTexture('txDiffuse', color)
-                :setMaterialTexture('txEmissive', color)
+                :setMaterialTexture('txDiffuse', message.Color)
+                :setMaterialTexture('txEmissive', message.Color)
                 :storeCurrentTransformation()
         end
         
-        ac.refreshCarColor(car.index)
+        ac.refreshCarColor(sender.index)
     end)
+
+tagModeColorEvent{Color = rgbm.new(0.43, 0.79, 0.1, 1), Disconnect = false}

@@ -81,10 +81,8 @@ public class EntryCarTagMode
         CurrentColor = color;
         var packet = new TagModeColorPacket
         {
-            R = color.R,
-            G = color.G,
-            B = color.B,
-            Target = _entryCar.SessionId,
+            Color = color,
+            SessionId = _entryCar.SessionId,
             Disconnect = disconnect
         };
          _entryCarManager.BroadcastPacket(packet);

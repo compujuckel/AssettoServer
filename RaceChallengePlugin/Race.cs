@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using AssettoServer.Server;
-using AssettoServer.Shared.Network.Packets.Shared;
+using AssettoServer.Server.Plugin;
 using Serilog;
 
 namespace RaceChallengePlugin;
@@ -24,16 +24,18 @@ public class Race
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly RaceChallengePlugin _plugin;
+    private readonly PluginDataManager _pluginDataManager;
 
     public delegate Race Factory(EntryCar challenger, EntryCar challenged, bool lineUpRequired = true);
     
-    public Race(EntryCar challenger, EntryCar challenged, SessionManager sessionManager, EntryCarManager entryCarManager, RaceChallengePlugin plugin, bool lineUpRequired = true)
+    public Race(EntryCar challenger, EntryCar challenged, SessionManager sessionManager, EntryCarManager entryCarManager, RaceChallengePlugin plugin, PluginDataManager pluginDataManager, bool lineUpRequired = true)
     {
         Challenger = challenger;
         Challenged = challenged;
         _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
         _plugin = plugin;
+        _pluginDataManager = pluginDataManager;
         LineUpRequired = lineUpRequired;
 
         ChallengerName = Challenger.Client?.Name!;
@@ -219,6 +221,13 @@ public class Race
 
             _entryCarManager.BroadcastChat($"{winnerName} just beat {loserName} in a race.");
             Log.Information("{WinnerName} just beat {LoserName} in a race", winnerName, loserName);
+            _pluginDataManager.SendSharedCarData(Leader, new PluginDataEventArgs
+            {
+                Source = GetType().Namespace!,
+                Description = "Race Challenge",
+                DataType = PluginDataType.EventWon,
+                Opponent = Follower
+            });
         }
     }
 

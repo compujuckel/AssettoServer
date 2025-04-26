@@ -78,6 +78,7 @@ public class Startup
         builder.RegisterType<CSPClientMessageHandler>().AsSelf().SingleInstance();
         builder.RegisterType<SessionManager>().AsSelf().SingleInstance();
         builder.RegisterType<VoteManager>().AsSelf().SingleInstance();
+        builder.RegisterType<PluginDataManager>().AsSelf().SingleInstance();
         builder.RegisterType<EntryCarManager>().AsSelf().SingleInstance();
         builder.RegisterType<IpApiGeoParamsProvider>().As<IGeoParamsProvider>();
         builder.RegisterType<GeoParamsManager>().AsSelf().SingleInstance();

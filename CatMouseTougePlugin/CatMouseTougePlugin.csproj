@@ -25,6 +25,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="lua\hud.lua">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
       <None Update="lua\teleport.lua">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>

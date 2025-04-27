@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Microsoft.Data.Sqlite;
 using AssettoServer.Network.Tcp;
+using System.IO;
 
 namespace CatMouseTougePlugin;
 
@@ -15,6 +16,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     private readonly EntryCarManager _entryCarManager;
     private readonly Func<EntryCar, EntryCarTougeSession> _entryCarTougeSessionFactory;
     private readonly Dictionary<int, EntryCarTougeSession> _instances = [];
+    private readonly CSPServerScriptProvider _scriptProvider;
 
     public readonly string dbPath = "plugins/CatMouseTougePlugin/database.db";
 
@@ -27,21 +29,18 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         ACServerConfiguration serverConfiguration
         ) : base(applicationLifetime)
     {
-        Log.Debug("Starting UkkO's cat mouse touge plugin!");
-
         _entryCarManager = entryCarManager;
         _entryCarTougeSessionFactory = entryCarTougeSessionFactory;
+        _scriptProvider = scriptProvider;
 
         if (!serverConfiguration.Extra.EnableClientMessages)
         {
-            throw new ConfigurationException("CatMouseTougePlugin requires ClientMessages to be enabled");
+            throw new ConfigurationException("CatMouseTougePlugin requires ClientMessages to be enabled.");
         }
 
-        var luaPath = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "lua", "teleport.lua");
-
-        using var streamReader = new StreamReader(luaPath);
-        var reconnectScript = streamReader.ReadToEnd();
-        scriptProvider.AddScript(reconnectScript, "teleport.lua");
+        // Provide lua scripts
+        ProvideScript("teleport.lua");
+        ProvideScript("hud.lua");
 
         InitializeDatabase(dbPath);
 
@@ -96,12 +95,9 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
 
         int playerExists = Convert.ToInt32(checkCommand.ExecuteScalar());
 
-        Log.Debug($"=-=-=-=-= Person driving {client.EntryCar.Model} joined."); // Remove this later.
-
         // If player doesn't exist, add them with default values
         if (playerExists == 0)
         {
-            Log.Debug("Player does not exist. Adding to database.");
             var insertCommand = connection.CreateCommand();
             insertCommand.CommandText = "INSERT INTO Players (PlayerId, Rating, RacesCompleted) VALUES (@PlayerId, @Rating, @RacesCompleted)";
             insertCommand.Parameters.AddWithValue("@PlayerId", playerId);
@@ -109,10 +105,6 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
             insertCommand.Parameters.AddWithValue("@RacesCompleted", 0);
             insertCommand.ExecuteNonQuery();
 
-        }
-        else
-        {
-            Log.Debug("Player already exists in database.");
         }
 
         client.FirstUpdateSent += OnFirstUpdate;
@@ -152,6 +144,16 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         {
             throw new Exception($"Player with ID {playerId} not found in the database.");
         }
+    }
+
+    private void ProvideScript(string scriptName)
+    {
+        string scriptPath = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "lua", scriptName);
+
+        using var streamReader = new StreamReader(scriptPath);
+        var reconnectScript = streamReader.ReadToEnd();
+
+        _scriptProvider.AddScript(reconnectScript, scriptName);
     }
 }
 

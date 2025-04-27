@@ -18,10 +18,11 @@ public class TougeSession
     private readonly EntryCarManager _entryCarManager;
     private readonly CatMouseTouge _plugin;
     private readonly Race.Factory _raceFactory;
+    private readonly CatMouseTougeConfiguration _configuration;
 
     public delegate TougeSession Factory(EntryCar challenger, EntryCar challenged);
 
-    public TougeSession(EntryCar challenger, EntryCar challenged, SessionManager sessionManager, EntryCarManager entryCarManager, CatMouseTouge plugin, Race.Factory raceFactory)
+    public TougeSession(EntryCar challenger, EntryCar challenged, SessionManager sessionManager, EntryCarManager entryCarManager, CatMouseTouge plugin, Race.Factory raceFactory, CatMouseTougeConfiguration configuration)
     {
         Challenger = challenger;
         Challenged = challenged;
@@ -29,6 +30,7 @@ public class TougeSession
         _entryCarManager = entryCarManager;
         _plugin = plugin;
         _raceFactory = raceFactory;
+        _configuration = configuration;
     }
 
     public Task StartAsync()
@@ -47,10 +49,12 @@ public class TougeSession
         try
         {
             EntryCar? overallWinner = null;
+            
             // Run race 1.
             Race race1 = _raceFactory(Challenger, Challenged);
             EntryCar? winner1 = await race1.RaceAsync();
-            // Because its important the race is finished before starting the next one.
+
+            // If there is a winner in race 1, run race 2.
             if (winner1 != null)
             {
                 Race race2 = _raceFactory(Challenged, Challenger);
@@ -68,8 +72,8 @@ public class TougeSession
                         overallWinner = winner1;
                     }
                 }
-            }
-            UpdateElo(overallWinner);
+                UpdateElo(overallWinner);
+            }   
         }
         catch (Exception ex) 
         {
@@ -100,12 +104,11 @@ public class TougeSession
         string winnerId = winner.Client!.Guid.ToString();
         string loserId = loser.Client!.Guid.ToString();
 
+        int winnerCarRating = GetCarRating(winner.Model);
+        int loserCarRating = GetCarRating(loser.Model);
+
         int winnerElo = _plugin.GetPlayerElo(winnerId);
         int loserElo = _plugin.GetPlayerElo(loserId);
-
-        // Actually do elo calcs.
-        int winnerCarRating = 700; //Hardcoded for now, later retrieve from cfg.
-        int loserCarRating = 700;
 
         int newWinnerElo = CalculateElo(winnerElo, loserElo, winnerCarRating, loserCarRating, true);
         int newLoserElo = CalculateElo(loserElo, winnerElo, loserCarRating, winnerCarRating, false);
@@ -167,5 +170,16 @@ public class TougeSession
         {
             throw new Exception($"Failed to update rating. Player with ID {playerId} not found.");
         }
+    }
+
+    private int GetCarRating(string carModel)
+    {
+        // Check if the rating is in the cfg file
+        int performance = 500; // Default value
+        if (_configuration.CarPerformanceRatings.TryGetValue(carModel, out int carPerformance))
+        {
+            performance = carPerformance;
+        }
+        return performance;
     }
 }

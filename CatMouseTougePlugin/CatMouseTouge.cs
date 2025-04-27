@@ -96,6 +96,8 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
 
         int playerExists = Convert.ToInt32(checkCommand.ExecuteScalar());
 
+        Log.Debug($"=-=-=-=-= Person driving {client.EntryCar.Model} joined."); // Remove this later.
+
         // If player doesn't exist, add them with default values
         if (playerExists == 0)
         {
@@ -111,7 +113,6 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         else
         {
             Log.Debug("Player already exists in database.");
-            //client.SendChatMessage("Welcome back!");
         }
 
         client.FirstUpdateSent += OnFirstUpdate;

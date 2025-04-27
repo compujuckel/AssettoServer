@@ -144,6 +144,8 @@ public class Race
                     SendMessage($"{LeaderName} did not pull away. {FollowerName} wins!");
                     winner = Follower;
                 }
+                // Small cooldown time after the race finished.
+                await Task.Delay(10000);
             }
         }
 

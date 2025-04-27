@@ -1,7 +1,6 @@
 ﻿using System.Numerics;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using AssettoServer.Shared.Network.Packets.Incoming;
 
 namespace CatMouseTougePlugin;
 

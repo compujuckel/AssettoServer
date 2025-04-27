@@ -13,6 +13,11 @@ public class CatMouseTougeConfigurationValidator : AbstractValidator<CatMouseTou
         RuleFor(cfg => cfg.CarPerformanceRatings)
             .Must(BeWithinValidRange)
             .WithMessage(x => GetInvalidRangeMessage(x.CarPerformanceRatings));
+
+        // If you want to add additional constraints on the value
+        RuleFor(cfg => cfg.MaxEloGain)
+            .GreaterThanOrEqualTo(0)
+            .WithMessage("MaxEloGain must be a non-negative integer");
     }
 
     private bool BeWithinValidRange(Dictionary<string, int> ratings)

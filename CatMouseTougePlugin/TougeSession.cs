@@ -1,7 +1,5 @@
 ﻿
-using System.ComponentModel.DataAnnotations;
 using AssettoServer.Server;
-using AssettoServer.Shared.Model;
 using Microsoft.Data.Sqlite;
 using Serilog;
 
@@ -129,7 +127,7 @@ public class TougeSession
         // Calculate expected outcome (standard ELO formula)
         double expectedResult = 1.0 / (1.0 + Math.Pow(10.0, (opponentElo - effectivePlayerElo) / 400.0));
 
-        int maxGain = 32; //Hardcoded for now, later retrieve from cfg.
+        int maxGain = _configuration.MaxEloGain;
 
         // Calculate base ELO change
         int result = hasWon ? 1 : 0;

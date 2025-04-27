@@ -13,4 +13,6 @@ public class CatMouseTougeConfiguration : IValidateConfiguration<CatMouseTougeCo
         { "ks_mazda_miata", 125 },
         { "ks_toyota_ae86", 131 }
     };
+    [YamlMember(Description = "Maximum elo gain. Must be a positive value.")]
+    public int MaxEloGain { get; init; } = 32;
 }

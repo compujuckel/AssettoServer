@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Numerics;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Shared.Network.Packets.Incoming;
@@ -14,7 +9,6 @@ namespace CatMouseTougePlugin;
 // Handles sending and accepting invites and starting the TougeSession
 public class EntryCarTougeSession
 {
-    private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly CatMouseTouge _plugin;
     private readonly EntryCar _entryCar;
@@ -22,27 +16,18 @@ public class EntryCarTougeSession
 
     internal TougeSession? CurrentSession { get; set; }
 
-    public EntryCarTougeSession(EntryCar entryCar, SessionManager sessionManager, EntryCarManager entryCarManager, CatMouseTouge plugin, TougeSession.Factory tougeSessionFactory)
+    public EntryCarTougeSession(EntryCar entryCar, EntryCarManager entryCarManager, CatMouseTouge plugin, TougeSession.Factory tougeSessionFactory)
     {
         _entryCar = entryCar;
-        _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
         _plugin = plugin;
         _tougeSessionFactory = tougeSessionFactory;
-        _entryCar.PositionUpdateReceived += OnPositionUpdateReceived;
         _entryCar.ResetInvoked += OnResetInvoked;
     }
 
     private void OnResetInvoked(EntryCar sender, EventArgs args)
     {
         CurrentSession = null;
-    }
-
-    private void OnPositionUpdateReceived(EntryCar sender, in PositionUpdateIn positionUpdate)
-    {
-        // Implement session invite logic here.
-        // Or not, maybe in commands for now. This can be used for something like the light flashing thing.
-        // Use chat commands, so create a command module
     }
 
     internal EntryCar? FindNearbyCar()

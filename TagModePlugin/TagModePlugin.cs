@@ -34,7 +34,6 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
         Func<EntryCar, EntryCarTagMode> entryCarTagModeFactory,
         TagSession.Factory sessionFactory,
         CSPServerScriptProvider scriptProvider,
-        CSPClientMessageTypeManager messageTypeManager,
         IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
@@ -62,11 +61,6 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
         TaggedColor = ColorTranslator.FromHtml(_configuration.TaggedColor);
         RunnerColor = ColorTranslator.FromHtml(_configuration.RunnerColor);
         NeutralColor = ColorTranslator.FromHtml(_configuration.NeutralColor);
-        
-        messageTypeManager.RegisterOnlineEvent<TagModeColorPacket>((client, packet) =>
-        {
-            Log.Information("{Client}: Color: {Color}", client.Name, packet.Color);
-        });
     }
 
     private void OnDisconnecting(ACTcpClient sender, EventArgs args)

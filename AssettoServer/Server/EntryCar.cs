@@ -2,19 +2,22 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Threading.Tasks;
-using AssettoServer.Server.Ai;
-using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
-using AssettoServer.Shared.Network.Packets.Shared;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 
 namespace AssettoServer.Server;
+
+public enum AiMode
+{
+    None,
+    Auto,
+    Fixed
+}
 
 public partial class EntryCar : IEntryCar<ACTcpClient>
 { 
@@ -46,9 +49,13 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public float NetworkDistanceSquared { get; internal set; }
     public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }
 
-    internal long[] OtherCarsLastSentUpdateTime { get; }
+    public long[] OtherCarsLastSentUpdateTime { get; }
     public EntryCar? TargetCar { get; set; }
     private long LastFallCheckTime{ get; set; }
+
+    public bool AiControlled { get; set; } = false;
+    public AiMode AiMode { get; set; } = AiMode.None;
+    public string? AiName { get; set; }
 
     /// <summary>
     /// Fires when a position update is received.
@@ -85,7 +92,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         }
     }
         
-    public EntryCar(string model, string? skin, byte sessionId, Func<EntryCar, AiState> aiStateFactory, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager, AiSpline? spline = null)
+    public EntryCar(string model, string? skin, byte sessionId, SessionManager sessionManager, ACServerConfiguration configuration, EntryCarManager entryCarManager)
     {
         Model = model;
         Skin = skin ?? "";
@@ -93,14 +100,8 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         _sessionManager = sessionManager;
         _configuration = configuration;
         _entryCarManager = entryCarManager;
-        _spline = spline;
-        _aiStateFactory = aiStateFactory;
         OtherCarsLastSentUpdateTime = new long[entryCarManager.EntryCars.Length];
-
-        AiPakSequenceIds = new byte[entryCarManager.EntryCars.Length];
-        LastSeenAiState = new AiState[entryCarManager.EntryCars.Length];
-        LastSeenAiSpawn = new byte[entryCarManager.EntryCars.Length];
-        
+            
         Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .Enrich.With(new EntryCarLogEventEnricher(this))
@@ -108,8 +109,6 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
             .CreateLogger();
         
         _sessionManager.SessionChanged += OnSessionChanged;
-        
-        AiInit();
     }
 
     private void OnSessionChanged(SessionManager sender, SessionChangedEventArgs args)
@@ -217,57 +216,16 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
 
     public bool GetPositionUpdateForCar(EntryCar toCar, out PositionUpdateOut positionUpdateOut)
     {
-        CarStatus targetCarStatus;
-        var toTargetCar = toCar.TargetCar;
-        if (toTargetCar != null)
-        {
-            if (toTargetCar.AiControlled && toTargetCar.LastSeenAiState[toCar.SessionId] != null)
-            {
-                targetCarStatus = toTargetCar.LastSeenAiState[toCar.SessionId]!.Status;
-            }
-            else
-            {
-                targetCarStatus = toTargetCar.Status;
-            }
-        }
-        else
-        {
-            targetCarStatus = toCar.Status;
-        }
-
-        CarStatus status;
         if (AiControlled)
         {
-            var aiState = GetBestStateForPlayer(targetCarStatus);
-
-            if (aiState == null)
-            {
-                positionUpdateOut = default;
-                return false;
-            }
-
-            if (LastSeenAiState[toCar.SessionId] != aiState
-                || LastSeenAiSpawn[toCar.SessionId] != aiState.SpawnCounter)
-            {
-                LastSeenAiState[toCar.SessionId] = aiState;
-                LastSeenAiSpawn[toCar.SessionId] = aiState.SpawnCounter;
-
-                if (AiEnableColorChanges)
-                {
-                    toCar.Client?.SendPacket(new CSPCarColorUpdate
-                    {
-                        SessionId = SessionId,
-                        Color = aiState.Color
-                    });
-                }
-            }
-
-            status = aiState.Status;
+            positionUpdateOut = default;
+            return false;
         }
-        else
-        {
-            status = Status;
-        }
+        
+        var toTargetCar = toCar.TargetCar;
+        CarStatus targetCarStatus = toTargetCar != null ? toTargetCar.Status : toCar.Status;
+
+        CarStatus status = Status;
 
         float distanceSquared = Vector3.DistanceSquared(status.Position, targetCarStatus.Position);
         if (TargetCar != null || distanceSquared > NetworkDistanceSquared)
@@ -282,7 +240,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         }
 
         positionUpdateOut = new PositionUpdateOut(SessionId,
-            AiControlled ? AiPakSequenceIds[toCar.SessionId]++ : status.PakSequenceId,
+            status.PakSequenceId,
             (uint)(status.Timestamp - toCar.TimeOffset),
             Ping,
             status.Position,
@@ -308,41 +266,5 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     {
         var targetPosition = target.TargetCar != null ? target.TargetCar.Status.Position : target.Status.Position;
         return Vector3.DistanceSquared(Status.Position, targetPosition) < range * range;
-    }
-
-    public bool TryResetPosition()
-    {
-        if (_spline == null)
-        {
-            Logger.Information("Failed reset position for {Player} ({SessionId})",Client?.Name, Client?.SessionId);
-            return false;
-        }
-
-        if (_sessionManager.ServerTimeMilliseconds < _sessionManager.CurrentSession.StartTimeMilliseconds + 20_000 
-            || (_sessionManager.ServerTimeMilliseconds > _sessionManager.CurrentSession.EndTimeMilliseconds
-                && _sessionManager.CurrentSession.EndTimeMilliseconds > 0))
-            return false;
-
-        var (splinePointId, _) = _spline.WorldToSpline(Status.Position);
-
-        var splinePoint = _spline.Points[splinePointId];
-        
-        var position = splinePoint.Position;
-        var direction = - _spline.Operations.GetForwardVector(splinePoint.NextId);
-        
-        Client?.SendCollisionUpdatePacket(false);
-        
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(500);
-        
-            Client?.SendTeleportCarPacket(position, direction);
-            await Task.Delay(10000);
-        
-            Client?.SendCollisionUpdatePacket(true);
-        });
-    
-        Logger.Information("Reset position for {Player} ({SessionId})",Client?.Name, Client?.SessionId);
-        return true;
     }
 }

@@ -21,31 +21,6 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
             extra.RuleFor(x => x.WhitelistUserGroup).NotEmpty();
             extra.RuleFor(x => x.AdminUserGroup).NotEmpty();
             extra.RuleFor(x => x.VoteKickMinimumConnectedPlayers).GreaterThanOrEqualTo((ushort)3);
-
-            extra.RuleFor(x => x.AiParams).ChildRules(aiParams =>
-            {
-                aiParams.RuleFor(ai => ai.MinSpawnDistancePoints).LessThanOrEqualTo(ai => ai.MaxSpawnDistancePoints);
-                aiParams.RuleFor(ai => ai.MinAiSafetyDistanceMeters).LessThanOrEqualTo(ai => ai.MaxAiSafetyDistanceMeters);
-                aiParams.RuleFor(ai => ai.MinSpawnProtectionTimeSeconds).LessThanOrEqualTo(ai => ai.MaxSpawnProtectionTimeSeconds);
-                aiParams.RuleFor(ai => ai.MinCollisionStopTimeSeconds).LessThanOrEqualTo(ai => ai.MaxCollisionStopTimeSeconds);
-                aiParams.RuleFor(ai => ai.MaxSpeedVariationPercent).InclusiveBetween(0, 1);
-                aiParams.RuleFor(ai => ai.DefaultAcceleration).GreaterThan(0);
-                aiParams.RuleFor(ai => ai.DefaultDeceleration).GreaterThan(0);
-                aiParams.RuleFor(ai => ai.NamePrefix).NotNull();
-                aiParams.RuleFor(ai => ai.IgnoreObstaclesAfterSeconds).GreaterThanOrEqualTo(0);
-                aiParams.RuleFor(ai => ai.HourlyTrafficDensity)
-                    .Must(htd => htd?.Count == 24)
-                    .When(ai => ai.HourlyTrafficDensity != null)
-                    .WithMessage("HourlyTrafficDensity must have exactly 24 entries");
-                aiParams.RuleFor(ai => ai.CarSpecificOverrides).NotNull();
-                aiParams.RuleFor(ai => ai.AiBehaviorUpdateIntervalHz).GreaterThan(0);
-                aiParams.RuleFor(ai => ai.LaneCountSpecificOverrides).NotNull();
-                aiParams.RuleForEach(ai => ai.LaneCountSpecificOverrides).ChildRules(overrides =>
-                {
-                    overrides.RuleFor(o => o.Key).GreaterThan(0);
-                    overrides.RuleFor(o => o.Value.MinAiSafetyDistanceMeters).LessThanOrEqualTo(o => o.Value.MaxAiSafetyDistanceMeters);
-                });
-            });
         });
 
         RuleFor(cfg => cfg.Server).ChildRules(server =>

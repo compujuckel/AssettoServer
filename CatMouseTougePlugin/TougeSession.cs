@@ -144,8 +144,10 @@ public class TougeSession
         // Apply car factor to elo change.
         int adjustedEloChange = (int)Math.Round(eloChange * carFactor);
 
-        return playerElo + adjustedEloChange;
+        int newElo = playerElo + adjustedEloChange;
 
+        // Ensure Elo rating never goes below 0
+        return Math.Max(0, newElo);
     }
 
     private void UpdatePlayerElo(string playerId, int newElo)

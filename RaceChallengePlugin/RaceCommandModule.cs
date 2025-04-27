@@ -27,6 +27,8 @@ public class RaceCommandModule : ACModuleBase
             Reply("You do not have a pending race request.");
         else if (currentRace.HasStarted)
             Reply("This race has already started.");
+        else if (currentRace.Challenger == Client!.EntryCar)
+            Reply("You cannot accept a race you initiated.");
         else
             await currentRace.StartAsync();
     }

@@ -35,7 +35,7 @@ public class SessionManager : CriticalBackgroundService
     public bool IsOpen => CurrentSession.Configuration.IsOpen switch
     {
         IsOpenMode.Open => true,
-        IsOpenMode.CloseAtStart => !CurrentSession.IsStarted,
+        IsOpenMode.CloseAtStart => !CurrentSession.IsCutoffReached,
         _ => false,
     };
 
@@ -286,25 +286,25 @@ public class SessionManager : CriticalBackgroundService
 
         if (CurrentSession.Configuration.IsOpen == IsOpenMode.Closed && connectedCount < 2)
         {
+            Log.Information("Skipping race session: didn't reach minimum player count before cutoff ({PlayerCount}/2). Use 'IS_OPEN=1' to allow joining during the race", connectedCount);
             return true;
         }
 
         if (CurrentSession.Configuration.IsOpen != IsOpenMode.CloseAtStart)
         {
-            return connectedCount == 0;
+            if (connectedCount > 0) return false;
+            
+            Log.Information("Skipping race session: no player connected");
+            return true;
         }
 
-        switch (CurrentSession.Configuration.Type)
+        if (connectedCount < 2 && CurrentSession.IsCutoffReached)
         {
-            case SessionType.Race when connectedCount > 0 && Program.IsDebugBuild:
-                return false;
-            case SessionType.Race when connectedCount == 0 && Program.IsDebugBuild:
-                return true;
-            case SessionType.Race when connectedCount <= 1:
-                return true;
-            default:
-                return false;
+            Log.Information("Skipping race session: didn't reach minimum player count before cutoff ({PlayerCount}/2). Use 'IS_OPEN=1' to allow joining during the race", connectedCount);
+            return true;
         }
+        
+        return false;
     }
 
     private void CalcOverTime()

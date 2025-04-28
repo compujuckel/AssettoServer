@@ -1,13 +1,17 @@
-local supportAPI_physics = physics.setGentleStop ~= nil
+local supportAPI_physics = physics.setGentleStop ~= nil -- For disabling physics
+local supportAPI_collision = physics.disableCarCollisions ~= nil
+
+local teleportTimer = nil
 
 function TeleportExec(pos, rot)
-    if supportAPI_physics then
-        physics.setGentleStop(0, false)
-    end
+    if supportAPI_collision then physics.disableCarCollisions(0, true) end
     pos.y = FindGroundY(pos)  -- Adjust y-coordinate to ground level
     rot.y = 0 -- Make sure the car is right side up.
-    print("Teleporting car to position:", pos, "with direction:", rot)
     physics.setCarPosition(0, pos, rot)
+    
+    -- Start teleport timer
+    teleportTimer = 10
+    
 end
 
 local teleportEvent = ac.OnlineEvent(
@@ -35,5 +39,15 @@ function FindGroundY(pos)
         return pos.y - distance
     else
         return pos.y  -- Fallback if no hit detected
+    end
+end
+
+function script.update(dt)
+    if teleportTimer then
+        teleportTimer = teleportTimer - dt
+        if teleportTimer <= 0 then
+            teleportTimer = nil
+            if supportAPI_collision then physics.disableCarCollisions(0, false) end
+        end
     end
 end

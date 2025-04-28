@@ -57,6 +57,9 @@ public class TougeSession
         {
             EntryCar? overallWinner = null;
 
+            // Turn on the hud
+            SendStandings(true);
+
             // Run race 1.
             Race race1 = _raceFactory(Challenger, Challenged);
             EntryCar? winner1 = await race1.RaceAsync();
@@ -119,6 +122,11 @@ public class TougeSession
         string ChallengerName = Challenger.Client?.Name!;
 
         _entryCarManager.BroadcastChat($"Race between {ChallengerName} and {ChallengedName} has concluded!");
+
+        // Turn off and reset hud
+        Array.Fill(challengerStandings, (int)RaceResult.Tbd);
+        Array.Fill(challengedStandings, (int)RaceResult.Tbd);
+        SendStandings(false);
     }
 
     private void UpdateElo(EntryCar? winner)
@@ -227,8 +235,13 @@ public class TougeSession
         }
 
         // Now update client side.
-        Challenger.Client!.SendPacket(new StandingPacket { Result1 = challengerStandings[0], Result2 = challengerStandings[1], Result3 = challengerStandings[2] });
-        Challenged.Client!.SendPacket(new StandingPacket { Result1 = challengedStandings[0], Result2 = challengedStandings[1], Result3 = challengedStandings[2] });
+        SendStandings();
+    }
+
+    private void SendStandings(bool isHudOn = true)
+    {
+        Challenger.Client!.SendPacket(new StandingPacket { Result1 = challengerStandings[0], Result2 = challengerStandings[1], Result3 = challengerStandings[2], IsHudOn = isHudOn });
+        Challenged.Client!.SendPacket(new StandingPacket { Result1 = challengedStandings[0], Result2 = challengedStandings[1], Result3 = challengedStandings[2], IsHudOn = isHudOn });
         // Maybe these values can be passed as an array in the future.
         // But I am happy it actually works for now :)
     }

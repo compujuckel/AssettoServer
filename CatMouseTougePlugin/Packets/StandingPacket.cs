@@ -11,4 +11,6 @@ public class StandingPacket : OnlineEvent<StandingPacket>
     public int Result2;
     [OnlineEventField(Name = "result3")]
     public int Result3;
+    [OnlineEventField(Name = "isHudOn")]
+    public bool IsHudOn = true;
 }

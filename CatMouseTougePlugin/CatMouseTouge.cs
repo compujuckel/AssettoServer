@@ -4,10 +4,8 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
-using Serilog;
 using Microsoft.Data.Sqlite;
 using AssettoServer.Network.Tcp;
-using System.IO;
 
 namespace CatMouseTougePlugin;
 

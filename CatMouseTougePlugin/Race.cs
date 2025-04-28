@@ -11,6 +11,8 @@ public class Race
     public EntryCar Leader { get; }
     public EntryCar Follower { get;  }
 
+    private readonly EntryCarManager _entryCarManager;
+
     public bool HasStarted { get; private set; }
 
     private readonly Dictionary<string, Vector3> _leaderStartPos = [];
@@ -35,7 +37,7 @@ public class Race
 
     public delegate Race Factory(EntryCar leader, EntryCar follower);
 
-    public Race(EntryCar leader, EntryCar follower)
+    public Race(EntryCar leader, EntryCar follower, EntryCarManager entryCarManager)
     {
         Leader = leader;
         Follower = follower;
@@ -56,6 +58,7 @@ public class Race
 
         _followerStartPos.Add("Position", new Vector3(-198.89f, 468.01f, -88.14f));
         _followerStartPos.Add("Direction", new Vector3(0.0919f, 0.992f, 0.0832f));
+        _entryCarManager = entryCarManager;
     }
 
     public async Task<EntryCar?> RaceAsync()
@@ -206,6 +209,15 @@ public class Race
 
     private async Task TeleportToStartAsync(EntryCar Leader, EntryCar Follower)
     {
+
+        int waitTime = 0;
+        while (!isStartAreaClear() || waitTime < 40)
+        {
+            // Wait for a short time before checking again to avoid blocking the thread
+            await Task.Delay(250);
+            waitTime += 1;
+        }
+
         Leader.Client!.SendPacket(new TeleportPacket
         {
             Position = _leaderStartPos["Position"],  
@@ -238,8 +250,7 @@ public class Race
                 isFollowerTeleported = true;
             }
 
-            // Wait for a short time before checking again to avoid blocking the thread
-            await Task.Delay(100);  // Delay for 100 ms (adjust as necessary)
+            await Task.Delay(250); 
         }
     }
 
@@ -276,7 +287,7 @@ public class Race
         float leaderDistanceSquared = Vector3.DistanceSquared(currentLeaderPos, _leaderStartPos["Position"]);
         float followerDistanceSquared = Vector3.DistanceSquared(currentFollowerPos, _followerStartPos["Position"]);
 
-        const float thresholdSquared = 100f;
+        const float thresholdSquared = 50f;
 
         // Check if either car has moved too far (jumpstart detection)
         if (leaderDistanceSquared > thresholdSquared && followerDistanceSquared > thresholdSquared)
@@ -294,6 +305,41 @@ public class Race
         }
 
         return JumpstartResult.None; // No jumpstart
+    }
+
+    private bool isStartAreaClear()
+    {
+        // Checks if both start areas are clear.
+        // This function mainly exists for when more starting points/starting point groups are added.
+        if (isStartPosClear(_leaderStartPos["Position"]) && isStartPosClear(_followerStartPos["Position"]))
+        {
+            return true;
+        }
+        else
+            return false;
+
+    }
+
+    private bool isStartPosClear(Vector3 startPos)
+    {
+        // Checks if startPos is clear.
+        const float startArea = 50f; // Area around the startpoint that should be cleared.
+        foreach (var car in _entryCarManager.EntryCars)
+        {
+            // Dont look at the players in the race or empty cars
+            ACTcpClient? carClient = car.Client;
+            if (carClient != null && car != Leader && car != Follower)
+            {
+                // Check if they are not in the starting area.
+                float distanceToStartPosSquared = Vector3.DistanceSquared(car.Status.Position, startPos);
+                if (distanceToStartPosSquared < startArea)
+                {
+                    // The car is in the start area.
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
 

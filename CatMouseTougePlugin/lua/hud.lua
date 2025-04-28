@@ -10,32 +10,70 @@ if sim.isVRMode then
     screenSize = screenSize * 0.6
 end
 
-local screenOffset = ((vec2(sim.windowWidth, sim.windowHeight) - screenSize) * 0.5)
-
 -- Example state of the rounds for testing
-local roundResults = { nil, true, false }  -- First not played yet, second won, third lost
+local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
 
--- Position and size
-local startX, startY = 100, 100
-local rectWidth, rectHeight = 50, 30
-local spacing = 10
+local standingEvent = ac.OnlineEvent(
+    {
+        ac.StructItem.key('AS_Standing'),
+        result1 = ac.StructItem.int32(),
+        result2 = ac.StructItem.int32(),
+        result3 = ac.StructItem.int32()
+    }, function (sender, message)
+        print("Received standings packet.")
+        if sender ~= nil then
+            print("Sender is nil.")
+            return
+        end
 
--- Draw the HUD
-ui.beginTransparentWindow('best_of_3_hud', vec2(startX, startY), vec2(rectWidth * 3 + spacing * 2, rectHeight))
-for i = 1, 3 do
-    -- Set color based on result
-    if roundResults[i] == true then
-        ui.setColor(rgbm(0, 1, 0, 1)) -- Green for win
-    elseif roundResults[i] == false then
-        ui.setColor(rgbm(1, 0, 0, 1)) -- Red for loss
-    else
-        ui.setColor(rgbm(1, 1, 1, 0.3)) -- Grey / transparent for not yet played
-    end
+        standings[1] = message.result1
+        standings[2] = message.result2
+        standings[3] = message.result3
 
-    -- Calculate position
-    local posX = (i - 1) * (rectWidth + spacing)
+        print("This is result1:")
+        print(message.result1)
 
-    -- Draw rectangle
-    ui.rect(vec2(posX, 0), vec2(posX + rectWidth, rectHeight))
+    end)
+
+-- Global variables for access across functions
+local sim = ac.getSim()
+
+function script.drawUI()
+    -- Get updated window dimensions each frame
+    local windowWidth = sim.windowWidth
+    local windowHeight = sim.windowHeight
+    
+    ui.transparentWindow("scoreWindow", vec2(windowWidth/96, windowHeight/2), vec2(1000, 1000), function()
+
+        -- Draw text
+        ui.dwriteTextAligned("Standings:", 32, ui.Alignment.Start, ui.Alignment.Center, vec2(1000, 100), false, rgbm(1,1,1,1))
+
+        
+        -- Explicit loop through fixed indices
+        for i = 1, 3 do
+            local result = standings[i]
+            
+            -- Calculate position for each circle (horizontally centered)
+            local circleRadius = 20
+            local spacing = 20
+            local totalWidth = (3 * (circleRadius * 2)) + (2 * spacing)
+            local startX = (200 - totalWidth) / 2
+            local xPos = startX + (i - 1) * (circleRadius * 2 + spacing) + circleRadius
+            
+            -- Set color based on result
+            local color
+            if result == 0 then
+                color = rgbm(0.5, 0.5, 0.5, 0.1) -- Gray for not played
+            elseif result == 1 then
+                color = rgbm(0.561, 0.651, 0.235, 1) -- Green for won
+            else
+                color = rgbm(0.349, 0.0078, 0.0078, 1) -- Red for lost
+            end
+            
+            -- Draw circle with appropriate color
+            ui.drawCircleFilled(vec2(xPos, 100), circleRadius, color)
+        end
+    end)
 end
-ui.endTransparentWindow()
+
+

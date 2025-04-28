@@ -229,7 +229,7 @@ public class Race
             float leaderDistanceSquared = Vector3.DistanceSquared(currentLeaderPos, _leaderStartPos["Position"]);
             float followerDistanceSquared = Vector3.DistanceSquared(currentFollowerPos, _followerStartPos["Position"]);
 
-            const float thresholdSquared = 100f;
+            const float thresholdSquared = 50f;
 
             if (leaderDistanceSquared < thresholdSquared) {
                 isLeaderTeleported = true;

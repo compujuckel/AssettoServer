@@ -14,8 +14,10 @@ public class CatMouseTougeConfiguration : IValidateConfiguration<CatMouseTougeCo
         { "ks_mazda_miata", 125 },
         { "ks_toyota_ae86", 131 }
     };
+    
     [YamlMember(Description = "Maximum elo gain. Must be a positive value.")]
     public int MaxEloGain { get; init; } = 32;
+    
     [YamlMember(Description = "The starting positions for the touge races.")]
     public Dictionary<string, Vector3>[][] StartingPositions =
     [
@@ -32,4 +34,10 @@ public class CatMouseTougeConfiguration : IValidateConfiguration<CatMouseTougeCo
         }
     ],
     ];
+    
+    [YamlMember(Description = "Number of races for which is player is marked as provisional for the elo system.")]
+    public int ProvisionalRaces = 20;
+
+    [YamlMember(Description = "Maximum elo gain, when player is marked as provisional")]
+    public int MaxEloGainProvisional = 50;
 }

@@ -138,11 +138,11 @@ public class TougeSession
         int winnerCarRating = GetCarRating(winner.Model);
         int loserCarRating = GetCarRating(loser.Model);
 
-        int winnerElo = _plugin.GetPlayerElo(winnerId);
-        int loserElo = _plugin.GetPlayerElo(loserId);
+        var (winnerElo, winnerRacesCompleted) = _plugin.GetPlayerStats(winnerId);
+        var (loserElo, loserRacesCompleted) = _plugin.GetPlayerStats(loserId);
 
-        int newWinnerElo = CalculateElo(winnerElo, loserElo, winnerCarRating, loserCarRating, true);
-        int newLoserElo = CalculateElo(loserElo, winnerElo, loserCarRating, winnerCarRating, false);
+        int newWinnerElo = CalculateElo(winnerElo, loserElo, winnerCarRating, loserCarRating, true, winnerRacesCompleted);
+        int newLoserElo = CalculateElo(loserElo, winnerElo, loserCarRating, winnerCarRating, false, loserRacesCompleted);
 
         // Update elo in the database.
         UpdatePlayerElo(winnerId, newWinnerElo);
@@ -153,7 +153,7 @@ public class TougeSession
         loser.Client!.SendPacket(new EloPacket { Elo = newLoserElo });
     }
 
-    private int CalculateElo(int playerElo, int opponentElo, int playerCarRating, int opponentCarRating, bool hasWon)
+    private int CalculateElo(int playerElo, int opponentElo, int playerCarRating, int opponentCarRating, bool hasWon, int racesCompleted)
     {
         // Calculate car performance difference factor
         double carAdvantage = (playerCarRating - opponentCarRating) / 100;
@@ -165,6 +165,10 @@ public class TougeSession
         double expectedResult = 1.0 / (1.0 + Math.Pow(10.0, (opponentElo - effectivePlayerElo) / 400.0));
 
         int maxGain = _configuration.MaxEloGain;
+        if (racesCompleted < _configuration.ProvisionalRaces)
+        {
+            maxGain = _configuration.MaxEloGainProvisional;
+        }
 
         // Calculate base ELO change
         int result = hasWon ? 1 : 0;
@@ -195,8 +199,9 @@ public class TougeSession
         using var command = connection.CreateCommand();
         command.CommandText = @"
         UPDATE Players
-        SET Rating = $newRating
-        WHERE PlayerId = $playerId
+        SET Rating = $newRating,
+            RacesCompleted = RacesCompleted + 1
+        WHERE PlayerId = $playerId;
     ";
         command.Parameters.AddWithValue("$newRating", newElo);
         command.Parameters.AddWithValue("$playerId", playerId);

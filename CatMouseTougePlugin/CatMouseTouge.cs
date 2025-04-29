@@ -138,6 +138,33 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         }
     }
 
+    public (int Rating, int RacesCompleted) GetPlayerStats(string playerId)
+    {
+        using var connection = new SqliteConnection($"Data Source={dbPath}");
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+        SELECT Rating, RacesCompleted
+        FROM Players
+        WHERE PlayerId = $playerId;
+    ";
+        command.Parameters.AddWithValue("$playerId", playerId);
+
+        using var reader = command.ExecuteReader();
+
+        if (reader.Read())
+        {
+            int rating = reader.GetInt32(0);           // Rating
+            int racesCompleted = reader.GetInt32(1);   // RacesCompleted
+            return (rating, racesCompleted);
+        }
+        else
+        {
+            throw new Exception($"Player with ID {playerId} not found in the database.");
+        }
+    }
+
     private void ProvideScript(string scriptName)
     {
         string scriptPath = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "lua", scriptName);

@@ -329,16 +329,6 @@ public class Race
         return true;
     }
 
-    private bool IsStartPosGroupClear(Vector3 pos1, Vector3 pos2)
-    {
-        if (IsStartPosClear(pos1) && IsStartPosClear(pos2))
-        {
-            return true;
-        }
-        else
-            return false;
-    }
-
     private async Task<Dictionary<string, Vector3>[]> GetStartingAreaAsync()
     {
         // Get the startingArea here.

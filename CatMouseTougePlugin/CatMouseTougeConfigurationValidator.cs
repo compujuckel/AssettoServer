@@ -17,12 +17,20 @@ public class CatMouseTougeConfigurationValidator : AbstractValidator<CatMouseTou
 
         // If you want to add additional constraints on the value
         RuleFor(cfg => cfg.MaxEloGain)
-            .GreaterThanOrEqualTo(0)
-            .WithMessage("MaxEloGain must be a non-negative integer");
+            .GreaterThan(0)
+            .WithMessage("MaxEloGain must be a positive integer");
 
         RuleFor(cfg => cfg.StartingPositions)
             .Must(HaveValidStartingPositionPair)
             .WithMessage("There must be at least one pair of starting positions, each with 'Position' and 'Direction' keys.");
+        
+        RuleFor(cfg => cfg.ProvisionalRaces)
+        .GreaterThan(0)
+        .WithMessage("ProvisionalRaces must be a positive integer");
+
+        RuleFor(cfg => cfg.MaxEloGainProvisional)
+            .GreaterThan(0)
+            .WithMessage("MaxEloGainProvisional must be a positive integer");
     }
 
     private bool BeWithinValidRange(Dictionary<string, int> ratings)

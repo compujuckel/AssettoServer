@@ -12,11 +12,9 @@ public class Race
     public EntryCar Follower { get;  }
 
     private readonly EntryCarManager _entryCarManager;
+    private readonly CatMouseTougeConfiguration _configuration;
 
     public bool HasStarted { get; private set; }
-
-    private readonly Dictionary<string, Vector3> _leaderStartPos = [];
-    private readonly Dictionary<string, Vector3> _followerStartPos = [];
 
     public enum JumpstartResult
     {
@@ -37,7 +35,7 @@ public class Race
 
     public delegate Race Factory(EntryCar leader, EntryCar follower);
 
-    public Race(EntryCar leader, EntryCar follower, EntryCarManager entryCarManager)
+    public Race(EntryCar leader, EntryCar follower, EntryCarManager entryCarManager, CatMouseTougeConfiguration configuration)
     {
         Leader = leader;
         Follower = follower;
@@ -51,14 +49,8 @@ public class Race
         Leader.Client.Disconnecting += OnClientDisconnected;
         Follower.Client.Disconnecting += OnClientDisconnected;
 
-        // Setting up starting positions.
-        // In the future should be loaded from the config file.
-        _leaderStartPos.Add("Position", new Vector3(-204.4f, 468.34f, -93.87f));
-        _leaderStartPos.Add("Direction", new Vector3(0.0998f, 0.992f, 0.0784f));
-
-        _followerStartPos.Add("Position", new Vector3(-198.89f, 468.01f, -88.14f));
-        _followerStartPos.Add("Direction", new Vector3(0.0919f, 0.992f, 0.0832f));
         _entryCarManager = entryCarManager;
+        _configuration = configuration;
     }
 
     public async Task<EntryCar?> RaceAsync()
@@ -68,8 +60,10 @@ public class Race
         bool isGo = false;
         try
         {
+            Dictionary<string, Vector3>[] startingArea = await GetStartingAreaAsync();
+
             // First teleport players to their starting positions.
-            await TeleportToStartAsync(Leader, Follower);
+            await TeleportToStartAsync(Leader, Follower, startingArea);
 
             SendMessage("Race starting soon...");
             await Task.Delay(3000);
@@ -82,16 +76,17 @@ public class Race
                 byte signalStage = 0;
                 while (signalStage < 3)
                 {
-                    JumpstartResult jumpstart = AreInStartingPos();
+                    JumpstartResult jumpstart = AreInStartingPos(startingArea);
                     if (jumpstart != JumpstartResult.None)
                     {
                         if (jumpstart == JumpstartResult.Both)
                         {
                             SendMessage("Both players made a jumpstart.");
                             SendMessage("Returning both players to starting position.");
-                            await TeleportToStartAsync(Leader, Follower);
                             SendMessage("Race restarting soon...");
                             await Task.Delay(3000);
+                            startingArea = await GetStartingAreaAsync();
+                            await TeleportToStartAsync(Leader, Follower, startingArea);
                             break;
                         }
                         else if (jumpstart == JumpstartResult.Follower)
@@ -207,26 +202,17 @@ public class Race
         _disconnected.TrySetResult(true);
     }
 
-    private async Task TeleportToStartAsync(EntryCar Leader, EntryCar Follower)
+    private async Task TeleportToStartAsync(EntryCar Leader, EntryCar Follower, Dictionary<string, Vector3>[] startingArea)
     {
-
-        int waitTime = 0;
-        while (!isStartAreaClear() || waitTime < 40)
-        {
-            // Wait for a short time before checking again to avoid blocking the thread
-            await Task.Delay(250);
-            waitTime += 1;
-        }
-
         Leader.Client!.SendPacket(new TeleportPacket
         {
-            Position = _leaderStartPos["Position"],  
-            Direction = _leaderStartPos["Direction"],  
+            Position = startingArea[0]["Position"],  
+            Direction = startingArea[0]["Direction"],  
         });
         Follower.Client!.SendPacket(new TeleportPacket
         {
-            Position = _followerStartPos["Position"],
-            Direction = _followerStartPos["Direction"],
+            Position = startingArea[1]["Position"],
+            Direction = startingArea[1]["Direction"],
         });
 
         // Check if both cars have been teleported to their starting locations.
@@ -238,8 +224,8 @@ public class Race
             Vector3 currentLeaderPos = Leader.Status.Position;
             Vector3 currentFollowerPos = Follower.Status.Position;
             
-            float leaderDistanceSquared = Vector3.DistanceSquared(currentLeaderPos, _leaderStartPos["Position"]);
-            float followerDistanceSquared = Vector3.DistanceSquared(currentFollowerPos, _followerStartPos["Position"]);
+            float leaderDistanceSquared = Vector3.DistanceSquared(currentLeaderPos, startingArea[0]["Position"]);
+            float followerDistanceSquared = Vector3.DistanceSquared(currentFollowerPos, startingArea[1]["Position"]);
 
             const float thresholdSquared = 50f;
 
@@ -276,7 +262,7 @@ public class Race
     }
 
     // Check if the cars are still in their starting positions.
-    private JumpstartResult AreInStartingPos()
+    private JumpstartResult AreInStartingPos(Dictionary<string, Vector3>[] startingArea)
     {
         // Get the current position of each car.
         Vector3 currentLeaderPos = Leader.Status.Position;
@@ -284,8 +270,8 @@ public class Race
 
         // Check if they are the same as the original starting postion.
         // Or at least check if the difference is not larger than a threshold.
-        float leaderDistanceSquared = Vector3.DistanceSquared(currentLeaderPos, _leaderStartPos["Position"]);
-        float followerDistanceSquared = Vector3.DistanceSquared(currentFollowerPos, _followerStartPos["Position"]);
+        float leaderDistanceSquared = Vector3.DistanceSquared(currentLeaderPos, startingArea[0]["Position"]);
+        float followerDistanceSquared = Vector3.DistanceSquared(currentFollowerPos, startingArea[1]["Position"]);
 
         const float thresholdSquared = 50f;
 
@@ -307,20 +293,21 @@ public class Race
         return JumpstartResult.None; // No jumpstart
     }
 
-    private bool isStartAreaClear()
+    private Dictionary<string, Vector3>[]? FindClearStartArea()
     {
-        // Checks if both start areas are clear.
-        // This function mainly exists for when more starting points/starting point groups are added.
-        if (isStartPosClear(_leaderStartPos["Position"]) && isStartPosClear(_followerStartPos["Position"]))
+        // Loop over the list of starting positions in the cfg file
+        // If you find a valid/clear starting pos, return that.
+        foreach (var startingArea in _configuration.StartingPositions)
         {
-            return true;
+            if (IsStartPosClear(startingArea[0]["Position"]) && IsStartPosClear(startingArea[1]["Position"]))
+            {
+                return startingArea;
+            }
         }
-        else
-            return false;
-
+        return null;
     }
 
-    private bool isStartPosClear(Vector3 startPos)
+    private bool IsStartPosClear(Vector3 startPos)
     {
         // Checks if startPos is clear.
         const float startArea = 50f; // Area around the startpoint that should be cleared.
@@ -342,8 +329,38 @@ public class Race
         return true;
     }
 
+    private bool IsStartPosGroupClear(Vector3 pos1, Vector3 pos2)
+    {
+        if (IsStartPosClear(pos1) && IsStartPosClear(pos2))
+        {
+            return true;
+        }
+        else
+            return false;
+    }
 
+    private async Task<Dictionary<string, Vector3>[]> GetStartingAreaAsync()
+    {
+        // Get the startingArea here.
+        int waitTime = 0;
+        Dictionary<string, Vector3>[]? startingArea = FindClearStartArea();
+        while (startingArea == null)
+        {
+            // Wait for a short time before checking again to avoid blocking the thread
+            await Task.Delay(250);
 
+            // Try to find a starting area again
+            startingArea = FindClearStartArea();
+
+            waitTime += 1;
+            if (waitTime > 40)
+            {
+                // Fallback after 10 seconds.
+                startingArea = _configuration.StartingPositions[0];
+            }
+        }
+        return startingArea;
+    }
 }
 
 

@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using System.Numerics;
+using FluentValidation;
 using JetBrains.Annotations;
 
 namespace CatMouseTougePlugin;
@@ -18,6 +19,10 @@ public class CatMouseTougeConfigurationValidator : AbstractValidator<CatMouseTou
         RuleFor(cfg => cfg.MaxEloGain)
             .GreaterThanOrEqualTo(0)
             .WithMessage("MaxEloGain must be a non-negative integer");
+
+        RuleFor(cfg => cfg.StartingPositions)
+            .Must(HaveValidStartingPositionPair)
+            .WithMessage("There must be at least one pair of starting positions, each with 'Position' and 'Direction' keys.");
     }
 
     private bool BeWithinValidRange(Dictionary<string, int> ratings)
@@ -33,5 +38,25 @@ public class CatMouseTougeConfigurationValidator : AbstractValidator<CatMouseTou
             .ToList();
 
         return $"The following car performance ratings must be between 1 and 1000: {string.Join(", ", invalidEntries)}";
+    }
+
+    private bool HaveValidStartingPositionPair(Dictionary<string, Vector3>[][] positions)
+    {
+        if (positions == null) return false;
+
+        foreach (var group in positions)
+        {
+            if (group == null || group.Length != 2) continue;
+
+            bool bothHaveKeys = group.All(dict =>
+                dict != null &&
+                dict.ContainsKey("Position") &&
+                dict.ContainsKey("Direction"));
+
+            if (bothHaveKeys)
+                return true;
+        }
+
+        return false;
     }
 }

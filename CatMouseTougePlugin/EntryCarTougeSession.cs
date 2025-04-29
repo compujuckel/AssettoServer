@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
+using CatMouseTougePlugin.Packets;
 
 namespace CatMouseTougePlugin;
 
@@ -99,7 +100,7 @@ public class EntryCarTougeSession
 
                     // Send messages to both players
                     _entryCar.Client?.SendChatMessage($"You have challenged {car.Client!.Name} to a touge session.");
-                    car.Client?.SendChatMessage($"{_entryCar.Client!.Name} has challenged you to a touge session. Type /accepttouge within 10 seconds to accept.");
+                    car.Client?.SendPacket(new InvitePacket { InviteSenderName = _entryCar.Client!.Name! });
 
                     _ = Task.Delay(10000).ContinueWith(_ =>
                     {

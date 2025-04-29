@@ -7,7 +7,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Data.Sqlite;
 using AssettoServer.Network.Tcp;
 using CatMouseTougePlugin.Packets;
-using Qommon.Binding;
 
 namespace CatMouseTougePlugin;
 
@@ -48,7 +47,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         InitializeDatabase(dbPath);
 
         _cspClientMessageTypeManager.RegisterOnlineEvent<EloPacket>(OnEloPacket);
-
+        _cspClientMessageTypeManager.RegisterOnlineEvent<InvitePacket>(OnInvitePacket);
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -182,6 +181,24 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         elo = GetPlayerElo(playerId);
 
         client.SendPacket(new EloPacket { Elo = elo });
+    }
+
+    private void OnInvitePacket(ACTcpClient client, InvitePacket packet)
+    {
+        InviteNearbyCar(client);
+    }
+
+    public void InviteNearbyCar(ACTcpClient client)
+    {
+        EntryCar? nearestCar = GetSession(client!.EntryCar).FindNearbyCar();
+        if (nearestCar != null)
+        {
+            GetSession(client!.EntryCar).ChallengeCar(nearestCar);
+        }
+        else
+        {
+            client.SendChatMessage("No car nearby!");
+        }
     }
 }
 

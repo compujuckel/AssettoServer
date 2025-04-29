@@ -20,20 +20,7 @@ public class CatMouseTougeCommandModule : ACModuleBase
     [Command("invite"), RequireConnectedPlayer]
     public void Invite()
     {
-        // Find the most nearby player if there is any and send them an session invite.
-        // In the future along with the chat command it would be nice to have a UI element to invite people.
-        
-        // Get the closest player
-        EntryCar? nearestCar = _plugin.GetSession(Client!.EntryCar).FindNearbyCar();
-        if (nearestCar != null)
-        {
-            _plugin.GetSession(Client!.EntryCar).ChallengeCar(nearestCar);
-        }
-        else
-        {
-            Reply("No car nearby!");
-        }
-        
+        _plugin.InviteNearbyCar(Client!);  
     }
 
     [Command("accepttouge"), RequireConnectedPlayer]

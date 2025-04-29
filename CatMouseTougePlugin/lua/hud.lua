@@ -4,16 +4,14 @@ local baseUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP() .
 local font = 'Segoe UI'
 local fontBold = 'Segoe UI;Weight=Bold'
 
-local sim = ac.getSim()
-local screenSize = vec2(sim.windowWidth, sim.windowHeight)
-if sim.isVRMode then
-    screenSize = screenSize * 0.6
-end
-
--- Example state of the rounds for testing
+local elo = -1
+local inviteSenderName = ""
+local hasActiveInvite = false
+local inviteActivatedAt = nil
 local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
 local isHudOn = false;
 
+-- Events
 local standingEvent = ac.OnlineEvent(
     {
         ac.StructItem.key('AS_Standing'),
@@ -36,8 +34,6 @@ local standingEvent = ac.OnlineEvent(
 
     end)
 
-local elo = -1
-
 local eloEvent = ac.OnlineEvent(
     {
         ac.StructItem.key('AS_Elo'),
@@ -52,10 +48,23 @@ local eloEvent = ac.OnlineEvent(
 
     end)
 
-eloEvent({elo = elo});
+local inviteEvent = ac.OnlineEvent(
+    {
+        ac.StructItem.key('AS_Invite'),
+        inviteSenderName = ac.StructItem.string(),
+    }, function (sender, message)
+        if sender ~= nil then
+            print("Sender is nil.")
+            return
+        end
+        hasActiveInvite = true
+        inviteSenderName = message.inviteSenderName
+    end
+)
 
--- Global variables for access across functions
+-- Set the variables
 local sim = ac.getSim()
+eloEvent({elo = elo})
 
 function script.drawUI()
 
@@ -97,13 +106,37 @@ function script.drawUI()
         end)
     end
 
-    -- Draw elo hud element
+        -- Draw elo hud element
         if elo ~= -1 then
             ui.transparentWindow("eloWindow", vec2(windowWidth/96, windowHeight/4), vec2(1000,1000), function ()
                 ui.dwriteDrawText(string.format("Elo: %i", elo), 32, 1)
         
             end)
         end
+
+        -- Draw invite hud element
+        if hasActiveInvite == true then
+            ui.transparentWindow("inviteWindow", vec2(windowWidth-500, windowHeight-100), vec2(1000,1000), function ()
+                ui.dwriteDrawText(string.format("%s invited you to a touge race!", inviteSenderName), 32, 1)
+            end)
+        end
 end
 
+function InputCheck()
+    if ui.keyboardButtonPressed(ui.KeyIndex.N, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
+        -- Send invite
+        inviteEvent({inviteSenderName = "senderName"})
+    end
+end
 
+function script.update(dt)
+    InputCheck()
+    if hasActiveInvite and inviteActivatedAt == nil then
+        inviteActivatedAt = os.clock()
+    end
+
+    if inviteActivatedAt ~= nil and os.clock() - inviteActivatedAt >= 10 then
+        hasActiveInvite = false
+        inviteActivatedAt = nil
+    end
+end

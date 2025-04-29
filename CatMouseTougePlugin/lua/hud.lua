@@ -36,15 +36,34 @@ local standingEvent = ac.OnlineEvent(
 
     end)
 
+local elo = -1
+
+local eloEvent = ac.OnlineEvent(
+    {
+        ac.StructItem.key('AS_Elo'),
+        elo = ac.StructItem.int32()
+    }, function (sender, message)
+        if sender ~= nil then
+            print("Sender is nil.")
+            return
+        end       
+
+        elo = message.elo
+
+    end)
+
+eloEvent({elo = elo});
+
 -- Global variables for access across functions
 local sim = ac.getSim()
 
 function script.drawUI()
-    if isHudOn then
-        -- Get updated window dimensions each frame
-        local windowWidth = sim.windowWidth
-        local windowHeight = sim.windowHeight
-        
+
+    -- Get updated window dimensions each frame
+    local windowWidth = sim.windowWidth
+    local windowHeight = sim.windowHeight
+
+    if isHudOn then    
         ui.transparentWindow("scoreWindow", vec2(windowWidth/96, windowHeight/2), vec2(1000, 1000), function()
 
             -- Draw text
@@ -77,6 +96,14 @@ function script.drawUI()
             end
         end)
     end
+
+    -- Draw elo hud element
+        if elo ~= -1 then
+            ui.transparentWindow("eloWindow", vec2(windowWidth/96, windowHeight/4), vec2(1000,1000), function ()
+                ui.dwriteDrawText(string.format("Elo: %i", elo), 32, 1)
+        
+            end)
+        end
 end
 
 

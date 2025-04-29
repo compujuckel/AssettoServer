@@ -64,8 +64,6 @@ public class TougeSession
             Race race1 = _raceFactory(Challenger, Challenged);
             EntryCar? winner1 = await race1.RaceAsync();
 
-
-
             // If there is a winner in race 1, run race 2.
             if (winner1 != null)
             {
@@ -149,6 +147,10 @@ public class TougeSession
         // Update elo in the database.
         UpdatePlayerElo(winnerId, newWinnerElo);
         UpdatePlayerElo(loserId, newLoserElo);
+
+        // Send new elo the clients.
+        winner.Client!.SendPacket(new EloPacket { Elo = newWinnerElo });
+        loser.Client!.SendPacket(new EloPacket { Elo = newLoserElo });
     }
 
     private int CalculateElo(int playerElo, int opponentElo, int playerCarRating, int opponentCarRating, bool hasWon)

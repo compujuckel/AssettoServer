@@ -6,6 +6,8 @@ using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Data.Sqlite;
 using AssettoServer.Network.Tcp;
+using CatMouseTougePlugin.Packets;
+using Qommon.Binding;
 
 namespace CatMouseTougePlugin;
 
@@ -15,6 +17,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     private readonly Func<EntryCar, EntryCarTougeSession> _entryCarTougeSessionFactory;
     private readonly Dictionary<int, EntryCarTougeSession> _instances = [];
     private readonly CSPServerScriptProvider _scriptProvider;
+    private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
 
     public readonly string dbPath = "plugins/CatMouseTougePlugin/database.db";
 
@@ -24,12 +27,14 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         Func<EntryCar, EntryCarTougeSession> entryCarTougeSessionFactory,
         IHostApplicationLifetime applicationLifetime,
         CSPServerScriptProvider scriptProvider,
-        ACServerConfiguration serverConfiguration
+        ACServerConfiguration serverConfiguration,
+        CSPClientMessageTypeManager cspClientMessageTypeManager
         ) : base(applicationLifetime)
     {
         _entryCarManager = entryCarManager;
         _entryCarTougeSessionFactory = entryCarTougeSessionFactory;
         _scriptProvider = scriptProvider;
+        _cspClientMessageTypeManager = cspClientMessageTypeManager;
 
         if (!serverConfiguration.Extra.EnableClientMessages)
         {
@@ -41,6 +46,8 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         ProvideScript("hud.lua");
 
         InitializeDatabase(dbPath);
+
+        _cspClientMessageTypeManager.RegisterOnlineEvent<EloPacket>(OnEloPacket);
 
     }
 
@@ -104,19 +111,6 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
             insertCommand.ExecuteNonQuery();
 
         }
-
-        client.FirstUpdateSent += OnFirstUpdate;
-
-    }
-
-    private void OnFirstUpdate(ACTcpClient client, EventArgs args)
-    {
-        int elo = 1000; // Default Elo if player not found
-        string playerId = client.Guid.ToString();
-
-        elo = GetPlayerElo(playerId);
-
-        client.SendChatMessage($"Welcome to the server, your touge elo is {elo}. Improve it by racing other players!");
     }
 
     public int GetPlayerElo(string playerId)
@@ -152,6 +146,15 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         var reconnectScript = streamReader.ReadToEnd();
 
         _scriptProvider.AddScript(reconnectScript, scriptName);
+    }
+
+    private void OnEloPacket(ACTcpClient client, EloPacket packet)
+    {
+        int elo = 1000; // Default Elo if player not found
+        string playerId = client.Guid.ToString();
+        elo = GetPlayerElo(playerId);
+
+        client.SendPacket(new EloPacket { Elo = elo });
     }
 }
 

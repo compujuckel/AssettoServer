@@ -2,6 +2,7 @@
 using AssettoServer.Commands;
 using AssettoServer.Commands.Attributes;
 using AssettoServer.Server;
+using AssettoServer.Shared.Model;
 using CatMouseTougePlugin.Packets;
 using Qmmands;
 
@@ -73,5 +74,6 @@ public class CatMouseTougeCommandModule : ACModuleBase
         string playerId = Client!.Guid.ToString();
         int elo = _plugin.GetPlayerElo(playerId);
         Reply($"You elo is {elo}.");
+        Client!.SendPacket(new EloPacket { Elo = elo });
     }
 }

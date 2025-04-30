@@ -53,7 +53,7 @@ public class Race
         _configuration = configuration;
     }
 
-    public async Task<EntryCar?> RaceAsync()
+    public async Task<RaceResult> RaceAsync()
     {
         Log.Debug("Starting race.");
         EntryCar? winner = null;
@@ -92,12 +92,12 @@ public class Race
                         else if (jumpstart == JumpstartResult.Follower)
                         {
                             SendMessage($"{FollowerName} made a jumpstart. {LeaderName} wins this race.");
-                            return Leader;
+                            return RaceResult.Win(Leader);
                         }
                         else
                         {
                             SendMessage($"{LeaderName} made a jumpstart. {FollowerName} wins this race.");
-                            return Follower;
+                            return RaceResult.Win(Follower);
                         }
                     }
 
@@ -122,7 +122,10 @@ public class Race
             Task completed = await Task.WhenAny(secondLapCompleted.Task, _disconnected.Task, _followerFirst.Task);
 
             if (completed == _disconnected.Task)
+            {
                 SendMessage("Race cancelled due to disconnection.");
+                return RaceResult.Disconnected();
+            }
 
             else
             {
@@ -139,8 +142,8 @@ public class Race
                 }
                 else
                 {
-                    SendMessage($"{LeaderName} did not pull away. {FollowerName} wins!");
-                    winner = Follower;
+                    SendMessage($"{LeaderName} did not pull away. It's a tie!");
+                    return RaceResult.Tie();
                 }
                 // Small cooldown time after the race finished.
                 await Task.Delay(10000);
@@ -151,13 +154,14 @@ public class Race
         {
             Log.Error(e, "Error while running race.");
             SendMessage("There was an error while runnning the race.");
+            return RaceResult.Tie();
         }
         finally
         {
             FinishRace();
         }
 
-        return winner;
+        return RaceResult.Win(winner);
     }
 
     private void FinishRace()

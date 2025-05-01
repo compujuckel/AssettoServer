@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Data.Sqlite;
 using AssettoServer.Network.Tcp;
 using CatMouseTougePlugin.Packets;
+using Serilog;
 
 namespace CatMouseTougePlugin;
 
@@ -192,51 +193,55 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     private void OnLobbyStatusPacket(ACTcpClient client, LobbyStatusPacket packet)
     {
         // Find if there is a player close to the client.
-        EntryCar? closestCar = GetSession(client!.EntryCar).FindNearbyCar();
-        Dictionary<string, object> closestPlayer = new Dictionary<string, object>();
-        if (closestCar != null)
-        {
-            closestPlayer["name"] = closestCar.Client!.Name!;
-            closestPlayer["id"] = closestCar.Client!.Guid!;
-            closestPlayer["inRace"] = IsInTougeSession(closestCar);
-        }
-        else
-        {
-            // Default values for no player nearby
-            closestPlayer["name"] = "";
-            closestPlayer["id"] = (ulong)0;
-            closestPlayer["inRace"] = false;
-        }
+        List<EntryCar>? closestCars = GetSession(client!.EntryCar).FindClosestCars(5);
 
-        // Find info about all connected players
-        List<string> connectedPlayersNamesList = [];
-        List<ulong> connectedPlayersIdsList = [];
-        List<bool> connectedPlayersInRacesList = [];
+        List<Dictionary<string, object>> playerStatsList = [];
 
-        foreach (EntryCar car in _entryCarManager.EntryCars)
+        foreach (EntryCar car in closestCars)
         {
-            ACTcpClient? carClient = car.Client;
-            if (carClient != null && carClient != client)
+            Dictionary<string, object> playerStats = new Dictionary<string, object>
             {
-                Dictionary<string, object> playerInfo = new Dictionary<string, object>();
-                connectedPlayersNamesList.Add(carClient.Name!);
-                connectedPlayersIdsList.Add(carClient.Guid!);
-                connectedPlayersInRacesList.Add(IsInTougeSession(car));
+                { "name", car.Client!.Name! },
+                { "id", car.Client!.Guid! },
+                { "inRace", IsInTougeSession(car) },
+            };
+            playerStatsList.Add(playerStats);
+        }
+
+        int nearbyPlayersCount = playerStatsList.Count;
+        if (nearbyPlayersCount < 5)
+        {
+            // Add dummy values to fill up to 5 entries
+            for (int i = nearbyPlayersCount; i < 5; i++)
+            {
+                playerStatsList.Add(new Dictionary<string, object>
+                {
+                    { "name", "" },
+                    { "id", (ulong)0 },
+                    { "inRace", false }
+                });
             }
         }
 
-        string[] connectedPlayersNames = connectedPlayersNamesList.ToArray();
-        ulong[] connectedPlayersIds = connectedPlayersIdsList.ToArray();
-        bool[] connectedPlayersInRaces = connectedPlayersInRacesList.ToArray();
-
         // Send a packet back to the client
+        // Close your eyes, this is not going to be pretty :(
         client.SendPacket(new LobbyStatusPacket
         {
-            NearbyPlayerName = (string)closestPlayer["name"],
-            NearbyPlayerId = (ulong)closestPlayer["id"],
-            NearbyPlayerInRace = (bool)closestPlayer["inRace"],
-            //ConnectedIds = connectedPlayersIds,
-            //ConnectedInRaces = connectedPlayersInRaces
+            NearbyPlayerName1 = (string)playerStatsList[0]["name"],
+            NearbyPlayerId1 = (ulong)playerStatsList[0]["id"],
+            NearbyPlayerInRace1 = (bool)playerStatsList[0]["inRace"],
+            NearbyPlayerName2 = (string)playerStatsList[1]["name"],
+            NearbyPlayerId2 = (ulong)playerStatsList[1]["id"],
+            NearbyPlayerInRace2 = (bool)playerStatsList[1]["inRace"],
+            NearbyPlayerName3 = (string)playerStatsList[2]["name"],
+            NearbyPlayerId3 = (ulong)playerStatsList[2]["id"],
+            NearbyPlayerInRace3 = (bool)playerStatsList[2]["inRace"],
+            NearbyPlayerName4 = (string)playerStatsList[3]["name"],
+            NearbyPlayerId4 = (ulong)playerStatsList[3]["id"],
+            NearbyPlayerInRace4 = (bool)playerStatsList[3]["inRace"],
+            NearbyPlayerName5 = (string)playerStatsList[4]["name"],
+            NearbyPlayerId5 = (ulong)playerStatsList[4]["id"],
+            NearbyPlayerInRace5 = (bool)playerStatsList[4]["inRace"],
         });
     }
 

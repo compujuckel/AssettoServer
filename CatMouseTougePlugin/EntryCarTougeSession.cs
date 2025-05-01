@@ -60,6 +60,23 @@ public class EntryCarTougeSession
         return bestMatch;
     }
 
+    internal List<EntryCar> FindClosestCars(int count)
+    {
+        var closestCars = _entryCarManager.EntryCars
+            .Where(car => car.Client != null && car != _entryCar)
+            .Select(car => new
+            {
+                Car = car,
+                DistanceSquared = Vector3.DistanceSquared(car.Status.Position, _entryCar.Status.Position)
+            })
+            .OrderBy(x => x.DistanceSquared)
+            .Take(count)
+            .Select(x => x.Car)
+            .ToList();
+
+        return closestCars;
+    }
+
     // Challenges car to a touge session.
     // Updates CurrentSession for both cars if invite is succesfully sent.
     // If session isn't active after 10 seconds, it withdraws the invite.

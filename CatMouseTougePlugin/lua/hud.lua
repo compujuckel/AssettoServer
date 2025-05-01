@@ -4,13 +4,12 @@ local elo = -1
 local hue = 180
 local eloNumPos = vec2(66, 26)
 
-
 local inviteSenderName = ""
 local hasActiveInvite = false
 
 local hasInviteMenuOpen = false
 local connectedPlayers = {}
-local nearbyPlayer = {id = nil, name = "", inRace = false}
+local nearbyPlayers = {}
 
 local inviteActivatedAt = nil
 local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
@@ -25,6 +24,8 @@ local standingsHudPath = baseUrl .. "Standings.png"
 local playerCardPath = baseUrl .. "PlayerCard.png"
 local mKeyPath = baseUrl .. "MKey.png"
 local inviteMenuPath = baseUrl .. "InviteMenu.png"
+
+local sim = ac.getSim()
 
 -- Load fonts
 local fontsURL = baseUrl .. "fonts.zip"
@@ -92,29 +93,53 @@ local inviteEvent = ac.OnlineEvent(
 
 local lobbyStatusEvent = ac.OnlineEvent({
     ac.StructItem.key('AS_LobbyStatus'),
-    nearbyName = ac.StructItem.string(),
-    nearbyId = ac.StructItem.uint64(),
-    nearbyInRace = ac.StructItem.boolean(),
+    nearbyName1 = ac.StructItem.string(),
+    nearbyId1 = ac.StructItem.uint64(),
+    nearbyInRace1 = ac.StructItem.boolean(),
+    nearbyName2 = ac.StructItem.string(),
+    nearbyId2 = ac.StructItem.uint64(),
+    nearbyInRace2 = ac.StructItem.boolean(),
+    nearbyName3 = ac.StructItem.string(),
+    nearbyId3 = ac.StructItem.uint64(),
+    nearbyInRace3 = ac.StructItem.boolean(),
+    nearbyName4 = ac.StructItem.string(),
+    nearbyId4 = ac.StructItem.uint64(),
+    nearbyInRace4 = ac.StructItem.boolean(),
+    nearbyName5 = ac.StructItem.string(),
+    nearbyId5 = ac.StructItem.uint64(),
+    nearbyInRace5 = ac.StructItem.boolean(),
+
 }, function (sender, message)
 
-    -- Update nearby player
-    nearbyPlayer.name = message.nearbyName
-    nearbyPlayer.id = message.nearbyId
-    nearbyPlayer.inRace = message.nearbyInRace
-
-    -- Copy connected players
-    --connectedPlayers = {}
-
-    --for i = 1, sim.carsCount - 1 do
-    --    connectedPlayers[i] = {
-    --        id = message.connectedIds[i],
-    --        inRace = message.connectedInRaces[i]
-    --    }
-    --end
+    -- Update nearby players
+    nearbyPlayers[1] = {
+        name = message.nearbyName1,
+        id = message.nearbyId1,
+        inRace = message.nearbyInRace1
+      }
+    nearbyPlayers[2] = {
+        name = message.nearbyName2,
+        id = message.nearbyId2,
+        inRace = message.nearbyInRace2
+      }
+    nearbyPlayers[3] = {
+        name = message.nearbyName3,
+        id = message.nearbyId3,
+        inRace = message.nearbyInRace3
+      }
+    nearbyPlayers[4] = {
+        name = message.nearbyName4,
+        id = message.nearbyId4,
+        inRace = message.nearbyInRace4
+      }
+    nearbyPlayers[5] = {
+        name = message.nearbyName5,
+        id = message.nearbyId5,
+        inRace = message.nearbyInRace5
+      }
 end)
 
 -- Set the variables
-local sim = ac.getSim()
 eloEvent({elo = elo})
 
 function HsvToRgb(h, s, v)
@@ -195,24 +220,26 @@ function script.drawUI()
         ui.transparentWindow("inviteWindow", vec2(windowWidth - 818, 50), vec2(768,1145), function ()
             ui.drawImage(inviteMenuPath, vec2(0,0), vec2(768,1145))
             local color = rgbm(1,1,1,1)
+            local index = 1
 
-            -- If there is a car nearby. Within 20 meters or something. Draw nearby part
-            if nearbyPlayer.name ~= "" then
+            -- Currently all the playercards are being drawn over each other.
+            -- Still need to implement spacing based on index.
+            while index <= 5 and nearbyPlayers[index] and nearbyPlayers[index].name ~= "" do
                 -- Draw the nearby section
                 ui.pushDWriteFont(font)
-                ui.dwriteDrawText("Closest", 48, vec2(40,40))
+                ui.dwriteDrawText("Nearby", 48, vec2(40,40))
                 ui.popDWriteFont()
                 ui.drawImage(playerCardPath, vec2(32,120), vec2(737,292))
                 ui.pushDWriteFont(fontBold)
-                if nearbyPlayer.inRace then
+                if nearbyPlayers[index].inRace then
                     color = rgbm(0.5, 0.5, 0.5, 1)
                 else
                     color = rgbm(1,1,1,1)
                 end
-                ui.dwriteDrawText(nearbyPlayer.name, 48, vec2(212,182), color)
+                ui.dwriteDrawText(nearbyPlayers[index].name, 48, vec2(212,182), color)
+
+                index = index + 1
             end
-            
-            
         end)
     end
 
@@ -237,7 +264,8 @@ function InputCheck()
     end
     if ui.keyboardButtonPressed(ui.KeyIndex.I, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
         hasInviteMenuOpen = not hasInviteMenuOpen
-        if hasInviteMenuOpen then lobbyStatusEvent() end
+        if hasInviteMenuOpen then lobbyStatusEvent() end -- This should have a cooldown
+        -- Probably just start a timer and also check if it has run about before calling lobbyStatusEvent
     end
 
 end

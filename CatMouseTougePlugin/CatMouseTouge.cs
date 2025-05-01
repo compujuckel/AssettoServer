@@ -48,6 +48,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
 
         _cspClientMessageTypeManager.RegisterOnlineEvent<EloPacket>(OnEloPacket);
         _cspClientMessageTypeManager.RegisterOnlineEvent<InvitePacket>(OnInvitePacket);
+        _cspClientMessageTypeManager.RegisterOnlineEvent<LobbyStatusPacket>(OnLobbyStatusPacket);
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -186,6 +187,65 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     private void OnInvitePacket(ACTcpClient client, InvitePacket packet)
     {
         InviteNearbyCar(client);
+    }
+
+    private void OnLobbyStatusPacket(ACTcpClient client, LobbyStatusPacket packet)
+    {
+        // Find if there is a player close to the client.
+        EntryCar? closestCar = GetSession(client!.EntryCar).FindNearbyCar();
+        Dictionary<string, object> closestPlayer = new Dictionary<string, object>();
+        if (closestCar != null)
+        {
+            closestPlayer["name"] = closestCar.Client!.Name!;
+            closestPlayer["id"] = closestCar.Client!.Guid!;
+            closestPlayer["inRace"] = IsInTougeSession(closestCar);
+        }
+        else
+        {
+            // Default values for no player nearby
+            closestPlayer["name"] = "";
+            closestPlayer["id"] = (ulong)0;
+            closestPlayer["inRace"] = false;
+        }
+
+        // Find info about all connected players
+        List<string> connectedPlayersNamesList = [];
+        List<ulong> connectedPlayersIdsList = [];
+        List<bool> connectedPlayersInRacesList = [];
+
+        foreach (EntryCar car in _entryCarManager.EntryCars)
+        {
+            ACTcpClient? carClient = car.Client;
+            if (carClient != null && carClient != client)
+            {
+                Dictionary<string, object> playerInfo = new Dictionary<string, object>();
+                connectedPlayersNamesList.Add(carClient.Name!);
+                connectedPlayersIdsList.Add(carClient.Guid!);
+                connectedPlayersInRacesList.Add(IsInTougeSession(car));
+            }
+        }
+
+        string[] connectedPlayersNames = connectedPlayersNamesList.ToArray();
+        ulong[] connectedPlayersIds = connectedPlayersIdsList.ToArray();
+        bool[] connectedPlayersInRaces = connectedPlayersInRacesList.ToArray();
+
+        // Send a packet back to the client
+        client.SendPacket(new LobbyStatusPacket
+        {
+            NearbyPlayerName = (string)closestPlayer["name"],
+            NearbyPlayerId = (ulong)closestPlayer["id"],
+            NearbyPlayerInRace = (bool)closestPlayer["inRace"],
+            //ConnectedIds = connectedPlayersIds,
+            //ConnectedInRaces = connectedPlayersInRaces
+        });
+    }
+
+    private bool IsInTougeSession(EntryCar car)
+    {
+        EntryCarTougeSession session = GetSession(car);
+        if (session.CurrentSession != null)
+            return true;
+        return false;
     }
 
     public void InviteNearbyCar(ACTcpClient client)

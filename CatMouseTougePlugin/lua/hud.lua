@@ -7,9 +7,14 @@ local eloNumPos = vec2(66, 26)
 
 local inviteSenderName = ""
 local hasActiveInvite = false
+
+local hasInviteMenuOpen = false
+local connectedPlayers = {}
+local nearbyPlayer = {id = nil, name = "", inRace = false}
+
 local inviteActivatedAt = nil
 local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
-local isHudOn = false;
+local isHudOn = false
 
 local font = ""
 local fontBold = ""
@@ -17,7 +22,9 @@ local fontSemiBold = ""
 
 local eloHudPath = baseUrl .. "Elo.png"
 local standingsHudPath = baseUrl .. "Standings.png"
-local inviteHudPath = baseUrl .. "Invite.png"
+local playerCardPath = baseUrl .. "PlayerCard.png"
+local mKeyPath = baseUrl .. "MKey.png"
+local inviteMenuPath = baseUrl .. "InviteMenu.png"
 
 -- Load fonts
 local fontsURL = baseUrl .. "fonts.zip"
@@ -47,12 +54,7 @@ local standingEvent = ac.OnlineEvent(
         result3 = ac.StructItem.int32(),
         isHudOn = ac.StructItem.boolean()
     }, function (sender, message)
-        print("Received standings packet.")
-        if sender ~= nil then
-            print("Sender is nil.")
-            return
-        end
-
+        
         standings[1] = message.result1
         standings[2] = message.result2
         standings[3] = message.result3
@@ -66,10 +68,6 @@ local eloEvent = ac.OnlineEvent(
         ac.StructItem.key('AS_Elo'),
         elo = ac.StructItem.int32()
     }, function (sender, message)
-        if sender ~= nil then
-            print("Sender is nil.")
-            return
-        end       
 
         elo = message.elo
         hue = (elo / 2000) * 360 - 80
@@ -86,14 +84,34 @@ local inviteEvent = ac.OnlineEvent(
         ac.StructItem.key('AS_Invite'),
         inviteSenderName = ac.StructItem.string(),
     }, function (sender, message)
-        if sender ~= nil then
-            print("Sender is nil.")
-            return
-        end
+
         hasActiveInvite = true
         inviteSenderName = message.inviteSenderName
     end
 )
+
+local lobbyStatusEvent = ac.OnlineEvent({
+    ac.StructItem.key('AS_LobbyStatus'),
+    nearbyName = ac.StructItem.string(),
+    nearbyId = ac.StructItem.uint64(),
+    nearbyInRace = ac.StructItem.boolean(),
+}, function (sender, message)
+
+    -- Update nearby player
+    nearbyPlayer.name = message.nearbyName
+    nearbyPlayer.id = message.nearbyId
+    nearbyPlayer.inRace = message.nearbyInRace
+
+    -- Copy connected players
+    --connectedPlayers = {}
+
+    --for i = 1, sim.carsCount - 1 do
+    --    connectedPlayers[i] = {
+    --        id = message.connectedIds[i],
+    --        inRace = message.connectedInRaces[i]
+    --    }
+    --end
+end)
 
 -- Set the variables
 local sim = ac.getSim()
@@ -129,7 +147,6 @@ function script.drawUI()
             ui.drawImage(standingsHudPath, vec2(0,0), vec2(387,213))
             ui.pushDWriteFont(fontSemiBold)
             ui.dwriteDrawText("Standings", 48, vec2(44, 37))
-
             
             -- Explicit loop through fixed indices
             for i = 1, 3 do
@@ -158,32 +175,59 @@ function script.drawUI()
         end)
     end
 
-        -- Draw elo hud element
-        if elo ~= -1 then
-            ui.transparentWindow("eloWindow", vec2(50, 50), vec2(196,82), function ()
-                local r, g, b = HsvToRgb(hue, 0.7, 0.8)
-                ui.drawImage(eloHudPath, vec2(0, 0), vec2(196, 82), rgbm(r,g,b,1))
-                ui.pushDWriteFont(font)
-                ui.dwriteDrawText("Elo", 24, vec2(11, 31))
-                ui.popDWriteFont()
-                ui.pushDWriteFont(fontBold)
-                ui.dwriteDrawText(tostring(elo), 34, eloNumPos)
-                ui.popDWriteFont()
-        
-            end)
-        end
+    -- Draw elo hud element
+    if elo ~= -1 then
+        ui.transparentWindow("eloWindow", vec2(50, 50), vec2(196,82), function ()
+            local r, g, b = HsvToRgb(hue, 0.7, 0.8)
+            ui.drawImage(eloHudPath, vec2(0, 0), vec2(196, 82), rgbm(r,g,b,1))
+            ui.pushDWriteFont(font)
+            ui.dwriteDrawText("Elo", 24, vec2(11, 31))
+            ui.popDWriteFont()
+            ui.pushDWriteFont(fontBold)
+            ui.dwriteDrawText(tostring(elo), 34, eloNumPos)
+            ui.popDWriteFont()
+    
+        end)
+    end
 
-        -- Draw invite hud element
-        if hasActiveInvite == true then
-            ui.transparentWindow("inviteWindow", vec2(windowWidth-755, windowHeight-222), vec2(705,172), function ()
-                ui.drawImage(inviteHudPath, vec2(0,0), vec2(705,172))
-                ui.pushDWriteFont(fontBold)
-                ui.dwriteDrawText(tostring(inviteSenderName), 48, vec2(179,40))
-                ui.popDWriteFont()
+    -- Draw invite menu hud.
+    if hasInviteMenuOpen then
+        ui.transparentWindow("inviteWindow", vec2(windowWidth - 818, 50), vec2(768,1145), function ()
+            ui.drawImage(inviteMenuPath, vec2(0,0), vec2(768,1145))
+            local color = rgbm(1,1,1,1)
+
+            -- If there is a car nearby. Within 20 meters or something. Draw nearby part
+            if nearbyPlayer.name ~= "" then
+                -- Draw the nearby section
                 ui.pushDWriteFont(font)
-                ui.dwriteDrawText("Challenged you!", 36, vec2(180,95))
-            end)
-        end
+                ui.dwriteDrawText("Closest", 48, vec2(40,40))
+                ui.popDWriteFont()
+                ui.drawImage(playerCardPath, vec2(32,120), vec2(737,292))
+                ui.pushDWriteFont(fontBold)
+                if nearbyPlayer.inRace then
+                    color = rgbm(0.5, 0.5, 0.5, 1)
+                else
+                    color = rgbm(1,1,1,1)
+                end
+                ui.dwriteDrawText(nearbyPlayer.name, 48, vec2(212,182), color)
+            end
+            
+            
+        end)
+    end
+
+    -- Draw invite hud element
+    if hasActiveInvite == true then
+        ui.transparentWindow("receivedInviteWindow", vec2(windowWidth-755, windowHeight-222), vec2(705,172), function ()
+            ui.drawImage(playerCardPath, vec2(0,0), vec2(705,172))
+            ui.drawImage(mKeyPath, vec2(560,32), vec2(670,142))
+            ui.pushDWriteFont(fontBold)
+            ui.dwriteDrawText(tostring(inviteSenderName), 48, vec2(179,40))
+            ui.popDWriteFont()
+            ui.pushDWriteFont(font)
+            ui.dwriteDrawText("Challenged you!", 36, vec2(180,95))
+        end)
+    end
 end
 
 function InputCheck()
@@ -191,6 +235,11 @@ function InputCheck()
         -- Send invite
         inviteEvent({inviteSenderName = "senderName"})
     end
+    if ui.keyboardButtonPressed(ui.KeyIndex.I, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
+        hasInviteMenuOpen = not hasInviteMenuOpen
+        if hasInviteMenuOpen then lobbyStatusEvent() end
+    end
+
 end
 
 function script.update(dt)

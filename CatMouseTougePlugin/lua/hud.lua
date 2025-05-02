@@ -1,5 +1,7 @@
 local baseUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP() .. "/static/CatMouseTougePlugin/"
 
+local scaling = require('scaling')
+
 local elo = -1
 local hue = 180
 local eloNumPos = vec2(66, 26)
@@ -8,8 +10,9 @@ local inviteSenderName = ""
 local hasActiveInvite = false
 
 local hasInviteMenuOpen = false
-local connectedPlayers = {}
 local nearbyPlayers = {}
+local lastLobbyStatusRequest = 0
+local lobbyCooldown = 1.0  -- Cooldown in seconds
 
 local inviteActivatedAt = nil
 local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
@@ -35,15 +38,12 @@ web.loadRemoteAssets(fontsURL, function(err, folder)
       return
     end
 
-  
-    -- Assuming the .ttf file is directly inside the ZIP
     local fontPath = folder .. "/twoweekendgo-regular.otf"
     local fontPathBold = folder .. "/twoweekendgo-bold.otf"
     local fontPathSemiBold = folder .. "/twoweekendgo-semibold.otf"
     font = string.format("Two Weekend Go:%s", fontPath)
     fontBold = string.format("Two Weekend Go:%s", fontPathBold)
     fontSemiBold = string.format("Two Weekend Go:%s", fontPathSemiBold)
-  
 end)
 
 -- Events
@@ -167,22 +167,22 @@ function script.drawUI()
 
 
     if isHudOn then    
-        ui.transparentWindow("standingsWindow", vec2(50, windowHeight/2), vec2(387, 213), function()
+        ui.transparentWindow("standingsWindow", scaling.vec2(50, windowHeight/2), scaling.vec2(387, 213), function()
 
-            ui.drawImage(standingsHudPath, vec2(0,0), vec2(387,213))
+            ui.drawImage(standingsHudPath, scaling.vec2(0,0), scaling.vec2(387,213))
             ui.pushDWriteFont(fontSemiBold)
-            ui.dwriteDrawText("Standings", 48, vec2(44, 37))
+            ui.dwriteDrawText("Standings", scaling.size(48), scaling.vec2(44, 37))
             
             -- Explicit loop through fixed indices
             for i = 1, 3 do
                 local result = standings[i]
                 
                 -- Calculate position for each circle (horizontally centered)
-                local circleRadius = 25
-                local spacing = 40
+                local circleRadius = scaling.size(25)
+                local spacing = scaling.size(40)
                 local totalWidth = (3 * (circleRadius * 2)) + (2 * spacing)
-                local startX = (200 - totalWidth) / 2 + 90
-                local xPos = startX + (i - 1) * (circleRadius * 2 + spacing) + circleRadius
+                local startX = scaling.size((200 - totalWidth) / 2 + 90)
+                local xPos = scaling.size(startX + (i - 1) * (circleRadius * 2 + spacing) + circleRadius)
                 
                 -- Set color based on result
                 local color
@@ -195,21 +195,21 @@ function script.drawUI()
                 end
                 
                 -- Draw circle with appropriate color
-                ui.drawCircleFilled(vec2(xPos, 145), circleRadius, color)
+                ui.drawCircleFilled(scaling.vec2(xPos, 145), circleRadius, color)
             end
         end)
     end
 
     -- Draw elo hud element
     if elo ~= -1 then
-        ui.transparentWindow("eloWindow", vec2(50, 50), vec2(196,82), function ()
+        ui.transparentWindow("eloWindow", scaling.vec2(50, 50), scaling.vec2(196,82), function ()
             local r, g, b = HsvToRgb(hue, 0.7, 0.8)
-            ui.drawImage(eloHudPath, vec2(0, 0), vec2(196, 82), rgbm(r,g,b,1))
+            ui.drawImage(eloHudPath, scaling.vec2(0, 0), scaling.vec2(196, 82), rgbm(r,g,b,1))
             ui.pushDWriteFont(font)
-            ui.dwriteDrawText("Elo", 24, vec2(11, 31))
+            ui.dwriteDrawText("Elo", scaling.size(24), scaling.vec2(11, 31))
             ui.popDWriteFont()
             ui.pushDWriteFont(fontBold)
-            ui.dwriteDrawText(tostring(elo), 34, eloNumPos)
+            ui.dwriteDrawText(tostring(elo), scaling.size(34), eloNumPos)
             ui.popDWriteFont()
     
         end)
@@ -217,26 +217,33 @@ function script.drawUI()
 
     -- Draw invite menu hud.
     if hasInviteMenuOpen then
-        ui.transparentWindow("inviteWindow", vec2(windowWidth - 818, 50), vec2(768,1145), function ()
-            ui.drawImage(inviteMenuPath, vec2(0,0), vec2(768,1145))
-            local color = rgbm(1,1,1,1)
+        ui.transparentWindow("inviteWindow", scaling.vec2(windowWidth - 818, 50), scaling.vec2(768,1145), function ()
+            ui.drawImage(inviteMenuPath, vec2(0,0), scaling.vec2(768,1145))
             local index = 1
+
+            local cardSpacingY = scaling.size(180)  -- Space between cards vertically
+            local baseY = scaling.size(120)         -- Starting Y position
 
             -- Currently all the playercards are being drawn over each other.
             -- Still need to implement spacing based on index.
             while index <= 5 and nearbyPlayers[index] and nearbyPlayers[index].name ~= "" do
-                -- Draw the nearby section
-                ui.pushDWriteFont(font)
-                ui.dwriteDrawText("Nearby", 48, vec2(40,40))
-                ui.popDWriteFont()
-                ui.drawImage(playerCardPath, vec2(32,120), vec2(737,292))
-                ui.pushDWriteFont(fontBold)
-                if nearbyPlayers[index].inRace then
-                    color = rgbm(0.5, 0.5, 0.5, 1)
-                else
-                    color = rgbm(1,1,1,1)
+                local yOffset = baseY + (index - 1) * cardSpacingY  -- Calculate Y offset
+
+                -- Draw the nearby section title once
+                if index == 1 then
+                    ui.pushDWriteFont(font)
+                    ui.dwriteDrawText("Nearby", scaling.size(48), scaling.vec2(40, 40))
+                    ui.popDWriteFont()
                 end
-                ui.dwriteDrawText(nearbyPlayers[index].name, 48, vec2(212,182), color)
+
+                -- Draw player card background
+                ui.drawImage(playerCardPath, scaling.vec2(32, yOffset), scaling.vec2(737, yOffset + 172))
+
+                -- Draw player name
+                ui.pushDWriteFont(fontBold)
+                local color = nearbyPlayers[index].inRace and rgbm(0.5, 0.5, 0.5, 1) or rgbm(1, 1, 1, 1)
+                ui.dwriteDrawText(nearbyPlayers[index].name, scaling.size(48), scaling.vec2(212, yOffset + 62), color)
+                ui.popDWriteFont()
 
                 index = index + 1
             end
@@ -245,14 +252,14 @@ function script.drawUI()
 
     -- Draw invite hud element
     if hasActiveInvite == true then
-        ui.transparentWindow("receivedInviteWindow", vec2(windowWidth-755, windowHeight-222), vec2(705,172), function ()
-            ui.drawImage(playerCardPath, vec2(0,0), vec2(705,172))
-            ui.drawImage(mKeyPath, vec2(560,32), vec2(670,142))
+        ui.transparentWindow("receivedInviteWindow", scaling.vec2(windowWidth-755, windowHeight-222), scaling.vec2(705,172), function ()
+            ui.drawImage(playerCardPath, scaling.vec2(0,0), scaling.vec2(705,172))
+            ui.drawImage(mKeyPath, scaling.vec2(560,32), scaling.vec2(670,142))
             ui.pushDWriteFont(fontBold)
-            ui.dwriteDrawText(tostring(inviteSenderName), 48, vec2(179,40))
+            ui.dwriteDrawText(tostring(inviteSenderName), scaling.size(48), scaling.vec2(179,40))
             ui.popDWriteFont()
             ui.pushDWriteFont(font)
-            ui.dwriteDrawText("Challenged you!", 36, vec2(180,95))
+            ui.dwriteDrawText("Challenged you!", scaling.size(36), scaling.vec2(180,95))
         end)
     end
 end
@@ -264,8 +271,14 @@ function InputCheck()
     end
     if ui.keyboardButtonPressed(ui.KeyIndex.I, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
         hasInviteMenuOpen = not hasInviteMenuOpen
-        if hasInviteMenuOpen then lobbyStatusEvent() end -- This should have a cooldown
-        -- Probably just start a timer and also check if it has run about before calling lobbyStatusEvent
+        if hasInviteMenuOpen then 
+            local now = os.clock()
+            if now - lastLobbyStatusRequest > lobbyCooldown then
+                lastLobbyStatusRequest = now
+                --lobbyStatusEvent()
+                print("lobby update request sent!")
+            end
+        end
     end
 
 end

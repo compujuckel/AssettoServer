@@ -73,9 +73,9 @@ local eloEvent = ac.OnlineEvent(
         elo = message.elo
         hue = (elo / 2000) * 360 - 80
         if elo >= 1000 then
-            eloNumPos = vec2(66, 26)
+            eloNumPos = scaling.vec2(66, 26)
         else
-            eloNumPos = vec2(76, 26)
+            eloNumPos = scaling.vec2(76, 26)
         end
 
     end)
@@ -84,10 +84,13 @@ local inviteEvent = ac.OnlineEvent(
     {
         ac.StructItem.key('AS_Invite'),
         inviteSenderName = ac.StructItem.string(),
+        inviteRecipientGuid = ac.StructItem.uint64(),
     }, function (sender, message)
 
-        hasActiveInvite = true
-        inviteSenderName = message.inviteSenderName
+        if message.inviteSenderName ~= "" and message.inviteRecipientGuid ~= 1 then
+            hasActiveInvite = true
+            inviteSenderName = message.inviteSenderName
+        end
     end
 )
 
@@ -172,18 +175,15 @@ function script.drawUI()
             ui.drawImage(standingsHudPath, scaling.vec2(0,0), scaling.vec2(387,213))
             ui.pushDWriteFont(fontSemiBold)
             ui.dwriteDrawText("Standings", scaling.size(48), scaling.vec2(44, 37))
-            
             -- Explicit loop through fixed indices
             for i = 1, 3 do
                 local result = standings[i]
-                
                 -- Calculate position for each circle (horizontally centered)
                 local circleRadius = scaling.size(25)
                 local spacing = scaling.size(40)
                 local totalWidth = (3 * (circleRadius * 2)) + (2 * spacing)
                 local startX = scaling.size((200 - totalWidth) / 2 + 90)
                 local xPos = scaling.size(startX + (i - 1) * (circleRadius * 2 + spacing) + circleRadius)
-                
                 -- Set color based on result
                 local color
                 if result == 0 then
@@ -193,7 +193,6 @@ function script.drawUI()
                 else
                     color = rgbm(0.349, 0.0078, 0.0078, 1) -- Red for lost
                 end
-                
                 -- Draw circle with appropriate color
                 ui.drawCircleFilled(scaling.vec2(xPos, 145), circleRadius, color)
             end
@@ -211,7 +210,6 @@ function script.drawUI()
             ui.pushDWriteFont(fontBold)
             ui.dwriteDrawText(tostring(elo), scaling.size(34), eloNumPos)
             ui.popDWriteFont()
-    
         end)
     end
 
@@ -223,6 +221,8 @@ function script.drawUI()
 
             local cardSpacingY = scaling.size(180)  -- Space between cards vertically
             local baseY = scaling.size(120)         -- Starting Y position
+
+            local mousePos = ui.mouseLocalPos()
 
             -- Currently all the playercards are being drawn over each other.
             -- Still need to implement spacing based on index.
@@ -236,8 +236,24 @@ function script.drawUI()
                     ui.popDWriteFont()
                 end
 
+                local cardPos = scaling.vec2(32, yOffset)
+                local cardSize = scaling.vec2(737, 172)
+                local cardBottomRight = cardPos + cardSize
+
                 -- Draw player card background
                 ui.drawImage(playerCardPath, scaling.vec2(32, yOffset), scaling.vec2(737, yOffset + 172))
+
+                -- Check for mouse click inside card bounds
+                if ui.mouseClicked() then
+                    if mousePos.x >= cardPos.x and mousePos.x <= cardBottomRight.x and
+                    mousePos.y >= cardPos.y and mousePos.y <= cardBottomRight.y then
+                    -- Player card was clicked
+                    print("Clicked on player:", nearbyPlayers[index].name)
+                    hasInviteMenuOpen = false;
+                    -- Do something, like sending an invite
+                    inviteEvent({inviteSenderName = "", inviteRecipientGuid = nearbyPlayers[index].id})
+                    end
+                end
 
                 -- Draw player name
                 ui.pushDWriteFont(fontBold)
@@ -267,7 +283,7 @@ end
 function InputCheck()
     if ui.keyboardButtonPressed(ui.KeyIndex.N, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
         -- Send invite
-        inviteEvent({inviteSenderName = "senderName"})
+        inviteEvent({inviteSenderName = "nearby", inviteRecipientGuid = 1})
     end
     if ui.keyboardButtonPressed(ui.KeyIndex.I, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
         hasInviteMenuOpen = not hasInviteMenuOpen
@@ -275,10 +291,16 @@ function InputCheck()
             local now = os.clock()
             if now - lastLobbyStatusRequest > lobbyCooldown then
                 lastLobbyStatusRequest = now
-                --lobbyStatusEvent()
+                lobbyStatusEvent()
                 print("lobby update request sent!")
             end
         end
+    end
+    if ui.keyboardButtonPressed(ui.KeyIndex.M, false) and not ui.anyItemFocused() and not ui.anyItemActive() and hasActiveInvite then
+        -- Accept invite
+        print("trying to accept invite.")
+        inviteEvent({inviteSenderName = "a", inviteRecipientGuid = 1})
+        hasActiveInvite = false
     end
 
 end

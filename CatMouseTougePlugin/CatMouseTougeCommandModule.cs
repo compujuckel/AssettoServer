@@ -1,8 +1,6 @@
 ﻿using System.Numerics;
 using AssettoServer.Commands;
 using AssettoServer.Commands.Attributes;
-using AssettoServer.Server;
-using AssettoServer.Shared.Model;
 using CatMouseTougePlugin.Packets;
 using Qmmands;
 

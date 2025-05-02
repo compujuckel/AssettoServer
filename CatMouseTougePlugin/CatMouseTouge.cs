@@ -7,7 +7,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Data.Sqlite;
 using AssettoServer.Network.Tcp;
 using CatMouseTougePlugin.Packets;
-using Serilog;
+using AssettoServer.Shared.Model;
+using System.Threading.Tasks;
 
 namespace CatMouseTougePlugin;
 
@@ -44,6 +45,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         // Provide lua scripts
         ProvideScript("teleport.lua");
         ProvideScript("hud.lua");
+        ProvideScript("scaling.lua");
 
         InitializeDatabase(dbPath);
 
@@ -187,7 +189,20 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
 
     private void OnInvitePacket(ACTcpClient client, InvitePacket packet)
     {
-        InviteNearbyCar(client);
+        if (packet.InviteSenderName == "nearby")
+            InviteNearbyCar(client);
+        else if (packet.InviteSenderName == "a")
+        {
+            // Accept invite.
+            var currentSession = GetSession(client.EntryCar).CurrentSession;
+            if (currentSession != null && currentSession.Challenger != client.EntryCar && !currentSession.IsActive)
+            {
+                _ = Task.Run(currentSession.StartAsync);
+            }
+        }
+        else
+            // Invite by GUID.
+            InviteCar(client, packet.InviteRecipientGuid);
     }
 
     private void OnLobbyStatusPacket(ACTcpClient client, LobbyStatusPacket packet)
@@ -263,6 +278,34 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         else
         {
             client.SendChatMessage("No car nearby!");
+        }
+    }
+
+    public void InviteCar(ACTcpClient client, ulong recipientId)
+    {
+        // First find EntryCar in EntryCarManager that matches guid.
+        EntryCar? recipientCar = null;
+        foreach (EntryCar car in _entryCarManager.EntryCars)
+        {
+            ACTcpClient? carClient = car.Client;
+            if (carClient != null) {
+                if (carClient.Guid == recipientId)
+                {
+                    recipientCar = car;
+                    break;
+                }
+            }
+        }
+
+        // Either found the recipient or still null.
+        if (recipientCar != null)
+        {
+            // Invite the recipientCar
+            GetSession(client!.EntryCar).ChallengeCar(recipientCar);
+        }
+        else
+        {
+            client.SendChatMessage("There was an issue sending the invite. Unable to find recipient.");
         }
     }
 }

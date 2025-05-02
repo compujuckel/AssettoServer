@@ -76,28 +76,27 @@ public class Race
                 byte signalStage = 0;
                 while (signalStage < 3)
                 {
-                    JumpstartResult jumpstart = AreInStartingPos(startingArea);
-                    if (jumpstart != JumpstartResult.None)
+                    if (!_configuration.isRollingStart)
                     {
-                        if (jumpstart == JumpstartResult.Both)
+                        JumpstartResult jumpstart = AreInStartingPos(startingArea);
+                        if (jumpstart != JumpstartResult.None)
                         {
-                            SendMessage("Both players made a jumpstart.");
-                            SendMessage("Returning both players to starting position.");
-                            SendMessage("Race restarting soon...");
-                            await Task.Delay(3000);
-                            startingArea = await GetStartingAreaAsync();
-                            await TeleportToStartAsync(Leader, Follower, startingArea);
-                            break;
-                        }
-                        else if (jumpstart == JumpstartResult.Follower)
-                        {
-                            SendMessage($"{FollowerName} made a jumpstart. {LeaderName} wins this race.");
-                            return RaceResult.Win(Leader);
-                        }
-                        else
-                        {
-                            SendMessage($"{LeaderName} made a jumpstart. {FollowerName} wins this race.");
-                            return RaceResult.Win(Follower);
+                            if (jumpstart == JumpstartResult.Both)
+                            {
+                                SendMessage("Both players made a jumpstart.");
+                                await RestartRaceAsync();
+                                break;
+                            }
+                            else if (jumpstart == JumpstartResult.Follower)
+                            {
+                                SendMessage($"{FollowerName} made a jumpstart. {LeaderName} wins this race.");
+                                return RaceResult.Win(Leader);
+                            }
+                            else
+                            {
+                                SendMessage($"{LeaderName} made a jumpstart. {FollowerName} wins this race.");
+                                return RaceResult.Win(Follower);
+                            }
                         }
                     }
 
@@ -107,6 +106,16 @@ public class Race
                         _ = SendTimedMessageAsync("Set...");
                     else if (signalStage == 2)
                     {
+                        if (_configuration.isRollingStart)
+                        {
+                            // Check if cars are close enough to each other to give a valid "Go!".
+                            if (!IsValidRollingStartPos())
+                            {
+                                SendMessage("Players are not close enough for a fair rolling start.");
+                                await RestartRaceAsync();
+                                break;
+                            }
+                        }
                         _ = SendTimedMessageAsync("Go!");
                         isGo = true;
                         break;
@@ -179,6 +188,15 @@ public class Race
         Leader.Client?.SendChatMessage(message);
     }
 
+    private async Task RestartRaceAsync()
+    {
+        SendMessage("Returning both players to their starting positions.");
+        SendMessage("Race restarting soon...");
+        await Task.Delay(3000);
+        Dictionary<string, Vector3>[] startingArea = await GetStartingAreaAsync();
+        await TeleportToStartAsync(Leader, Follower, startingArea);
+    }
+
     private void OnClientLapCompleted(ACTcpClient sender, LapCompletedEventArgs args)
     {
         var car = sender.EntryCar;
@@ -193,6 +211,7 @@ public class Race
 
         // If only the leader has set a lap
         else if (LeaderSetLap && !FollowerSetLap)
+            // Make this time also configurable as outrun time.
             _ = Task.Delay(3000).ContinueWith(_ => secondLapCompleted.TrySetResult(false));
 
         // Overtake, the follower finished earlier than leader.
@@ -296,6 +315,16 @@ public class Race
 
         return JumpstartResult.None; // No jumpstart
     }
+
+    private bool IsValidRollingStartPos()
+    {
+        // Check if players are within a certain distance of each other.
+        float distanceBetweenCars = Vector3.DistanceSquared(Follower.Status.Position, Leader.Status.Position);
+        if (distanceBetweenCars > 30)
+            return false;
+        return true;
+    }
+
 
     private Dictionary<string, Vector3>[]? FindClearStartArea()
     {

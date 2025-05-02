@@ -40,4 +40,7 @@ public class CatMouseTougeConfiguration : IValidateConfiguration<CatMouseTougeCo
 
     [YamlMember(Description = "Maximum elo gain, when player is marked as provisional")]
     public int MaxEloGainProvisional = 50;
+
+    [YamlMember(Description = "Rolling start enabled.")]
+    public bool isRollingStart = false;
 }

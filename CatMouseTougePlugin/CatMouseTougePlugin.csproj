@@ -43,6 +43,9 @@
       <None Update="wwwroot\InviteMenu.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="wwwroot\Key.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
       <None Update="wwwroot\MKey.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
@@ -50,6 +53,9 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="wwwroot\Standings.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="wwwroot\Tutorial.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

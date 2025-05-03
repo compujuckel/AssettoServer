@@ -18,6 +18,8 @@ local inviteActivatedAt = nil
 local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
 local isHudOn = false
 
+local hasTutorialHidden = false
+
 local font = ""
 local fontBold = ""
 local fontSemiBold = ""
@@ -27,6 +29,8 @@ local standingsHudPath = baseUrl .. "Standings.png"
 local playerCardPath = baseUrl .. "PlayerCard.png"
 local mKeyPath = baseUrl .. "MKey.png"
 local inviteMenuPath = baseUrl .. "InviteMenu.png"
+local tutorialPath = baseUrl .. "Tutorial.png"
+local keyPath = baseUrl .. "Key.png"
 
 local sim = ac.getSim()
 
@@ -145,6 +149,9 @@ end)
 -- Set the variables
 eloEvent({elo = elo})
 
+
+-- Utility functions
+
 function HsvToRgb(h, s, v)
     local c = v * s
     local x = c * (1 - math.abs((h / 60) % 2 - 1))
@@ -162,17 +169,30 @@ function HsvToRgb(h, s, v)
     return r + m, g + m, b + m
 end
 
+function DrawKey(key, pos, keyPos)
+    ui.transparentWindow("keyWindow" .. key, pos, scaling.vec2(110,110), function ()
+
+        keyPos = keyPos or vec2(39, 35)
+
+        ui.drawImage(keyPath, vec2(0,0), scaling.vec2(110,110))
+
+        ui.pushDWriteFont(fontBold)
+        ui.dwriteTextAligned(key, scaling.size(40), ui.Alignment.Start, ui.Alignment.Center)
+        ui.dwriteDrawText(key, scaling.size(40), keyPos)
+        ui.popDWriteFont()
+    end)
+end
+
 function script.drawUI()
 
     -- Get updated window dimensions each frame
     local windowWidth = sim.windowWidth
     local windowHeight = sim.windowHeight
 
-
     if isHudOn then    
         ui.transparentWindow("standingsWindow", scaling.vec2(50, windowHeight/2), scaling.vec2(387, 213), function()
 
-            ui.drawImage(standingsHudPath, scaling.vec2(0,0), scaling.vec2(387,213))
+            ui.drawImage(standingsHudPath, vec2(0,0), scaling.vec2(387,213))
             ui.pushDWriteFont(fontSemiBold)
             ui.dwriteDrawText("Standings", scaling.size(48), scaling.vec2(44, 37))
             -- Explicit loop through fixed indices
@@ -211,6 +231,23 @@ function script.drawUI()
             ui.dwriteDrawText(tostring(elo), scaling.size(34), eloNumPos)
             ui.popDWriteFont()
         end)
+    end
+
+    -- Draw tutorial hud element
+    if not hasTutorialHidden then
+        ui.transparentWindow("tutorialWindow", vec2(scaling.size(50), windowHeight - scaling.size(465)), scaling.vec2(584, 415), function ()
+            ui.drawImage(tutorialPath, vec2(0,0), scaling.vec2(584, 415))
+            ui.pushDWriteFont(fontSemiBold)
+            ui.dwriteDrawText("How to play", scaling.size(24), scaling.vec2(32, 32))
+            ui.popDWriteFont()
+            ui.pushDWriteFont(font)
+            ui.dwriteDrawText("Chase car overtakes before finish: 1 point to the chase car.\nChase car stays close: draw, no points.\nLead car outruns: 1 point to the lead car.\n\nIf score is tied after the first two rounds: Sudden death.", scaling.size(12), scaling.vec2(32, 78))
+            ui.popDWriteFont()
+            ui.pushDWriteFont(fontSemiBold)
+            ui.dwriteDrawText("Controls", scaling.size(24), scaling.vec2(32, 177))
+            ui.popDWriteFont()
+        end)
+        
     end
 
     -- Draw invite menu hud.
@@ -269,7 +306,7 @@ function script.drawUI()
     -- Draw invite hud element
     if hasActiveInvite == true then
         ui.transparentWindow("receivedInviteWindow", scaling.vec2(windowWidth-755, windowHeight-222), scaling.vec2(705,172), function ()
-            ui.drawImage(playerCardPath, scaling.vec2(0,0), scaling.vec2(705,172))
+            ui.drawImage(playerCardPath, vec2(0,0), scaling.vec2(705,172))
             ui.drawImage(mKeyPath, scaling.vec2(560,32), scaling.vec2(670,142))
             ui.pushDWriteFont(fontBold)
             ui.dwriteDrawText(tostring(inviteSenderName), scaling.size(48), scaling.vec2(179,40))
@@ -278,6 +315,7 @@ function script.drawUI()
             ui.dwriteDrawText("Challenged you!", scaling.size(36), scaling.vec2(180,95))
         end)
     end
+
 end
 
 function InputCheck()
@@ -292,7 +330,6 @@ function InputCheck()
             if now - lastLobbyStatusRequest > lobbyCooldown then
                 lastLobbyStatusRequest = now
                 lobbyStatusEvent()
-                print("lobby update request sent!")
             end
         end
     end
@@ -301,6 +338,9 @@ function InputCheck()
         print("trying to accept invite.")
         inviteEvent({inviteSenderName = "a", inviteRecipientGuid = 1})
         hasActiveInvite = false
+    end
+    if ui.keyboardButtonPressed(ui.KeyIndex.H, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
+        hasTutorialHidden = not hasTutorialHidden
     end
 
 end

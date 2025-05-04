@@ -2,6 +2,9 @@ local baseUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP() .
 
 local scaling = require('scaling')
 
+local windowWidth = sim.windowWidth
+local windowHeight = sim.windowHeight
+
 local elo = -1
 local hue = 180
 local eloNumPos = vec2(66, 26)
@@ -19,6 +22,11 @@ local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
 local isHudOn = false
 
 local hasTutorialHidden = false
+local keyBindings = {
+    { key = "N", description = "Invite\nnearby" },
+    { key = "I", description = "Invite\nmenu" },
+    { key = "H", description = "Hide\ntutorial" }
+}
 
 local font = ""
 local fontBold = ""
@@ -169,25 +177,29 @@ function HsvToRgb(h, s, v)
     return r + m, g + m, b + m
 end
 
-function DrawKey(key, pos, keyPos)
-    ui.transparentWindow("keyWindow" .. key, pos, scaling.vec2(110,110), function ()
+function DrawKey(key, pos, letterPos)
+    ui.transparentWindow("tutorialWindow", pos, scaling.vec2(110,110), function ()
 
-        keyPos = keyPos or vec2(39, 35)
+        letterPos = letterPos or vec2(39, 35)
 
         ui.drawImage(keyPath, vec2(0,0), scaling.vec2(110,110))
 
         ui.pushDWriteFont(fontBold)
         ui.dwriteTextAligned(key, scaling.size(40), ui.Alignment.Start, ui.Alignment.Center)
-        ui.dwriteDrawText(key, scaling.size(40), keyPos)
+        ui.dwriteDrawText(key, scaling.size(40), letterPos)
         ui.popDWriteFont()
     end)
+end
+
+function DrawKeyBindings()
+    
 end
 
 function script.drawUI()
 
     -- Get updated window dimensions each frame
-    local windowWidth = sim.windowWidth
-    local windowHeight = sim.windowHeight
+    windowWidth = sim.windowWidth
+    windowHeight = sim.windowHeight
 
     if isHudOn then    
         ui.transparentWindow("standingsWindow", scaling.vec2(50, windowHeight/2), scaling.vec2(387, 213), function()
@@ -246,8 +258,29 @@ function script.drawUI()
             ui.pushDWriteFont(fontSemiBold)
             ui.dwriteDrawText("Controls", scaling.size(24), scaling.vec2(32, 177))
             ui.popDWriteFont()
+
+            local startX = scaling.size(130)
+            local spacingX = scaling.size(150)  -- Space between each key+label pair
+            local baseY = windowHeight - scaling.size(250)     -- Fixed vertical position
+            local startXText = scaling.size(130)
+
+            
+
+            for i, binding in ipairs(keyBindings) do
+                local xOffset = startX + (i - 1) * spacingX
+                local XTextOffest = startXText + (i - 1)
+                local keyPos = scaling.vec2(xOffset, baseY)
+                local textPos = scaling.vec2(XTextOffest - scaling.size(120), 120)
+
+                -- Draw the key
+                DrawKey(binding.key, keyPos)
+
+                -- Draw the description
+                ui.pushDWriteFont(fontSemiBold)
+                ui.dwriteDrawText(binding.description, scaling.size(24), textPos)
+                ui.popDWriteFont()
+            end
         end)
-        
     end
 
     -- Draw invite menu hud.

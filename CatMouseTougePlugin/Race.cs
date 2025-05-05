@@ -184,8 +184,9 @@ public class Race
 
     private void SendMessage(string message)
     {
-        Follower.Client?.SendChatMessage(message);
-        Leader.Client?.SendChatMessage(message);
+        CatMouseTouge.SendNotification(Follower.Client, message);
+        CatMouseTouge.SendNotification(Leader.Client, message);
+
     }
 
     private async Task RestartRaceAsync()
@@ -280,8 +281,10 @@ public class Race
         }
 
         highPingCar.Client?.SendChatMessage(message);
+        CatMouseTouge.SendNotification(highPingCar.Client, message);
         await Task.Delay(highPingCar.Ping - lowPingCar.Ping);
         lowPingCar.Client?.SendChatMessage(message);
+        CatMouseTouge.SendNotification(lowPingCar.Client, message);
     }
 
     // Check if the cars are still in their starting positions.

@@ -277,7 +277,5 @@ public class TougeSession
     {
         Challenger.Client!.SendPacket(new StandingPacket { Result1 = challengerStandings[0], Result2 = challengerStandings[1], Result3 = challengerStandings[2], IsHudOn = isHudOn });
         Challenged.Client!.SendPacket(new StandingPacket { Result1 = challengedStandings[0], Result2 = challengedStandings[1], Result3 = challengedStandings[2], IsHudOn = isHudOn });
-        // Maybe these values can be passed as an array in the future.
-        // But I am happy it actually works for now :)
     }
 }

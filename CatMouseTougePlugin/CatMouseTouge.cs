@@ -7,8 +7,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Data.Sqlite;
 using AssettoServer.Network.Tcp;
 using CatMouseTougePlugin.Packets;
-using AssettoServer.Shared.Model;
-using System.Threading.Tasks;
 
 namespace CatMouseTougePlugin;
 
@@ -274,10 +272,11 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         if (nearestCar != null)
         {
             GetSession(client!.EntryCar).ChallengeCar(nearestCar);
+            SendNotification(client, "Invite sent!");
         }
         else
         {
-            client.SendChatMessage("No car nearby!");
+            SendNotification(client, "No car nearby!");
         }
     }
 
@@ -302,11 +301,18 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         {
             // Invite the recipientCar
             GetSession(client!.EntryCar).ChallengeCar(recipientCar);
+            SendNotification(client, "Invite sent!");
         }
         else
         {
-            client.SendChatMessage("There was an issue sending the invite. Unable to find recipient.");
+            SendNotification(client, "There was an issue sending the invite. Unable to find recipient.");
         }
     }
+
+    internal static void SendNotification(ACTcpClient? client, string message)
+    {
+        client?.SendPacket(new NotificationPacket { Message = message });
+    }
+
 }
 

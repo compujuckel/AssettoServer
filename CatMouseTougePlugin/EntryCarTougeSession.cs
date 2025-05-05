@@ -84,7 +84,9 @@ public class EntryCarTougeSession
     internal void ChallengeCar(EntryCar car)
     {
         void Reply(string message)
-            => _entryCar.Client?.SendChatMessage(message);
+        {
+            CatMouseTouge.SendNotification(_entryCar.Client!, message);
+        }
 
         var currentSession = CurrentSession;
         if (currentSession != null)
@@ -135,4 +137,6 @@ public class EntryCarTougeSession
             }
         }
     }
+
+
 }

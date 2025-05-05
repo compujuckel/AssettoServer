@@ -11,13 +11,13 @@ local eloNumPos = vec2(66, 26)
 
 local inviteSenderName = ""
 local hasActiveInvite = false
+local inviteActivatedAt = nil
 
 local hasInviteMenuOpen = false
 local nearbyPlayers = {}
 local lastLobbyStatusRequest = 0
 local lobbyCooldown = 1.0  -- Cooldown in seconds
 
-local inviteActivatedAt = nil
 local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
 local isHudOn = false
 
@@ -39,6 +39,10 @@ local mKeyPath = baseUrl .. "MKey.png"
 local inviteMenuPath = baseUrl .. "InviteMenu.png"
 local tutorialPath = baseUrl .. "Tutorial.png"
 local keyPath = baseUrl .. "Key.png"
+
+local notificationMessage = ""
+local hasIncomingNotification = false
+local notificationActivatedAt = nil
 
 local sim = ac.getSim()
 
@@ -103,6 +107,16 @@ local inviteEvent = ac.OnlineEvent(
             hasActiveInvite = true
             inviteSenderName = message.inviteSenderName
         end
+    end
+)
+
+local notificationEvent = ac.OnlineEvent(
+    {
+        ac.StructItem.key('AS_Notification'),
+        message = ac.StructItem.string(64),
+    }, function (sender, message)
+        notificationMessage = message.message
+        hasIncomingNotification = true
     end
 )
 
@@ -191,10 +205,6 @@ function DrawKey(key, pos, letterPos)
     end)
 end
 
-function DrawKeyBindings()
-    
-end
-
 function script.drawUI()
 
     -- Get updated window dimensions each frame
@@ -263,8 +273,6 @@ function script.drawUI()
             local spacingX = scaling.size(150)  -- Space between each key+label pair
             local baseY = windowHeight - scaling.size(250)     -- Fixed vertical position
             local startXText = scaling.size(130)
-
-            
 
             for i, binding in ipairs(keyBindings) do
                 local xOffset = startX + (i - 1) * spacingX
@@ -349,6 +357,21 @@ function script.drawUI()
         end)
     end
 
+    -- Draw notification hud element
+    if hasIncomingNotification then
+        local notificationPos = scaling.vec2(windowWidth-755, windowHeight-222)
+        if hasActiveInvite then
+            -- If there is an active invite, draw it above.
+            notificationPos = scaling.vec2(windowWidth-755, windowHeight-414)
+        end
+
+        ui.transparentWindow("notificationWindow", notificationPos, scaling.vec2(705,172), function ()
+            ui.drawImage(playerCardPath, vec2(0,0), scaling.vec2(705,172))
+            ui.pushDWriteFont(fontSemiBold)
+            ui.dwriteDrawText(notificationMessage, scaling.size(18), scaling.vec2(179,40))
+            ui.popDWriteFont()
+        end)
+    end
 end
 
 function InputCheck()
@@ -358,7 +381,7 @@ function InputCheck()
     end
     if ui.keyboardButtonPressed(ui.KeyIndex.I, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
         hasInviteMenuOpen = not hasInviteMenuOpen
-        if hasInviteMenuOpen then 
+        if hasInviteMenuOpen then
             local now = os.clock()
             if now - lastLobbyStatusRequest > lobbyCooldown then
                 lastLobbyStatusRequest = now
@@ -368,14 +391,12 @@ function InputCheck()
     end
     if ui.keyboardButtonPressed(ui.KeyIndex.M, false) and not ui.anyItemFocused() and not ui.anyItemActive() and hasActiveInvite then
         -- Accept invite
-        print("trying to accept invite.")
         inviteEvent({inviteSenderName = "a", inviteRecipientGuid = 1})
         hasActiveInvite = false
     end
     if ui.keyboardButtonPressed(ui.KeyIndex.H, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
         hasTutorialHidden = not hasTutorialHidden
     end
-
 end
 
 function script.update(dt)
@@ -383,9 +404,16 @@ function script.update(dt)
     if hasActiveInvite and inviteActivatedAt == nil then
         inviteActivatedAt = os.clock()
     end
+    if hasIncomingNotification and notificationActivatedAt == nil then
+        notificationActivatedAt = os.clock()
+    end
 
     if inviteActivatedAt ~= nil and os.clock() - inviteActivatedAt >= 10 then
         hasActiveInvite = false
         inviteActivatedAt = nil
+    end
+    if notificationActivatedAt ~= nil and os.clock() - notificationActivatedAt >= 10 then
+        hasIncomingNotification = false
+        notificationActivatedAt = nil
     end
 end

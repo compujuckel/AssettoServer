@@ -31,6 +31,10 @@ public class CatMouseTougeConfigurationValidator : AbstractValidator<CatMouseTou
         RuleFor(cfg => cfg.MaxEloGainProvisional)
             .GreaterThan(0)
             .WithMessage("MaxEloGainProvisional must be a positive integer");
+
+        RuleFor(cfg => cfg.outrunTime)
+            .InclusiveBetween(1, 60)
+            .WithMessage("OutrunTime must be an integer between 1 and 60 seconds.");
     }
 
     private bool BeWithinValidRange(Dictionary<string, int> ratings)

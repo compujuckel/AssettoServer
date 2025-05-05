@@ -212,8 +212,11 @@ public class Race
 
         // If only the leader has set a lap
         else if (LeaderSetLap && !FollowerSetLap)
+        {
             // Make this time also configurable as outrun time.
-            _ = Task.Delay(3000).ContinueWith(_ => secondLapCompleted.TrySetResult(false));
+            int outrunTimer = _configuration.outrunTime * 1000;
+            _ = Task.Delay(outrunTimer).ContinueWith(_ => secondLapCompleted.TrySetResult(false));
+        }
 
         // Overtake, the follower finished earlier than leader.
         else if (FollowerSetLap && !LeaderSetLap)

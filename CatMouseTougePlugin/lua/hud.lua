@@ -70,14 +70,11 @@ local standingEvent = ac.OnlineEvent(
         result2 = ac.StructItem.int32(),
         result3 = ac.StructItem.int32(),
         isHudOn = ac.StructItem.boolean()
-    }, function (sender, message)
-        
+    }, function (sender, message)  
         standings[1] = message.result1
         standings[2] = message.result2
         standings[3] = message.result3
         isHudOn = message.isHudOn
-
-
     end)
 
 local eloEvent = ac.OnlineEvent(

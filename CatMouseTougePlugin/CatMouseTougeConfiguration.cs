@@ -43,4 +43,7 @@ public class CatMouseTougeConfiguration : IValidateConfiguration<CatMouseTougeCo
 
     [YamlMember(Description = "Rolling start enabled.")]
     public bool isRollingStart = false;
+
+    [YamlMember(Description = "Outrun timer in seconds. Chase car has to finish within this amount of time after the lead car crosses the finish line.")]
+    public int outrunTime = 3;
 }

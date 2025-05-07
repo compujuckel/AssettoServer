@@ -110,7 +110,6 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
             insertCommand.Parameters.AddWithValue("@Rating", 1000); // Default ELO rating
             insertCommand.Parameters.AddWithValue("@RacesCompleted", 0);
             insertCommand.ExecuteNonQuery();
-
         }
     }
 

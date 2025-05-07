@@ -367,3 +367,6 @@ out-win-*
 
 # Jetbrains IDEs
 .idea/
+
+# Obsidian
+.obsidian

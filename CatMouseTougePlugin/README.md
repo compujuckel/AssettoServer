@@ -15,7 +15,7 @@ A plugin for Assetto Corsa servers that enables cat-and-mouse-style **touge** ra
     _(Download link will be added here soon)_
 - **Extract it**  
     Place the contents into your server's `plugins` directory:
-    `assettocorsa/server/plugins/CatMouseTouge/`
+    `assettocorsa/server/plugins/`
 - **Run your server once**  
     This will generate a configuration file inside the `cfg` folder.
 - **Customize your ruleset**  

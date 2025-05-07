@@ -58,27 +58,25 @@ public class TougeSession
         {
             // Turn on the hud
             SendStandings(true);
-            RaceResult firstTwoRacesResult = await FirstTwoRaceAsync();
+            RaceResult result = await FirstTwoRaceAsync();
 
-            if (firstTwoRacesResult.Outcome != RaceOutcome.Disconnected)
+            if (result.Outcome != RaceOutcome.Disconnected)
             {
                 // If the result of the first two races is a tie, race until there is a winner.
                 // Sudden death style.
-                RaceResult finalResult = RaceResult.Tie();
-
-                while (finalResult.Outcome == RaceOutcome.Tie)
+                while (result.Outcome == RaceOutcome.Tie)
                 {
-                    // Keep racing
+                    // Keep racing, and stop when there is a winner of disconnect.
                     Race race = _raceFactory(Challenger, Challenged);
-                    finalResult = await race.RaceAsync();
+                    result = await race.RaceAsync();
                 }
 
-                if (finalResult.Outcome != RaceOutcome.Disconnected)
+                if (result.Outcome != RaceOutcome.Disconnected)
                 {
-
-                    // Now finalResult contains the overall winner.
-                    UpdateStandings(finalResult.Winner!, winCounter);
-                    UpdateElo(finalResult.Winner!);
+                    UpdateStandings(result.Winner!, winCounter);
+                    UpdateElo(result.Winner!);
+                    // In the current situation players can rage dc and deny the oponnent a win.
+                    // Maybe elo should always be subtracted when leaving.
                 }
             }
         }

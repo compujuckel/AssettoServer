@@ -186,7 +186,6 @@ public class Race
     {
         CatMouseTouge.SendNotification(Follower.Client, message);
         CatMouseTouge.SendNotification(Leader.Client, message);
-
     }
 
     private async Task RestartRaceAsync()
@@ -331,7 +330,6 @@ public class Race
         return true;
     }
 
-
     private Dictionary<string, Vector3>[]? FindClearStartArea()
     {
         // Loop over the list of starting positions in the cfg file
@@ -391,5 +389,3 @@ public class Race
         return startingArea;
     }
 }
-
-

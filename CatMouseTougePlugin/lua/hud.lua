@@ -19,7 +19,7 @@ local lastLobbyStatusRequest = 0
 local lobbyCooldown = 1.0  -- Cooldown in seconds
 
 local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
-local isHudOn = false
+local isHudOn = true
 
 local hasTutorialHidden = false
 local keyBindings = {
@@ -191,7 +191,7 @@ end
 function DrawKey(key, pos, letterPos)
     ui.transparentWindow("tutorialWindow", pos, scaling.vec2(110,110), function ()
 
-        letterPos = letterPos or vec2(39, 35)
+        letterPos = letterPos or scaling.vec2(39, 35)
 
         ui.drawImage(keyPath, vec2(0,0), scaling.vec2(110,110))
 
@@ -221,7 +221,7 @@ function script.drawUI()
                 local circleRadius = scaling.size(25)
                 local spacing = scaling.size(40)
                 local totalWidth = (3 * (circleRadius * 2)) + (2 * spacing)
-                local startX = scaling.size((200 - totalWidth) / 2 + 90)
+                local startX = (200 - totalWidth) / 2 + 90
                 local xPos = scaling.size(startX + (i - 1) * (circleRadius * 2 + spacing) + circleRadius)
                 -- Set color based on result
                 local color
@@ -233,7 +233,7 @@ function script.drawUI()
                     color = rgbm(0.349, 0.0078, 0.0078, 1) -- Red for lost
                 end
                 -- Draw circle with appropriate color
-                ui.drawCircleFilled(scaling.vec2(xPos, 145), circleRadius, color)
+                ui.drawCircleFilled(vec2(xPos, scaling.size(145)), circleRadius, color, 32)
             end
         end)
     end
@@ -260,13 +260,13 @@ function script.drawUI()
             ui.dwriteDrawText("How to play", scaling.size(24), scaling.vec2(32, 32))
             ui.popDWriteFont()
             ui.pushDWriteFont(font)
-            ui.dwriteDrawText("Chase car overtakes before finish: 1 point to the chase car.\nChase car stays close: draw, no points.\nLead car outruns: 1 point to the lead car.\n\nIf score is tied after the first two rounds: Sudden death.", scaling.size(12), scaling.vec2(32, 78))
+            ui.dwriteDrawText("Chase car overtakes before finish: 1 point to the chase car.\nChase car stays close: draw, no points.\nLead car outruns: 1 point to the lead car.\n\nIf score is tied after the first two rounds: Sudden death.", scaling.size(14), scaling.vec2(32, 78))
             ui.popDWriteFont()
             ui.pushDWriteFont(fontSemiBold)
             ui.dwriteDrawText("Controls", scaling.size(24), scaling.vec2(32, 177))
             ui.popDWriteFont()
 
-            local startX = scaling.size(130)
+            local startX = scaling.size(135)
             local spacingX = scaling.size(150)  -- Space between each key+label pair
             local baseY = windowHeight - scaling.size(250)     -- Fixed vertical position
             local startXText = scaling.size(130)
@@ -274,8 +274,8 @@ function script.drawUI()
             for i, binding in ipairs(keyBindings) do
                 local xOffset = startX + (i - 1) * spacingX
                 local XTextOffest = startXText + (i - 1)
-                local keyPos = scaling.vec2(xOffset, baseY)
-                local textPos = scaling.vec2(XTextOffest - scaling.size(120), 120)
+                local keyPos = vec2(xOffset, baseY)
+                local textPos = vec2(XTextOffest - scaling.size(120), scaling.size(120))
 
                 -- Draw the key
                 DrawKey(binding.key, keyPos)
@@ -290,17 +290,15 @@ function script.drawUI()
 
     -- Draw invite menu hud.
     if hasInviteMenuOpen then
-        ui.transparentWindow("inviteWindow", scaling.vec2(windowWidth - 818, 50), scaling.vec2(768,1145), function ()
+        ui.transparentWindow("inviteWindow", vec2(windowWidth - scaling.size(818), scaling.size(50)), scaling.vec2(768,1145), function ()
             ui.drawImage(inviteMenuPath, vec2(0,0), scaling.vec2(768,1145))
             local index = 1
 
-            local cardSpacingY = scaling.size(180)  -- Space between cards vertically
-            local baseY = scaling.size(120)         -- Starting Y position
+            local cardSpacingY = 180  -- Space between cards vertically
+            local baseY = scaling.size(150)         -- Starting Y position
 
             local mousePos = ui.mouseLocalPos()
 
-            -- Currently all the playercards are being drawn over each other.
-            -- Still need to implement spacing based on index.
             while index <= 5 and nearbyPlayers[index] and nearbyPlayers[index].name ~= "" do
                 local yOffset = baseY + (index - 1) * cardSpacingY  -- Calculate Y offset
 
@@ -316,7 +314,7 @@ function script.drawUI()
                 local cardBottomRight = cardPos + cardSize
 
                 -- Draw player card background
-                ui.drawImage(playerCardPath, scaling.vec2(32, yOffset), scaling.vec2(737, yOffset + 172))
+                ui.drawImage(playerCardPath, cardPos, scaling.vec2(737, yOffset + 172))
 
                 -- Check for mouse click inside card bounds
                 if ui.mouseClicked() then
@@ -341,9 +339,9 @@ function script.drawUI()
         end)
     end
 
-    -- Draw invite hud element
+    -- Draw incoming invite hud element
     if hasActiveInvite == true then
-        ui.transparentWindow("receivedInviteWindow", scaling.vec2(windowWidth-755, windowHeight-222), scaling.vec2(705,172), function ()
+        ui.transparentWindow("receivedInviteWindow", vec2(windowWidth-scaling.size(755), windowHeight-scaling.size(222)), scaling.vec2(705,172), function ()
             ui.drawImage(playerCardPath, vec2(0,0), scaling.vec2(705,172))
             ui.drawImage(mKeyPath, scaling.vec2(560,32), scaling.vec2(670,142))
             ui.pushDWriteFont(fontBold)
@@ -356,7 +354,7 @@ function script.drawUI()
 
     -- Draw notification hud element
     if hasIncomingNotification then
-        local notificationPos = scaling.vec2(windowWidth-755, windowHeight-222)
+        local notificationPos = vec2(windowWidth-scaling.size(755), windowHeight-scaling.size(222))
         if hasActiveInvite then
             -- If there is an active invite, draw it above.
             notificationPos = scaling.vec2(windowWidth-755, windowHeight-414)

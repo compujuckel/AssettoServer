@@ -305,7 +305,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         }
         else
         {
-            SendNotification(client, "There was an issue sending the invite. Unable to find recipient.");
+            SendNotification(client, "There was an issue sending the invite.");
         }
     }
 

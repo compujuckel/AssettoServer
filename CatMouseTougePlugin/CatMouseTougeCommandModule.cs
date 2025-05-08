@@ -52,13 +52,4 @@ public class CatMouseTougeCommandModule : ACModuleBase
             Direction = new Vector3(0.0998f, 0.992f, 0.0784f),  // Forward direction (can be approximate)
         });
     }
-
-    [Command("elo"), RequireConnectedPlayer]
-    public void Elo()
-    {
-        string playerId = Client!.Guid.ToString();
-        int elo = _plugin.GetPlayerElo(playerId);
-        Reply($"You elo is {elo}.");
-        Client!.SendPacket(new EloPacket { Elo = elo });
-    }
 }

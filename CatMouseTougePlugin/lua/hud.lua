@@ -19,7 +19,7 @@ local lastLobbyStatusRequest = 0
 local lobbyCooldown = 1.0  -- Cooldown in seconds
 
 local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
-local isHudOn = true
+local isHudOn = false
 
 local hasTutorialHidden = false
 local keyBindings = {

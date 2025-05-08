@@ -46,4 +46,7 @@ public class CatMouseTougeConfiguration : IValidateConfiguration<CatMouseTougeCo
 
     [YamlMember(Description = "Outrun timer in seconds. Chase car has to finish within this amount of time after the lead car crosses the finish line.")]
     public int outrunTime = 3;
+
+    [YamlMember(Description = "Local database mode enabled. If disabled please provide database connection information.")]
+    public bool isDbLocalMode = true;
 }

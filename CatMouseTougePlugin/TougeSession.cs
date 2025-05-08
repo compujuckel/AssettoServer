@@ -1,7 +1,6 @@
 ﻿
 using AssettoServer.Server;
 using CatMouseTougePlugin.Packets;
-using Microsoft.Data.Sqlite;
 using Serilog;
 
 namespace CatMouseTougePlugin;
@@ -12,8 +11,8 @@ public class TougeSession
     public EntryCar Challenged { get; }
 
     private int winCounter = 0;
-    private int[] challengerStandings = [(int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd];
-    private int[] challengedStandings = [(int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd];
+    private readonly int[] challengerStandings = [(int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd];
+    private readonly int[] challengedStandings = [(int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd];
 
     private enum RaceResultCounter
     {
@@ -74,7 +73,7 @@ public class TougeSession
                 if (result.Outcome != RaceOutcome.Disconnected)
                 {
                     UpdateStandings(result.Winner!, winCounter);
-                    UpdateElo(result.Winner!);
+                    UpdateEloAsync(result.Winner!);
                     // In the current situation players can rage dc and deny the oponnent a win.
                     // Maybe elo should always be subtracted when leaving.
                 }
@@ -155,7 +154,7 @@ public class TougeSession
         SendStandings(false);
     }
 
-    private void UpdateElo(EntryCar? winner)
+    private async void UpdateEloAsync(EntryCar? winner)
     {
         if (winner == null) return;
         var loser = (winner == Challenger) ? Challenged : Challenger;
@@ -166,15 +165,15 @@ public class TougeSession
         int winnerCarRating = GetCarRating(winner.Model);
         int loserCarRating = GetCarRating(loser.Model);
 
-        var (winnerElo, winnerRacesCompleted) = _plugin.GetPlayerStats(winnerId);
-        var (loserElo, loserRacesCompleted) = _plugin.GetPlayerStats(loserId);
+        var (winnerElo, winnerRacesCompleted) = await _plugin.database.GetPlayerStats(winnerId);
+        var (loserElo, loserRacesCompleted) = await _plugin.database.GetPlayerStats(loserId);
 
         int newWinnerElo = CalculateElo(winnerElo, loserElo, winnerCarRating, loserCarRating, true, winnerRacesCompleted);
         int newLoserElo = CalculateElo(loserElo, winnerElo, loserCarRating, winnerCarRating, false, loserRacesCompleted);
 
         // Update elo in the database.
-        UpdatePlayerElo(winnerId, newWinnerElo);
-        UpdatePlayerElo(loserId, newLoserElo);
+        await _plugin.database.UpdatePlayerElo(winnerId, newWinnerElo);
+        await _plugin.database.UpdatePlayerElo(loserId, newLoserElo);
 
         // Send new elo the clients.
         winner.Client!.SendPacket(new EloPacket { Elo = newWinnerElo });
@@ -217,29 +216,6 @@ public class TougeSession
 
         // Ensure Elo rating never goes below 0
         return Math.Max(0, newElo);
-    }
-
-    private void UpdatePlayerElo(string playerId, int newElo)
-    {
-        using var connection = new SqliteConnection($"Data Source={_plugin.dbPath}");
-        connection.Open();
-
-        using var command = connection.CreateCommand();
-        command.CommandText = @"
-        UPDATE Players
-        SET Rating = $newRating,
-            RacesCompleted = RacesCompleted + 1
-        WHERE PlayerId = $playerId;
-    ";
-        command.Parameters.AddWithValue("$newRating", newElo);
-        command.Parameters.AddWithValue("$playerId", playerId);
-
-        int affectedRows = command.ExecuteNonQuery();
-
-        if (affectedRows == 0)
-        {
-            throw new Exception($"Failed to update rating. Player with ID {playerId} not found.");
-        }
     }
 
     private int GetCarRating(string carModel)

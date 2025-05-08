@@ -18,6 +18,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     private readonly CSPServerScriptProvider _scriptProvider;
     private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
     private readonly CatMouseTougeConfiguration _configuration;
+    private readonly IDbConnectionFactory _connectionFactory;
 
     public readonly IDatabase database;
 
@@ -51,10 +52,11 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         if (_configuration.isDbLocalMode)
         {
             // SQLite database.
-            database = new SQLiteDatabase("plugins/CatMouseTougePlugin/database.db");
+            _connectionFactory = new SqliteConnectionFactory("plugins/CatMouseTougePlugin/database.db");
         }
 
-        database.InitializeDatabase();
+        _connectionFactory.InitializeDatabase(); // Can be null but will be fixed when PostgreSQL is implemented.
+        database = new GenericDatabase(_connectionFactory);
 
         _cspClientMessageTypeManager.RegisterOnlineEvent<EloPacket>(OnEloPacket);
         _cspClientMessageTypeManager.RegisterOnlineEvent<InvitePacket>(OnInvitePacket);
@@ -79,7 +81,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     {
         // Check if the player is registered in the database
         string playerId = client.Guid.ToString();
-        database.CheckPlayer(playerId);
+        database.CheckPlayerAsync(playerId);
     }
 
     private void ProvideScript(string scriptName)
@@ -96,7 +98,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
     {
         int elo = 1000; // Default Elo if player not found
         string playerId = client.Guid.ToString();
-        elo = await database.GetPlayerElo(playerId);
+        elo = await database.GetPlayerEloAsync(playerId);
 
         client.SendPacket(new EloPacket { Elo = elo });
     }

@@ -165,15 +165,15 @@ public class TougeSession
         int winnerCarRating = GetCarRating(winner.Model);
         int loserCarRating = GetCarRating(loser.Model);
 
-        var (winnerElo, winnerRacesCompleted) = await _plugin.database.GetPlayerStats(winnerId);
-        var (loserElo, loserRacesCompleted) = await _plugin.database.GetPlayerStats(loserId);
+        var (winnerElo, winnerRacesCompleted) = await _plugin.database.GetPlayerStatsAsync(winnerId);
+        var (loserElo, loserRacesCompleted) = await _plugin.database.GetPlayerStatsAsync(loserId);
 
         int newWinnerElo = CalculateElo(winnerElo, loserElo, winnerCarRating, loserCarRating, true, winnerRacesCompleted);
         int newLoserElo = CalculateElo(loserElo, winnerElo, loserCarRating, winnerCarRating, false, loserRacesCompleted);
 
         // Update elo in the database.
-        await _plugin.database.UpdatePlayerElo(winnerId, newWinnerElo);
-        await _plugin.database.UpdatePlayerElo(loserId, newLoserElo);
+        await _plugin.database.UpdatePlayerEloAsync(winnerId, newWinnerElo);
+        await _plugin.database.UpdatePlayerEloAsync(loserId, newLoserElo);
 
         // Send new elo the clients.
         winner.Client!.SendPacket(new EloPacket { Elo = newWinnerElo });

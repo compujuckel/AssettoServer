@@ -33,7 +33,6 @@ public class SqliteConnectionFactory : IDbConnectionFactory
             ";
             command.ExecuteNonQuery();
         }
-
         return Task.CompletedTask;
     }
 }

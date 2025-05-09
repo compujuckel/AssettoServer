@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using AssettoServer.Network.Tcp;
 using CatMouseTougePlugin.Packets;
 using CatMouseTougePlugin.Database;
+using Serilog;
 
 namespace CatMouseTougePlugin;
 
@@ -54,8 +55,22 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
             // SQLite database.
             _connectionFactory = new SqliteConnectionFactory("plugins/CatMouseTougePlugin/database.db");
         }
+        else
+        {
+            // PostgreSQL database.
+            _connectionFactory = new PostgresConnectionFactory(_configuration.postgresqlConnectionString!);
+        }
 
-        _connectionFactory.InitializeDatabase(); // Can be null but will be fixed when PostgreSQL is implemented.
+        try
+        {
+            _connectionFactory.InitializeDatabase();
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal("Failed to initialize touge database: " + ex.Message);
+            Environment.Exit(1);
+        }
+
         database = new GenericDatabase(_connectionFactory);
 
         _cspClientMessageTypeManager.RegisterOnlineEvent<EloPacket>(OnEloPacket);

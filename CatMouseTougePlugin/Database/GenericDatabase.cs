@@ -10,13 +10,13 @@ public class GenericDatabase(IDbConnectionFactory factory) : IDatabase
         using var command = connection.CreateCommand();
         command.CommandText = @"
         UPDATE Players
-        SET Rating = $newRating,
+        SET Rating = @newRating,
             RacesCompleted = RacesCompleted + 1
-        WHERE PlayerId = $playerId;
+        WHERE PlayerId = @playerId;
         ";
 
-        command.AddParameter("$newRating", newElo);
-        command.AddParameter("$playerId", playerId);
+        command.AddParameter("@newRating", newElo);
+        command.AddParameter("@playerId", playerId);
 
         int affectedRows = await command.ExecuteNonQueryAsync();
 
@@ -60,9 +60,9 @@ public class GenericDatabase(IDbConnectionFactory factory) : IDatabase
         command.CommandText = @"
         SELECT Rating
         FROM Players
-        WHERE PlayerId = $playerId
+        WHERE PlayerId = @playerId
         ";
-        command.AddParameter("$playerId", playerId);
+        command.AddParameter("@playerId", playerId);
 
         var result = command.ExecuteScalar();
 
@@ -85,9 +85,9 @@ public class GenericDatabase(IDbConnectionFactory factory) : IDatabase
         command.CommandText = @"
         SELECT Rating, RacesCompleted
         FROM Players
-        WHERE PlayerId = $playerId;
+        WHERE PlayerId = @playerId;
         ";
-        command.AddParameter("$playerId", playerId);
+        command.AddParameter("@playerId", playerId);
 
         using var reader = command.ExecuteReader();
 

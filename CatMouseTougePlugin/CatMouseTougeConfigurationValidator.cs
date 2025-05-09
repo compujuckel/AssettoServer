@@ -15,7 +15,6 @@ public class CatMouseTougeConfigurationValidator : AbstractValidator<CatMouseTou
             .Must(BeWithinValidRange)
             .WithMessage(x => GetInvalidRangeMessage(x.CarPerformanceRatings));
 
-        // If you want to add additional constraints on the value
         RuleFor(cfg => cfg.MaxEloGain)
             .GreaterThan(0)
             .WithMessage("MaxEloGain must be a positive integer");
@@ -35,6 +34,11 @@ public class CatMouseTougeConfigurationValidator : AbstractValidator<CatMouseTou
         RuleFor(cfg => cfg.outrunTime)
             .InclusiveBetween(1, 60)
             .WithMessage("OutrunTime must be an integer between 1 and 60 seconds.");
+
+        RuleFor(cfg => cfg.postgresqlConnectionString)
+            .NotEmpty()
+            .WithMessage("PostgreSQL connection string must be provided when isDbLocalMode is false.")
+            .When(cfg => !cfg.isDbLocalMode);
     }
 
     private bool BeWithinValidRange(Dictionary<string, int> ratings)

@@ -49,4 +49,7 @@ public class CatMouseTougeConfiguration : IValidateConfiguration<CatMouseTougeCo
 
     [YamlMember(Description = "Local database mode enabled. If disabled please provide database connection information.")]
     public bool isDbLocalMode = true;
+
+    [YamlMember(Description = "Connection string to PostgreSQL database. Can be left empty if isDbLocalMode = true.")]
+    public string? postgresqlConnectionString;
 }

@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using AssettoServer.Network.ClientMessages;
 
-namespace CatMouseTougePlugin.Packets;
+namespace TougePlugin.Packets;
 
 [OnlineEvent(Key = "AS_Teleport")]
 public class TeleportPacket : OnlineEvent<TeleportPacket>

@@ -2,9 +2,9 @@
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using Serilog;
-using CatMouseTougePlugin.Packets;
+using TougePlugin.Packets;
 
-namespace CatMouseTougePlugin;
+namespace TougePlugin;
 
 public class Race
 {
@@ -12,7 +12,7 @@ public class Race
     public EntryCar Follower { get;  }
 
     private readonly EntryCarManager _entryCarManager;
-    private readonly CatMouseTougeConfiguration _configuration;
+    private readonly TougeConfiguration _configuration;
 
     public bool HasStarted { get; private set; }
 
@@ -35,7 +35,7 @@ public class Race
 
     public delegate Race Factory(EntryCar leader, EntryCar follower);
 
-    public Race(EntryCar leader, EntryCar follower, EntryCarManager entryCarManager, CatMouseTougeConfiguration configuration)
+    public Race(EntryCar leader, EntryCar follower, EntryCarManager entryCarManager, TougeConfiguration configuration)
     {
         Leader = leader;
         Follower = follower;
@@ -184,8 +184,8 @@ public class Race
 
     private void SendMessage(string message)
     {
-        CatMouseTouge.SendNotification(Follower.Client, message);
-        CatMouseTouge.SendNotification(Leader.Client, message);
+        Touge.SendNotification(Follower.Client, message);
+        Touge.SendNotification(Leader.Client, message);
     }
 
     private async Task RestartRaceAsync()
@@ -283,10 +283,10 @@ public class Race
         }
 
         highPingCar.Client?.SendChatMessage(message);
-        CatMouseTouge.SendNotification(highPingCar.Client, message);
+        Touge.SendNotification(highPingCar.Client, message);
         await Task.Delay(highPingCar.Ping - lowPingCar.Ping);
         lowPingCar.Client?.SendChatMessage(message);
-        CatMouseTouge.SendNotification(lowPingCar.Client, message);
+        Touge.SendNotification(lowPingCar.Client, message);
     }
 
     // Check if the cars are still in their starting positions.

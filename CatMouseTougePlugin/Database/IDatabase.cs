@@ -1,4 +1,4 @@
-﻿namespace CatMouseTougePlugin.Database;
+﻿namespace TougePlugin.Database;
 
 public interface IDatabase
 {

@@ -1,6 +1,6 @@
 ﻿using AssettoServer.Network.ClientMessages;
 
-namespace CatMouseTougePlugin.Packets;
+namespace TougePlugin.Packets;
 
 [OnlineEvent(Key = "AS_LobbyStatus")]
 public class LobbyStatusPacket : OnlineEvent<LobbyStatusPacket>

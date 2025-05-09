@@ -5,26 +5,26 @@ using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using AssettoServer.Network.Tcp;
-using CatMouseTougePlugin.Packets;
-using CatMouseTougePlugin.Database;
+using TougePlugin.Packets;
+using TougePlugin.Database;
 using Serilog;
 
-namespace CatMouseTougePlugin;
+namespace TougePlugin;
 
-public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
+public class Touge : CriticalBackgroundService, IAssettoServerAutostart
 {
     private readonly EntryCarManager _entryCarManager;
     private readonly Func<EntryCar, EntryCarTougeSession> _entryCarTougeSessionFactory;
     private readonly Dictionary<int, EntryCarTougeSession> _instances = [];
     private readonly CSPServerScriptProvider _scriptProvider;
     private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
-    private readonly CatMouseTougeConfiguration _configuration;
+    private readonly TougeConfiguration _configuration;
     private readonly IDbConnectionFactory _connectionFactory;
 
     public readonly IDatabase database;
 
-    public CatMouseTouge(
-        CatMouseTougeConfiguration configuration,
+    public Touge(
+        TougeConfiguration configuration,
         EntryCarManager entryCarManager,
         Func<EntryCar, EntryCarTougeSession> entryCarTougeSessionFactory,
         IHostApplicationLifetime applicationLifetime,
@@ -41,7 +41,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
 
         if (!serverConfiguration.Extra.EnableClientMessages)
         {
-            throw new ConfigurationException("CatMouseTougePlugin requires ClientMessages to be enabled.");
+            throw new ConfigurationException("Touge plugin requires ClientMessages to be enabled.");
         }
 
         // Provide lua scripts
@@ -53,7 +53,7 @@ public class CatMouseTouge : CriticalBackgroundService, IAssettoServerAutostart
         if (_configuration.isDbLocalMode)
         {
             // SQLite database.
-            _connectionFactory = new SqliteConnectionFactory("plugins/CatMouseTougePlugin/database.db");
+            _connectionFactory = new SqliteConnectionFactory("plugins/TougePlugin/database.db");
         }
         else
         {

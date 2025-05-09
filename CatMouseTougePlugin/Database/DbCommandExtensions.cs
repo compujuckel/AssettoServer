@@ -1,6 +1,6 @@
 ﻿using System.Data.Common;
 
-namespace CatMouseTougePlugin.Database;
+namespace TougePlugin.Database;
 
 public static class DbCommandExtensions
 {

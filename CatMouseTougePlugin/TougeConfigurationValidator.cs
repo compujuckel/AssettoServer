@@ -2,13 +2,13 @@
 using FluentValidation;
 using JetBrains.Annotations;
 
-namespace CatMouseTougePlugin;
+namespace TougePlugin;
 
 // Use FluentValidation to validate plugin configuration
 [UsedImplicitly]
-public class CatMouseTougeConfigurationValidator : AbstractValidator<CatMouseTougeConfiguration>
+public class TougeConfigurationValidator : AbstractValidator<TougeConfiguration>
 {
-    public CatMouseTougeConfigurationValidator()
+    public TougeConfigurationValidator()
     {
         // Validate that each value in the CarPerformanceRatings dictionary is between 1 and 1000
         RuleFor(cfg => cfg.CarPerformanceRatings)

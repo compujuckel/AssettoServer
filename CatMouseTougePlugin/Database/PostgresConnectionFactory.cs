@@ -1,7 +1,7 @@
 ﻿using System.Data.Common;
 using Npgsql;
 
-namespace CatMouseTougePlugin.Database;
+namespace TougePlugin.Database;
 
 public class PostgresConnectionFactory(string connectionString) : IDbConnectionFactory
 {

@@ -1,6 +1,6 @@
 ﻿using AssettoServer.Server;
 
-namespace CatMouseTougePlugin;
+namespace TougePlugin;
 public enum RaceOutcome
 {
     Win,

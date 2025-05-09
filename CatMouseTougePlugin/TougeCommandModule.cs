@@ -1,16 +1,16 @@
 ﻿using System.Numerics;
 using AssettoServer.Commands;
 using AssettoServer.Commands.Attributes;
-using CatMouseTougePlugin.Packets;
+using TougePlugin.Packets;
 using Qmmands;
 
-namespace CatMouseTougePlugin;
+namespace TougePlugin;
 
-public class CatMouseTougeCommandModule : ACModuleBase
+public class TougeCommandModule : ACModuleBase
 {
-    private readonly CatMouseTouge _plugin;
+    private readonly Touge _plugin;
 
-    public CatMouseTougeCommandModule(CatMouseTouge plugin)
+    public TougeCommandModule(Touge plugin)
     {
         _plugin = plugin;
     }

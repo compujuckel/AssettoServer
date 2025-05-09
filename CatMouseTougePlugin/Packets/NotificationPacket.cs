@@ -1,6 +1,6 @@
 ﻿using AssettoServer.Network.ClientMessages;
 
-namespace CatMouseTougePlugin.Packets;
+namespace TougePlugin.Packets;
 
 [OnlineEvent(Key = "AS_Notification")]
 public class NotificationPacket : OnlineEvent<NotificationPacket>

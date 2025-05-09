@@ -1,7 +1,7 @@
 ﻿using System.Data.Common;
 using Microsoft.Data.Sqlite;
 
-namespace CatMouseTougePlugin.Database;
+namespace TougePlugin.Database;
 
 public class SqliteConnectionFactory : IDbConnectionFactory
 {

@@ -1,22 +1,22 @@
 ﻿using System.Numerics;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using CatMouseTougePlugin.Packets;
+using TougePlugin.Packets;
 
-namespace CatMouseTougePlugin;
+namespace TougePlugin;
 
 // Instance attached to each EntryCar that manages TougeSessions
 // Handles sending and accepting invites and starting the TougeSession
 public class EntryCarTougeSession
 {
     private readonly EntryCarManager _entryCarManager;
-    private readonly CatMouseTouge _plugin;
+    private readonly Touge _plugin;
     private readonly EntryCar _entryCar;
     private readonly TougeSession.Factory _tougeSessionFactory;
 
     internal TougeSession? CurrentSession { get; set; }
 
-    public EntryCarTougeSession(EntryCar entryCar, EntryCarManager entryCarManager, CatMouseTouge plugin, TougeSession.Factory tougeSessionFactory)
+    public EntryCarTougeSession(EntryCar entryCar, EntryCarManager entryCarManager, Touge plugin, TougeSession.Factory tougeSessionFactory)
     {
         _entryCar = entryCar;
         _entryCarManager = entryCarManager;
@@ -85,7 +85,7 @@ public class EntryCarTougeSession
     {
         void Reply(string message)
         {
-            CatMouseTouge.SendNotification(_entryCar.Client!, message);
+            Touge.SendNotification(_entryCar.Client!, message);
         }
 
         var currentSession = CurrentSession;

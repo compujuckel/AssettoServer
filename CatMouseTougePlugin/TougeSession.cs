@@ -1,9 +1,9 @@
 ﻿
 using AssettoServer.Server;
-using CatMouseTougePlugin.Packets;
+using TougePlugin.Packets;
 using Serilog;
 
-namespace CatMouseTougePlugin;
+namespace TougePlugin;
 
 public class TougeSession
 {
@@ -24,13 +24,13 @@ public class TougeSession
     public bool IsActive { get; private set; }
 
     private readonly EntryCarManager _entryCarManager;
-    private readonly CatMouseTouge _plugin;
+    private readonly Touge _plugin;
     private readonly Race.Factory _raceFactory;
-    private readonly CatMouseTougeConfiguration _configuration;
+    private readonly TougeConfiguration _configuration;
 
     public delegate TougeSession Factory(EntryCar challenger, EntryCar challenged);
 
-    public TougeSession(EntryCar challenger, EntryCar challenged, EntryCarManager entryCarManager, CatMouseTouge plugin, Race.Factory raceFactory, CatMouseTougeConfiguration configuration)
+    public TougeSession(EntryCar challenger, EntryCar challenged, EntryCarManager entryCarManager, Touge plugin, Race.Factory raceFactory, TougeConfiguration configuration)
     {
         Challenger = challenger;
         Challenged = challenged;

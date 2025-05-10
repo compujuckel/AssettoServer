@@ -1,5 +1,4 @@
-﻿
-using AssettoServer.Server;
+﻿using AssettoServer.Server;
 using TougePlugin.Packets;
 using Serilog;
 

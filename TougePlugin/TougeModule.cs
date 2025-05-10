@@ -12,5 +12,4 @@ public class TougeModule : AssettoServerModule<TougeConfiguration>
         builder.RegisterType<TougeSession>().AsSelf();
         builder.RegisterType<Race>().AsSelf();
     }
-
 }

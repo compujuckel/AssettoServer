@@ -47,7 +47,6 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
         // Provide lua scripts
         ProvideScript("teleport.lua");
         ProvideScript("hud.lua");
-        ProvideScript("scaling.lua");
 
         // Set up database connection
         if (_configuration.isDbLocalMode)

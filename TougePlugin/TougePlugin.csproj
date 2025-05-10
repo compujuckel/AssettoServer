@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <EnableDynamicLoading>true</EnableDynamicLoading>
+        <PlatformTarget>x64</PlatformTarget>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -27,9 +28,6 @@
 
     <ItemGroup>
       <None Update="lua\hud.lua">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="lua\scaling.lua">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="lua\teleport.lua">

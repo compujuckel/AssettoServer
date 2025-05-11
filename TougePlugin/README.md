@@ -21,7 +21,7 @@ A plugin for Assetto Corsa servers that enables cat-and-mouse-style **touge** ra
 - **Run your server once**  
     This will generate a configuration file inside the `cfg` folder.
 - **Customize your ruleset**  
-    Edit the generated `plugin_cat_mouse_touge_cfg.yml` to adjust setting to your liking.  
+    Edit the generated `plugin_touge_cfg.yml` to adjust setting to your liking.  
 
 ---
 
@@ -132,7 +132,7 @@ StartingPositions:
 
 **Example:**
 ```yaml
-postgresqlConnectionString: "Host=localhost;Port=5432;Database=touge_db;Username=user;Password=pass"
+postgresqlConnectionString: "Host={IP/URL};Port={Port};Username={Username};Password={Password};Database={Database name}"
 ```
 
 ---

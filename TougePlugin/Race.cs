@@ -154,8 +154,6 @@ public class Race
                     SendMessage($"{LeaderName} did not pull away. It's a tie!");
                     return RaceResult.Tie();
                 }
-                // Small cooldown time after the race finished.
-                await Task.Delay(10000);
             }
         }
 
@@ -219,8 +217,7 @@ public class Race
 
         // Overtake, the follower finished earlier than leader.
         else if (FollowerSetLap && !LeaderSetLap)
-            _followerFirst.TrySetResult(true);
-            
+            _followerFirst.TrySetResult(true);    
     }
 
     private void OnClientDisconnected(ACTcpClient sender, EventArgs args)
@@ -301,7 +298,7 @@ public class Race
         float leaderDistanceSquared = Vector3.DistanceSquared(currentLeaderPos, startingArea[0]["Position"]);
         float followerDistanceSquared = Vector3.DistanceSquared(currentFollowerPos, startingArea[1]["Position"]);
 
-        const float thresholdSquared = 50f;
+        const float thresholdSquared = 40f;
 
         // Check if either car has moved too far (jumpstart detection)
         if (leaderDistanceSquared > thresholdSquared && followerDistanceSquared > thresholdSquared)

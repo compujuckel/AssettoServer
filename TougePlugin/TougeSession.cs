@@ -13,6 +13,8 @@ public class TougeSession
     private readonly int[] challengerStandings = [(int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd];
     private readonly int[] challengedStandings = [(int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd];
 
+    private const int coolDownTime = 10000; // Cooldown timer for inbetween races.
+
     private enum RaceResultCounter
     {
         Tbd = 0,
@@ -70,6 +72,7 @@ public class TougeSession
                     EntryCar follower = isChallengerLeading ? Challenged : Challenger;
 
                     Race race = _raceFactory(leader, follower);
+                    await Task.Delay(coolDownTime); // Small cooldown time inbetween races.
                     result = await race.RaceAsync();
 
                     isChallengerLeading = !isChallengerLeading;
@@ -90,7 +93,7 @@ public class TougeSession
         }
         finally
         {
-            FinishTougeSession();
+            await FinishTougeSessionAsync();
         }
     }
 
@@ -100,7 +103,7 @@ public class TougeSession
         Race race1 = _raceFactory(Challenger, Challenged);
         RaceResult result1 = await race1.RaceAsync();
 
-        // If there is a winner in race 1, run race 2.
+        // If both players are still connected. Run race 2.
         if (result1.Outcome != RaceOutcome.Disconnected)
         {
             if (result1.Outcome == RaceOutcome.Win)
@@ -110,6 +113,7 @@ public class TougeSession
             }
 
             // Always start second race.
+            await Task.Delay(coolDownTime); // Small cooldown time inbetween races.
             Race race2 = _raceFactory(Challenged, Challenger);
             RaceResult result2 = await race2.RaceAsync();
 
@@ -143,7 +147,7 @@ public class TougeSession
         return winCounter == 0 || (bothAreWins && differentWinners);
     }
 
-    private void FinishTougeSession()
+    private async Task FinishTougeSessionAsync()
     {
         _plugin.GetSession(Challenger).CurrentSession = null;
         _plugin.GetSession(Challenged).CurrentSession = null;
@@ -152,6 +156,8 @@ public class TougeSession
         string ChallengerName = Challenger.Client?.Name!;
 
         _entryCarManager.BroadcastChat($"Race between {ChallengerName} and {ChallengedName} has concluded!");
+
+        await Task.Delay(coolDownTime); // Small cooldown to shortly keep scoreboard up after session has ended.
 
         // Turn off and reset hud
         Array.Fill(challengerStandings, (int)RaceResultCounter.Tbd);

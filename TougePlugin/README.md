@@ -29,7 +29,7 @@ A plugin for Assetto Corsa servers that enables cat-and-mouse-style **touge** ra
 
 ---
 ### `touge_starting_areas.ini`
-Used to setup the starting areas on various maps. You can use [comfy map](https://www.overtake.gg/downloads/comfy-map.52623/) to get the position and heading. The following example sets up two starting areas, one for Gunma and one for Imola. Configurations for different tracks can all be stored in the same file. A download link for a base configuration file that contains various starting positions for popular tracks will be added later.
+Used to setup the starting areas on various maps. You can use [comfy map](https://www.overtake.gg/downloads/comfy-map.52623/) to get the position and heading. The following example sets up two starting areas, one for Gunma and one for Imola. Configurations for different tracks can all be stored in the same file. A download link for a base configuration file that contains various starting positions for popular tracks will be added later. Also, feel free to share your configs in the [Discord](https://discord.gg/z22Pcsy3df).
 ```
 [pk_gunma_cycle_sports_center-gcsc_full_attack_1]
 leader_pos = -199.7,467.3,-87.7

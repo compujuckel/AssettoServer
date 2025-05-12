@@ -21,7 +21,6 @@ local teleportEvent = ac.OnlineEvent(
         direction = ac.StructItem.vec3()
     },
     function(sender, message)
-        print("Received teleport packet")
         if sender ~= nil then
             print("Sender is nil")
             return

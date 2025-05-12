@@ -7,7 +7,7 @@ using Microsoft.Extensions.Hosting;
 using AssettoServer.Network.Tcp;
 using TougePlugin.Packets;
 using TougePlugin.Database;
-using Serilog;
+using System.Numerics;
 
 namespace TougePlugin;
 
@@ -21,7 +21,10 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
     private readonly TougeConfiguration _configuration;
     private readonly IDbConnectionFactory _connectionFactory;
 
+    private static readonly string startingPositionsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cfg", "touge_starting_areas.ini");
+
     public readonly IDatabase database;
+    public readonly Dictionary<string, Vector3>[][] startingPositions;
 
     public Touge(
         TougeConfiguration configuration,
@@ -66,8 +69,7 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
         }
         catch (Exception ex)
         {
-            Log.Fatal("Failed to initialize touge database: " + ex.Message);
-            Environment.Exit(1);
+            throw new Exception("Failed to initialize touge database: " + ex.Message);
         }
 
         database = new GenericDatabase(_connectionFactory);
@@ -75,6 +77,9 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
         _cspClientMessageTypeManager.RegisterOnlineEvent<EloPacket>(OnEloPacket);
         _cspClientMessageTypeManager.RegisterOnlineEvent<InvitePacket>(OnInvitePacket);
         _cspClientMessageTypeManager.RegisterOnlineEvent<LobbyStatusPacket>(OnLobbyStatusPacket);
+
+        // Read starting positions from file
+        startingPositions = getStartingPositions();
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -244,6 +249,18 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
     internal static void SendNotification(ACTcpClient? client, string message)
     {
         client?.SendPacket(new NotificationPacket { Message = message });
+    }
+
+    private Dictionary<string, Vector3>[][] getStartingPositions()
+    {
+        if (!File.Exists(startingPositionsFile))
+        {
+            // Create the file
+            File.WriteAllText(startingPositionsFile, "[starting_area_1]\nleader_pos =\nleader_heading =\nchaser_pos =\nchaser_heading =");
+            throw new Exception("No touge starting areas defined in cfg/touge_starting_areas.ini!");
+        }
+
+        return StartingAreaParser.Parse("cfg/touge_starting_areas.ini");
     }
 }
 

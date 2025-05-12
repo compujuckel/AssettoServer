@@ -18,10 +18,6 @@ public class TougeConfigurationValidator : AbstractValidator<TougeConfiguration>
         RuleFor(cfg => cfg.MaxEloGain)
             .GreaterThan(0)
             .WithMessage("MaxEloGain must be a positive integer");
-
-        RuleFor(cfg => cfg.StartingPositions)
-            .Must(HaveValidStartingPositionPair)
-            .WithMessage("There must be at least one pair of starting positions, each with 'Position' and 'Direction' keys.");
         
         RuleFor(cfg => cfg.ProvisionalRaces)
         .GreaterThan(0)
@@ -54,25 +50,5 @@ public class TougeConfigurationValidator : AbstractValidator<TougeConfiguration>
             .ToList();
 
         return $"The following car performance ratings must be between 1 and 1000: {string.Join(", ", invalidEntries)}";
-    }
-
-    private bool HaveValidStartingPositionPair(Dictionary<string, Vector3>[][] positions)
-    {
-        if (positions == null) return false;
-
-        foreach (var group in positions)
-        {
-            if (group == null || group.Length != 2) continue;
-
-            bool bothHaveKeys = group.All(dict =>
-                dict != null &&
-                dict.ContainsKey("Position") &&
-                dict.ContainsKey("Direction"));
-
-            if (bothHaveKeys)
-                return true;
-        }
-
-        return false;
     }
 }

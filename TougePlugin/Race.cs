@@ -13,6 +13,7 @@ public class Race
 
     private readonly EntryCarManager _entryCarManager;
     private readonly TougeConfiguration _configuration;
+    private readonly Touge _plugin;
 
     public bool HasStarted { get; private set; }
 
@@ -35,7 +36,7 @@ public class Race
 
     public delegate Race Factory(EntryCar leader, EntryCar follower);
 
-    public Race(EntryCar leader, EntryCar follower, EntryCarManager entryCarManager, TougeConfiguration configuration)
+    public Race(EntryCar leader, EntryCar follower, EntryCarManager entryCarManager, TougeConfiguration configuration, Touge plugin)
     {
         Leader = leader;
         Follower = follower;
@@ -51,6 +52,7 @@ public class Race
 
         _entryCarManager = entryCarManager;
         _configuration = configuration;
+        _plugin = plugin;
     }
 
     public async Task<RaceResult> RaceAsync()
@@ -331,7 +333,7 @@ public class Race
     {
         // Loop over the list of starting positions in the cfg file
         // If you find a valid/clear starting pos, return that.
-        foreach (var startingArea in _configuration.StartingPositions)
+        foreach (var startingArea in _plugin.startingPositions)
         {
             if (IsStartPosClear(startingArea[0]["Position"]) && IsStartPosClear(startingArea[1]["Position"]))
             {
@@ -380,7 +382,7 @@ public class Race
             if (waitTime > 40)
             {
                 // Fallback after 10 seconds.
-                startingArea = _configuration.StartingPositions[0];
+                startingArea = _plugin.startingPositions[0];
             }
         }
         return startingArea;

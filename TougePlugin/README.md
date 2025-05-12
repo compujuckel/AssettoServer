@@ -19,7 +19,7 @@ A plugin for Assetto Corsa servers that enables cat-and-mouse-style **touge** ra
 - **Extract it**  
     Place the contents into your server's `plugins` directory.
 - **Run your server once**  
-    This will generate a configuration file inside the `cfg` folder.
+    This will generate configuration files inside the `cfg` folder.
 - **Customize your ruleset**  
     Edit the generated `plugin_touge_cfg.yml` to adjust setting to your liking.  
 
@@ -27,10 +27,28 @@ A plugin for Assetto Corsa servers that enables cat-and-mouse-style **touge** ra
 
 ## Configuration
 
+---
+### `touge_starting_areas.ini`
+Used to setup the starting areas on various maps. You can use [comfy map](https://www.overtake.gg/downloads/comfy-map.52623/) to get the position and heading. The following example sets up two starting areas, one for Gunma and one for Imola. Configurations for different tracks can all be stored in the same file. A download link for a base configuration file that contains various starting positions for popular tracks will be added later.
+```
+[pk_gunma_cycle_sports_center-gcsc_full_attack_1]
+leader_pos = -199.7,467.3,-87.7
+leader_heading = -16
+chaser_pos = -195.3,467,-83.1
+chaser_heading = -17
 
-### Elo Configuration
+[imola_1]
+leader_pos = -199.7,467.3,-87.7
+leader_heading = -16
+chaser_pos = -195.3,467,-83.1
+chaser_heading = -17
+```
 
-### `CarPerformanceRatings`
+---
+### `plugin_touge_cfg.yml`
+#### Elo Configuration
+
+##### `CarPerformanceRatings`
 **Type:** `Dictionary<string, int>`  
 **Description:** Specifies performance ratings for different car models.  
 **Usage:** Each key represents the car's internal model name (e.g., `ks_mazda_miata`) and the value is a performance score between **1** and **1000**.  
@@ -42,35 +60,27 @@ CarPerformanceRatings:
   ks_toyota_ae86: 131
 ```
 
----
-
-### `MaxEloGain`
+##### `MaxEloGain`
 **Type:** `int`  
 **Description:** The maximum amount of elo rating a player can gain (or lose) in a single race.  
 **Constraints:** Must be a **positive integer**.  
 **Purpose:** Gives control over the volatility of the rating system.
 
----
-
-### `ProvisionalRaces`
+##### `ProvisionalRaces`
 **Type:** `int`  
 **Description:** The number of initial races a player is considered "provisional" in the elo system.  
 **Constraints:** Must be **greater than 0**.  
 **Purpose:** Allows for slightly larger elo changes than configured in MaxEloGain while a player's skill is still being established.
 
----
-
-### `MaxEloGainProvisional`
+##### `MaxEloGainProvisional`
 **Type:** `int`  
 **Description:** The maximum elo gain/loss while a player is still provisional.  
 **Constraints:** Must be **greater than 0**.  
 **Purpose:** Allows for a faster elo adjustment during provisional matches compared to regular ones.
 
----
+#### Race Setup
 
-## Race Setup
-
-### `StartingPositions`
+##### `StartingPositions`
 **Type:** `Dictionary<string, Vector3>[][]`  
 **Description:** A two-dimensional array of starting position pairs.  
 Each inner array contains two dictionaries, one for each car, and each dictionary contains:
@@ -93,37 +103,29 @@ StartingPositions:
       Direction: { X: 0.0919, Y: 0.992, Z: 0.0832 }
 ```
 
----
-
-### `isRollingStart`
+##### `isRollingStart`
 **Type:** `bool`  
 **Description:** Enables or disables rolling starts.  
 **Usage:**  
 - `true`: Cars start moving at the beginning of the race.  
 - `false`: Cars are stationary at the start.
 
----
-
-### `outrunTime`
+##### `outrunTime`
 **Type:** `int`  
 **Description:** The number of seconds the **chase car** has to cross the finish line after the **lead car** finishes.  
 **Constraints:** Must be between **1 and 60 seconds**.  
 **Purpose:** Used to determine if the lead car successfully outran the chase car.
 
----
+#### Database
 
-## Database
-
-### `isDbLocalMode`
+##### `isDbLocalMode`
 **Type:** `bool`  
 **Description:** Whether the system should use a local in-memory or file-based database instead of a PostgreSQL server.  
 **Usage:**
 - `true`: No external DB needed; local data only.
 - `false`: Requires valid PostgreSQL connection string.
 
----
-
-### `postgresqlConnectionString`
+##### `postgresqlConnectionString`
 **Type:** `string?`  
 **Description:** Connection string used to connect to a PostgreSQL database.  
 **Constraints:**  

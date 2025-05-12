@@ -20,6 +20,7 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
     private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
     private readonly TougeConfiguration _configuration;
     private readonly IDbConnectionFactory _connectionFactory;
+    private readonly ACServerConfiguration _serverConfig;
 
     private static readonly string startingPositionsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cfg", "touge_starting_areas.ini");
 
@@ -41,6 +42,7 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
         _scriptProvider = scriptProvider;
         _cspClientMessageTypeManager = cspClientMessageTypeManager;
         _configuration = configuration;
+        _serverConfig = serverConfiguration;
 
         if (!serverConfiguration.Extra.EnableClientMessages)
         {
@@ -79,7 +81,14 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
         _cspClientMessageTypeManager.RegisterOnlineEvent<LobbyStatusPacket>(OnLobbyStatusPacket);
 
         // Read starting positions from file
-        startingPositions = getStartingPositions();
+        string trackName = _serverConfig.FullTrackName;
+        trackName = trackName.Substring(trackName.LastIndexOf('/') + 1);
+        startingPositions = getStartingPositions(trackName);
+        if (startingPositions.Length == 0)
+        {
+            // There are no valid starting areas.
+            throw new Exception($"Did not find any valid starting areas in cfg/touge_starting_areas.ini. Please define some for the track: {trackName}");
+        }
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -251,7 +260,7 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
         client?.SendPacket(new NotificationPacket { Message = message });
     }
 
-    private Dictionary<string, Vector3>[][] getStartingPositions()
+    private Dictionary<string, Vector3>[][] getStartingPositions(string trackName)
     {
         if (!File.Exists(startingPositionsFile))
         {
@@ -260,7 +269,7 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
             throw new Exception("No touge starting areas defined in cfg/touge_starting_areas.ini!");
         }
 
-        return StartingAreaParser.Parse("cfg/touge_starting_areas.ini");
+        return StartingAreaParser.Parse("cfg/touge_starting_areas.ini", trackName);
     }
 }
 

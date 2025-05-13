@@ -265,7 +265,7 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
         if (!File.Exists(startingPositionsFile))
         {
             // Create the file
-            File.WriteAllText(startingPositionsFile, "[starting_area_1]\nleader_pos =\nleader_heading =\nchaser_pos =\nchaser_heading =");
+            File.WriteAllText(startingPositionsFile, "[full_track_name_1]\nleader_pos =\nleader_heading =\nchaser_pos =\nchaser_heading =");
             throw new Exception("No touge starting areas defined in cfg/touge_starting_areas.ini!");
         }
 

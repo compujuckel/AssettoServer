@@ -17,13 +17,15 @@ local lastLobbyStatusRequest = 0
 local lobbyCooldown = 1.0  -- Cooldown in seconds
 
 local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
-local isHudOn = false
+local isInRace = false
 
 local hasTutorialHidden = false
 local keyBindings = {
     { key = "N", description = "Invite\nnearby" },
     { key = "I", description = "Invite\nmenu" },
-    { key = "H", description = "Hide\ntutorial" }
+    { key = "F", description = "Forfeit\n"},
+    { key = "H", description = "Hide\ntutorial" },
+    
 }
 
 local font = ""
@@ -41,6 +43,9 @@ local keyPath = baseUrl .. "Key.png"
 local notificationMessage = ""
 local hasIncomingNotification = false
 local notificationActivatedAt = nil
+
+local forfeitStartTime = nil
+local forfeitHoldDuration = 3.0 -- seconds
 
 local sim = ac.getSim()
 
@@ -91,7 +96,7 @@ local standingEvent = ac.OnlineEvent(
         standings[1] = message.result1
         standings[2] = message.result2
         standings[3] = message.result3
-        isHudOn = message.isHudOn
+        isInRace = message.isHudOn
     end)
 
 local eloEvent = ac.OnlineEvent(
@@ -131,6 +136,15 @@ local notificationEvent = ac.OnlineEvent(
     }, function (sender, message)
         notificationMessage = message.message
         hasIncomingNotification = true
+    end
+)
+
+local forfeitEvent = ac.OnlineEvent(
+    {
+        ac.StructItem.key('AS_Forfeit'),
+        forfeit = ac.StructItem.boolean()
+    }, function (sender, message)
+        
     end
 )
 
@@ -185,7 +199,6 @@ end)
 -- Set the variables
 eloEvent({elo = elo})
 
-
 -- Utility functions
 
 function HsvToRgb(h, s, v)
@@ -205,16 +218,16 @@ function HsvToRgb(h, s, v)
     return r + m, g + m, b + m
 end
 
-function DrawKey(key, pos, letterPos)
+function DrawKey(key, pos, letterPos, scale)
     ui.transparentWindow("tutorialWindow", pos, scaling.vec2(110,110), function ()
 
         letterPos = letterPos or scaling.vec2(39, 35)
+        scale = scale or 1.0
 
-        ui.drawImage(keyPath, vec2(0,0), scaling.vec2(110,110))
+        ui.drawImage(keyPath, vec2(0,0), scaling.vec2(110,110)*scale)
 
         ui.pushDWriteFont(fontBold)
-        ui.dwriteTextAligned(key, scaling.size(40), ui.Alignment.Start, ui.Alignment.Center)
-        ui.dwriteDrawText(key, scaling.size(40), letterPos)
+        ui.dwriteDrawText(key, scaling.size(40*scale), letterPos)
         ui.popDWriteFont()
     end)
 end
@@ -225,7 +238,7 @@ function script.drawUI()
     windowWidth = sim.windowWidth
     windowHeight = sim.windowHeight
 
-    if isHudOn then    
+    if isInRace then    
         ui.transparentWindow("standingsWindow", scaling.vec2(50, windowHeight/2), scaling.vec2(387, 213), function()
 
             ui.drawImage(standingsHudPath, vec2(0,0), scaling.vec2(387,213))
@@ -283,23 +296,25 @@ function script.drawUI()
             ui.dwriteDrawText("Controls", scaling.size(24), scaling.vec2(32, 177))
             ui.popDWriteFont()
 
-            local startX = scaling.size(135)
-            local spacingX = scaling.size(150)  -- Space between each key+label pair
+            local scale = 0.8
+            local startX = scaling.size(112)
+            local spacingX = scaling.size(120)  -- Space between each key+label pair
             local baseY = windowHeight - scaling.size(250)     -- Fixed vertical position
-            local startXText = scaling.size(130)
+            local startXText = scaling.size(104)
+            
 
             for i, binding in ipairs(keyBindings) do
                 local xOffset = startX + (i - 1) * spacingX
                 local XTextOffest = startXText + (i - 1)
                 local keyPos = vec2(xOffset, baseY)
-                local textPos = vec2(XTextOffest - scaling.size(120), scaling.size(120))
+                local textPos = vec2(XTextOffest - scaling.size(96), scaling.size(96))
 
                 -- Draw the key
-                DrawKey(binding.key, keyPos)
+                DrawKey(binding.key, keyPos, nil, scale)
 
                 -- Draw the description
                 ui.pushDWriteFont(fontSemiBold)
-                ui.dwriteDrawText(binding.description, scaling.size(24), textPos)
+                ui.dwriteDrawText(binding.description, scaling.size(18), textPos)
                 ui.popDWriteFont()
             end
         end)
@@ -384,6 +399,18 @@ function script.drawUI()
             ui.popDWriteFont()
         end)
     end
+
+    -- Draw forfeit dialog
+    if forfeitStartTime ~= nil then
+        ui.transparentWindow("forfeitWindow", vec2(windowWidth-scaling.size(755), windowHeight-scaling.size(222)), scaling.vec2(705,172), function ()
+            -- Draw the notification
+            ui.drawImage(playerCardPath, vec2(0,0), scaling.vec2(705,172))
+            ui.pushDWriteFont(fontSemiBold)
+            ui.dwriteDrawText("Hold for 3 seconds to forfeit.", scaling.size(18), scaling.vec2(179,40))
+            ui.popDWriteFont()
+        end)
+    end
+
 end
 
 function InputCheck()
@@ -409,6 +436,19 @@ function InputCheck()
     if ui.keyboardButtonPressed(ui.KeyIndex.H, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
         hasTutorialHidden = not hasTutorialHidden
     end
+    if isInRace then
+        if ui.keyboardButtonDown(ui.KeyIndex.F) then
+            if not forfeitStartTime then
+                forfeitStartTime = os.clock()
+            elseif os.clock() - forfeitStartTime >= forfeitHoldDuration then
+                forfeitEvent({forfeit = true})
+                forfeitStartTime = nil -- reset so it doesn't trigger repeatedly
+            end
+        else
+            forfeitStartTime = nil -- reset if key is released
+        end
+    end
+
 end
 
 function script.update(dt)

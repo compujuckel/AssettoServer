@@ -218,16 +218,25 @@ function HsvToRgb(h, s, v)
     return r + m, g + m, b + m
 end
 
-function DrawKey(key, pos, letterPos, scale)
+function DrawKey(key, pos, scale)
     ui.transparentWindow("tutorialWindow", pos, scaling.vec2(110,110), function ()
 
-        letterPos = letterPos or scaling.vec2(39, 35)
         scale = scale or 1.0
+        local imageSize = scaling.vec2(110, 110) * scale
 
-        ui.drawImage(keyPath, vec2(0,0), scaling.vec2(110,110)*scale)
+        ui.drawImage(keyPath, vec2(0,0), imageSize)
 
         ui.pushDWriteFont(fontBold)
-        ui.dwriteDrawText(key, scaling.size(40*scale), letterPos)
+        local fontSize = scaling.size(40 * scale)
+        local keySize = ui.measureDWriteText(key, fontSize)
+
+        -- Calculate the top-left corner to center the text
+        local centeredPos = vec2(
+            (imageSize.x - keySize.x) / 2,
+            (imageSize.y - keySize.y) / 2
+        )
+
+        ui.dwriteDrawText(key, fontSize, centeredPos)
         ui.popDWriteFont()
     end)
 end
@@ -310,7 +319,7 @@ function script.drawUI()
                 local textPos = vec2(XTextOffest - scaling.size(96), scaling.size(96))
 
                 -- Draw the key
-                DrawKey(binding.key, keyPos, nil, scale)
+                DrawKey(binding.key, keyPos, scale)
 
                 -- Draw the description
                 ui.pushDWriteFont(fontSemiBold)
@@ -375,7 +384,7 @@ function script.drawUI()
     if hasActiveInvite == true then
         ui.transparentWindow("receivedInviteWindow", vec2(windowWidth-scaling.size(755), windowHeight-scaling.size(222)), scaling.vec2(705,172), function ()
             ui.drawImage(playerCardPath, vec2(0,0), scaling.vec2(705,172))
-            ui.drawImage(mKeyPath, scaling.vec2(560,32), scaling.vec2(670,142))
+            ui.drawImage(mKeyPath, scaling.vec2(560,32), scaling.vec2(670,142)) -- replace with drawKey.
             ui.pushDWriteFont(fontBold)
             ui.dwriteDrawText(tostring(inviteSenderName), scaling.size(48), scaling.vec2(179,40))
             ui.popDWriteFont()

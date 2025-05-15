@@ -24,7 +24,7 @@ public class EntryList
         [IniField("TEAM")] public string? Team { get; init; }        
         [IniField("FIXED_SETUP")] public string? FixedSetup { get; init; } = null;
         [IniField("GUID")] public string Guid { get; init; } = "";
-        [IniField("AI")] public AiMode AiMode { get; internal set; } = AiMode.None;
+        [IniField("AI")] public AiMode AiMode { get; set; } = AiMode.None;
         [IniField("LEGAL_TYRES")] public string? LegalTyres { get; init; }
     }
     

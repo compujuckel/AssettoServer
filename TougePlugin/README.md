@@ -80,29 +80,6 @@ CarPerformanceRatings:
 
 #### Race Setup
 
-##### `StartingPositions`
-**Type:** `Dictionary<string, Vector3>[][]`  
-**Description:** A two-dimensional array of starting position pairs.  
-Each inner array contains two dictionaries, one for each car, and each dictionary contains:
-- `"Position"`: a 3D vector (X, Y, Z) indicating the starting location.
-- `"Direction"`: a normalized 3D vector indicating the direction the car faces at start.
-
-**Constraints:**
-- At least one pair of starting positions must be defined.
-- Each dictionary must include both `"Position"` and `"Direction"` keys.
-
-**Purpose:** Defines the spawn and orientation of cars at the start of a touge race.
-
-**Example:**
-```yaml
-StartingPositions:
-  - 
-    - Position: { X: -204.4, Y: 468.34, Z: -93.87 }
-      Direction: { X: 0.0998, Y: 0.992, Z: 0.0784 }
-    - Position: { X: -198.89, Y: 468.01, Z: -88.14 }
-      Direction: { X: 0.0919, Y: 0.992, Z: 0.0832 }
-```
-
 ##### `isRollingStart`
 **Type:** `bool`  
 **Description:** Enables or disables rolling starts.  

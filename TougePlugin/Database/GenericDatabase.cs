@@ -51,31 +51,6 @@ public class GenericDatabase(IDbConnectionFactory factory) : IDatabase
         }
     }
 
-    public async Task<int> GetPlayerEloAsync(string playerId)
-    {
-        await using var connection = factory.CreateConnection();
-        connection.Open();
-
-        using var command = connection.CreateCommand();
-        command.CommandText = @"
-        SELECT Rating
-        FROM Players
-        WHERE PlayerId = @playerId
-        ";
-        command.AddParameter("@playerId", playerId);
-
-        var result = command.ExecuteScalar();
-
-        if (result != null && int.TryParse(result.ToString(), out int rating))
-        {
-            return rating;
-        }
-        else
-        {
-            throw new Exception($"Player with ID {playerId} not found in the database.");
-        }
-    }
-
     public async Task<(int Rating, int RacesCompleted)> GetPlayerStatsAsync(string playerId)
     {
         await using var connection = factory.CreateConnection();

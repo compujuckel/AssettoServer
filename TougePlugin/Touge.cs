@@ -76,7 +76,7 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
 
         database = new GenericDatabase(_connectionFactory);
 
-        _cspClientMessageTypeManager.RegisterOnlineEvent<EloPacket>(OnEloPacket);
+        _cspClientMessageTypeManager.RegisterOnlineEvent<PlayerStatsPacket>(OnPlayerStatsPacket);
         _cspClientMessageTypeManager.RegisterOnlineEvent<InvitePacket>(OnInvitePacket);
         _cspClientMessageTypeManager.RegisterOnlineEvent<LobbyStatusPacket>(OnLobbyStatusPacket);
 
@@ -122,13 +122,12 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
         _scriptProvider.AddScript(reconnectScript, scriptName);
     }
 
-    private async void OnEloPacket(ACTcpClient client, EloPacket packet)
+    private async void OnPlayerStatsPacket(ACTcpClient client, PlayerStatsPacket packet)
     {
-        int elo = 1000; // Default Elo if player not found
         string playerId = client.Guid.ToString();
-        elo = await database.GetPlayerEloAsync(playerId);
+        var(elo, racesCompleted) = await database.GetPlayerStatsAsync(playerId);
 
-        client.SendPacket(new EloPacket { Elo = elo });
+        client.SendPacket(new PlayerStatsPacket { Elo = elo, RacesCompleted = racesCompleted });
     }
 
     private void OnInvitePacket(ACTcpClient client, InvitePacket packet)

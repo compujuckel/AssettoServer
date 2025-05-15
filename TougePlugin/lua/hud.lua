@@ -7,6 +7,8 @@ local elo = -1
 local hue = 180
 local eloNumPos = vec2(66, 26)
 
+local racesCompleted = 0
+
 local inviteSenderName = ""
 local hasActiveInvite = false
 local inviteActivatedAt = nil
@@ -25,7 +27,6 @@ local keyBindings = {
     { key = "I", description = "Invite\nmenu" },
     { key = "F", description = "Forfeit\n"},
     { key = "H", description = "Hide\ntutorial" },
-    
 }
 
 local font = ""
@@ -46,8 +47,6 @@ local notificationActivatedAt = nil
 
 local forfeitStartTime = nil
 local forfeitHoldDuration = 3.0 -- seconds
-
-local sim = ac.getSim()
 
 -- Scaling
 local baseRes = vec2(2560, 1440) -- Reference resolution
@@ -99,20 +98,23 @@ local standingEvent = ac.OnlineEvent(
         isInRace = message.isHudOn
     end)
 
-local eloEvent = ac.OnlineEvent(
-    {
-        ac.StructItem.key('AS_Elo'),
-        elo = ac.StructItem.int32()
-    }, function (sender, message)
-
-        elo = message.elo
-        hue = (elo / 2000) * 360 - 80
+-- elo helper funciton
+function SetElo(newElo)
+    elo = newElo
+    hue = (elo / 2000) * 360 - 80
         if elo >= 1000 then
             eloNumPos = scaling.vec2(66, 26)
         else
             eloNumPos = scaling.vec2(76, 26)
         end
+    end
 
+local eloEvent = ac.OnlineEvent(
+    {
+        ac.StructItem.key('AS_Elo'),
+        elo = ac.StructItem.int32()
+    }, function (sender, message)
+        SetElo(message.elo)
     end)
 
 local inviteEvent = ac.OnlineEvent(
@@ -145,6 +147,19 @@ local forfeitEvent = ac.OnlineEvent(
         forfeit = ac.StructItem.boolean()
     }, function (sender, message)
         
+    end
+)
+
+local playerStatsEvent = ac.OnlineEvent(
+    {
+        ac.StructItem.key('AS_PlayerStats'),
+        elo = ac.StructItem.int32(),
+        racesCompleted = ac.StructItem.int32()
+    }, function (sender, message)
+        SetElo(message.elo)
+        if message.racesCompleted >= 3 then
+            hasTutorialHidden = true
+        end
     end
 )
 
@@ -197,7 +212,7 @@ local lobbyStatusEvent = ac.OnlineEvent({
 end)
 
 -- Set the variables
-eloEvent({elo = elo})
+playerStatsEvent({elo = elo, racesCompleted = racesCompleted})
 
 -- Utility functions
 
@@ -247,7 +262,7 @@ function script.drawUI()
     windowWidth = sim.windowWidth
     windowHeight = sim.windowHeight
 
-    if isInRace then    
+    if isInRace then
         ui.transparentWindow("standingsWindow", scaling.vec2(50, windowHeight/2), scaling.vec2(387, 213), function()
 
             ui.drawImage(standingsHudPath, vec2(0,0), scaling.vec2(387,213))

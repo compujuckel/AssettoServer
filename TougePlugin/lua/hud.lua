@@ -275,8 +275,8 @@ function script.drawUI()
             for i = 1, 3 do
                 local result = standings[i]
                 -- Calculate position for each circle (horizontally centered)
-                local circleRadius = scaling.size(25)
-                local spacing = scaling.size(40)
+                local circleRadius = 25
+                local spacing = 40
                 local totalWidth = (3 * (circleRadius * 2)) + (2 * spacing)
                 local startX = (200 - totalWidth) / 2 + 90
                 local xPos = scaling.size(startX + (i - 1) * (circleRadius * 2 + spacing) + circleRadius)
@@ -290,7 +290,7 @@ function script.drawUI()
                     color = rgbm(0.349, 0.0078, 0.0078, 1) -- Red for lost
                 end
                 -- Draw circle with appropriate color
-                ui.drawCircleFilled(vec2(xPos, scaling.size(145)), circleRadius, color, 32)
+                ui.drawCircleFilled(vec2(xPos, scaling.size(145)), scaling.size(circleRadius), color, 32)
             end
         end)
     end
@@ -355,7 +355,7 @@ function script.drawUI()
             local index = 1
 
             local cardSpacingY = 180  -- Space between cards vertically
-            local baseY = scaling.size(150)         -- Starting Y position
+            local baseY = 150         -- Starting Y position
 
             local mousePos = ui.mouseLocalPos()
 
@@ -374,14 +374,14 @@ function script.drawUI()
                 local cardBottomRight = cardPos + cardSize
 
                 -- Draw player card background
-                ui.drawImage(playerCardPath, cardPos, scaling.vec2(737, yOffset + 172))
+                local cardSize = scaling.vec2(737, yOffset + 172)
+                ui.drawImage(playerCardPath, cardPos, cardSize)
 
                 -- Check for mouse click inside card bounds
                 if ui.mouseClicked() then
                     if mousePos.x >= cardPos.x and mousePos.x <= cardBottomRight.x and
                     mousePos.y >= cardPos.y and mousePos.y <= cardBottomRight.y then
                     -- Player card was clicked
-                    print("Clicked on player:", nearbyPlayers[index].name)
                     hasInviteMenuOpen = false;
                     -- Do something, like sending an invite
                     inviteEvent({inviteSenderName = "", inviteRecipientGuid = nearbyPlayers[index].id})
@@ -391,7 +391,15 @@ function script.drawUI()
                 -- Draw player name
                 ui.pushDWriteFont(fontBold)
                 local color = nearbyPlayers[index].inRace and rgbm(0.5, 0.5, 0.5, 1) or rgbm(1, 1, 1, 1)
-                ui.dwriteDrawText(nearbyPlayers[index].name, scaling.size(48), scaling.vec2(212, yOffset + 62), color)
+                
+                -- Find the right font size.
+                local fontSize = 48 -- Largest possible size
+                local textSize = ui.measureDWriteText(nearbyPlayers[index].name, scaling.size(fontSize))
+                while textSize.x > scaling.size(550) do
+                    fontSize = fontSize - 8
+                    textSize = ui.measureDWriteText(nearbyPlayers[index].name, scaling.size(fontSize))
+                end
+                ui.dwriteDrawTextClipped(nearbyPlayers[index].name, scaling.size(fontSize), cardPos + scaling.vec2(180, 0), cardSize, ui.Alignment.Start, ui.Alignment.Center, false, color)
                 ui.popDWriteFont()
 
                 index = index + 1
@@ -403,7 +411,7 @@ function script.drawUI()
     if hasActiveInvite == true then
         ui.transparentWindow("receivedInviteWindow", vec2(windowWidth-scaling.size(755), windowHeight-scaling.size(222)), scaling.vec2(705,172), function ()
             ui.drawImage(playerCardPath, vec2(0,0), scaling.vec2(705,172))
-            ui.drawImage(mKeyPath, scaling.vec2(560,32), scaling.vec2(670,142)) -- replace with drawKey.
+            ui.drawImage(mKeyPath, scaling.vec2(560,32), scaling.vec2(670,142))
             ui.pushDWriteFont(fontBold)
             ui.dwriteDrawText(tostring(inviteSenderName), scaling.size(48), scaling.vec2(179,40))
             ui.popDWriteFont()
@@ -423,9 +431,10 @@ function script.drawUI()
         ui.transparentWindow("notificationWindow", notificationPos, scaling.vec2(705,172), function ()
             ui.drawImage(playerCardPath, vec2(0,0), scaling.vec2(705,172))
             ui.pushDWriteFont(fontSemiBold)
-            ui.dwriteDrawText(notificationMessage, scaling.size(18), scaling.vec2(179,40))
+            ui.dwriteDrawTextClipped(notificationMessage, scaling.size(18), scaling.vec2(170,0), scaling.vec2(650,172), ui.Alignment.Start, ui.Alignment.Center, true)
             ui.popDWriteFont()
         end)
+
     end
 
     -- Draw forfeit dialog

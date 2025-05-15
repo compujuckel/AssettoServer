@@ -28,7 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Autofac" Version="8.2.1" />
+        <PackageReference Include="Autofac" Version="8.3.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
         <PackageReference Include="CommunityToolkit.Common" Version="8.4.0" />
@@ -45,7 +45,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="FluentValidation" Version="11.11.0" />
+        <PackageReference Include="FluentValidation" Version="12.0.0" />
         <PackageReference Include="Humanizer.Core" Version="3.0.0-beta.54" />
         <PackageReference Include="ini-parser" Version="2.5.2">
             <NoWarn>NU1701</NoWarn>
@@ -54,7 +54,7 @@
         <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
         <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="NJsonSchema" Version="11.2.0" />
+        <PackageReference Include="NJsonSchema" Version="11.3.2" />
         <PackageReference Include="NodaTime" Version="3.2.2" />
         <PackageReference Include="Open.NAT" Version="2.1.0">
             <NoWarn>NU1701</NoWarn>
@@ -72,16 +72,24 @@
         <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-        <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
         <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.0" />
         <PackageReference Include="SerilogTimings" Version="3.1.0" />
         <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.8" />
         <PackageReference Include="Sigil" Version="5.0.0" />
         <PackageReference Include="SunCalcNet" Version="1.2.2" />
-        <PackageReference Include="System.IO.Hashing" Version="9.0.4" />
+        <PackageReference Include="System.IO.Hashing" Version="9.0.5" />
         <PackageReference Include="YamlDotNet" Version="16.3.0" />
-        <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.244" PrivateAssets="all" Condition="!Exists('packages.config')" />
+        <PackageReference Include="MinVer" Version="6.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
+
+    <PropertyGroup>
+        <MinVerTagPrefix>v</MinVerTagPrefix>
+        <MinVerIgnoreHeight>true</MinVerIgnoreHeight>
+    </PropertyGroup>
 
     <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
         <ContentWithTargetPath Include="Redist/libsteam_api.so">

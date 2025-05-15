@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Text;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Utils;
@@ -102,6 +103,14 @@ public struct PacketWriter
             Buffer.Slice(_writePosition, remaining).Span.Clear();
             _writePosition += remaining;
         }
+    }
+
+    public void WriteColorAsRgbm(Color color)
+    {
+        Write((float)color.R/255);
+        Write((float)color.G/255);
+        Write((float)color.B/255);
+        Write((float)color.A/255);
     }
 
     public void Write<T>(T value) where T : struct

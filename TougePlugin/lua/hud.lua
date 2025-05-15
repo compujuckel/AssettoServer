@@ -22,6 +22,7 @@ local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
 local isInRace = false
 
 local hasTutorialHidden = false
+local isTutorialAutoHidden = false
 local keyBindings = {
     { key = "N", description = "Invite\nnearby" },
     { key = "I", description = "Invite\nmenu" },
@@ -47,6 +48,8 @@ local notificationActivatedAt = nil
 
 local forfeitStartTime = nil
 local forfeitHoldDuration = 3.0 -- seconds
+
+local car = ac.getCar(0)
 
 -- Scaling
 local baseRes = vec2(2560, 1440) -- Reference resolution
@@ -158,7 +161,7 @@ local playerStatsEvent = ac.OnlineEvent(
     }, function (sender, message)
         SetElo(message.elo)
         if message.racesCompleted >= 3 then
-            hasTutorialHidden = true
+            isTutorialAutoHidden = true
         end
     end
 )
@@ -308,40 +311,41 @@ function script.drawUI()
 
     -- Draw tutorial hud element
     if not hasTutorialHidden then
-        ui.transparentWindow("tutorialWindow", vec2(scaling.size(50), windowHeight - scaling.size(465)), scaling.vec2(584, 415), function ()
-            ui.drawImage(tutorialPath, vec2(0,0), scaling.vec2(584, 415))
-            ui.pushDWriteFont(fontSemiBold)
-            ui.dwriteDrawText("How to play", scaling.size(24), scaling.vec2(32, 32))
-            ui.popDWriteFont()
-            ui.pushDWriteFont(font)
-            ui.dwriteDrawText("Chase car overtakes before finish: 1 point to the chase car.\nChase car stays close: draw, no points.\nLead car outruns: 1 point to the lead car.\n\nIf score is tied after the first two rounds: Sudden death.", scaling.size(14), scaling.vec2(32, 78))
-            ui.popDWriteFont()
-            ui.pushDWriteFont(fontSemiBold)
-            ui.dwriteDrawText("Controls", scaling.size(24), scaling.vec2(32, 177))
-            ui.popDWriteFont()
-
-            local scale = 0.8
-            local startX = scaling.size(112)
-            local spacingX = scaling.size(120)  -- Space between each key+label pair
-            local baseY = windowHeight - scaling.size(250)     -- Fixed vertical position
-            local startXText = scaling.size(104)
-            
-
-            for i, binding in ipairs(keyBindings) do
-                local xOffset = startX + (i - 1) * spacingX
-                local XTextOffest = startXText + (i - 1)
-                local keyPos = vec2(xOffset, baseY)
-                local textPos = vec2(XTextOffest - scaling.size(96), scaling.size(96))
-
-                -- Draw the key
-                DrawKey(binding.key, keyPos, scale)
-
-                -- Draw the description
+        if not isTutorialAutoHidden or (car ~= nil and car.speedKmh < 10) then
+            ui.transparentWindow("tutorialWindow", vec2(scaling.size(50), windowHeight - scaling.size(465)), scaling.vec2(584, 415), function ()
+                ui.drawImage(tutorialPath, vec2(0,0), scaling.vec2(584, 415))
                 ui.pushDWriteFont(fontSemiBold)
-                ui.dwriteDrawText(binding.description, scaling.size(18), textPos)
+                ui.dwriteDrawText("How to play", scaling.size(24), scaling.vec2(32, 32))
                 ui.popDWriteFont()
-            end
-        end)
+                ui.pushDWriteFont(font)
+                ui.dwriteDrawText("Chase car overtakes before finish: 1 point to the chase car.\nChase car stays close: draw, no points.\nLead car outruns: 1 point to the lead car.\n\nIf score is tied after the first two rounds: Sudden death.", scaling.size(14), scaling.vec2(32, 78))
+                ui.popDWriteFont()
+                ui.pushDWriteFont(fontSemiBold)
+                ui.dwriteDrawText("Controls", scaling.size(24), scaling.vec2(32, 177))
+                ui.popDWriteFont()
+
+                local scale = 0.8
+                local startX = scaling.size(112)
+                local spacingX = scaling.size(120)  -- Space between each key+label pair
+                local baseY = windowHeight - scaling.size(250)     -- Fixed vertical position
+                local startXText = scaling.size(104)
+
+                for i, binding in ipairs(keyBindings) do
+                    local xOffset = startX + (i - 1) * spacingX
+                    local XTextOffest = startXText + (i - 1)
+                    local keyPos = vec2(xOffset, baseY)
+                    local textPos = vec2(XTextOffest - scaling.size(96), scaling.size(96))
+
+                    -- Draw the key
+                    DrawKey(binding.key, keyPos, scale)
+
+                    -- Draw the description
+                    ui.pushDWriteFont(fontSemiBold)
+                    ui.dwriteDrawText(binding.description, scaling.size(18), textPos)
+                    ui.popDWriteFont()
+                end
+            end)
+        end
     end
 
     -- Draw invite menu hud.

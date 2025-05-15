@@ -79,6 +79,7 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
         _cspClientMessageTypeManager.RegisterOnlineEvent<PlayerStatsPacket>(OnPlayerStatsPacket);
         _cspClientMessageTypeManager.RegisterOnlineEvent<InvitePacket>(OnInvitePacket);
         _cspClientMessageTypeManager.RegisterOnlineEvent<LobbyStatusPacket>(OnLobbyStatusPacket);
+        _cspClientMessageTypeManager.RegisterOnlineEvent<ForfeitPacket>(OnForfeitPacket);
 
         // Read starting positions from file
         string trackName = _serverConfig.FullTrackName;
@@ -104,6 +105,18 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
     }
 
     internal EntryCarTougeSession GetSession(EntryCar entryCar) => _instances[entryCar.SessionId];
+
+    internal Race? GetActiveRace(EntryCar entryCar)
+    {
+        EntryCarTougeSession session = GetSession(entryCar);
+        TougeSession? tougeSession = session.CurrentSession;
+        if (tougeSession != null)
+        {
+            // Now get the active race.
+            return tougeSession.ActiveRace;
+        }
+        return null;
+    }
 
     private void OnClientConnected(ACTcpClient client, EventArgs args)
     {
@@ -201,6 +214,12 @@ public class Touge : CriticalBackgroundService, IAssettoServerAutostart
             NearbyPlayerId5 = (ulong)playerStatsList[4]["id"],
             NearbyPlayerInRace5 = (bool)playerStatsList[4]["inRace"],
         });
+    }
+
+    private void OnForfeitPacket(ACTcpClient sender, ForfeitPacket packet)
+    {
+        Race? activeRace = GetActiveRace(sender.EntryCar);
+        activeRace?.ForfeitPlayer(sender);
     }
 
     private bool IsInTougeSession(EntryCar car)

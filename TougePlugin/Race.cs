@@ -14,7 +14,6 @@ public class Race
     private readonly EntryCarManager _entryCarManager;
     private readonly TougeConfiguration _configuration;
     private readonly Touge _plugin;
-    private readonly CSPClientMessageTypeManager _cspClientMessageTypeManager;
 
     public bool HasStarted { get; private set; }
 
@@ -29,16 +28,15 @@ public class Race
     private bool LeaderSetLap = false;
     private bool FollowerSetLap = false;
     private readonly TaskCompletionSource<bool> secondLapCompleted = new();
-    private readonly TaskCompletionSource<bool> _disconnected = new();
+    private readonly TaskCompletionSource<ACTcpClient> _disconnected = new();
     private readonly TaskCompletionSource<bool> _followerFirst = new();
-    private readonly TaskCompletionSource<bool> _forfeit = new();
 
     private string LeaderName { get; }
     private string FollowerName { get; }
 
     public delegate Race Factory(EntryCar leader, EntryCar follower);
 
-    public Race(EntryCar leader, EntryCar follower, EntryCarManager entryCarManager, TougeConfiguration configuration, Touge plugin, CSPClientMessageTypeManager cspClientMessageTypeManager)
+    public Race(EntryCar leader, EntryCar follower, EntryCarManager entryCarManager, TougeConfiguration configuration, Touge plugin)
     {
         Leader = leader;
         Follower = follower;
@@ -55,15 +53,13 @@ public class Race
         _entryCarManager = entryCarManager;
         _configuration = configuration;
         _plugin = plugin;
-        _cspClientMessageTypeManager = cspClientMessageTypeManager;
-
-        _cspClientMessageTypeManager.RegisterOnlineEvent<ForfeitPacket>(OnForfeitPacket);
     }
 
     public async Task<RaceResult> RaceAsync()
     {
         EntryCar? winner = null;
         bool isGo = false;
+
         try
         {
             Dictionary<string, Vector3>[] startingArea = await GetStartingAreaAsync();
@@ -133,20 +129,12 @@ public class Race
 
             // Start the race.
             // Let the cars do a lap/complete the course.
-            Task completed = await Task.WhenAny(secondLapCompleted.Task, _disconnected.Task, _followerFirst.Task, _forfeit.Task);
+            Task completed = await Task.WhenAny(secondLapCompleted.Task, _disconnected.Task, _followerFirst.Task);
 
             if (completed == _disconnected.Task)
             {
-                SendMessage("Race cancelled due to disconnection.");
-                return RaceResult.Disconnected();
-            }
-
-            else if (completed == _forfeit.Task)
-            {
-                // A player disconnected.
-                // For now just handle the same as disconnect.
-                // TODO: check if remaining player was ahead in the standings and apply elo calcs accordingly.
-                return RaceResult.Disconnected();
+                SendMessage("Race cancelled due to disconnection or forfeit.");
+                return RaceResult.Disconnected(_disconnected.Task.Result.EntryCar);
             }
 
             else
@@ -235,12 +223,12 @@ public class Race
 
     private void OnClientDisconnected(ACTcpClient sender, EventArgs args)
     {
-        _disconnected.TrySetResult(true);
+        _disconnected.TrySetResult(sender);
     }
 
-    private void OnForfeitPacket(ACTcpClient sender, ForfeitPacket packet)
+    internal void ForfeitPlayer(ACTcpClient sender)
     {
-        _forfeit.TrySetResult(true);
+        _disconnected.TrySetResult(sender);
     }
 
     private async Task TeleportToStartAsync(EntryCar Leader, EntryCar Follower, Dictionary<string, Vector3>[] startingArea)

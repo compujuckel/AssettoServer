@@ -23,6 +23,7 @@ public class TougeSession
     }
 
     public bool IsActive { get; private set; }
+    public Race? ActiveRace = null;
 
     private readonly EntryCarManager _entryCarManager;
     private readonly Touge _plugin;
@@ -59,32 +60,27 @@ public class TougeSession
             // Turn on the hud
             SendStandings(true);
             RaceResult result = await FirstTwoRaceAsync();
+            
+            bool isChallengerLeading = true; // Challenger as leader at first.
+
+            // If the result of the first two races is a tie, race until there is a winner.
+            while (result.Outcome == RaceOutcome.Tie)
+            {
+                // Swap the posistion of leader and follower.
+                EntryCar leader = isChallengerLeading ? Challenger : Challenged;
+                EntryCar follower = isChallengerLeading ? Challenged : Challenger;
+
+                Race race = _raceFactory(leader, follower);
+                await Task.Delay(coolDownTime); // Small cooldown time inbetween races.
+                result = await StartRaceAsync(race);
+
+                isChallengerLeading = !isChallengerLeading;
+            }
 
             if (result.Outcome != RaceOutcome.Disconnected)
             {
-                // If the result of the first two races is a tie, race until there is a winner.
-                // Sudden death style.
-                bool isChallengerLeading = true; // Challenger as leader at first.
-                while (result.Outcome == RaceOutcome.Tie)
-                {
-                    // Swap the posistion of leader and follower.
-                    EntryCar leader = isChallengerLeading ? Challenger : Challenged;
-                    EntryCar follower = isChallengerLeading ? Challenged : Challenger;
-
-                    Race race = _raceFactory(leader, follower);
-                    await Task.Delay(coolDownTime); // Small cooldown time inbetween races.
-                    result = await race.RaceAsync();
-
-                    isChallengerLeading = !isChallengerLeading;
-                }
-
-                if (result.Outcome != RaceOutcome.Disconnected)
-                {
-                    UpdateStandings(result.Winner!, winCounter);
-                    UpdateEloAsync(result.Winner!);
-                    // In the current situation players can rage dc and deny the oponnent a win.
-                    // Maybe elo should always be subtracted when leaving.
-                }
+                UpdateStandings(result.ResultCar!, winCounter);
+                UpdateEloAsync(result.ResultCar!);
             }
         }
         catch (Exception ex)
@@ -101,27 +97,27 @@ public class TougeSession
     {
         // Run race 1.
         Race race1 = _raceFactory(Challenger, Challenged);
-        RaceResult result1 = await race1.RaceAsync();
+        RaceResult result1 = await StartRaceAsync(race1);
 
         // If both players are still connected. Run race 2.
         if (result1.Outcome != RaceOutcome.Disconnected)
         {
             if (result1.Outcome == RaceOutcome.Win)
             {
-                UpdateStandings(result1.Winner!, winCounter);
+                UpdateStandings(result1.ResultCar!, winCounter);
                 winCounter++;
             }
 
             // Always start second race.
             await Task.Delay(coolDownTime); // Small cooldown time inbetween races.
             Race race2 = _raceFactory(Challenged, Challenger);
-            RaceResult result2 = await race2.RaceAsync();
+            RaceResult result2 = await StartRaceAsync(race2);
 
             if (result2.Outcome != RaceOutcome.Disconnected)
             {
                 if (result2.Outcome == RaceOutcome.Win)
                 {
-                    UpdateStandings(result2.Winner!, winCounter);
+                    UpdateStandings(result2.ResultCar!, winCounter);
                     winCounter++;
                 }
 
@@ -133,17 +129,37 @@ public class TougeSession
                 else
                 {
                     // Its either 0-1 or 0-2.
-                    return RaceResult.Win(result1.Winner!);
+                    return RaceResult.Win(result1.ResultCar!);
                 }
             }
+            else
+            {
+                // Someone disconnected or forfeited.
+                // Check if they won the first race or not.
+                if (result1.Outcome == RaceOutcome.Win && result1.ResultCar != result2.ResultCar)
+                {
+                    // The player who disconnected was not leading the standings.
+                    // So the other player (who won race 1, is the overall winner)
+                    return RaceResult.Win(result1.ResultCar!);
+                }
+                return RaceResult.Disconnected(result2.ResultCar!);
+            }
         }
-        return RaceResult.Disconnected();
+        return RaceResult.Disconnected(result1.ResultCar!);
+    }
+
+    private async Task<RaceResult> StartRaceAsync(Race race)
+    {
+        ActiveRace = race;
+        RaceResult result = await race.RaceAsync();
+        ActiveRace = null;
+        return result;
     }
 
     private bool IsTie(RaceResult r1, RaceResult r2)
     {
         bool bothAreWins = r1.Outcome == RaceOutcome.Win && r2.Outcome == RaceOutcome.Win;
-        bool differentWinners = r1.Winner != r2.Winner;
+        bool differentWinners = r1.ResultCar != r2.ResultCar;
         return winCounter == 0 || (bothAreWins && differentWinners);
     }
 
@@ -243,6 +259,7 @@ public class TougeSession
     public void UpdateStandings(EntryCar winner, int scoreboardIndex)
     {
         // Update the standings arrays
+        // Maybe just store the winner in a list? Not 2. And figure out by Client how the score should be sent.
         if (winner == Challenger)
         {
             challengerStandings[scoreboardIndex] = (int)RaceResultCounter.Win;

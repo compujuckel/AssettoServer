@@ -19,7 +19,18 @@ local lastLobbyStatusRequest = 0
 local lobbyCooldown = 1.0  -- Cooldown in seconds
 
 local standings = { 0, 0, 0 }  -- Default, no rounds have been completed.
-local isInRace = false
+local currentHudState = 0
+local HudStates = {
+    Off = 0,
+    FirstTwo = 1,
+    SuddenDeath = 2,
+}
+local RaceResults = {
+    Tbd = 0,
+    Win = 1,
+    Loss = 2,
+    Tie = 3,
+}
 
 local hasTutorialHidden = false
 local isTutorialAutoHidden = false
@@ -92,13 +103,13 @@ local standingEvent = ac.OnlineEvent(
         ac.StructItem.key('AS_Standing'),
         result1 = ac.StructItem.int32(),
         result2 = ac.StructItem.int32(),
-        result3 = ac.StructItem.int32(),
-        isHudOn = ac.StructItem.boolean()
+        suddenDeathResult = ac.StructItem.int32(),
+        hudState = ac.StructItem.int32()
     }, function (sender, message)  
         standings[1] = message.result1
         standings[2] = message.result2
-        standings[3] = message.result3
-        isInRace = message.isHudOn
+        standings[3] = message.suddenDeathResult
+        currentHudState = message.hudState
     end)
 
 -- elo helper funciton
@@ -265,32 +276,57 @@ function script.drawUI()
     windowWidth = sim.windowWidth
     windowHeight = sim.windowHeight
 
-    if isInRace then
+    -- Draw standings hud
+    if currentHudState ~= HudStates.Off then
         ui.transparentWindow("standingsWindow", scaling.vec2(50, windowHeight/2), scaling.vec2(387, 213), function()
-
             ui.drawImage(standingsHudPath, vec2(0,0), scaling.vec2(387,213))
-            ui.pushDWriteFont(fontSemiBold)
-            ui.dwriteDrawText("Standings", scaling.size(48), scaling.vec2(44, 37))
-            -- Explicit loop through fixed indices
-            for i = 1, 3 do
-                local result = standings[i]
-                -- Calculate position for each circle (horizontally centered)
-                local circleRadius = 25
-                local spacing = 40
-                local totalWidth = (3 * (circleRadius * 2)) + (2 * spacing)
-                local startX = (200 - totalWidth) / 2 + 90
-                local xPos = scaling.size(startX + (i - 1) * (circleRadius * 2 + spacing) + circleRadius)
-                -- Set color based on result
-                local color
-                if result == 0 then
-                    color = rgbm(0.5, 0.5, 0.5, 0.1) -- Gray for not played
-                elseif result == 1 then
-                    color = rgbm(0.561, 0.651, 0.235, 1) -- Green for won
-                else
-                    color = rgbm(0.349, 0.0078, 0.0078, 1) -- Red for lost
+            if currentHudState == HudStates.FirstTwo then
+                ui.pushDWriteFont(fontSemiBold)
+                ui.dwriteDrawText("Standings", scaling.size(48), scaling.vec2(44, 37))
+                ui.popDWriteFont()
+
+                for i = 1, 2 do
+                    local result = standings[i]
+                    -- Calculate position for each circle (horizontally centered)
+                    local circleRadius = 25
+                    local spacing = 40
+                    local totalWidth = (2 * (circleRadius * 2)) + spacing
+                    local startX = (200 - totalWidth) / 2 + 90
+                    local xPos = scaling.size(startX + (i - 1) * (circleRadius * 2 + spacing) + circleRadius)
+                    -- Set color based on result
+                    local color
+                    if result == RaceResults.Tbd then
+                        color = rgbm(0.5, 0.5, 0.5, 0.1) -- Gray for not played
+                    elseif result == RaceResults.Win then
+                        color = rgbm(0.561, 0.651, 0.235, 1) -- Green for won
+                    elseif result == RaceResults.Loss then
+                        color = rgbm(0.349, 0.0078, 0.0078, 1) -- Red for lost
+                    else
+                        color = rgbm(0.5, 0.5, 0.5, 0.7) -- Dark grey for tie
+                    end
+                    -- Draw circle with appropriate color
+                    ui.drawCircleFilled(vec2(xPos, scaling.size(145)), scaling.size(circleRadius), color, 32)
                 end
-                -- Draw circle with appropriate color
-                ui.drawCircleFilled(vec2(xPos, scaling.size(145)), scaling.size(circleRadius), color, 32)
+            else
+                -- Sudden death
+                if standings[3] == RaceResults.Tbd then
+                    ui.pushDWriteFont(fontBold)
+                    ui.dwriteDrawText("Sudden Death!", scaling.size(32), scaling.vec2(44, 80))
+                    ui.popDWriteFont()
+                    ui.pushDWriteFont(font)
+                    ui.dwriteDrawText("First player to win a round.", scaling.size(18), scaling.vec2(44, 120))
+                    ui.popDWriteFont()
+                else
+                    if standings[3] == RaceResults.Win then
+                        ui.pushDWriteFont(fontBold)
+                        ui.dwriteDrawText("You win!", scaling.size(32), scaling.vec2(44, 90))
+                        ui.popDWriteFont()
+                    else
+                        ui.pushDWriteFont(fontBold)
+                        ui.dwriteDrawText("You lose.", scaling.size(32), scaling.vec2(44, 90))
+                        ui.popDWriteFont()
+                    end
+                end
             end
         end)
     end
@@ -434,7 +470,6 @@ function script.drawUI()
             ui.dwriteDrawTextClipped(notificationMessage, scaling.size(18), scaling.vec2(170,0), scaling.vec2(650,172), ui.Alignment.Start, ui.Alignment.Center, true)
             ui.popDWriteFont()
         end)
-
     end
 
     -- Draw forfeit dialog
@@ -447,7 +482,6 @@ function script.drawUI()
             ui.popDWriteFont()
         end)
     end
-
 end
 
 function InputCheck()
@@ -473,7 +507,7 @@ function InputCheck()
     if ui.keyboardButtonPressed(ui.KeyIndex.H, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
         hasTutorialHidden = not hasTutorialHidden
     end
-    if isInRace then
+    if currentHudState then
         if ui.keyboardButtonDown(ui.KeyIndex.F) then
             if not forfeitStartTime then
                 forfeitStartTime = os.clock()
@@ -485,7 +519,6 @@ function InputCheck()
             forfeitStartTime = nil -- reset if key is released
         end
     end
-
 end
 
 function script.update(dt)

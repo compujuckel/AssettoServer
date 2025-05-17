@@ -13,13 +13,21 @@ public class TougeSession
     private readonly int[] challengerStandings = [(int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd];
     private readonly int[] challengedStandings = [(int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd];
 
-    private const int coolDownTime = 10000; // Cooldown timer for inbetween races.
+    private const int coolDownTime = 7000; // Cooldown timer for inbetween races.
 
     private enum RaceResultCounter
     {
         Tbd = 0,
         Win = 1,
         Loss = 2,
+        Tie = 3,
+    }
+
+    private enum HudState
+    {
+        Off = 0,
+        FirstTwo = 1,
+        SuddenDeath = 2,
     }
 
     public bool IsActive { get; private set; }
@@ -58,28 +66,20 @@ public class TougeSession
         try
         {
             // Turn on the hud
-            SendStandings(true);
+            SendStandings(HudState.FirstTwo);
+
             RaceResult result = await FirstTwoRaceAsync();
-            
-            bool isChallengerLeading = true; // Challenger as leader at first.
 
             // If the result of the first two races is a tie, race until there is a winner.
-            while (result.Outcome == RaceOutcome.Tie)
+            if (result.Outcome == RaceOutcome.Tie)
             {
-                // Swap the posistion of leader and follower.
-                EntryCar leader = isChallengerLeading ? Challenger : Challenged;
-                EntryCar follower = isChallengerLeading ? Challenged : Challenger;
-
-                Race race = _raceFactory(leader, follower);
-                await Task.Delay(coolDownTime); // Small cooldown time inbetween races.
-                result = await StartRaceAsync(race);
-
-                isChallengerLeading = !isChallengerLeading;
+                SendStandings(HudState.SuddenDeath);
+                result = await RunSuddenDeathRacesAsync(result);
             }
 
             if (result.Outcome != RaceOutcome.Disconnected)
             {
-                UpdateStandings(result.ResultCar!, winCounter);
+                UpdateStandings(result.ResultCar!, 2, HudState.SuddenDeath);
                 UpdateEloAsync(result.ResultCar!);
             }
         }
@@ -102,11 +102,7 @@ public class TougeSession
         // If both players are still connected. Run race 2.
         if (result1.Outcome != RaceOutcome.Disconnected)
         {
-            if (result1.Outcome == RaceOutcome.Win)
-            {
-                UpdateStandings(result1.ResultCar!, winCounter);
-                winCounter++;
-            }
+            ApplyRaceResultToStandings(result1, 0);
 
             // Always start second race.
             await Task.Delay(coolDownTime); // Small cooldown time inbetween races.
@@ -115,11 +111,7 @@ public class TougeSession
 
             if (result2.Outcome != RaceOutcome.Disconnected)
             {
-                if (result2.Outcome == RaceOutcome.Win)
-                {
-                    UpdateStandings(result2.ResultCar!, winCounter);
-                    winCounter++;
-                }
+                ApplyRaceResultToStandings(result2, 1);
 
                 // Both races are finished. Check what to return.
                 if (IsTie(result1, result2))
@@ -146,6 +138,39 @@ public class TougeSession
             }
         }
         return RaceResult.Disconnected(result1.ResultCar!);
+    }
+
+    private void ApplyRaceResultToStandings(RaceResult result, int raceIndex)
+    {
+        if (result.Outcome == RaceOutcome.Win)
+        {
+            UpdateStandings(result.ResultCar!, raceIndex, HudState.FirstTwo);
+            winCounter++;
+        }
+        else
+        {
+            // Tie case.
+            UpdateStandings(null, raceIndex, HudState.FirstTwo);
+        }
+    }
+
+    private async Task<RaceResult> RunSuddenDeathRacesAsync(RaceResult firstTwoResult)
+    {
+        RaceResult result = firstTwoResult;
+        bool isChallengerLeading = true; // Challenger as leader at first.
+        while (result.Outcome == RaceOutcome.Tie)
+        {
+            // Swap the posistion of leader and follower.
+            EntryCar leader = isChallengerLeading ? Challenger : Challenged;
+            EntryCar follower = isChallengerLeading ? Challenged : Challenger;
+
+            Race race = _raceFactory(leader, follower);
+            await Task.Delay(coolDownTime); // Small cooldown time inbetween races.
+            result = await StartRaceAsync(race);
+
+            isChallengerLeading = !isChallengerLeading;
+        }
+        return result;
     }
 
     private async Task<RaceResult> StartRaceAsync(Race race)
@@ -178,7 +203,7 @@ public class TougeSession
         // Turn off and reset hud
         Array.Fill(challengerStandings, (int)RaceResultCounter.Tbd);
         Array.Fill(challengedStandings, (int)RaceResultCounter.Tbd);
-        SendStandings(false);
+        SendStandings(HudState.Off);
     }
 
     private async void UpdateEloAsync(EntryCar? winner)
@@ -256,11 +281,17 @@ public class TougeSession
         return performance;
     }
 
-    public void UpdateStandings(EntryCar winner, int scoreboardIndex)
+    private void UpdateStandings(EntryCar? winner, int scoreboardIndex, HudState hudState)
     {
         // Update the standings arrays
         // Maybe just store the winner in a list? Not 2. And figure out by Client how the score should be sent.
-        if (winner == Challenger)
+        if (winner == null)
+        {
+            // Tie
+            challengerStandings[scoreboardIndex] = (int)RaceResultCounter.Tie;
+            challengedStandings[scoreboardIndex] = (int)RaceResultCounter.Tie;
+        }
+        else if (winner == Challenger)
         {
             challengerStandings[scoreboardIndex] = (int)RaceResultCounter.Win;
             challengedStandings[scoreboardIndex] = (int)RaceResultCounter.Loss;
@@ -272,12 +303,12 @@ public class TougeSession
         }
 
         // Now update client side.
-        SendStandings();
+        SendStandings(hudState);
     }
 
-    private void SendStandings(bool isHudOn = true)
+    private void SendStandings(HudState hudState)
     {
-        Challenger.Client!.SendPacket(new StandingPacket { Result1 = challengerStandings[0], Result2 = challengerStandings[1], Result3 = challengerStandings[2], IsHudOn = isHudOn });
-        Challenged.Client!.SendPacket(new StandingPacket { Result1 = challengedStandings[0], Result2 = challengedStandings[1], Result3 = challengedStandings[2], IsHudOn = isHudOn });
+        Challenger.Client!.SendPacket(new StandingPacket { Result1 = challengerStandings[0], Result2 = challengerStandings[1], SuddenDeathResult = challengerStandings[2], HudState = (int)hudState });
+        Challenged.Client!.SendPacket(new StandingPacket { Result1 = challengedStandings[0], Result2 = challengedStandings[1], SuddenDeathResult = challengedStandings[2], HudState = (int)hudState });
     }
 }

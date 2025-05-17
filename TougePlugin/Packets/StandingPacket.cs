@@ -9,8 +9,8 @@ public class StandingPacket : OnlineEvent<StandingPacket>
     public int Result1;
     [OnlineEventField(Name = "result2")]
     public int Result2;
-    [OnlineEventField(Name = "result3")]
-    public int Result3;
-    [OnlineEventField(Name = "isHudOn")]
-    public bool IsHudOn = true;
+    [OnlineEventField(Name = "suddenDeathResult")]
+    public int SuddenDeathResult;
+    [OnlineEventField(Name = "hudState")]
+    public int HudState;
 }

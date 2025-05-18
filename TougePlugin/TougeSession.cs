@@ -13,7 +13,7 @@ public class TougeSession
     private readonly int[] challengerStandings = [(int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd];
     private readonly int[] challengedStandings = [(int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd, (int)RaceResultCounter.Tbd];
 
-    private const int coolDownTime = 7000; // Cooldown timer for inbetween races.
+    private const int coolDownTime = 6000; // Cooldown timer for inbetween races.
 
     private enum RaceResultCounter
     {
@@ -28,6 +28,7 @@ public class TougeSession
         Off = 0,
         FirstTwo = 1,
         SuddenDeath = 2,
+        Finished = 3,
     }
 
     public bool IsActive { get; private set; }
@@ -65,9 +66,8 @@ public class TougeSession
     {
         try
         {
-            // Turn on the hud
+            // Do the first two races.
             SendStandings(HudState.FirstTwo);
-
             RaceResult result = await FirstTwoRaceAsync();
 
             // If the result of the first two races is a tie, race until there is a winner.
@@ -79,8 +79,13 @@ public class TougeSession
 
             if (result.Outcome != RaceOutcome.Disconnected)
             {
-                UpdateStandings(result.ResultCar!, 2, HudState.SuddenDeath);
+                UpdateStandings(result.ResultCar!, 2, HudState.Finished);
                 UpdateEloAsync(result.ResultCar!);
+
+                EntryCar loser = result.ResultCar! == Challenged ? Challenger : Challenged;
+                string loserName = loser.Client?.Name!;
+                string winnerName = result.ResultCar!.Client?.Name!;
+                _entryCarManager.BroadcastChat($"{winnerName} beat {loserName}");
             }
         }
         catch (Exception ex)
@@ -112,6 +117,7 @@ public class TougeSession
             if (result2.Outcome != RaceOutcome.Disconnected)
             {
                 ApplyRaceResultToStandings(result2, 1);
+                await Task.Delay(coolDownTime); // Small cooldown to keep scoreboard up.
 
                 // Both races are finished. Check what to return.
                 if (IsTie(result1, result2))
@@ -158,17 +164,24 @@ public class TougeSession
     {
         RaceResult result = firstTwoResult;
         bool isChallengerLeading = true; // Challenger as leader at first.
+        bool isFirstSuddenDeathRace = true;
         while (result.Outcome == RaceOutcome.Tie)
         {
+            if (!isFirstSuddenDeathRace)
+            {
+                // Skip cooldown on the first iteration, because of cooldown after first two races.
+                await Task.Delay(coolDownTime);
+            }
+
             // Swap the posistion of leader and follower.
             EntryCar leader = isChallengerLeading ? Challenger : Challenged;
             EntryCar follower = isChallengerLeading ? Challenged : Challenger;
 
             Race race = _raceFactory(leader, follower);
-            await Task.Delay(coolDownTime); // Small cooldown time inbetween races.
             result = await StartRaceAsync(race);
 
             isChallengerLeading = !isChallengerLeading;
+            isFirstSuddenDeathRace = false;
         }
         return result;
     }
@@ -192,11 +205,6 @@ public class TougeSession
     {
         _plugin.GetSession(Challenger).CurrentSession = null;
         _plugin.GetSession(Challenged).CurrentSession = null;
-
-        string ChallengedName = Challenged.Client?.Name!;
-        string ChallengerName = Challenger.Client?.Name!;
-
-        _entryCarManager.BroadcastChat($"Race between {ChallengerName} and {ChallengedName} has concluded!");
 
         await Task.Delay(coolDownTime); // Small cooldown to shortly keep scoreboard up after session has ended.
 

@@ -24,6 +24,7 @@ local HudStates = {
     Off = 0,
     FirstTwo = 1,
     SuddenDeath = 2,
+    Finished = 3,
 }
 local RaceResults = {
     Tbd = 0,
@@ -307,25 +308,22 @@ function script.drawUI()
                     -- Draw circle with appropriate color
                     ui.drawCircleFilled(vec2(xPos, scaling.size(145)), scaling.size(circleRadius), color, 32)
                 end
-            else
-                -- Sudden death
-                if standings[3] == RaceResults.Tbd then
+            elseif currentHudState == HudStates.SuddenDeath then
+                ui.pushDWriteFont(fontBold)
+                ui.dwriteDrawText("Sudden Death!", scaling.size(32), scaling.vec2(44, 80))
+                ui.popDWriteFont()
+                ui.pushDWriteFont(font)
+                ui.dwriteDrawText("First player to win a round.", scaling.size(18), scaling.vec2(44, 120))
+                ui.popDWriteFont()
+            elseif currentHudState == HudStates.Finished then
+                if standings[3] == RaceResults.Win then
                     ui.pushDWriteFont(fontBold)
-                    ui.dwriteDrawText("Sudden Death!", scaling.size(32), scaling.vec2(44, 80))
-                    ui.popDWriteFont()
-                    ui.pushDWriteFont(font)
-                    ui.dwriteDrawText("First player to win a round.", scaling.size(18), scaling.vec2(44, 120))
+                    ui.dwriteDrawText("You win!", scaling.size(32), scaling.vec2(44, 90))
                     ui.popDWriteFont()
                 else
-                    if standings[3] == RaceResults.Win then
-                        ui.pushDWriteFont(fontBold)
-                        ui.dwriteDrawText("You win!", scaling.size(32), scaling.vec2(44, 90))
-                        ui.popDWriteFont()
-                    else
-                        ui.pushDWriteFont(fontBold)
-                        ui.dwriteDrawText("You lose.", scaling.size(32), scaling.vec2(44, 90))
-                        ui.popDWriteFont()
-                    end
+                    ui.pushDWriteFont(fontBold)
+                    ui.dwriteDrawText("You lose.", scaling.size(32), scaling.vec2(44, 90))
+                    ui.popDWriteFont()
                 end
             end
         end)

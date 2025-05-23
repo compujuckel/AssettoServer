@@ -11,16 +11,19 @@ namespace VotingPresetPlugin.Preset;
 public class PresetManager : CriticalBackgroundService
 {
     private readonly ACServerConfiguration _acServerConfiguration;
+    private readonly VotingPresetConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
     private bool _presetChangeRequested = false;
     
     private const string RestartKickReason = "SERVER RESTART FOR TRACK CHANGE (won't take long)";
 
     public PresetManager(ACServerConfiguration acServerConfiguration, 
+        VotingPresetConfiguration configuration,
         EntryCarManager entryCarManager,
         IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _acServerConfiguration = acServerConfiguration;
+        _configuration = configuration;
         _entryCarManager = entryCarManager;
     }
 
@@ -61,12 +64,10 @@ public class PresetManager : CriticalBackgroundService
         {
             Log.Information("Preset change to \'{Name}\' initiated", CurrentPreset.UpcomingType!.Name);
             
-            // Notify about restart
             Log.Information("Restarting server");
     
-            if (_acServerConfiguration.Extra.EnableClientMessages)
+            if (_acServerConfiguration.Extra.EnableClientMessages && _configuration.EnableReconnect)
             {
-                // Reconnect clients
                 Log.Information("Reconnecting all clients for preset change");
                 _entryCarManager.BroadcastPacket(new ReconnectClientPacket { Time = (ushort) CurrentPreset.TransitionDuration });
             }
@@ -79,7 +80,8 @@ public class PresetManager : CriticalBackgroundService
         
             var preset = new DirectoryInfo(CurrentPreset.UpcomingType!.PresetFolder).Name;
         
-            // Restart the server
+            // The minus 1 makes it so the server restarts 1 second before the reconnecting through script happens
+            // Could probably be refined, but should suffice
             var sleep = (CurrentPreset.TransitionDuration - 1) * 1000;
             await Task.Delay(sleep);
         

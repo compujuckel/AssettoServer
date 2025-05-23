@@ -10,7 +10,7 @@ public class PresetConfiguration
     [YamlMember(Description = "The name that is displayed when a vote is going on or the preset is changing")]
     public string Name { get; set; } = "<Please change me>";
 
-    [YamlMember(Description = "Whether only admins should be able to change to this preset")]
+    [YamlMember(Description = "Set to true too make this preset only available for admins. \nSet to false to add this preset into the preset pool for voting")]
     public bool AdminOnly { get; set; } = false;
     
     

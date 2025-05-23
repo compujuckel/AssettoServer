@@ -64,8 +64,7 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
             TransitionDuration = 0
         });
         
-        // Include Client Reconnection Script
-        if (acServerConfiguration.Extra.EnableClientMessages)
+        if (acServerConfiguration.Extra.EnableClientMessages && _configuration.EnableReconnect)
         {
             using var streamReader = new StreamReader(Assembly.GetExecutingAssembly()
                 .GetManifestResourceStream("VotingPresetPlugin.lua.reconnectclient.lua")!);
@@ -81,12 +80,12 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
         _cancellationToken = stoppingToken;
         while (!stoppingToken.IsCancellationRequested)
         {
-            await Task.Delay(_configuration.VotingIntervalMilliseconds - _configuration.VotingDurationMilliseconds,
+            await Task.Delay(_configuration.IntervalMilliseconds - _configuration.VotingDurationMilliseconds,
                 stoppingToken);
             try
             {
                 Log.Information("Starting preset vote");
-                if (_configuration.VoteEnabled)
+                if (_configuration.EnableVote)
                     await VotingAsync(stoppingToken);
             }
             catch (TaskCanceledException)
@@ -287,14 +286,13 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
             return;
         }
 
-        if (_configuration.VoteEnabled || manualVote)
+        if (_configuration.EnableVote || manualVote)
             _entryCarManager.BroadcastChat("Vote for next track:");
         
-        // Add "Stay on current track"
-        if (_configuration.IncludeStayOnTrackVote)
+        if (_configuration.EnableStayOnTrack)
         {
             _availablePresets.Add(new PresetChoice { Preset = last.Type, Votes = 0 });
-            if (_configuration.VoteEnabled || manualVote)
+            if (_configuration.EnableVote || manualVote)
             {
                 _entryCarManager.BroadcastChat(" /vt 0 - Stay on current track.");
             }
@@ -307,14 +305,13 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
             _availablePresets.Add(new PresetChoice { Preset = nextPreset, Votes = 0 });
             presetsLeft.Remove(nextPreset);
 
-            if (_configuration.VoteEnabled || manualVote)
+            if (_configuration.EnableVote || manualVote)
             {
                 _entryCarManager.BroadcastChat($" /vt {i} - {nextPreset.Name}");
             }
         }
 
-        // Wait for the vote to finish
-        if (_configuration.VoteEnabled || manualVote)
+        if (_configuration.EnableVote || manualVote)
         {
             if (!await WaitVoting(stoppingToken))
                 return;
@@ -327,17 +324,16 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
 
         if (last.Type!.Equals(winner.Preset!) || (maxVotes == 0 && !_configuration.ChangePresetWithoutVotes))
         {
-            _entryCarManager.BroadcastChat($"Track vote ended. Staying on track for {_configuration.VotingIntervalMinutes} more minutes.");
+            _entryCarManager.BroadcastChat($"Track vote ended. Staying on track for {_configuration.IntervalMinutes} more minutes.");
         }
         else
         {
             _entryCarManager.BroadcastChat($"Track vote ended. Next track: {winner.Preset!.Name} - {winner.Votes} votes");
-            _entryCarManager.BroadcastChat($"Track will change in {(_configuration.DelayTransitionDurationSeconds < 60 ? 
-                    $"{_configuration.DelayTransitionDurationSeconds} second(s)" :
-                    $"{(int)Math.Ceiling(_configuration.DelayTransitionDurationSeconds / 60.0)} minute(s)")}.");
+            _entryCarManager.BroadcastChat($"Track will change in {(_configuration.TransitionDelaySeconds < 60 ? 
+                    $"{_configuration.TransitionDelaySeconds} second(s)" :
+                    $"{(int)Math.Ceiling(_configuration.TransitionDelaySeconds / 60.0)} minute(s)")}.");
 
-            // Delay the preset switch by configured time delay
-            await Task.Delay(_configuration.DelayTransitionDurationMilliseconds, stoppingToken);
+            await Task.Delay(_configuration.TransitionDelayMilliseconds, stoppingToken);
 
             _presetManager.SetPreset(new PresetData(last.Type, winner.Preset)
             {
@@ -354,12 +350,11 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
             if (preset.Type!.Equals(preset.UpcomingType!)) return;
             Log.Information("Next preset: {Preset}", preset.UpcomingType!.Name);
             _entryCarManager.BroadcastChat($"Next track: {preset.UpcomingType!.Name}");
-            _entryCarManager.BroadcastChat($"Track will change in {(_configuration.DelayTransitionDurationSeconds < 60 ? 
-                    $"{_configuration.DelayTransitionDurationSeconds} second(s)" :
-                    $"{(int)Math.Ceiling(_configuration.DelayTransitionDurationSeconds / 60.0)} minute(s)")}.");
+            _entryCarManager.BroadcastChat($"Track will change in {(_configuration.TransitionDelaySeconds < 60 ? 
+                    $"{_configuration.TransitionDelaySeconds} second(s)" :
+                    $"{(int)Math.Ceiling(_configuration.TransitionDelaySeconds / 60.0)} minute(s)")}.");
 
-            // Delay the preset switch by configured time delay
-            await Task.Delay(_configuration.DelayTransitionDurationMilliseconds);
+            await Task.Delay(_configuration.TransitionDelayMilliseconds);
 
             _presetManager.SetPreset(preset);
         }

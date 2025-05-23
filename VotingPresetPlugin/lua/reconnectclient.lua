@@ -1,4 +1,4 @@
-local pngUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP() .. "/votingpreset/reconnecting.png"
+local pngUrl = "http://" .. ac.getServerIP() .. ":" .. ac.getServerPortHTTP() .. "/static/VotingPresetPlugin/reconnecting.png"
 
 local pleaseReconnect = false
 local drawReconnect = false

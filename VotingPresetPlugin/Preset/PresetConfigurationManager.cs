@@ -22,7 +22,6 @@ public class PresetConfigurationManager
         var directories = Directory.GetDirectories("presets");
         
         var baseEntryListHash = HashEntryList(acServerConfiguration.BaseFolder);
-        var warnEntryLists = false;
         foreach (var dir in directories)
         {
             var pluginCfgPath = Path.Join(dir, "plugin_voting_preset_cfg.yml");
@@ -40,14 +39,16 @@ public class PresetConfigurationManager
                 if (HashEntryList(dir) != baseEntryListHash)
                 {
                     Log.Warning("Preset {Preset} skipped, EntryList does not match", dir);
-                    warnEntryLists = true;
                     continue;
                 }
             }
-            if (warnEntryLists)
-                Log.Warning("Mismatching EntryLists can cause issues with reconnecting");
 
             configs.Add(PresetConfiguration.FromFile(pluginCfgPath));
+        }
+
+        if (votingPresetConfiguration.SkipEntryListCheck)
+        {
+            Log.Warning("Mismatching EntryLists can cause issues with reconnecting");
         }
         
         if (configs.Count < 2)

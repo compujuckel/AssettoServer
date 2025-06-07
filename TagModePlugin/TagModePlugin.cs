@@ -101,38 +101,15 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
     
     public bool TryPickRandomTagger([NotNullWhen(true)] out EntryCar? randomTagger)
     {
-        randomTagger = null;
-        
-        float weightSum = _entryCarManager.EntryCars.Count(car => car.Client is { HasSentFirstUpdate: true });
-        if (weightSum < MinPlayers) return false;
-
-        float prefixSum = 0.0f;
-        List<(EntryCar Car, float PrefixSum)> players = [];
-        foreach (var car in _entryCarManager.EntryCars.Where(car => car.Client is { HasSentFirstUpdate: true }))
+        var players = _entryCarManager.EntryCars.Where(car => car.Client is { HasSentFirstUpdate: true }).ToList();
+        if (players.Count < MinPlayers)
         {
-            prefixSum += 1 / weightSum;
-            players.Add((car, prefixSum));
+            randomTagger = null;
+            return false;
         }
         
-        float rng = Random.Shared.NextSingle();
-
-        int begin = 0, end = players.Count;
-        while (begin <= end)
-        {
-            int i = (begin + end) / 2;
-
-            if (players[i].PrefixSum <= rng)
-            {
-                begin = i + 1;
-            }
-            else
-            {
-                end = i - 1;
-                randomTagger = players[i].Car;
-            }
-        }
-
-        return randomTagger != null;
+        randomTagger = players[Random.Shared.Next(players.Count)];
+        return true;
     }
 
     public async Task<bool> TryStartSession(EntryCar? tagger = null)

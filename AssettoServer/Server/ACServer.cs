@@ -109,10 +109,10 @@ public class ACServer : CriticalBackgroundService
 
         if (_configuration.Extra.EnableCarReset)
         {
-            if (!_configuration.Extra.EnableClientMessages || _configuration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_3_p47  || aiSpline == null)
+            if (!_configuration.Extra.EnableClientMessages || _configuration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_8  || aiSpline == null)
             {
                 throw new ConfigurationException(
-                    "Reset car: Minimum required CSP version of 0.2.3-preview47 (2796); Requires enabled client messages; Requires working AI spline");
+                    "Reset car: Minimum required CSP version of 0.2.8 (3424); Requires enabled client messages; Requires working AI spline");
             }
         }
     }

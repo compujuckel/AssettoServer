@@ -46,8 +46,8 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
         {
             sender.Collision += OnCollision;
             sender.Disconnecting += OnDisconnecting;
+            sender.LuaReady += OnLuaReady;
         };
-        clientMessageTypeManager.RegisterOnlineEvent<TagModeColorPacket>(OnTagModeColor);
 
         if (!acServerConfiguration.Extra.EnableClientMessages)
         {
@@ -67,8 +67,8 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
     private void OnDisconnecting(ACTcpClient sender, EventArgs args)
         => Instances[sender.SessionId].OnDisconnecting();
 
-    private void OnTagModeColor(ACTcpClient sender, TagModeColorPacket packet)
-        => Instances[sender.SessionId].OnTagModeColor();
+    private void OnLuaReady(ACTcpClient sender, EventArgs args)
+        => Instances[sender.SessionId].OnLuaReady();
 
     private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
         => Instances[sender.SessionId].OnCollision(args);

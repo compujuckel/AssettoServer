@@ -18,5 +18,3 @@ local tagModeColorEvent = ac.OnlineEvent(
         
         ac.refreshCarColor(sender.index)
     end)
-
-tagModeColorEvent{ Color = rgbm.tmp(), Disconnect = false }

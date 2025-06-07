@@ -17,24 +17,16 @@ public class TagModeCommandModule : ACModuleBase
     }
 
     [Command("tagstart"), RequireConnectedPlayer, RequireAdmin]
-    public async ValueTask Start([Remainder] ACTcpClient player)
+    public async ValueTask Start([Remainder] ACTcpClient? player = null)
     {
-        if (await _plugin.TryStartSession(player.EntryCar))
-            Reply("Session is started.");
-        else
-            Reply("Session could not be started.");
-    }
-
-    [Command("tagstartrandom"), RequireConnectedPlayer, RequireAdmin]
-    public async ValueTask StartRandom()
-    {
-        if (!_plugin.TryPickRandomTagger(out var randomTagger))
+        var starter = player?.EntryCar;
+        if (starter == null && !_plugin.TryPickRandomTagger(out starter))
         {
             Reply("Unable to pick a random tagger.");
             return;
         }
         
-        if (await _plugin.TryStartSession(randomTagger))
+        if (await _plugin.TryStartSession(starter))
             Reply("Session is started.");
         else
             Reply("Session could not be started.");

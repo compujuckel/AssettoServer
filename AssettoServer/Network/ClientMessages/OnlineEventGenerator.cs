@@ -136,9 +136,13 @@ internal static class OnlineEventGenerator
                 throw new InvalidOperationException($"Unsupported type {type.Name} for client message field {messageType.Name}.{field.Name}");
             }
 
-            var size = field.FieldType == typeof(string) ? -attr.Size :
-                field.FieldType == typeof(Color) ? 16 :
-                MarshalUtils.SizeOf(type);
+            int size;
+            if (field.FieldType == typeof(string))
+                size = -attr.Size;
+            else if (field.FieldType == typeof(Color))
+                size = 16;
+            else
+                size = MarshalUtils.SizeOf(type);
 
             ordered.Add(new OnlineEventFieldInfo
             {

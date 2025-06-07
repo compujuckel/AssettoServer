@@ -601,8 +601,15 @@ public class ACTcpClient : IClient
 
     private void OnSpectateCar(PacketReader reader)
     {
-        SpectateCar spectatePacket = reader.ReadPacket<SpectateCar>();
-        EntryCar.TargetCar = spectatePacket.SessionId != SessionId ? _entryCarManager.EntryCars[spectatePacket.SessionId] : null;
+        var spectatePacket = reader.ReadPacket<SpectateCar>();
+        if (spectatePacket.SessionId == SessionId || spectatePacket.SessionId > _entryCarManager.EntryCars.Length)
+        {
+            EntryCar.TargetCar = null;
+        }
+        else
+        {
+            EntryCar.TargetCar = _entryCarManager.EntryCars[spectatePacket.SessionId];
+        }
     }
 
     private void OnChecksum(PacketReader reader)

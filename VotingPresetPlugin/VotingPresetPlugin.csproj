@@ -31,12 +31,8 @@
     <ItemGroup>
         <None Remove="lua\reconnectclient.lua" />
         <EmbeddedResource Include="lua\reconnectclient.lua" />
-        <None Update="Content\reconnecting.png">
+        <None Update="wwwroot\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Content" />
     </ItemGroup>
 </Project>

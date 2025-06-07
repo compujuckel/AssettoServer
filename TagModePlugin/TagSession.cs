@@ -55,23 +55,12 @@ public class TagSession
             _entryCarManager.BroadcastChat("Game of tag starting in 15 seconds");
             await Task.Delay(15_000);
             
-            byte signalStage = 0;
-            while(signalStage < 3)
-            {
-                if (signalStage == 0)
-                    _entryCarManager.BroadcastChat("Ready...");
-                else if (signalStage == 1)
-                    _entryCarManager.BroadcastChat("Set...");
-                else if (signalStage == 2)
-                {
-                    _entryCarManager.BroadcastChat("Run!");
-                    break;
-                }
-
-                await Task.Delay(1_000);
-                signalStage++;
-            }
-
+            _entryCarManager.BroadcastChat("Ready...");
+            await Task.Delay(1_000);
+            _entryCarManager.BroadcastChat("Set...");
+            await Task.Delay(1_000);
+            _entryCarManager.BroadcastChat("Run!");
+            
             _plugin.Instances[InitialTagger.SessionId].SetTagged();
             StartTimeMilliseconds = _sessionManager.ServerTimeMilliseconds;
             

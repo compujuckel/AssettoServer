@@ -34,6 +34,7 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
         Func<EntryCar, EntryCarTagMode> entryCarTagModeFactory,
         TagSession.Factory sessionFactory,
         CSPServerScriptProvider scriptProvider,
+        CSPClientMessageTypeManager clientMessageTypeManager,
         IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
     {
         _configuration = configuration;
@@ -43,10 +44,10 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
         
         _entryCarManager.ClientConnected += (sender, _) =>
         {
-            sender.FirstUpdateSent += OnFirstUpdateSent;
             sender.Collision += OnCollision;
             sender.Disconnecting += OnDisconnecting;
         };
+        clientMessageTypeManager.RegisterOnlineEvent<TagModeColorPacket>(OnTagModeColor);
 
         if (!acServerConfiguration.Extra.EnableClientMessages)
         {
@@ -66,8 +67,8 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
     private void OnDisconnecting(ACTcpClient sender, EventArgs args)
         => Instances[sender.SessionId].OnDisconnecting();
 
-    private void OnFirstUpdateSent(ACTcpClient sender, EventArgs args)
-        => _ = Instances[sender.SessionId].OnFirstUpdateSent();
+    private void OnTagModeColor(ACTcpClient sender, TagModeColorPacket packet)
+        => Instances[sender.SessionId].OnTagModeColor();
 
     private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
         => Instances[sender.SessionId].OnCollision(args);

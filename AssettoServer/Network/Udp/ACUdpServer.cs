@@ -72,11 +72,7 @@ public class ACUdpServer : CriticalBackgroundService
                 var bytesRead = _socket.ReceiveFrom(buffer, SocketFlags.None, address);
                 OnReceived(address, buffer, bytesRead);
             }
-            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
-            {
-                // This is a workaround because on Linux, the SocketAddress Size will be set to 0 for some reason
-                address.Size = address.Buffer.Length;
-            }
+            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut) { }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in UDP receive loop");

@@ -56,6 +56,8 @@ internal static class Logging
             loggerConfiguration.Enrich.WithSensitiveDataMasking(o =>
             {
                 o.ExcludeProperties.Add("ServerInviteLink");
+                o.ExcludeProperties.Add("RouterPage");
+                o.ExcludeProperties.Add("LocalIp");
                 o.MaskingOperators = [new IpAddressMaskingOperator()];
             });
         }

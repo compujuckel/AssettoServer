@@ -1,11 +1,11 @@
-﻿using AssettoServer.Server.Configuration;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Autofac.Extensions.DependencyInjection;
@@ -60,6 +60,7 @@ public static class Program
         public string? Preset { get; init; }
         public string? ServerCfgPath { get; init; }
         public string? EntryListPath { get; init; }
+        public PortOverrides? PortOverrides { get; init; }
     }
 
     public static bool IsContentManager { get; private set; }
@@ -88,7 +89,6 @@ public static class Program
         
         if (options.UseRandomPreset)
         {
-        
             var presetsPath = Path.Join(AppContext.BaseDirectory, "presets");
             var presets = Path.Exists(presetsPath) ? 
                 Directory.EnumerateDirectories("presets").Select(Path.GetFileName).OfType<string>().ToArray() : [];
@@ -97,7 +97,6 @@ public static class Program
                 options.Preset = presets[Random.Shared.Next(presets.Length)];
             else 
                 Log.Warning("Presets directory does not exist or contain any preset");
-                
         }
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
@@ -122,7 +121,7 @@ public static class Program
         {
             _restartTask = new TaskCompletionSource<StartOptions>();
             using var cts = new CancellationTokenSource();
-            var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, options.UseVerboseLogging, cts.Token);
+            var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, startOptions.PortOverrides ,options.UseVerboseLogging, cts.Token);
             var finishedTask = await Task.WhenAny(serverTask, _restartTask.Task);
 
             if (finishedTask == _restartTask.Task)
@@ -136,14 +135,19 @@ public static class Program
         }
     }
 
-    public static void RestartServer(string? preset, string? serverCfgPath = null, string? entryListPath = null)
+    public static void RestartServer(
+        string? preset,
+        string? serverCfgPath = null,
+        string? entryListPath = null,
+        PortOverrides? portOverrides = null)
     {
         Log.Information("Initiated in-process server restart");
         _restartTask.SetResult(new StartOptions
         {
             Preset = preset,
             ServerCfgPath = serverCfgPath,
-            EntryListPath = entryListPath
+            EntryListPath = entryListPath,
+            PortOverrides = portOverrides,
         });
     }
 
@@ -151,6 +155,7 @@ public static class Program
         string? preset,
         string? serverCfgPath,
         string? entryListPath,
+        PortOverrides? portOverrides,
         bool useVerboseLogging,
         CancellationToken token = default)
     {
@@ -158,7 +163,7 @@ public static class Program
         
         try
         {
-            var config = new ACServerConfiguration(preset, ConfigurationLocations, _loadPluginsFromWorkdir, _generatePluginConfigs);
+            var config = new ACServerConfiguration(preset, ConfigurationLocations, _loadPluginsFromWorkdir, _generatePluginConfigs, portOverrides);
 
             string logPrefix = string.IsNullOrEmpty(preset) ? "log" : preset;
             Logging.CreateLogger(logPrefix, IsContentManager, preset, useVerboseLogging, config.Extra.RedactIpAddresses, config.Extra.LokiSettings);

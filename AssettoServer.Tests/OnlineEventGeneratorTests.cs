@@ -1,4 +1,5 @@
-﻿using AssettoServer.Network.ClientMessages;
+﻿using System.Drawing;
+using AssettoServer.Network.ClientMessages;
 // ReSharper disable InconsistentNaming
 
 namespace AssettoServer.Tests;
@@ -20,6 +21,9 @@ public class OnlineEventGeneratorTests
 
         var testMessage4 = OnlineEventGenerator.ParseClientMessage(typeof(TestMessage4));
         Assert.That(OnlineEventGenerator.GenerateStructure(testMessage4.Key, testMessage4.Fields), Is.EqualTo("double i23;int i22[4];uint8_t i21;char i20[20];"));
+        
+        var testMessage5 = OnlineEventGenerator.ParseClientMessage(typeof(TestMessage5));
+        Assert.That(OnlineEventGenerator.GenerateStructure(testMessage5.Key, testMessage5.Fields), Is.EqualTo("rgbm i51;float i50;"));
     }
 }
 
@@ -63,3 +67,10 @@ public class TestMessage4
     public double i23;
 }
 
+public class TestMessage5
+{
+    [OnlineEventField(Name = "i50")]
+    public float i50;
+    [OnlineEventField(Name = "i51")]
+    public Color i51;
+}

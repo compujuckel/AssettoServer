@@ -33,7 +33,7 @@ public class PresetManager : CriticalBackgroundService
     {
         CurrentPreset = preset;
         _presetChangeRequested = true;
-        
+
         if (!CurrentPreset.IsInit)
             _ = UpdatePreset();
     }
@@ -77,15 +77,22 @@ public class PresetManager : CriticalBackgroundService
                 _entryCarManager.BroadcastPacket(new CSPKickBanMessageOverride { Message = RestartKickReason });
                 _entryCarManager.BroadcastPacket(new KickCar { SessionId = 255, Reason = KickReason.Kicked });
             }
-        
+
             var preset = new DirectoryInfo(CurrentPreset.UpcomingType!.PresetFolder).Name;
         
             // The minus 1 makes it so the server restarts 1 second before the reconnecting through script happens
             // Could probably be refined, but should suffice
             var sleep = (CurrentPreset.TransitionDuration - 1) * 1000;
             await Task.Delay(sleep);
-        
-            Program.RestartServer(preset);
+
+            Program.RestartServer(
+                preset,
+                portOverrides: new PortOverrides
+                {
+                    TcpPort = _acServerConfiguration.Server.TcpPort,
+                    UdpPort = _acServerConfiguration.Server.UdpPort,
+                    HttpPort =  _acServerConfiguration.Server.HttpPort
+                });
         }
     }
 }

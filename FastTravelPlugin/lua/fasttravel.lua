@@ -2,7 +2,8 @@
 --c1xtz: comments are from Tsuka, unless they start with 'c1xtz:'
 --thisguyStan: my comments start with 'thisguyStan:' :D
 
---thisguyStan: changed these paths to use the assettoserver instance
+--thisguyStan: changed these paths to use the AssettoServer instance
+--thisguyStan: moved a few settings into AssettoServer
 
 local config = ac.configValues({
     mapFixedTargetPosition = "", -- { -2100, 0, 3200 },
@@ -65,7 +66,6 @@ mapShot:setClippingPlanes(10, 30000)
 local mapFullShot = ac.GeometryShot(ac.findNodes('sceneRoot:yes'), screenSize, 1, false)
 
 local roadsNode = ac.findNodes('trackRoot:yes'):findMeshes('{ ?ROAD?, ?Road?, ?road?, ?ASPH?, ?Asph?, ?asph?, ?jnc_asp? }')
-    -- :setBlendMode(render.BlendMode.Opaque):setCullMode(render.CullMode.Front):setDepthMode(render.DepthMode.Normal)
 local roadsShot = ac.GeometryShot(roadsNode, screenSize, 1, false)
 roadsShot:setShadersType(render.ShadersType.Simplified)
 roadsShot:setAmbientColor(rgbm(100, 100, 100, 1))

@@ -29,6 +29,8 @@ internal static class Program
 
         [Option("reverse", Required = false, HelpText = "Reverse direction of spline")]
         public bool Reverse { get; set; } = false;
+        [Option("height-offset", Required = false, HelpText = "Change the height of all spline points (meters)")]
+        public float HeightOffset { get; set; } = 0;
     }
 
     public static async Task Main(string[] args)
@@ -55,6 +57,9 @@ internal static class Program
         
         if (options.Reverse)
             fastLane.Reverse();
+
+        if (options.HeightOffset != 0)
+            fastLane.ChangeHeight(options.HeightOffset);
 
         Log.Information("Writing output spline to {Path}...", options.Output);
         await using (var outputFile = File.Create(options.Output))

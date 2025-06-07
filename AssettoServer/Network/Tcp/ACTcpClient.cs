@@ -63,7 +63,8 @@ public class ACTcpClient : IClient
     public InputMethod InputMethod { get; set; }
 
     internal SocketAddress? UdpEndpoint { get; private set; }
-    internal bool SupportsCSPCustomUpdate { get; private set; }
+    public bool HasUdpEndpoint => UdpEndpoint != null;
+    public bool SupportsCSPCustomUpdate { get; private set; }
     public int? CSPVersion { get; private set; }
     internal string ApiKey { get; }
 
@@ -259,7 +260,7 @@ public class ACTcpClient : IClient
         }
     }
 
-    internal void SendPacketUdp<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket
+    public void SendPacketUdp<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket
     {
         if (UdpEndpoint == null) return;
 
@@ -601,8 +602,15 @@ public class ACTcpClient : IClient
 
     private void OnSpectateCar(PacketReader reader)
     {
-        SpectateCar spectatePacket = reader.ReadPacket<SpectateCar>();
-        EntryCar.TargetCar = spectatePacket.SessionId != SessionId ? _entryCarManager.EntryCars[spectatePacket.SessionId] : null;
+        var spectatePacket = reader.ReadPacket<SpectateCar>();
+        if (spectatePacket.SessionId == SessionId || spectatePacket.SessionId > _entryCarManager.EntryCars.Length)
+        {
+            EntryCar.TargetCar = null;
+        }
+        else
+        {
+            EntryCar.TargetCar = _entryCarManager.EntryCars[spectatePacket.SessionId];
+        }
     }
 
     private void OnChecksum(PacketReader reader)
@@ -1010,10 +1018,12 @@ public class ACTcpClient : IClient
         });
     }
 
+    public void SendChatMessage(string message, byte senderId = 255) => SendPacket(new ChatMessage { Message = message, SessionId = senderId });
+
     private static string IdFromGuid(ulong guid)
     {
         var hash = SHA1.HashData(Encoding.UTF8.GetBytes($"antarcticfurseal{guid}"));
-        return Convert.ToHexString(hash).ToLower();
+        return Convert.ToHexStringLower(hash);
     }
     
     private static ulong GuidFromName(string input)

@@ -114,6 +114,7 @@ public class ACPluginLoader
                 LoadedPlugins.Add(new LoadedPlugin
                 {
                     Name = name,
+                    Directory = plugin.Path,
                     Assembly = assembly,
                     Instance = instance,
                     ConfigurationType = configType,

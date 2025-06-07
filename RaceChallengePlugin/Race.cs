@@ -217,18 +217,15 @@ public class Race
             string winnerName = Challenger == Leader ? ChallengerName : ChallengedName;
             string loserName = Challenger == Leader ? ChallengedName : ChallengerName;
 
-            _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = $"{winnerName} just beat {loserName} in a race." });
+            _entryCarManager.BroadcastChat($"{winnerName} just beat {loserName} in a race.");
             Log.Information("{WinnerName} just beat {LoserName} in a race", winnerName, loserName);
         }
     }
 
     private void SendMessage(string message)
     {
-        if (Challenger.Client != null)
-            SendMessage(Challenger, message);
-
-        if (Challenged.Client != null)
-            SendMessage(Challenged, message);
+        Challenger.Client?.SendChatMessage(message);
+        Challenged.Client?.SendChatMessage(message);
     }
 
     private bool AreLinedUp()
@@ -277,11 +274,6 @@ public class Race
         return true;
     }
 
-    private void SendMessage(EntryCar car, string message)
-    {
-        car.Client?.SendPacket(new ChatMessage { SessionId = 255, Message = message });
-    }
-
     private async Task SendTimedMessageAsync(string message)
     {
         bool isChallengerHighPing = Challenger.Ping > Challenged.Ping;
@@ -298,8 +290,8 @@ public class Race
             lowPingCar = Challenger;
         }
 
-        SendMessage(highPingCar, message);
+        highPingCar.Client?.SendChatMessage(message);
         await Task.Delay(highPingCar.Ping - lowPingCar.Ping);
-        SendMessage(lowPingCar, message);
+        lowPingCar.Client?.SendChatMessage(message);
     }
 }

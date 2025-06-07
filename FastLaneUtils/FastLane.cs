@@ -24,7 +24,7 @@ public class FastLane
         {
             int count = Points.Count - end - 1;
             Log.Debug("Removing {Count} points from end of spline", count);
-            Points.RemoveRange(end + 1, Points.Count - end - 1);
+            Points.RemoveRange(end + 1, count);
         }
 
         if (start > 0)
@@ -134,6 +134,14 @@ public class FastLane
         }
     }
 
+    public void ChangeHeight(float offset)
+    {
+        foreach (var point in Points)
+        {
+            point.Position += new Vector3(0, offset, 0);
+        }
+    }
+
     public void ToFile(Stream file)
     {
         using var writer = new BinaryWriter(file);
@@ -155,14 +163,14 @@ public class FastLane
     private void ToFileVn1(BinaryWriter writer)
     {
         writer.Write(Points.Count);
-        
-        for (int i = 0; i < Points.Count; i++)
+
+        foreach (var point in Points)
         {
-            writer.Write(Points[i].Position.X);
-            writer.Write(Points[i].Position.Y);
-            writer.Write(Points[i].Position.Z);
-            writer.Write(Points[i].Radius);
-            writer.Write(Points[i].Camber * Points[i].Direction);
+            writer.Write(point.Position.X);
+            writer.Write(point.Position.Y);
+            writer.Write(point.Position.Z);
+            writer.Write(point.Radius);
+            writer.Write(point.Camber * point.Direction);
         }
     }
 
@@ -172,37 +180,37 @@ public class FastLane
         writer.Write(LapTime);
         writer.Write(SampleCount);
 
-        for (int i = 0; i < Points.Count; i++)
+        foreach (var point in Points)
         {
-            writer.Write(Points[i].Position.X);
-            writer.Write(Points[i].Position.Y);
-            writer.Write(Points[i].Position.Z);
-            writer.Write(Points[i].Length);
-            writer.Write(Points[i].Id);
+            writer.Write(point.Position.X);
+            writer.Write(point.Position.Y);
+            writer.Write(point.Position.Z);
+            writer.Write(point.Length);
+            writer.Write(point.Id);
         }
             
         writer.Write(Points.Count);
 
-        for (int i = 0; i < Points.Count; i++)
+        foreach (var point in Points)
         {
-            writer.Write(Points[i].Speed);
-            writer.Write(Points[i].Gas);
-            writer.Write(Points[i].Brake);
-            writer.Write(Points[i].ObsoleteLatG);
-            writer.Write(Points[i].Radius);
-            writer.Write(Points[i].SideLeft);
-            writer.Write(Points[i].SideRight);
-            writer.Write(Points[i].Camber);
-            writer.Write(Points[i].Direction);
-            writer.Write(Points[i].Normal.X);
-            writer.Write(Points[i].Normal.Y);
-            writer.Write(Points[i].Normal.Z);
-            writer.Write(Points[i].DetailLength);
-            writer.Write(Points[i].Forward.X);
-            writer.Write(Points[i].Forward.Y);
-            writer.Write(Points[i].Forward.Z);
-            writer.Write(Points[i].Tag);
-            writer.Write(Points[i].Grade);
+            writer.Write(point.Speed);
+            writer.Write(point.Gas);
+            writer.Write(point.Brake);
+            writer.Write(point.ObsoleteLatG);
+            writer.Write(point.Radius);
+            writer.Write(point.SideLeft);
+            writer.Write(point.SideRight);
+            writer.Write(point.Camber);
+            writer.Write(point.Direction);
+            writer.Write(point.Normal.X);
+            writer.Write(point.Normal.Y);
+            writer.Write(point.Normal.Z);
+            writer.Write(point.DetailLength);
+            writer.Write(point.Forward.X);
+            writer.Write(point.Forward.Y);
+            writer.Write(point.Forward.Z);
+            writer.Write(point.Tag);
+            writer.Write(point.Grade);
         }
     }
 }

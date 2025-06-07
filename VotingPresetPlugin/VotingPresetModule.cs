@@ -13,4 +13,19 @@ public class VotingPresetModule : AssettoServerModule<VotingPresetConfiguration>
         
         builder.RegisterType<VotingPresetPlugin>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
     }
+
+    public override VotingPresetConfiguration ReferenceConfiguration => new()
+    {
+        EnableReconnect = true,
+        EnableVote = false,
+        EnableStayOnTrack = false,
+        IntervalMinutes = 60,
+        TransitionDelaySeconds = 30,
+        TransitionDurationSeconds = 10,
+        Meta = new()
+        {
+            Name = "SRP",
+            AdminOnly = false
+        }
+    };
 }

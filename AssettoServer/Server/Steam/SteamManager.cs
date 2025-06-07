@@ -39,7 +39,7 @@ public class SteamManager
                 client.Logger.Information("{ClientName} ({SteamId}) is using Steam family sharing, owner {OwnerSteamId}", client.Name, client.Guid, client.OwnerGuid);
             }
 
-            client.Logger.Information("Steam authentication succeeded for {ClientName} ({SessionId})", client.Name, client.SessionId);
+            client.Logger.Information("Steam authentication succeeded for {ClientName} ({SteamId})", client.Name, client.Guid);
         }
         else
         {

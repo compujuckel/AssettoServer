@@ -16,7 +16,7 @@ public class SessionState
     public uint TargetLap { get; set; } = 0;
     public uint LeaderLapCount { get; set; } = 0;
     public bool LeaderHasCompletedLastLap { get; set; } = false;
-    public bool IsStarted { get; set; } = false;
+    public bool IsCutoffReached => _timeSource.ServerTimeMilliseconds > StartTimeMilliseconds - 20_000;
 
     public bool SessionOverFlag => Configuration switch
     {

@@ -62,6 +62,7 @@ public class TagSession
             _entryCarManager.BroadcastChat("Run!");
             
             _plugin.Instances[InitialTagger.SessionId].SetTagged();
+            _entryCarManager.BroadcastChat($"{InitialTagger.Client?.Name} is now a tagger", InitialTagger.SessionId);
             StartTimeMilliseconds = _sessionManager.ServerTimeMilliseconds;
             
             while (!IsCancelled)

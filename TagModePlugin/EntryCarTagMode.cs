@@ -29,7 +29,7 @@ public class EntryCarTagMode
         UpdateColor(_plugin.NeutralColor, true);
     }
 
-    public void OnTagModeColor()
+    public void OnLuaReady()
     {
         var isSessionActive = _plugin.CurrentSession is { HasEnded: false };
         if (isSessionActive && !_configuration.EnableLateJoinRunner)

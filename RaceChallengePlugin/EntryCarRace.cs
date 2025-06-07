@@ -78,7 +78,7 @@ public class EntryCarRace
     internal void ChallengeCar(EntryCar car, bool lineUpRequired = true)
     {
         void Reply(string message)
-            => _entryCar.Client?.SendPacket(new ChatMessage { SessionId = 255, Message = message });
+            => _entryCar.Client?.SendChatMessage(message);
 
         var currentRace = CurrentRace;
         if (currentRace != null)
@@ -108,13 +108,12 @@ public class EntryCarRace
                     CurrentRace = currentRace;
                     _plugin.GetRace(car).CurrentRace = currentRace;
 
-                    _entryCar.Client?.SendPacket(new ChatMessage { SessionId = 255, Message = $"You have challenged {car.Client?.Name} to a race." });
+                    _entryCar.Client?.SendChatMessage($"You have challenged {car.Client?.Name} to a race.");
 
                     if (lineUpRequired)
-                        car.Client?.SendPacket(new ChatMessage { SessionId = 255, Message = $"{_entryCar.Client?.Name} has challenged you to a race. Send /accept within 10 seconds to accept." });
+                        car.Client?.SendChatMessage($"{_entryCar.Client?.Name} has challenged you to a race. Send /accept within 10 seconds to accept.");
                     else
-                        car.Client?.SendPacket(new ChatMessage
-                            { SessionId = 255, Message = $"{_entryCar.Client?.Name} has challenged you to a race. Flash your hazard lights or send /accept within 10 seconds to accept." });
+                        car.Client?.SendChatMessage($"{_entryCar.Client?.Name} has challenged you to a race. Flash your hazard lights or send /accept within 10 seconds to accept.");
 
                     _ = Task.Delay(10000).ContinueWith(_ =>
                     {
@@ -123,9 +122,9 @@ public class EntryCarRace
                             CurrentRace = null;
                             _plugin.GetRace(car).CurrentRace = null;
 
-                            ChatMessage timeoutMessage = new ChatMessage { SessionId = 255, Message = "Race request has timed out." };
-                            _entryCar.Client?.SendPacket(timeoutMessage);
-                            car.Client?.SendPacket(timeoutMessage);
+                            var timeoutMessage = "Race request has timed out.";
+                            _entryCar.Client?.SendChatMessage(timeoutMessage);
+                            car.Client?.SendChatMessage(timeoutMessage);
                         }
                     });
                 }

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Autofac.Extensions.DependencyInjection;
 using CommandLine;
@@ -28,7 +29,7 @@ public static class Program
 #else
     public static readonly bool IsDebugBuild = false;
 #endif
-
+    
     [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     private class Options
     {
@@ -62,17 +63,19 @@ public static class Program
         public PortOverrides? PortOverrides { get; init; }
     }
 
-    public static bool IsContentManager;
+    public static bool IsContentManager { get; private set; }
+    public static ConfigurationLocations? ConfigurationLocations { get; private set; }
+    
     private static bool _loadPluginsFromWorkdir;
     private static bool _generatePluginConfigs;
     private static TaskCompletionSource<StartOptions> _restartTask = new();
-
+    
     internal static async Task Main(string[] args)
     {
         SetupFluentValidation();
         SetupMetrics();
         DetectContentManager();
-
+        
         var options = Parser.Default.ParseArguments<Options>(args).Value;
         if (options == null) return;
 
@@ -92,14 +95,15 @@ public static class Program
             
             if (presets.Length > 0)
                 options.Preset = presets[Random.Shared.Next(presets.Length)];
-            else
+            else 
                 Log.Warning("Presets directory does not exist or contain any preset");
         }
 
         string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
-        Logging.CreateDefaultLogger(logPrefix, IsContentManager, options.UseVerboseLogging);
-
-        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+        Logging.CreateLogger(logPrefix, IsContentManager, options.Preset, options.UseVerboseLogging);
+        
+        AppDomain.CurrentDomain.UnhandledException += UnhandledException;
+        CriticalBackgroundService.UnhandledException += UnhandledException;
         Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
         if (IsContentManager)
         {
@@ -112,7 +116,7 @@ public static class Program
             ServerCfgPath = options.ServerCfgPath,
             EntryListPath = options.EntryListPath
         };
-
+        
         while (true)
         {
             _restartTask = new TaskCompletionSource<StartOptions>();
@@ -155,20 +159,14 @@ public static class Program
         bool useVerboseLogging,
         CancellationToken token = default)
     {
-        var configLocations = ConfigurationLocations.FromOptions(preset, serverCfgPath, entryListPath);
-
+        ConfigurationLocations = ConfigurationLocations.FromOptions(preset, serverCfgPath, entryListPath);
+        
         try
         {
-            var config = new ACServerConfiguration(preset, configLocations, _loadPluginsFromWorkdir, _generatePluginConfigs, portOverrides);
+            var config = new ACServerConfiguration(preset, ConfigurationLocations, _loadPluginsFromWorkdir, _generatePluginConfigs, portOverrides);
 
-            if (config.Extra.LokiSettings != null
-                && !string.IsNullOrEmpty(config.Extra.LokiSettings.Url)
-                && !string.IsNullOrEmpty(config.Extra.LokiSettings.Login)
-                && !string.IsNullOrEmpty(config.Extra.LokiSettings.Password))
-            {
-                string logPrefix = string.IsNullOrEmpty(preset) ? "log" : preset;
-                Logging.CreateLokiLogger(logPrefix, IsContentManager, preset, config.Extra.LokiSettings, useVerboseLogging);
-            }
+            string logPrefix = string.IsNullOrEmpty(preset) ? "log" : preset;
+            Logging.CreateLogger(logPrefix, IsContentManager, preset, useVerboseLogging, config.Extra.RedactIpAddresses, config.Extra.LokiSettings);
             
             if (!string.IsNullOrEmpty(preset))
             {
@@ -197,31 +195,18 @@ public static class Program
                         .UseUrls($"http://0.0.0.0:{config.Server.HttpPort}");
                 })
                 .Build();
-
+            
             await host.RunAsync(token);
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Error starting server");
-            string? crashReportPath = null;
-            try
-            {
-                crashReportPath = CrashReportHelper.GenerateCrashReport(configLocations, ex);
-            }
-            catch (Exception ex2)
-            {
-                Log.Error(ex2, "Error writing crash report");
-            }
-            await Log.CloseAndFlushAsync();
-            ExceptionHelper.PrintExceptionHelp(ex, IsContentManager, crashReportPath);
+            CrashReportHelper.HandleFatalException(ex);
         }
     }
 
-    private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)
+    private static void UnhandledException(object sender, UnhandledExceptionEventArgs args)
     {
-        Log.Fatal((Exception)args.ExceptionObject, "Unhandled exception occurred");
-        Log.CloseAndFlush();
-        Environment.Exit(1);
+        CrashReportHelper.HandleFatalException((Exception)args.ExceptionObject);
     }
 
     private static void SetupFluentValidation()
@@ -244,8 +229,8 @@ public static class Program
         Metrics.ConfigureMeterAdapter(adapterOptions =>
         {
             // Disable a bunch of verbose / unnecessary default metrics
-            adapterOptions.InstrumentFilterPredicate = inst =>
-                inst.Name != "kestrel.active_connections"
+            adapterOptions.InstrumentFilterPredicate = inst => 
+                inst.Name != "kestrel.active_connections" 
                 && inst.Name != "http.server.active_requests"
                 && inst.Name != "kestrel.queued_connections"
                 && inst.Name != "http.server.request.duration"

@@ -1,6 +1,8 @@
-﻿namespace AssettoServer.Shared.Network.Packets.Incoming;
+﻿using AssettoServer.Shared.Network.Packets.Outgoing;
 
-public struct HandshakeRequest : IIncomingNetworkPacket
+namespace AssettoServer.Shared.Network.Packets.Incoming;
+
+public struct HandshakeRequest : IIncomingNetworkPacket, IOutgoingNetworkPacket
 {
     public ushort ClientVersion;
     public ulong Guid;
@@ -15,7 +17,8 @@ public struct HandshakeRequest : IIncomingNetworkPacket
     public void FromReader(PacketReader reader)
     {
         ClientVersion = reader.Read<ushort>();
-        Guid = ulong.Parse(reader.ReadUTF8String());
+        if (ulong.TryParse(reader.ReadUTF8String(), out var guid))
+            Guid = guid;
         Name = reader.ReadUTF32String();
         Team = reader.ReadUTF8String();
         Nation = reader.ReadUTF8String();
@@ -36,5 +39,22 @@ public struct HandshakeRequest : IIncomingNetworkPacket
                 }
             }
         }
+    }
+
+    public void ToWriter(ref PacketWriter writer)
+    {
+        writer.Write(ACServerProtocol.RequestNewConnection);
+        writer.Write<ushort>(ClientVersion);
+        writer.WriteUTF8String(Guid.ToString());
+        writer.WriteUTF32String(Name);
+        writer.WriteUTF8String(Team);
+        writer.WriteUTF8String(Nation);
+        writer.WriteUTF8String(RequestedCar);
+        writer.WriteUTF8String(Password);
+        if (Features == null) return;
+        writer.WriteUTF8String(Features, true);
+        if (SessionTicket == null) return;
+        writer.Write((short)SessionTicket.Length);
+        writer.WriteBytes(SessionTicket);
     }
 }

@@ -288,17 +288,16 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
         }
 
         if (_configuration.VoteEnabled || manualVote)
-            _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = "Vote for next track:" });
+            _entryCarManager.BroadcastChat("Vote for next track:");
         
         // Add "Stay on current track"
         if (_configuration.IncludeStayOnTrackVote)
         {
             _availablePresets.Add(new PresetChoice { Preset = last.Type, Votes = 0 });
             if (_configuration.VoteEnabled || manualVote)
-                _entryCarManager.BroadcastPacket(new ChatMessage
-                    { SessionId = 255, Message = $" /vt 0 - Stay on current track." });
-            
-            
+            {
+                _entryCarManager.BroadcastChat(" /vt 0 - Stay on current track.");
+            }
         }
         for (int i = _availablePresets.Count; i < _configuration.VoteChoices; i++)
         {
@@ -309,8 +308,9 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
             presetsLeft.Remove(nextPreset);
 
             if (_configuration.VoteEnabled || manualVote)
-                _entryCarManager.BroadcastPacket(new ChatMessage
-                    { SessionId = 255, Message = $" /vt {i} - {nextPreset.Name}" });
+            {
+                _entryCarManager.BroadcastChat($" /vt {i} - {nextPreset.Name}");
+            }
         }
 
         // Wait for the vote to finish
@@ -327,23 +327,14 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
 
         if (last.Type!.Equals(winner.Preset!) || (maxVotes == 0 && !_configuration.ChangePresetWithoutVotes))
         {
-            _entryCarManager.BroadcastPacket(new ChatMessage
-            {
-                SessionId = 255,
-                Message = $"Track vote ended. Staying on track for {_configuration.VotingIntervalMinutes} more minutes."
-            });
+            _entryCarManager.BroadcastChat($"Track vote ended. Staying on track for {_configuration.VotingIntervalMinutes} more minutes.");
         }
         else
         {
-            _entryCarManager.BroadcastPacket(new ChatMessage
-                { SessionId = 255, Message = $"Track vote ended. Next track: {winner.Preset!.Name} - {winner.Votes} votes" });
-            _entryCarManager.BroadcastPacket(new ChatMessage
-            {
-                SessionId = 255, 
-                Message = $"Track will change in {(_configuration.DelayTransitionDurationSeconds < 60 ? 
+            _entryCarManager.BroadcastChat($"Track vote ended. Next track: {winner.Preset!.Name} - {winner.Votes} votes");
+            _entryCarManager.BroadcastChat($"Track will change in {(_configuration.DelayTransitionDurationSeconds < 60 ? 
                     $"{_configuration.DelayTransitionDurationSeconds} second(s)" :
-                    $"{(int)Math.Ceiling(_configuration.DelayTransitionDurationSeconds / 60.0)} minute(s)")}."
-            });
+                    $"{(int)Math.Ceiling(_configuration.DelayTransitionDurationSeconds / 60.0)} minute(s)")}.");
 
             // Delay the preset switch by configured time delay
             await Task.Delay(_configuration.DelayTransitionDurationMilliseconds, stoppingToken);
@@ -362,15 +353,10 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
         {
             if (preset.Type!.Equals(preset.UpcomingType!)) return;
             Log.Information("Next preset: {Preset}", preset.UpcomingType!.Name);
-            _entryCarManager.BroadcastPacket(new ChatMessage
-                { SessionId = 255, Message = $"Next track: {preset.UpcomingType!.Name}" });
-            _entryCarManager.BroadcastPacket(new ChatMessage
-            {
-                SessionId = 255, 
-                Message = $"Track will change in {(_configuration.DelayTransitionDurationSeconds < 60 ? 
+            _entryCarManager.BroadcastChat($"Next track: {preset.UpcomingType!.Name}");
+            _entryCarManager.BroadcastChat($"Track will change in {(_configuration.DelayTransitionDurationSeconds < 60 ? 
                     $"{_configuration.DelayTransitionDurationSeconds} second(s)" :
-                    $"{(int)Math.Ceiling(_configuration.DelayTransitionDurationSeconds / 60.0)} minute(s)")}."
-            });
+                    $"{(int)Math.Ceiling(_configuration.DelayTransitionDurationSeconds / 60.0)} minute(s)")}.");
 
             // Delay the preset switch by configured time delay
             await Task.Delay(_configuration.DelayTransitionDurationMilliseconds);

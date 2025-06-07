@@ -18,8 +18,9 @@ public class DynamicTrackConfiguration
     public float BaseGrip => Math.Min(StartGrip + _variance * Randomness, 1);
     public float TotalLapCount { get; internal set; }
     private float GripPerLap => 1 / (LapGain * 100);
+    public float? OverrideGrip { get; set; } = null;
 
-    public float CurrentGrip => LapGain == 0 ? BaseGrip : Math.Min(BaseGrip + GripPerLap * TotalLapCount, 1);
+    public float CurrentGrip => OverrideGrip ?? (LapGain == 0 ? BaseGrip : Math.Min(BaseGrip + GripPerLap * TotalLapCount, 1));
     public void TransferSession()
     {
         TotalLapCount *= SessionTransfer;

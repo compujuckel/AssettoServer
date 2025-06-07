@@ -7,6 +7,7 @@ namespace AssettoServer.Server.Plugin;
 public class LoadedPlugin
 {
     public required string Name { get; init; }
+    public required string Directory { get; init; }
     public required Assembly Assembly { get; init; }
     public required AssettoServerModule Instance { get; init; }
     [MemberNotNullWhen(true, nameof(ConfigurationFileName), nameof(SchemaFileName), nameof(ConfigurationType), nameof(ReferenceConfigurationFileName), nameof(ReferenceConfiguration))]

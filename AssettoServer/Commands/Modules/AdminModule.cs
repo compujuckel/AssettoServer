@@ -101,7 +101,7 @@ public class AdminModule : ACModuleBase
     public void TeleportToPits([Remainder] ACTcpClient player)
     {
         _sessionManager.SendCurrentSession(player);
-        player.SendPacket(new ChatMessage { SessionId = 255, Message = "You have been teleported to the pits." });
+        player.SendChatMessage("You have been teleported to the pits.");
 
         if (player.SessionId != Client?.SessionId)
             Reply($"{player.Name} has been teleported to the pits.");
@@ -165,13 +165,21 @@ public class AdminModule : ACModuleBase
         _weatherManager.CurrentWeather.RainWetness = wetness;
         _weatherManager.CurrentWeather.RainWater = water;
         _weatherManager.SendWeather();
+        Reply("Rain has been set.");
     }
 
     [Command("setgrip")]
     public void SetGrip(float grip)
     {
-        _weatherManager.CurrentWeather.TrackGrip = grip;
-        _weatherManager.SendWeather();
+        if (grip is < 0 or > 1)
+        {
+            Reply("Invalid input, please use a decimal between 0 and 1. Example: 0.95");
+        }
+        else
+        {
+            _configuration.Server.DynamicTrack.OverrideGrip = grip;
+            Reply("Grip has been set.");
+        }
     }
 
     [Command("distance"), RequireConnectedPlayer]

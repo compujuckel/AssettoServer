@@ -71,7 +71,7 @@ public class ACServer : CriticalBackgroundService
         _applicationLifetime = applicationLifetime;
         _trackParamsProvider = trackParamsProvider;
 
-        _autostartServices = new List<IHostedService> { weatherManager, sessionManager, tcpServer, udpServer };
+        _autostartServices = [weatherManager, sessionManager, tcpServer, udpServer];
         _autostartServices.AddRange(autostartServices);
         _autostartServices.Add(kunosLobbyRegistration);
 
@@ -80,6 +80,7 @@ public class ACServer : CriticalBackgroundService
         cspFeatureManager.Add(new CSPFeature { Name = "SPECTATING_AWARE" });
         cspFeatureManager.Add(new CSPFeature { Name = "LOWER_CLIENTS_SENDING_RATE" });
         cspFeatureManager.Add(new CSPFeature { Name = "EMOJI" });
+        cspFeatureManager.Add(new CSPFeature { Name = "SLOT_INDEX" });
 
         if (_configuration.Extra.EnableClientMessages)
         {
@@ -119,7 +120,7 @@ public class ACServer : CriticalBackgroundService
     private void OnApplicationStopping()
     {
         Log.Information("Server shutting down");
-        _entryCarManager.BroadcastPacket(new ChatMessage { SessionId = 255, Message = "*** Server shutting down ***" });
+        _entryCarManager.BroadcastChat("*** Server shutting down ***");
 
         var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var tasks = new List<Task>();

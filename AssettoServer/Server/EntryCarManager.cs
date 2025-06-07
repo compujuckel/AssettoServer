@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,8 +18,8 @@ namespace AssettoServer.Server;
 
 public class EntryCarManager
 {
-    public EntryCar[] EntryCars { get; private set; } = Array.Empty<EntryCar>();
-    internal ConcurrentDictionary<int, EntryCar> ConnectedCars { get; } = new();
+    public EntryCar[] EntryCars { get; private set; } = [];
+    public ConcurrentDictionary<int, EntryCar> ConnectedCars { get; } = new();
 
     private readonly ACServerConfiguration _configuration;
     private readonly IBlacklistService _blacklist;
@@ -87,7 +88,7 @@ public class EntryCarManager
         {
             if (broadcastReason != null)
             {
-                BroadcastPacket(new ChatMessage { SessionId = 255, Message = broadcastReason });
+                BroadcastChat(broadcastReason);
             }
 
             if (clientReason != null)
@@ -156,6 +157,9 @@ public class EntryCarManager
             }
         }
     }
+
+    public void BroadcastChat(string message, byte senderId = 255) =>
+        BroadcastPacket(new ChatMessage { SessionId = senderId, Message = message });
         
     public void BroadcastPacketUdp<TPacket>(in TPacket packet, ACTcpClient? sender = null, float? range = null, bool skipSender = true) where TPacket : IOutgoingNetworkPacket
     {
@@ -178,16 +182,33 @@ public class EntryCarManager
 
             if (ConnectedCars.Count >= _configuration.Server.MaxClients)
                 return false;
-            
-            for (int i = 0; i < EntryCars.Length; i++)
+
+            IEnumerable<EntryCar> candidates;
+
+            // Support for SLOT_INDEX CSP feature. CSP sends "car_model:n" where n is the specific slot index the user wants to connect to.
+            var slotIndexSeparator = handshakeRequest.RequestedCar.IndexOf(':');
+            if (slotIndexSeparator >= 0)
             {
-                EntryCar entryCar = EntryCars[i];
+                var requestedSlotIndex = int.Parse(handshakeRequest.RequestedCar.AsSpan(slotIndexSeparator + 1));
+                var requestedCarName = handshakeRequest.RequestedCar[..slotIndexSeparator];
+                var candidate = EntryCars.Where(c => c.Model == requestedCarName).ElementAtOrDefault(requestedSlotIndex);
 
-                bool isAdmin = await _adminService.IsAdminAsync(handshakeRequest.Guid);
+                if (candidate == null)
+                {
+                    return false;
+                }
+                
+                candidates = [candidate];
+            }
+            else
+            {
+                candidates = EntryCars.Where(c => c.Model == handshakeRequest.RequestedCar);
+            }
 
-                if (entryCar.Client == null
-                    && handshakeRequest.RequestedCar == entryCar.Model
-                    && (isAdmin || _openSlotFilterChain.Value.IsSlotOpen(entryCar, handshakeRequest.Guid)))
+            var isAdmin = await _adminService.IsAdminAsync(handshakeRequest.Guid);
+            foreach (var entryCar in candidates)
+            {
+                if (entryCar.Client == null && (isAdmin || _openSlotFilterChain.Value.IsSlotOpen(entryCar, handshakeRequest.Guid)))
                 {
                     entryCar.Reset();
                     entryCar.Client = client;

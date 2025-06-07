@@ -3,12 +3,28 @@
 --thisguyStan: my comments start with 'thisguyStan:' :D
 
 --thisguyStan: changed these paths to use the assettoserver instance
-local baseUrl = 'http://' .. ac.getServerIP() .. ':' .. ac.getServerPortHTTP() .. '/fasttravel/'
+
+local config = ac.configValues({
+    mapFixedTargetPosition = "", -- { -2100, 0, 3200 },
+    mapZoomValues = "", -- { 100, 1000, 4000, 15000 },
+    mapMoveSpeeds = "", -- { 1, 5, 20, 0 },
+    showMapImg = true
+})
+
+local parsedTargetPos = JSON.parse(config.mapFixedTargetPosition)
+local mapFixedTargetPosition = vec3(parsedTargetPos[1], parsedTargetPos[2], parsedTargetPos[3])
+local mapZoomValue = JSON.parse(config.mapZoomValues)
+local mapMoveSpeed = JSON.parse(config.mapMoveSpeeds)
+
+local baseUrl = 'http://' .. ac.getServerIP() .. ':' .. ac.getServerPortHTTP() .. '/static/FastTravelPlugin/'
 
 local supportAPI_physics = physics.setGentleStop ~= nil
 local supportAPI_collision = physics.disableCarCollisions ~= nil
 local supportAPI_matrix = ac.getPatchVersionCode() >= 3037
 local trackCompassOffset = 24 -- for SRP
+
+local font = 'Segoe UI'
+local fontBold = 'Segoe UI;Weight=Bold'
 
 --c1xtz: read teleports from server options, requires 'POINT_<num>_TYPE = PA/ST' to be added to the teleports in csp_extra_options.ini to not show up as the default.
 --c1xtz: additional custom types can be created as long as a corresponding 'mapicon_<type>.png' is in the images folder. example: 'POINT_1_TYPE = GS' & 'mapicon_gs.png' for a gas station type.
@@ -48,11 +64,13 @@ mapShot:setClippingPlanes(10, 30000)
 
 local mapFullShot = ac.GeometryShot(ac.findNodes('sceneRoot:yes'), screenSize, 1, false)
 
-local roadsNode = ac.findNodes('trackRoot:yes'):findMeshes('{ ?road?, ?ROAD? }')
+local roadsNode = ac.findNodes('trackRoot:yes'):findMeshes('{ ?ROAD?, ?Road?, ?road?, ?ASPH?, ?Asph?, ?asph?, ?jnc_asp? }')
+    -- :setBlendMode(render.BlendMode.Opaque):setCullMode(render.CullMode.Front):setDepthMode(render.DepthMode.Normal)
 local roadsShot = ac.GeometryShot(roadsNode, screenSize, 1, false)
 roadsShot:setShadersType(render.ShadersType.Simplified)
 roadsShot:setAmbientColor(rgbm(100, 100, 100, 1))
 roadsShot:setClippingPlanes(10, 30000)
+ac.setExtraTrackLODMultiplier(10)
 
 local roadsAABB_min, roadsAABB_max, meshCount = roadsNode:getStaticAABB()
 local limitArea = vec4(roadsAABB_min.x, roadsAABB_min.z, roadsAABB_max.x, roadsAABB_max.z)
@@ -63,9 +81,6 @@ local mapCameraOwn = 0
 local mapMode = false
 local mapZoom = 1
 local mapFOV = 90
-local mapFSC = vec3(-2100, 0, 3200)
-local mapZoomValue = { 100, 1000, 4000, 15000 }
-local mapMoveSpeed = { 1, 5, 20, 0 }
 local mapAlpha = { 0.5, 1, 1, 1 }
 local mapMovePower = vec2()
 local mapTargetPos = vec3()
@@ -102,8 +117,11 @@ local disabledCollisionEvent = ac.OnlineEvent({
     function(sender, data)
         if sender == nil then return end
         if sender.index == 0 then return end
-        ac.log(string.format('%s collision: [%d]%s', (data.disabled and 'disabled' or 'enabled'), sender.index, ac.getDriverName(sender.index)))
-        if supportAPI_collision then physics.disableCarCollisions(sender.index, data.disabled) end
+        if supportAPI_collision then
+            ac.log(string.format('%s collision: [%d]%s', (data.disabled and 'disabled' or 'enabled'), sender.index, ac.getDriverName(sender.index)))
+            physics.disableCarCollisions(sender.index, data.disabled)
+            physics.disableCarCollisions(0, data.disabled)
+        end
     end)
 
 ---@param mat mat4x4
@@ -200,15 +218,9 @@ function script.drawUI(dt)
         ui.transparentWindow('mapScreen', screenOffset, screenSize, function()
             local sim = ac.getSim()
             local mp = ui.mousePos() - screenOffset
-            if 4 < sim.timeHours and sim.timeHours < 18 then
-                mapShot:setShadersType(render.ShadersType.Simplest)
-                mapFullShot:setShadersType(render.ShadersType.Simplest)
-                mapAlpha[1] = 0.2
-            else
-                mapShot:setShadersType(render.ShadersType.Simplified)
-                mapFullShot:setShadersType(render.ShadersType.SimplifiedWithLights)
-                mapAlpha[1] = 0.5
-            end
+            mapShot:setShadersType(render.ShadersType.Simplest)
+            mapFullShot:setShadersType(render.ShadersType.Simplest)
+            mapAlpha[1] = 0.5
             ui.drawRectFilled(vec2(), screenSize, rgbm(0, 0, 0, 0.5))
             if mapZoom == 1 then
                 ui.drawImage(mapFullShot, vec2(), screenSize)
@@ -217,7 +229,7 @@ function script.drawUI(dt)
             end
             ui.drawImage(roadsShot, vec2(), screenSize, rgbm(0, 0.9, 1, mapAlpha[mapZoom]))
 
-            if mapZoom == #mapZoomValue then
+            if mapZoom == #mapZoomValue and config.showMapImg then
                 local map_mult = (screenSize.y - (screenSize.y * 0.1)) / trackMapImageSize.y
                 local map_size = trackMapImageSize * map_mult
                 local screen_center = screenSize / 2
@@ -252,13 +264,18 @@ function script.drawUI(dt)
             end
 
             hoverMark = -1
-            --c1xtz: tpdrawing: only shows first point of a unique type per group (hope this makes sense)
+            --c1xtz: tpdrawing: only shows first point of a unique type per group when zoomed out (hope this makes sense)
             local displayedPoints = {}
             for i, teleports in ipairs(onlineTeleports) do
                 local pointType, group = teleports[1], teleports[2]
                 if pointType == defaultType and mapZoom == #mapZoomValue then goto continue end
-                displayedPoints[group] = displayedPoints[group] or {}
-                if displayedPoints[group][pointType] then goto continue end
+
+                if mapZoom > 2 then
+                    displayedPoints[group] = displayedPoints[group] or {}
+                    if displayedPoints[group][pointType] then goto continue end
+                    displayedPoints[group][pointType] = true
+                end
+
                 local screenPos = projectPoint(teleports[3])
                 if 0 < screenPos.x and screenPos.x < 1 and 0 < screenPos.y and screenPos.y < 1 then
                     screenPos = screenPos * screenSize
@@ -267,7 +284,6 @@ function script.drawUI(dt)
                         hoverCID = -1
                         hoverCSP = screenPos
                     end
-                    displayedPoints[group][pointType] = true
                     ui.drawImage(baseUrl .. 'mapicon_' .. pointType .. '.png', screenPos - vec2(40, 40), screenPos + vec2(40, 40))
                 end
                 ::continue::
@@ -280,7 +296,7 @@ function script.drawUI(dt)
                 if hoverCID >= 0 then
                     ac.focusCar(hoverCID)
                     nametag = ac.getDriverName(hoverCID)
-                    ui.pushDWriteFont('Segoe UI')
+                    ui.pushDWriteFont(font)
                     ui.beginOutline()                    --c1xtz: added outline to make text more readable
                     ui.dwriteDrawText(ac.getCarName(hoverCID, false), 18, nametag_pos + vec2(0, 30), rgbm(1, 1, 1, 1))
                     ui.endOutline(rgb.colors.black, 0.5) --c1xtz: added outline to make text more readable
@@ -288,11 +304,13 @@ function script.drawUI(dt)
                 else
                     nametag = onlineTeleports[hoverMark][2]
                     --c1xtz: added the name of the teleport point
+                    ui.pushDWriteFont(font)
                     ui.beginOutline()
                     ui.dwriteDrawText(onlineTeleports[hoverMark][5], 18, nametag_pos + vec2(0, 30), rgbm(1, 1, 1, 1))
                     ui.endOutline(rgb.colors.black, 0.5)
+                    ui.popDWriteFont()
                 end
-                ui.pushDWriteFont('Segoe UI;Weight=Bold')
+                ui.pushDWriteFont(fontBold)
                 ui.beginOutline()                  --c1xtz: added outline to make text more readable
                 ui.dwriteDrawText(nametag, 20, nametag_pos, rgbm(1, 1, 1, 1))
                 ui.endOutline(rgb.colors.black, 1) --c1xtz: added outline to make text more readable
@@ -308,7 +326,7 @@ function script.drawUI(dt)
         end)
     elseif ac.getCar(0).speedKmh < 2 and sim.focusedCar == 0 and not ac.getUI().appsHidden then
         local opacity = math.sin(sim.gameTime * 5) / 2 + 0.5
-        ui.pushDWriteFont('Segoe UI;Weight=Bold')
+        ui.pushDWriteFont(fontBold)
         ui.beginOutline()                  --c1xtz: added outline to make text more readable
         ui.dwriteDrawText('Press M key to FastTravel', 20, vec2(sim.windowWidth, sim.windowHeight) * vec2(0.1, 0.9), rgbm(1, 1, 1, opacity))
         ui.endOutline(rgb.colors.black, 1) --c1xtz: added outline to make text more readable
@@ -447,7 +465,7 @@ function inputCheck()
         if zoomed then
             mapTargetEstimate = 0
             if mapZoom == #mapZoomValue then
-                mapTargetPos = mapFSC
+                mapTargetPos = mapFixedTargetPosition
             elseif hoverCID >= 0 then
                 mapTargetPos = ac.getCar(hoverCID).position
             elseif hoverMark >= 0 then

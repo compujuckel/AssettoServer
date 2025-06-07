@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Reflection;
+using System.Text.Json;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Ai.Splines;
@@ -45,7 +46,13 @@ public class FastTravelPlugin : CriticalBackgroundService, IAssettoServerAutosta
         
         using var streamReader = new StreamReader(luaPath);
         var reconnectScript = streamReader.ReadToEnd();
-        scriptProvider.AddScript(reconnectScript, "fasttravel.lua");
+        scriptProvider.AddScript(reconnectScript, "fasttravel.lua", new Dictionary<string, object>
+        {
+            ["mapFixedTargetPosition"] = $"\"{JsonSerializer.Serialize(configuration.MapFixedTargetPosition)}\"",
+            ["mapZoomValues"] = $"\"{JsonSerializer.Serialize(configuration.MapZoomValues)}\"",
+            ["mapMoveSpeeds"] = $"\"{JsonSerializer.Serialize(configuration.MapMoveSpeeds)}\"",
+            ["showMapImg"] = configuration.ShowMapImage ? "true" : "false"
+        });
         
         cspClientMessageTypeManager.RegisterOnlineEvent<FastTravelPacket>(OnFastTravelPacket);
     }

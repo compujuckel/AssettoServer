@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
+using AssettoServer.Network.ClientMessages;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
@@ -20,6 +21,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
 { 
     public ACTcpClient? Client { get; internal set; }
     public CarStatus Status { get; private set; } = new();
+    public bool EnableCollisions { get; private set; } = true;
 
     public bool ForceLights { get; internal set; }
 
@@ -309,6 +311,22 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         var targetPosition = target.TargetCar != null ? target.TargetCar.Status.Position : target.Status.Position;
         return Vector3.DistanceSquared(Status.Position, targetPosition) < range * range;
     }
+    
+    /// <summary>
+    /// This is broken on CSP &lt; 0.2.8
+    /// </summary>
+    /// <param name="enable">Enable collisions</param>
+    public void SetCollisions(bool enable)
+    {
+        if (EnableCollisions == enable) return;
+        
+        EnableCollisions = enable;
+        _entryCarManager.BroadcastPacket(new CollisionUpdatePacket
+        {
+            SessionId = SessionId,
+            Enabled = EnableCollisions
+        });
+    }
 
     public bool TryResetPosition()
     {
@@ -330,16 +348,14 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         var position = splinePoint.Position;
         var direction = - _spline.Operations.GetForwardVector(splinePoint.NextId);
         
-        Client?.SendCollisionUpdatePacket(false);
+        SetCollisions(false);
         
         _ = Task.Run(async () =>
         {
             await Task.Delay(500);
-        
             Client?.SendTeleportCarPacket(position, direction);
             await Task.Delay(10000);
-        
-            Client?.SendCollisionUpdatePacket(true);
+            SetCollisions(true);
         });
     
         Logger.Information("Reset position for {Player} ({SessionId})",Client?.Name, Client?.SessionId);

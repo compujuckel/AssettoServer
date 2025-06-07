@@ -87,7 +87,7 @@ public struct PacketReader
             Span<byte> tmp = stackalloc byte[bytesToRead];
             slice.CopyTo(tmp);
             result = MemoryMarshal.Read<T>(tmp);
-            ReadPosition = actualBytesRead;
+            ReadPosition += actualBytesRead;
         }
         else
         {

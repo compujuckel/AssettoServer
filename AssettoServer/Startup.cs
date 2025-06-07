@@ -92,7 +92,6 @@ public class Startup
         builder.RegisterType<SignalHandler>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<UpnpService>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         builder.RegisterType<ConfigurationSerializer>().AsSelf();
-        builder.RegisterType<ACClientAuthentication>().AsSelf().SingleInstance().AutoActivate();
         builder.RegisterType<HttpInfoCache>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         builder.RegisterType<DefaultCMContentProvider>().As<ICMContentProvider>().SingleInstance();
         builder.RegisterType<CommandService>().AsSelf().SingleInstance();

@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Text;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Utils;
@@ -61,6 +62,16 @@ public struct PacketReader
         var ret = MemoryMarshal.Cast<byte, T>(Buffer.Slice(ReadPosition, bytesToRead).Span);
         ReadPosition += bytesToRead;
         return ret;
+    }
+
+    public Color ReadRgbmAsColor()
+    {
+        var r = (byte) (Read<float>() * 255);
+        var g = (byte) (Read<float>() * 255);
+        var b = (byte) (Read<float>() * 255);
+        var m = (byte) (Read<float>() * 255);
+
+        return Color.FromArgb(m, r, g, b);
     }
 
     public T Read<T>() where T : unmanaged

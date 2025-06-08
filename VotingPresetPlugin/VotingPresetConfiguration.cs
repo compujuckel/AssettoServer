@@ -33,7 +33,7 @@ public class VotingPresetConfiguration : IValidateConfiguration<VotingPresetConf
     public int VotingDurationSeconds { get; init; } = 300;
     
     [YamlMember(Description = "Time between end of vote and restart notification. \nMinimum 0, Default 10")]
-    public int TransitionDelaySeconds { get; init; } = 0;
+    public int TransitionDelaySeconds { get; init; } = 10;
     
     [YamlMember(Description = "Time between restart notification and restart. \nMinimum 2, Default 5")]
     public int TransitionDurationSeconds { get; init; } = 5;

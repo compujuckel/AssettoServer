@@ -426,11 +426,11 @@ public class AiState : IAiState, IDisposable
         return false;
     }
 
-    private (AssettoServer.Server.EntryCar? entryCar, float distance) FindClosestPlayerObstacle()
+    private (EntryCar? entryCar, float distance) FindClosestPlayerObstacle()
     {
         if (!ShouldIgnorePlayerObstacles())
         {
-            AssettoServer.Server.EntryCar? closestCar = null;
+            EntryCar? closestCar = null;
             float minDistance = float.MaxValue;
             for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
             {
@@ -458,7 +458,7 @@ public class AiState : IAiState, IDisposable
         return (null, float.MaxValue);
     }
 
-    private bool IsObstacle(AssettoServer.Server.EntryCar playerCar)
+    private bool IsObstacle(EntryCar playerCar)
     {
         float aiRectWidth = 4; // Lane width
         float halfAiRectWidth = aiRectWidth / 2;
@@ -681,7 +681,6 @@ public class AiState : IAiState, IDisposable
         Status.TyreAngularSpeed[3] = encodedTyreAngularSpeed;
         Status.EngineRpm = (ushort)MathUtils.Lerp(EntryCarAi.AiIdleEngineRpm, EntryCarAi.AiMaxEngineRpm, CurrentSpeed / _configuration.MaxSpeedMs);
         Status.StatusFlag = GetLights(_configuration.EnableDaytimeLights, _weatherManager.CurrentSunPosition, _randomTwilight)
-                            | CarStatusFlags.HighBeamsOff
                             | (_sessionManager.ServerTimeMilliseconds < _stoppedForCollisionUntil || CurrentSpeed < 20 / 3.6f ? CarStatusFlags.HazardsOn : 0)
                             | (CurrentSpeed == 0 || Acceleration < 0 ? CarStatusFlags.BrakeLightsOn : 0)
                             | (_stoppedForObstacle && _sessionManager.ServerTimeMilliseconds > _obstacleHonkStart && _sessionManager.ServerTimeMilliseconds < _obstacleHonkEnd ? CarStatusFlags.Horn : 0)
@@ -708,8 +707,9 @@ public class AiState : IAiState, IDisposable
     
     private static CarStatusFlags GetLights(bool daytimeLights, SunPosition? sunPosition, double twilight)
     {
-        if (daytimeLights || sunPosition == null) return CarStatusFlags.LightsOn;
+        const CarStatusFlags lightFlags = CarStatusFlags.LightsOn | CarStatusFlags.HighBeamsOff;
+        if (daytimeLights || sunPosition == null) return lightFlags;
 
-        return sunPosition.Value.Altitude < twilight ? CarStatusFlags.LightsOn : 0;
+        return sunPosition.Value.Altitude < twilight ? lightFlags : 0;
     }
 }

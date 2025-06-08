@@ -1,7 +1,8 @@
-﻿using AssettoServer.Network.Tcp;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using AssettoServer.Network.ClientMessages;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Incoming;
@@ -23,6 +24,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
 { 
     public ACTcpClient? Client { get; internal set; }
     public CarStatus Status { get; private set; } = new();
+    public bool EnableCollisions { get; private set; } = true;
 
     public bool ForceLights { get; internal set; }
 
@@ -266,5 +268,21 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     {
         var targetPosition = target.TargetCar != null ? target.TargetCar.Status.Position : target.Status.Position;
         return Vector3.DistanceSquared(Status.Position, targetPosition) < range * range;
+    }
+    
+    /// <summary>
+    /// This is broken on CSP &lt; 0.2.8
+    /// </summary>
+    /// <param name="enable">Enable collisions</param>
+    public void SetCollisions(bool enable)
+    {
+        if (EnableCollisions == enable) return;
+        
+        EnableCollisions = enable;
+        _entryCarManager.BroadcastPacket(new CollisionUpdatePacket
+        {
+            SessionId = SessionId,
+            Enabled = EnableCollisions
+        });
     }
 }

@@ -73,8 +73,9 @@ public class KunosLobbyRegistration : CriticalBackgroundService
         var localIp = NetworkUtils.GetPrimaryIpAddress();
         var routerIp = NetworkUtils.GetGatewayAddressForInterfaceWithIpAddress(localIp);
         Log.Error("""
-                  Your ports are not forwarded correctly. The server will continue to run, but players outside of your network won't be able to join.
-                  To fix this, you'll need to go into your router settings and create Port Forwards for these ports:
+                  Your ports are not forwarded correctly or your firewall is blocking the connection.
+                  The server will continue to run, but players outside of your network won't be able to join.
+                  To fix this, check your firewall settings or go into your router settings and create Port Forwards for these ports:
                   Port {UdpPort} UDP
                   Port {TcpPort} TCP
                   Port {HttpPort} TCP

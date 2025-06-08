@@ -1,5 +1,5 @@
 local license = [[
-Copyright (C)  2024 Niewiarowski, compujuckel
+Copyright (C)  2025 Niewiarowski, compujuckel
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
@@ -81,23 +81,27 @@ end)
 
 local collisionUpdateEvent = ac.OnlineEvent({
     ac.StructItem.key("AS_CollisionUpdate"),
-    enabled = ac.StructItem.boolean(),
-    target = ac.StructItem.byte()
+    enabled = ac.StructItem.boolean()
 }, function (sender, message)
     ac.debug("collision_update_index", sender.index)
     ac.debug("collision_update_enabled", message.enabled)
 
-    physics.disableCarCollisions(0, not message.enabled)
-    if sender.index == 0 then
-        for i, c in ac.iterateCars.ordered() do
-            physics.disableCarCollisions(i, not message.enabled)
-        end
-    else
-        physics.disableCarCollisions(sender.index, not message.enabled)
+    physics.disableCarCollisions(sender.index, not message.enabled, true)
+end)
+
+local teleportToPitsEvent = ac.OnlineEvent({
+    ac.StructItem.key("AS_TeleportToPits"),
+    dummy = ac.StructItem.byte()
+}, function (sender, message)
+    if sender.index == 0 and ac.INIConfig.onlineExtras():get("EXTRA_RULES", "NO_BACK_TO_PITS", 0) == 0 then
+       physics.teleportCarTo(0, ac.SpawnSet.Pits) 
     end
 end)
 
-apiKeyEvent({ key = "" })
+local luaReadyEvent = ac.OnlineEvent({
+    ac.StructItem.key("AS_LuaReady"),
+    dummy = ac.StructItem.byte()
+}, function () end)
 
 local logoSize = vec2(68, 42)
 local srpLogoSize = vec2(244, 64)
@@ -275,3 +279,5 @@ local teleportToPitsEvent = ac.OnlineEvent({
        physics.teleportCarTo(0, ac.SpawnSet.Pits) 
     end
 end)
+
+luaReadyEvent({})

@@ -8,7 +8,6 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server.Blacklist;
-using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Server.TrackParams;

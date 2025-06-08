@@ -77,8 +77,8 @@ public class TrafficAi : CriticalBackgroundService, IAssettoServerAutostart, ITr
 
     private void OnResetCar(ACTcpClient sender)
     {
-        if (_configuration.EnableCarReset)
-            GetAiCarBySessionId(sender.SessionId).TryResetPosition();
+        if (!_configuration.EnableCarReset) return;
+        GetAiCarBySessionId(sender.SessionId).TryResetPosition();
     }
 
     // public EntryCarTrafficAi GetAiCarBySessionId(byte sessionId)

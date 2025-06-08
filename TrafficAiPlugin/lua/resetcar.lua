@@ -7,4 +7,4 @@ local requestResetCarEvent = ac.OnlineEvent({
 end)
 
 local resetCarControl = ac.ControlButton('__EXT_CMD_RESET', nil)
-resetCarControl:onPressed(function() requestResetCarEvent({dummy=0}) end)
+resetCarControl:onPressed(function() requestResetCarEvent({}) end)

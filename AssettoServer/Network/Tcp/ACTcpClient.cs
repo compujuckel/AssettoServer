@@ -433,9 +433,6 @@ public class ACTcpClient : IClient
                             CSPVersion = cspVersion;
                         }
 
-                        // Gracefully despawn AI cars
-                        EntryCar.SetAiOverbooking(0);
-
                         if (_configuration.Server.CheckAdminPassword(handshakeRequest.Password))
                             IsAdministrator = true;
 
@@ -872,15 +869,6 @@ public class ACTcpClient : IClient
 
                 batched.Packets.Add(new P2PUpdate { SessionId = car.SessionId, P2PCount = car.Status.P2PCount });
                 batched.Packets.Add(new BallastUpdate { SessionId = car.SessionId, BallastKg = car.Ballast, Restrictor = car.Restrictor });
-
-                if (_configuration.Extra.AiParams.HideAiCars)
-                {
-                    batched.Packets.Add(new CSPCarVisibilityUpdate
-                    {
-                        SessionId = car.SessionId,
-                        Visible = car.AiControlled ? CSPCarVisibility.Invisible : CSPCarVisibility.Visible
-                    });
-                }
             }
 
             if (EntryCar.FixedSetup != null

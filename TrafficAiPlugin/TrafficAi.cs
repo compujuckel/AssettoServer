@@ -42,10 +42,10 @@ public class TrafficAi : CriticalBackgroundService, IAssettoServerAutostart, ITr
         
         if (_configuration.EnableCarReset)
         {
-            if (!_serverConfiguration.Extra.EnableClientMessages || _serverConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_3_p47)
+            if (!_serverConfiguration.Extra.EnableClientMessages || _serverConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_8)
             {
                 throw new ConfigurationException(
-                    "Reset car: Minimum required CSP version of 0.2.3-preview47 (2796); Requires enabled client messages; Requires working AI spline");
+                    "Reset car: Minimum required CSP version of v0.2.8 (3424); Requires enabled client messages; Requires working AI spline");
             }
             cspClientMessageTypeManager.RegisterOnlineEvent<RequestResetPacket>((client, _) => { OnResetCar(client); });
         }

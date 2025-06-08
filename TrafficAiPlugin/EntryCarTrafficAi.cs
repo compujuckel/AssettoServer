@@ -397,16 +397,14 @@ public class EntryCarTrafficAi : IEntryCarTrafficAi
         var position = splinePoint.Position;
         var direction = - _aiSpline.Operations.GetForwardVector(splinePoint.NextId);
         
-        EntryCar.Client?.SendCollisionUpdatePacket(false);
+        EntryCar.SetCollisions(false);
         
         _ = Task.Run(async () =>
         {
             await Task.Delay(500);
-        
             EntryCar.Client?.SendTeleportCarPacket(position, direction);
             await Task.Delay(10000);
-        
-            EntryCar.Client?.SendCollisionUpdatePacket(true);
+            EntryCar.SetCollisions(true);
         });
     
         EntryCar.Logger.Information("Reset position for {Player} ({SessionId})",EntryCar.Client?.Name, EntryCar.Client?.SessionId);

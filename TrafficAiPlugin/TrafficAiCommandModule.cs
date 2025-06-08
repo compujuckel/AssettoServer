@@ -42,7 +42,7 @@ public class TrafficAiCommandModule : ACModuleBase
     [Command("resetcar"), RequireConnectedPlayer]
     public void ResetCarAsync()
     {
-        if (_serverConfiguration.Extra is { EnableClientMessages: true, MinimumCSPVersion: >= CSPVersion.V0_2_3_p47 } &&
+        if (_serverConfiguration.Extra is { EnableClientMessages: true, MinimumCSPVersion: >= CSPVersion.V0_2_8 } &&
             _configuration.EnableCarReset)
         {
             Reply(_trafficAi.GetAiCarBySessionId(Client!.SessionId).TryResetPosition()

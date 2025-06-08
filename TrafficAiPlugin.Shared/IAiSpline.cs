@@ -6,5 +6,6 @@ namespace TrafficAiPlugin.Shared;
 public interface IAiSpline
 {
     public SplinePointOperations Operations { get; }
+    public ReadOnlySpan<SplinePoint> Points { get; }
     public (int PointId, float DistanceSquared) WorldToSpline(Vector3 position);
 }

@@ -3,26 +3,26 @@ using System.Reflection;
 using System.Text.Json;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using FastTravelPlugin.Packets;
 using Microsoft.Extensions.Hosting;
+using TrafficAiPlugin.Shared;
 
 namespace FastTravelPlugin;
 
 public class FastTravelPlugin : CriticalBackgroundService, IAssettoServerAutostart
 {
-    private readonly AiSpline _aiSpline;
+    private readonly IAiSpline _aiSpline;
 
     public FastTravelPlugin(FastTravelConfiguration configuration,
         ACServerConfiguration serverConfiguration,
         CSPServerScriptProvider scriptProvider,
         CSPClientMessageTypeManager cspClientMessageTypeManager,
         IHostApplicationLifetime applicationLifetime,
-        AiSpline? aiSpline = null) : base(applicationLifetime)
+        IAiSpline? aiSpline = null) : base(applicationLifetime)
     {
         _aiSpline = aiSpline ?? throw new ConfigurationException("FastTravelPlugin does not work with AI traffic disabled");
         

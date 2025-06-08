@@ -20,7 +20,7 @@ public class ServerConfiguration
     [IniField("SERVER", "TRACK")] public string Track { get; internal set; } = "";
     [IniField("SERVER", "CONFIG_TRACK")] public string TrackConfig { get; init; } = "";
     [IniField("SERVER", "SUN_ANGLE")] public float SunAngle { get; init; }
-    [IniField("SERVER", "LOOP_MODE")] public bool Loop { get; init; }
+    [IniField("SERVER", "LOOP_MODE")] public bool Loop { get; init; } = true;
     [IniField("SERVER", "TC_ALLOWED")] public byte TractionControlAllowed { get; init; }
     [IniField("SERVER", "ABS_ALLOWED")] public byte ABSAllowed { get; init; }
     [IniField("SERVER", "ALLOWED_TYRES_OUT")] public short AllowedTyresOutCount { get; init; }

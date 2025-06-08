@@ -459,7 +459,9 @@ public class SessionManager : CriticalBackgroundService
             }
             else if (CurrentSession.Configuration.Type != SessionType.Race || _configuration.Server.InvertedGridPositions == 0 || IsLastRaceInverted)
             {
-                // TODO exit
+                Log.Information("Set LOOP_MODE=1 in the server_cfg.ini to loop sessions");
+                Program.ExitServer();
+                return false;
             }
 
             if (CurrentSession.Configuration.Type == SessionType.Race && _configuration.Server.InvertedGridPositions != 0)

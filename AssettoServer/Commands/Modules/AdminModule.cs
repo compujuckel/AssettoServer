@@ -86,7 +86,7 @@ public class AdminModule : ACModuleBase
     {
         Reply(_sessionManager.NextSession()
             ? "OK. Moving to next session"
-            : "Error. Couldn't move to next session. Player is connecting");
+            : "Error. Couldn't move to next session. Player is connecting or server is shutting down");
     }
 
     [Command("restart_session", "ksrs")]

@@ -389,19 +389,20 @@ public class EntryCarTrafficAi : IEntryCarTrafficAi
             || (_sessionManager.ServerTimeMilliseconds > _sessionManager.CurrentSession.EndTimeMilliseconds
                 && _sessionManager.CurrentSession.EndTimeMilliseconds > 0))
             return false;
-
-        var (splinePointId, _) = _aiSpline.WorldToSpline(EntryCar.Status.Position);
-
-        var splinePoint = _aiSpline.Points[splinePointId];
-        
-        var position = splinePoint.Position;
-        var direction = - _aiSpline.Operations.GetForwardVector(splinePoint.NextId);
         
         EntryCar.SetCollisions(false);
         
         _ = Task.Run(async () =>
         {
-            await Task.Delay(500);
+            await Task.Delay(250);
+            
+            var (splinePointId, _) = _aiSpline.WorldToSpline(EntryCar.Status.Position);
+
+            var splinePoint = _aiSpline.Points[splinePointId];
+        
+            var position = splinePoint.Position;
+            var direction = - _aiSpline.Operations.GetForwardVector(splinePoint.NextId);
+            
             EntryCar.Client?.SendTeleportCarPacket(position, direction);
             await Task.Delay(10000);
             EntryCar.SetCollisions(true);

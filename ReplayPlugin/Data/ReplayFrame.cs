@@ -21,12 +21,13 @@ public readonly ref struct ReplayFrame
         AiMappings = MemoryMarshal.Cast<byte, short>(memory.Span.Slice(HeaderSize + (Header.CarFrameCount + Header.AiFrameCount) * CarFrameSize, Header.AiMappingCount * AiMappingSize));
     }
     
-    public ReplayFrame(Memory<byte> memory, int numCarFrames, int numAiFrames, int numAiMappings)
+    public ReplayFrame(Memory<byte> memory, int numCarFrames, int numAiFrames, int numAiMappings, uint playerInfoIndex)
     {
         Header = ref MemoryMarshal.Cast<byte, ReplayFrameHeader>(memory.Span)[0];
         Header.CarFrameCount = (byte)numCarFrames;
         Header.AiFrameCount = (ushort)numAiFrames;
         Header.AiMappingCount = (ushort)numAiMappings;
+        Header.PlayerInfoIndex = playerInfoIndex;
 
         CarFrames = MemoryMarshal.Cast<byte, ReplayCarFrame>(memory.Span.Slice(HeaderSize, Header.CarFrameCount * CarFrameSize));
         AiFrames = MemoryMarshal.Cast<byte, ReplayCarFrame>(memory.Span.Slice(HeaderSize + Header.CarFrameCount * CarFrameSize, Header.AiFrameCount * CarFrameSize));

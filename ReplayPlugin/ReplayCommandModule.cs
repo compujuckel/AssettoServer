@@ -17,7 +17,7 @@ public class ReplayCommandModule : ACModuleBase
     }
 
     [Command("replay")]
-    public void SaveReplay(int seconds, ACTcpClient? client = null)
+    public void SaveReplay(int seconds, [Remainder] ACTcpClient? client = null)
     {
         var sessionId = client?.SessionId ?? Client?.SessionId;
         

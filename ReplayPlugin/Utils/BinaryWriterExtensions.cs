@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace ReplayPlugin.Utils;
@@ -15,5 +16,32 @@ public static class BinaryWriterExtensions
         str ??= "";
         writer.Write((uint)str.Length);
         writer.Write(Encoding.UTF8.GetBytes(str));
+    }
+
+    public static void WriteLengthPrefixed(this BinaryWriter writer, ReadOnlySpan<byte> data)
+    {
+        writer.Write((uint)data.Length);
+        writer.Write(data);
+    }
+
+    public static void WriteCspCompressedExtraData(this BinaryWriter writer, ulong id, Action<BinaryWriter> writeAction)
+    {
+        var lengthPosition = writer.BaseStream.Position;
+        writer.Write((uint)0);
+
+        writer.Write(id);
+        
+        using (var zlibStream = new ZLibStream(writer.BaseStream, CompressionMode.Compress, true))
+        {
+            using var zlibWriter = new BinaryWriter(zlibStream);
+            writeAction(zlibWriter);
+        }
+        
+        var afterPosition = writer.BaseStream.Position;
+        var length = (int)(afterPosition - lengthPosition - 4 /* length */);
+        
+        writer.Seek((int)lengthPosition, SeekOrigin.Begin);
+        writer.Write(length);
+        writer.Seek((int)afterPosition, SeekOrigin.Begin);
     }
 }

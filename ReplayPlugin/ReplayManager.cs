@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
@@ -19,12 +20,23 @@ public class ReplayManager
     private readonly WeatherManager _weather;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarExtraDataManager _extraData;
+    private readonly ReplayPlayerInfoProvider _playerInfo;
 
     private readonly ConcurrentQueue<ReplaySegment> _segments = [];
 
     private ReplaySegment _currentSegment;
     
-    public ReplayManager(EntryCarManager entryCarManager, ACServerConfiguration serverConfiguration, WeatherManager weather, SessionManager sessionManager, ReplayConfiguration configuration, EntryCarExtraDataManager extraData)
+    private static ReadOnlySpan<byte> CspMagic => "__AC_SHADERS_PATCH_v1__"u8;
+    private static ReadOnlySpan<byte> CspExtraStreamMagic => "EXT_EXTRASTREAM_v1"u8;
+    private static ReadOnlySpan<byte> CspExtraBlobMagic => "EXT_EXTRABLOB_v1"u8;
+    
+    public ReplayManager(EntryCarManager entryCarManager,
+        ACServerConfiguration serverConfiguration,
+        WeatherManager weather,
+        SessionManager sessionManager,
+        ReplayConfiguration configuration,
+        EntryCarExtraDataManager extraData,
+        ReplayPlayerInfoProvider playerInfo)
     {
         _entryCarManager = entryCarManager;
         _serverConfiguration = serverConfiguration;
@@ -32,6 +44,7 @@ public class ReplayManager
         _sessionManager = sessionManager;
         _configuration = configuration;
         _extraData = extraData;
+        _playerInfo = playerInfo;
 
         AddSegment();
     }
@@ -51,6 +64,7 @@ public class ReplayManager
         {
             Log.Debug("Removing old replay segment");
             _segments.TryDequeue(out _);
+            _playerInfo.Cleanup(segment.EndPlayerInfoIndex);
         }
     }
 
@@ -76,13 +90,13 @@ public class ReplayManager
         _segments.Enqueue(_currentSegment);
     }
 
-    public void AddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, TState state,
+    public void AddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, uint playerInfoIndex, TState state,
         [RequireStaticDelegate] ReplaySegment.ReplayFrameAction<TState> action)
     {
-        if (!_currentSegment.TryAddFrame(numCarFrames, numAiFrames, numAiMappings, state, action))
+        if (!_currentSegment.TryAddFrame(numCarFrames, numAiFrames, numAiMappings, playerInfoIndex, state, action))
         {
             AddSegment();
-            AddFrame(numCarFrames, numAiFrames, numAiMappings, state, action);
+            AddFrame(numCarFrames, numAiFrames, numAiMappings, playerInfoIndex, state, action);
         }
     }
 
@@ -176,5 +190,29 @@ public class ReplayManager
         }
         
         writer.Write(0);
+
+        var cspDataStartPosition = writer.BaseStream.Position;
+        
+        writer.WriteLengthPrefixed(CspExtraStreamMagic);
+        writer.WriteCspCompressedExtraData(0xB197F00E9828B262, w =>
+        {
+            foreach (var segment in segments)
+            {
+                foreach (var frame in segment)
+                {
+                    w.Write(frame.Header.PlayerInfoIndex);
+                }
+            }
+        });
+        
+        writer.WriteLengthPrefixed(CspExtraBlobMagic);
+        writer.WriteCspCompressedExtraData(0x86CE5FCE612D18DF, w =>
+        {
+            JsonSerializer.Serialize(w.BaseStream, _playerInfo.PlayerInfos);
+        });
+        
+        writer.Write(CspMagic);
+        writer.Write((int)cspDataStartPosition);
+        writer.Write(1);
     }
 }

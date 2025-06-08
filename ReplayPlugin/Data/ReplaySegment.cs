@@ -6,22 +6,22 @@ public class ReplaySegment
 {
     public long StartTime;
     public long EndTime;
+    public uint StartPlayerInfoIndex;
+    public uint EndPlayerInfoIndex;
 
     private readonly byte[] _array;
 
     public readonly List<int> Index = [];
-    public readonly int MaxSize;
-    public int Size { get; private set; } = 0;
+    public int Size { get; private set; }
 
     public ReplaySegment(int size)
     {
-        MaxSize = size;
         _array = new byte[size];
     }
 
     public delegate void ReplayFrameAction<in TState>(ref ReplayFrame frame, TState arg);
 
-    public bool TryAddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, TState state, [RequireStaticDelegate] ReplayFrameAction<TState> action)
+    public bool TryAddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, uint playerInfoIndex, TState state, [RequireStaticDelegate] ReplayFrameAction<TState> action)
     {
         var size = ReplayFrame.GetSize(numCarFrames, numAiFrames, numAiMappings);
 
@@ -31,16 +31,18 @@ public class ReplaySegment
         }
 
         var mem = _array.AsMemory(Size, size);
-        var frame = new ReplayFrame(mem, numCarFrames,  numAiFrames,  numAiMappings);
+        var frame = new ReplayFrame(mem, numCarFrames,  numAiFrames, numAiMappings, playerInfoIndex);
         
         action(ref frame, state);
 
         if (Size == 0)
         {
             StartTime = frame.Header.ServerTime;
+            StartPlayerInfoIndex = frame.Header.PlayerInfoIndex;
         }
 
         EndTime = frame.Header.ServerTime;
+        EndPlayerInfoIndex = frame.Header.PlayerInfoIndex;
         
         Index.Add(Size);
         Size += size;

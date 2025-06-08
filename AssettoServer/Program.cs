@@ -69,7 +69,6 @@ public static class Program
     private static bool _loadPluginsFromWorkdir;
     private static bool _generatePluginConfigs;
     private static TaskCompletionSource<StartOptions> _restartTask = new();
-    private static TaskCompletionSource _exitTask = new();
     
     internal static async Task Main(string[] args)
     {
@@ -121,10 +120,9 @@ public static class Program
         while (true)
         {
             _restartTask = new TaskCompletionSource<StartOptions>();
-            _exitTask = new TaskCompletionSource();
             using var cts = new CancellationTokenSource();
             var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, startOptions.PortOverrides ,options.UseVerboseLogging, cts.Token);
-            var finishedTask = await Task.WhenAny(serverTask, _restartTask.Task, _exitTask.Task);
+            var finishedTask = await Task.WhenAny(serverTask, _restartTask.Task);
 
             if (finishedTask == _restartTask.Task)
             {
@@ -132,12 +130,6 @@ public static class Program
                 await serverTask;
 
                 startOptions = _restartTask.Task.Result;
-            }
-            else if (finishedTask == _exitTask.Task)
-            {
-                await cts.CancelAsync();
-                await serverTask;
-                break;
             }
             else break;
         }
@@ -157,12 +149,6 @@ public static class Program
             EntryListPath = entryListPath,
             PortOverrides = portOverrides,
         });
-    }
-
-    public static void ExitServer()
-    {
-        Log.Information("Initiated in-process server shutdown");
-        _exitTask.SetResult();
     }
 
     private static async Task RunServerAsync(

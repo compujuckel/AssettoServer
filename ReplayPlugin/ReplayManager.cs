@@ -108,21 +108,76 @@ public class ReplayManager
         }
     }
 
-    public void WriteReplay(long timeSeconds, byte targetSessionId, string filename)
+    public void WriteReplay(int timeSeconds, byte targetSessionId, string filename)
+    {
+        var startTime = Math.Max(0, _sessionManager.ServerTimeMilliseconds - timeSeconds * 1000);
+        var endTime = _sessionManager.ServerTimeMilliseconds;
+        
+        WriteReplay(startTime, endTime, targetSessionId, filename);
+    }
+
+    private static uint GetTotalFrameCount(long startTime, long endTime, List<ReplaySegment> segments)
+    {
+        var totalCount = 0U;
+        
+        if (segments.Count == 1)
+        {
+            foreach (var frame in segments[0])
+            {
+                if (frame.Header.ServerTime >= startTime && frame.Header.ServerTime < endTime)
+                {
+                    totalCount++;
+                }
+            }
+        }
+        else if (segments.Count > 1)
+        {
+            foreach (var frame in segments[0])
+            {
+                if (frame.Header.ServerTime >= startTime)
+                {
+                    totalCount++;
+                }
+            }
+            
+            for (int i = 1; i < segments.Count - 1; i++)
+            {
+                totalCount += (uint)segments[i].Index.Count;
+            }
+            
+            foreach (var frame in segments[^1])
+            {
+                if (frame.Header.ServerTime < endTime)
+                {
+                    totalCount++;
+                }
+            }
+        }
+
+        return totalCount;
+    }
+
+    public void WriteReplay(long startTime, long endTime, byte targetSessionId, string filename)
     {
         // TODO make sure no segments are deleted while writing replay
-        
-        var startTime = Math.Max(0, _sessionManager.ServerTimeMilliseconds - timeSeconds * 1000);
-        var segments = _segments.SkipWhile(s => s.EndTime < startTime).ToList();
+        var segments = _segments
+            .SkipWhile(s => s.EndTime < startTime)
+            .TakeWhile(s => s.StartTime < endTime)
+            .ToList();
+
+        if (segments.Count == 0)
+        {
+            Log.Error("Trying to write replay but no replay segments present");
+            return;
+        }
         
         using var file = File.Create(filename);
         using var writer = new BinaryWriter(file);
 
         using var playerInfoIndexStream = new MemoryStream();
         using var playerInfoIndexWriter = new BinaryWriter(playerInfoIndexStream);
-
-        var endTime = _sessionManager.ServerTimeMilliseconds;
-        uint totalCount = (uint)segments.Sum(s => s.Index.Count); // TODO
+        
+        var totalCount = GetTotalFrameCount(startTime, endTime, segments);
         
         var header = new KunosReplayHeader
         {
@@ -164,6 +219,7 @@ public class ReplayManager
             file.Seek(trackFramesPosition, SeekOrigin.Begin);
             foreach (var frame in segment)
             {
+                if (frame.Header.ServerTime < startTime) continue;
                 if (frame.Header.ServerTime > endTime) break;
                 
                 writer.WriteStruct(new KunosReplayTrackFrame
@@ -177,6 +233,7 @@ public class ReplayManager
 
             foreach (var frame in segment)
             {
+                if (frame.Header.ServerTime < startTime) continue;
                 if (frame.Header.ServerTime > endTime) break;
                 
                 var aiFrameMappings = Span<short>.Empty;

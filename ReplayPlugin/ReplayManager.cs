@@ -20,7 +20,7 @@ public class ReplayManager
     private readonly WeatherManager _weather;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarExtraDataManager _extraData;
-    private readonly ReplayPlayerInfoProvider _playerInfo;
+    private readonly ReplayMetadataProvider _metadata;
 
     private readonly ConcurrentQueue<ReplaySegment> _segments = [];
 
@@ -36,7 +36,7 @@ public class ReplayManager
         SessionManager sessionManager,
         ReplayConfiguration configuration,
         EntryCarExtraDataManager extraData,
-        ReplayPlayerInfoProvider playerInfo)
+        ReplayMetadataProvider metadata)
     {
         _entryCarManager = entryCarManager;
         _serverConfiguration = serverConfiguration;
@@ -44,7 +44,7 @@ public class ReplayManager
         _sessionManager = sessionManager;
         _configuration = configuration;
         _extraData = extraData;
-        _playerInfo = playerInfo;
+        _metadata = metadata;
 
         AddSegment();
     }
@@ -64,7 +64,7 @@ public class ReplayManager
         {
             Log.Debug("Removing old replay segment");
             _segments.TryDequeue(out _);
-            _playerInfo.Cleanup(segment.EndPlayerInfoIndex);
+            _metadata.Cleanup(segment.EndPlayerInfoIndex);
         }
     }
 
@@ -138,7 +138,7 @@ public class ReplayManager
             var carHeader = new KunosReplayCarHeader
             {
                 CarId = _entryCarManager.EntryCars[i].Model,
-                DriverName = $"Player {i}",
+                DriverName = $"AssettoServer App Missing ({i})",
                 CarSkinId = _entryCarManager.EntryCars[i].Skin,
                 CarFrames = totalCount
             };
@@ -208,7 +208,7 @@ public class ReplayManager
         writer.WriteLengthPrefixed(CspExtraBlobMagic);
         writer.WriteCspCompressedExtraData(0x86CE5FCE612D18DF, w =>
         {
-            JsonSerializer.Serialize(w.BaseStream, _playerInfo.PlayerInfos);
+            JsonSerializer.Serialize(w.BaseStream, _metadata.GenerateMetadata());
         });
         
         writer.Write(CspMagic);

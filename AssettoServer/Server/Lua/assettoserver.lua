@@ -68,7 +68,6 @@ local teleportCarEvent = ac.OnlineEvent({
     position = ac.StructItem.vec3(),
     direction = ac.StructItem.vec3(),
     velocity = ac.StructItem.vec3(),
-    target = ac.StructItem.byte()
 }, function (sender, message)
     if sender ~= nil then return end
     ac.debug("teleport_car_position", message.position)

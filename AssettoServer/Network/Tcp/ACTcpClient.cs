@@ -1012,7 +1012,6 @@ public class ACTcpClient : IClient
             Position = position,
             Direction = direction,
             Velocity = velocity,
-            Target = SessionId
         });
     }
 

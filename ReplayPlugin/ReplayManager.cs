@@ -14,6 +14,8 @@ namespace ReplayPlugin;
 
 public class ReplayManager
 {
+    private static readonly string SegmentPath = Path.Join("cache", "replay", Guid.NewGuid().ToString());
+    
     private readonly ReplayConfiguration _configuration;
     private readonly ACServerConfiguration _serverConfiguration;
     private readonly EntryCarManager _entryCarManager;
@@ -46,6 +48,7 @@ public class ReplayManager
         _extraData = extraData;
         _metadata = metadata;
 
+        Directory.CreateDirectory(SegmentPath);
         AddSegment();
     }
 
@@ -64,6 +67,7 @@ public class ReplayManager
         {
             Log.Debug("Removing old replay segment");
             _segments.TryDequeue(out _);
+            segment.Dispose();
             _metadata.Cleanup(segment.EndPlayerInfoIndex);
         }
     }
@@ -85,9 +89,12 @@ public class ReplayManager
 
         segmentSize = Math.Clamp(segmentSize, _configuration.MinSegmentSizeBytes, _configuration.MaxSegmentSizeBytes);
         Log.Debug("Target replay segment size: {Size}", segmentSize.Bytes());
-        
-        _currentSegment = new ReplaySegment(segmentSize);
+
+        var oldSegment = _currentSegment;
+        _currentSegment = new ReplaySegment(Path.Join(SegmentPath, $"{Guid.NewGuid()}.rs1"), segmentSize);
         _segments.Enqueue(_currentSegment);
+        
+        oldSegment?.Unload();
     }
 
     public void AddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, uint playerInfoIndex, TState state,
@@ -214,5 +221,13 @@ public class ReplayManager
         writer.Write(CspMagic);
         writer.Write((int)cspDataStartPosition);
         writer.Write(1);
+
+        foreach (var segment in segments)
+        {
+            if (segment != _currentSegment)
+            {
+                segment.Unload();
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
+using JetBrains.Annotations;
 
 namespace ReplayPlugin.Utils;
 
@@ -24,7 +25,7 @@ public static class BinaryWriterExtensions
         writer.Write(data);
     }
 
-    public static void WriteCspCompressedExtraData(this BinaryWriter writer, ulong id, Action<BinaryWriter> writeAction)
+    public static void WriteCspCompressedExtraData(this BinaryWriter writer, ulong id, [InstantHandle] Action<BinaryWriter> writeAction)
     {
         var lengthPosition = writer.BaseStream.Position;
         writer.Write((uint)0);

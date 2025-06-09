@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace ReplayPlugin.Data;
 
@@ -9,8 +10,8 @@ public readonly ref struct ReplayFrame
     public readonly Span<ReplayCarFrame> AiFrames;
     public readonly Span<short> AiMappings;
 
-    private static readonly int HeaderSize = Marshal.SizeOf<ReplayFrameHeader>();
-    private static readonly int CarFrameSize = Marshal.SizeOf<ReplayCarFrame>();
+    private static readonly int HeaderSize = Unsafe.SizeOf<ReplayFrameHeader>();
+    private static readonly int CarFrameSize = Unsafe.SizeOf<ReplayCarFrame>();
     private const int AiMappingSize = sizeof(short);
 
     public ReplayFrame(Memory<byte> memory)

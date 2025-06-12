@@ -225,7 +225,7 @@ public class WeatherManager : CriticalBackgroundService
                     }
                 }
                 
-                _rainHelper.Update(CurrentWeather, _configuration.Server.DynamicTrack.CurrentGrip, _configuration.Extra.RainTrackGripReductionPercent, _timeSource.ServerTimeMilliseconds - lastTimeUpdate);
+                _rainHelper.Update(CurrentWeather, _configuration.Server.SunAngle, _configuration.Server.DynamicTrack.CurrentGrip, _configuration.Extra.RainTrackGripReductionPercent, _timeSource.ServerTimeMilliseconds - lastTimeUpdate);
                 _weatherImplementation.SendWeather(CurrentWeather, CurrentDateTime);
                 lastTimeUpdate = _timeSource.ServerTimeMilliseconds;
             }

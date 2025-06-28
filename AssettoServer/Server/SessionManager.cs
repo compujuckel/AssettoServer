@@ -24,6 +24,7 @@ public class SessionManager : CriticalBackgroundService
     private readonly Stopwatch _timeSource = new();
     private readonly EntryCarManager _entryCarManager;
     private readonly Lazy<WeatherManager> _weatherManager;
+    private readonly IHostApplicationLifetime _applicationLifetime;
 
     public int CurrentSessionIndex { get; private set; } = -1;
     public bool IsLastRaceInverted { get; private set; } = false;
@@ -54,6 +55,7 @@ public class SessionManager : CriticalBackgroundService
         _sessionStateFactory = sessionStateFactory;
         _entryCarManager = entryCarManager;
         _weatherManager = weatherManager;
+        _applicationLifetime = applicationLifetime;
 
         _entryCarManager.ClientConnected += OnClientConnected;
     }
@@ -459,7 +461,9 @@ public class SessionManager : CriticalBackgroundService
             }
             else if (CurrentSession.Configuration.Type != SessionType.Race || _configuration.Server.InvertedGridPositions == 0 || IsLastRaceInverted)
             {
-                // TODO exit
+                Log.Information("Set LOOP_MODE=1 in the server_cfg.ini to loop sessions");
+                _applicationLifetime.StopApplication();
+                return false;
             }
 
             if (CurrentSession.Configuration.Type == SessionType.Race && _configuration.Server.InvertedGridPositions != 0)

@@ -58,6 +58,8 @@ public class WeatherManager : CriticalBackgroundService
         }
     }
 
+    private Instant _startDate;
+
     public SunPosition? CurrentSunPosition { get; private set; }
 
     public void SetTime(int time)
@@ -101,7 +103,7 @@ public class WeatherManager : CriticalBackgroundService
             
         var weatherConfiguration = _configuration.Server.Weathers[id];
 
-        var startDate = weatherConfiguration.WeatherFxParams.StartDate.HasValue
+        _startDate = weatherConfiguration.WeatherFxParams.StartDate.HasValue
             ? Instant.FromUnixTimeSeconds(weatherConfiguration.WeatherFxParams.StartDate.Value)
             : SystemClock.Instance.GetCurrentInstant();
 
@@ -109,7 +111,7 @@ public class WeatherManager : CriticalBackgroundService
             ? LocalTime.FromSecondsSinceMidnight(weatherConfiguration.WeatherFxParams.StartTime.Value)
             : CurrentDateTime.TimeOfDay;
         
-        CurrentDateTime = startTime.On(startDate.InUtc().Date).InZoneLeniently(CurrentDateTime.Zone);
+        CurrentDateTime = startTime.On(_startDate.InUtc().Date).InZoneLeniently(CurrentDateTime.Zone);
         if (weatherConfiguration.WeatherFxParams.TimeMultiplier.HasValue)
         {
             _configuration.Server.TimeOfDayMultiplier = (float)weatherConfiguration.WeatherFxParams.TimeMultiplier.Value;
@@ -212,9 +214,7 @@ public class WeatherManager : CriticalBackgroundService
                     
                     if (_configuration.Extra.LockServerDate)
                     {
-                        var realDate = SystemClock.Instance
-                            .InZone(CurrentDateTime.Zone)
-                            .GetCurrentDate();
+                        var realDate = _startDate.InZone(CurrentDateTime.Zone).LocalDateTime.Date;
 
                         if (realDate != CurrentDateTime.Date)
                         {

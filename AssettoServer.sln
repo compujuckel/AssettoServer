@@ -39,6 +39,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CustomCommandPlugin", "Cust
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReplayPlugin", "ReplayPlugin\ReplayPlugin.csproj", "{85A4319F-EB8C-4CC3-B107-6C319E537EB8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TagModePlugin", "TagModePlugin\TagModePlugin.csproj", "{965E0A03-327B-4D82-908E-8356D3E22151}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastTravelPlugin", "FastTravelPlugin\FastTravelPlugin.csproj", "{022C75A2-8B36-44F5-B99C-AF577A0192FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -117,6 +121,14 @@ Global
 		{85A4319F-EB8C-4CC3-B107-6C319E537EB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{85A4319F-EB8C-4CC3-B107-6C319E537EB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{85A4319F-EB8C-4CC3-B107-6C319E537EB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{965E0A03-327B-4D82-908E-8356D3E22151}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{965E0A03-327B-4D82-908E-8356D3E22151}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{965E0A03-327B-4D82-908E-8356D3E22151}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{965E0A03-327B-4D82-908E-8356D3E22151}.Release|Any CPU.Build.0 = Release|Any CPU
+		{022C75A2-8B36-44F5-B99C-AF577A0192FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{022C75A2-8B36-44F5-B99C-AF577A0192FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{022C75A2-8B36-44F5-B99C-AF577A0192FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{022C75A2-8B36-44F5-B99C-AF577A0192FD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

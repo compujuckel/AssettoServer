@@ -7,4 +7,5 @@ public struct ReplayFrameHeader
     public byte CarFrameCount;
     public ushort AiFrameCount;
     public ushort AiMappingCount;
+    public uint PlayerInfoIndex;
 }

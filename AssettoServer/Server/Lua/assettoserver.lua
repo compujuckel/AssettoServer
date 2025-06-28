@@ -1,5 +1,5 @@
 local license = [[
-Copyright (C)  2024 Niewiarowski, compujuckel
+Copyright (C)  2025 Niewiarowski, compujuckel
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
@@ -68,7 +68,6 @@ local teleportCarEvent = ac.OnlineEvent({
     position = ac.StructItem.vec3(),
     direction = ac.StructItem.vec3(),
     velocity = ac.StructItem.vec3(),
-    target = ac.StructItem.byte()
 }, function (sender, message)
     if sender ~= nil then return end
     ac.debug("teleport_car_position", message.position)
@@ -81,23 +80,35 @@ end)
 
 local collisionUpdateEvent = ac.OnlineEvent({
     ac.StructItem.key("AS_CollisionUpdate"),
-    enabled = ac.StructItem.boolean(),
-    target = ac.StructItem.byte()
+    enabled = ac.StructItem.boolean()
 }, function (sender, message)
     ac.debug("collision_update_index", sender.index)
     ac.debug("collision_update_enabled", message.enabled)
 
-    physics.disableCarCollisions(0, not message.enabled)
-    if sender.index == 0 then
-        for i, c in ac.iterateCars.ordered() do
-            physics.disableCarCollisions(i, not message.enabled)
-        end
-    else
-        physics.disableCarCollisions(sender.index, not message.enabled)
+    physics.disableCarCollisions(sender.index, not message.enabled, true)
+end)
+
+local teleportToPitsEvent = ac.OnlineEvent({
+    ac.StructItem.key("AS_TeleportToPits"),
+    dummy = ac.StructItem.byte()
+}, function (sender, message)
+    if sender.index == 0 and ac.INIConfig.onlineExtras():get("EXTRA_RULES", "NO_BACK_TO_PITS", 0) == 0 then
+       physics.teleportCarTo(0, ac.SpawnSet.Pits) 
     end
 end)
 
-apiKeyEvent({ key = "" })
+local requestResetCarEvent = ac.OnlineEvent({
+    ac.StructItem.key("AS_RequestResetCar"),
+    dummy = ac.StructItem.byte(),
+}, function (sender, message)
+    if sender ~= nil then return end
+    ac.debug("request_reset_car", message.dummy)
+end)
+
+local luaReadyEvent = ac.OnlineEvent({
+    ac.StructItem.key("AS_LuaReady"),
+    dummy = ac.StructItem.byte()
+}, function () end)
 
 local logoSize = vec2(68, 42)
 local srpLogoSize = vec2(244, 64)
@@ -267,22 +278,7 @@ end
 
 ui.registerOnlineExtra(ui.Icons.Info, "AssettoServer", function () return true end, window_AssettoServer, nil, ui.OnlineExtraFlags.Tool)
 
-local teleportToPitsEvent = ac.OnlineEvent({
-    ac.StructItem.key("AS_TeleportToPits"),
-    dummy = ac.StructItem.byte()
-}, function (sender, message)
-    if sender.index == 0 and ac.INIConfig.onlineExtras():get("EXTRA_RULES", "NO_BACK_TO_PITS", 0) == 0 then
-       physics.teleportCarTo(0, ac.SpawnSet.Pits) 
-    end
-end)
-
-local requestResetCarEvent = ac.OnlineEvent({
-    ac.StructItem.key("AS_RequestResetCar"),
-    dummy = ac.StructItem.byte(),
-}, function (sender, message)
-    if sender ~= nil then return end
-    ac.debug("request_reset_car", message.dummy)
-end)
-
 local resetCarControl = ac.ControlButton('__EXT_CMD_RESET', nil)
-resetCarControl:onPressed(function() requestResetCarEvent({dummy=0}) end)
+resetCarControl:onPressed(function() requestResetCarEvent({}) end)
+
+luaReadyEvent({})

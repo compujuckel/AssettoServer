@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Text;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Utils;
@@ -63,6 +64,16 @@ public struct PacketReader
         return ret;
     }
 
+    public Color ReadRgbmAsColor()
+    {
+        var r = (byte) (Read<float>() * 255);
+        var g = (byte) (Read<float>() * 255);
+        var b = (byte) (Read<float>() * 255);
+        var m = (byte) (Read<float>() * 255);
+
+        return Color.FromArgb(m, r, g, b);
+    }
+
     public T Read<T>() where T : unmanaged
     {
         var bytesToRead = MarshalUtils.SizeOf(typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T));
@@ -76,7 +87,7 @@ public struct PacketReader
             Span<byte> tmp = stackalloc byte[bytesToRead];
             slice.CopyTo(tmp);
             result = MemoryMarshal.Read<T>(tmp);
-            ReadPosition = actualBytesRead;
+            ReadPosition += actualBytesRead;
         }
         else
         {

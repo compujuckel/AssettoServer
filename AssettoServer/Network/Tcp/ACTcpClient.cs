@@ -25,7 +25,6 @@ using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Shared.Network.Packets.Shared;
-using AssettoServer.Shared.Utils;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using Serilog;
@@ -63,7 +62,8 @@ public class ACTcpClient : IClient
     public InputMethod InputMethod { get; set; }
 
     internal SocketAddress? UdpEndpoint { get; private set; }
-    internal bool SupportsCSPCustomUpdate { get; private set; }
+    public bool HasUdpEndpoint => UdpEndpoint != null;
+    public bool SupportsCSPCustomUpdate { get; private set; }
     public int? CSPVersion { get; private set; }
     internal string ApiKey { get; }
 
@@ -162,6 +162,11 @@ public class ACTcpClient : IClient
     /// Fires when a player has authorized for admin permissions.
     /// </summary>
     public event EventHandler<ACTcpClient, EventArgs>? LoggedInAsAdministrator;
+    
+    /// <summary>
+    /// Called when all Lua server scripts are loaded on the client. Warning: This can be called multiple times if scripts are reloaded!
+    /// </summary>
+    public event EventHandler<ACTcpClient, EventArgs>? LuaReady;
 
     private class ACTcpClientLogEventEnricher : ILogEventEnricher
     {
@@ -233,6 +238,21 @@ public class ACTcpClient : IClient
         DisconnectTokenSource = new CancellationTokenSource();
 
         ApiKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
+        LuaReady += OnLuaReady;
+    }
+
+    private void OnLuaReady(ACTcpClient sender, EventArgs args)
+    {
+        SendPacket(new ApiKeyPacket { Key = ApiKey });
+        
+        var connectedCars = _entryCarManager.EntryCars.Where(c => c.Client != null || c.AiControlled).ToList();
+        foreach (var car in connectedCars)
+        {
+            if (!car.EnableCollisions)
+            {
+                SendPacket(new CollisionUpdatePacket { SessionId = car.SessionId, Enabled = car.EnableCollisions });
+            }
+        }
     }
 
     internal Task StartAsync()
@@ -601,8 +621,15 @@ public class ACTcpClient : IClient
 
     private void OnSpectateCar(PacketReader reader)
     {
-        SpectateCar spectatePacket = reader.ReadPacket<SpectateCar>();
-        EntryCar.TargetCar = spectatePacket.SessionId != SessionId ? _entryCarManager.EntryCars[spectatePacket.SessionId] : null;
+        var spectatePacket = reader.ReadPacket<SpectateCar>();
+        if (spectatePacket.SessionId == SessionId || spectatePacket.SessionId > _entryCarManager.EntryCars.Length)
+        {
+            EntryCar.TargetCar = null;
+        }
+        else
+        {
+            EntryCar.TargetCar = _entryCarManager.EntryCars[spectatePacket.SessionId];
+        }
     }
 
     private void OnChecksum(PacketReader reader)
@@ -985,7 +1012,6 @@ public class ACTcpClient : IClient
             Position = position,
             Direction = direction,
             Velocity = velocity,
-            Target = SessionId
         });
     }
 
@@ -997,17 +1023,9 @@ public class ACTcpClient : IClient
         LoggedInAsAdministrator?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>
-    /// Requires CSP Build >2796
-    /// </summary>
-    public void SendCollisionUpdatePacket(bool collisionEnabled)
+    internal void FireLuaReady()
     {
-        _entryCarManager.BroadcastPacket(new CollisionUpdatePacket
-        {
-            SessionId = SessionId,
-            Enabled = collisionEnabled,
-            Target = SessionId
-        });
+        LuaReady?.Invoke(this, EventArgs.Empty);
     }
 
     public void SendChatMessage(string message, byte senderId = 255) => SendPacket(new ChatMessage { Message = message, SessionId = senderId });

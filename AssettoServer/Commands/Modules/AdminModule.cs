@@ -12,9 +12,9 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather.Implementation;
 using AssettoServer.Server.Whitelist;
 using AssettoServer.Shared.Network.Packets.Outgoing;
-using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Utils;
 using AssettoServer.Shared.Weather;
+using AssettoServer.Utils;
 using JetBrains.Annotations;
 
 namespace AssettoServer.Commands.Modules;
@@ -86,7 +86,7 @@ public class AdminModule : ACModuleBase
     {
         Reply(_sessionManager.NextSession()
             ? "OK. Moving to next session"
-            : "Error. Couldn't move to next session. Player is connecting");
+            : "Error. Couldn't move to next session. Player is connecting or server is shutting down");
     }
 
     [Command("restart_session", "ksrs")]
@@ -268,6 +268,19 @@ public class AdminModule : ACModuleBase
     public void Say([Remainder] string message)
     {
         Broadcast("CONSOLE: " + message);
+    }
+
+    [Command("noclip"), RequireConnectedPlayer]
+    public void NoClip(bool enable)
+    {
+        if (_configuration.CSPTrackOptions.MinimumCSPVersion is null or < CSPVersion.V0_2_8)
+        {
+            Reply("Noclip is disabled. Please set a minimum required CSP version of 0.2.8 (3424) or higher");
+            return;
+        }
+        
+        Client?.EntryCar.SetCollisions(!enable);
+        Reply(enable ? "Noclip enabled" : "Noclip disabled");
     }
     
 #if DEBUG

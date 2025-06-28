@@ -24,6 +24,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
     private readonly ReplayManager _replayManager;
     private readonly Summary _onUpdateTimer;
     private readonly EntryCarExtraDataManager _extraData;
+    private readonly ReplayMetadataProvider _metadata;
     
     public ReplayPlugin(IHostApplicationLifetime applicationLifetime,
         EntryCarManager entryCarManager,
@@ -33,7 +34,8 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
         ReplayConfiguration configuration,
         CSPServerScriptProvider scriptProvider,
         CSPClientMessageTypeManager cspClientMessageTypeManager,
-        EntryCarExtraDataManager extraData) : base(applicationLifetime)
+        EntryCarExtraDataManager extraData,
+        ReplayMetadataProvider metadata) : base(applicationLifetime)
     {
         _entryCarManager = entryCarManager;
         _weather = weather;
@@ -41,6 +43,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
         _replayManager = replayManager;
         _configuration = configuration;
         _extraData = extraData;
+        _metadata = metadata;
 
         _onUpdateTimer = Metrics.CreateSummary("assettoserver_replayplugin_onupdate", "ReplayPlugin.OnUpdate Duration", MetricDefaults.DefaultQuantiles);
         
@@ -96,7 +99,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
             }
         }
 
-        _replayManager.AddFrame(_state.PlayerCars.Count, _state.AiCars.Count, numAiMappings, this, WriteFrame);
+        _replayManager.AddFrame(_state.PlayerCars.Count, _state.AiCars.Count, numAiMappings, _metadata.Index, this, WriteFrame);
     }
 
     private static void WriteFrame(ref ReplayFrame frame, ReplayPlugin self)

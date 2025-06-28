@@ -412,7 +412,7 @@ local fastTravelEvent = ac.OnlineEvent(
 function inputCheck()
     local sim = ac.getSim()
     local carState = ac.getCar(0)
-    if ui.keyboardButtonPressed(ui.KeyIndex.M, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
+    if ui.keyboardButtonPressed(ui.KeyIndex.M, false) and not ui.anyItemFocused() and not ui.anyItemActive() and not sim.isPaused then
         mapMode = not mapMode
         if mapMode then
             if not mapCamera then
@@ -431,6 +431,11 @@ function inputCheck()
     end
 
     if mapMode and mapCamera then
+        if sim.isPaused then
+            mapMode = false
+            return
+        end
+
         local mp = ui.mousePos()
         local mpScale = vec2(sim.windowWidth, sim.windowHeight) / screenSize
         local mw = ui.mouseWheel()

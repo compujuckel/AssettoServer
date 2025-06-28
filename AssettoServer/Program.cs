@@ -10,6 +10,7 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using Autofac.Extensions.DependencyInjection;
 using CommandLine;
+using DotNext.Collections.Generic;
 using FluentValidation;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Connections;
@@ -178,18 +179,10 @@ public static class Program
                 .ConfigureAppConfiguration(builder => { builder.Sources.Clear(); })
                 .ConfigureWebHostDefaults(webHostBuilder =>
                 {
-                    webHostBuilder.ConfigureKestrel(serverOptions =>
-                        {
-                            serverOptions.AllowSynchronousIO = true;
-                            serverOptions.ConfigureEndpointDefaults(lo =>
-                            {
-                                var middlewares = lo.ApplicationServices.GetServices<Func<ConnectionDelegate, ConnectionDelegate>>();
-                                foreach (var middleware in middlewares)
-                                {
-                                    lo.Use(middleware);
-                                }
-                            });
-                        })
+                    webHostBuilder.ConfigureKestrel(o => o.ConfigureEndpointDefaults(lo =>
+                            lo.ApplicationServices
+                                .GetServices<Func<ConnectionDelegate, ConnectionDelegate>>()
+                                .ForEach(m => lo.Use(m))))
                         .UseStartup(_ => new Startup(config))
                         .UseUrls($"http://0.0.0.0:{config.Server.HttpPort}");
                 })

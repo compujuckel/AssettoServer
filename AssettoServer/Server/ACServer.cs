@@ -54,7 +54,8 @@ public class ACServer : BackgroundService, IHostedLifecycleService
         _checksumManager = checksumManager;
         _applicationLifetime = applicationLifetime;
 
-        blacklistService.Changed += OnChanged;
+        blacklistService.Changed += OnBlacklistChanged;
+        whitelistService.Changed += OnWhitelistChanged;
 
         cspFeatureManager.Add(new CSPFeature { Name = "SPECTATING_AWARE" });
         cspFeatureManager.Add(new CSPFeature { Name = "LOWER_CLIENTS_SENDING_RATE" });
@@ -110,7 +111,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
         return Task.CompletedTask;
     }
 
-    private void OnChanged(IBlacklistService sender, EventArgs args)
+    private void OnBlacklistChanged(IBlacklistService sender, EventArgs args)
     {
         _ = Task.Run(async () =>
         {
@@ -121,6 +122,20 @@ public class ACServer : BackgroundService, IHostedLifecycleService
                     client.Logger.Information("{ClientName} was banned after reloading blacklist", client.Name);
                     client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = KickReason.VoteBlacklisted });
                     _ = client.DisconnectAsync();
+                }
+            }
+        });
+    }
+    
+    private void OnWhitelistChanged(IWhitelistService sender, EventArgs args)
+    {
+        _ = Task.Run(async () =>
+        {
+            foreach (var client in _entryCarManager.ConnectedCars.Values.Select(c => c.Client))
+            {
+                if (client != null && !await sender.IsWhitelistedAsync(client.Guid))
+                {
+                    _ = _entryCarManager.KickAsync(client, "not being whitelisted");
                 }
             }
         });

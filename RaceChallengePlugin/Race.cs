@@ -225,7 +225,6 @@ public class Race
             {
                 Plugin = GetType().Namespace!,
                 Name = GetType().Name,
-                Description = "Race Challenge",
                 DataType = PluginDataType.EventWin,
                 Opponent = Follower
             });

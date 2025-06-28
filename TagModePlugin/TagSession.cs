@@ -108,23 +108,26 @@ public class TagSession
             switch (_configuration.EnableEndlessMode)
             {
                 case false:
-                    var winners = _plugin.Instances.Where(car => car.Value is
-                        {
-                            IsTagged: false,
-                            IsConnected: true
-                        }).ToDictionary();
+                    var anyUntaggedLeft = _plugin.Instances.Any(car => car.Value is
+                    {
+                        IsTagged: false,
+                        IsConnected: true
+                    });
+                    var winners = _plugin.Instances.Where(x => x.Value is
+                    {
+                        IsConnected: true
+                    } car && car.IsTagged == !anyUntaggedLeft).Select(x => x.Value).ToList();
 
                     var winnerName = winners.Count != 0 ? "Runners" : "Taggers";
                     _entryCarManager.BroadcastChat($"The {winnerName} just won this game of tag.");
                     Log.Information("The {Winners} just won this game of tag", winnerName);
 
-                    foreach (var winnerCar in winners.Values)
+                    foreach (var winnerCar in winners)
                     {
                         _pluginDataManager.SendPluginEvent(winnerCar.EntryCar, new PluginDataEventArgs
                         {
                             Plugin = GetType().Namespace!,
                             Name = GetType().Name,
-                            Description = "Tag mode time limited",
                             DataType = PluginDataType.EventWin
                         });
                     }
@@ -135,12 +138,10 @@ public class TagSession
                     _entryCarManager.BroadcastChat($"'{winner}' just won this game of tag.");
                     Log.Information("{Winner} just won this game of tag", winner);
                     
-                    
                     _pluginDataManager.SendPluginEvent(LastCaught, new PluginDataEventArgs
                     {
                         Plugin = GetType().Namespace!,
                         Name = GetType().Name,
-                        Description = "Tag mode endless",
                         DataType = PluginDataType.EventWin
                     });
                     break;

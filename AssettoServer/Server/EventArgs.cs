@@ -153,7 +153,6 @@ public class PluginDataEventArgs : EventArgs
     public required PluginDataType DataType { get; init; }
     public required string Plugin { get; init; }
     public required string Name { get; init; }
-    public string? Description { get; init; }
     
     /// <summary>
     /// Points: self-explanatory

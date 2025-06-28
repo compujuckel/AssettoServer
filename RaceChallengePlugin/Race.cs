@@ -221,11 +221,12 @@ public class Race
 
             _entryCarManager.BroadcastChat($"{winnerName} just beat {loserName} in a race.");
             Log.Information("{WinnerName} just beat {LoserName} in a race", winnerName, loserName);
-            _pluginDataManager.SendSharedCarData(Leader, new PluginDataEventArgs
+            _pluginDataManager.SendPluginEvent(Leader, new PluginDataEventArgs
             {
-                Source = GetType().Namespace!,
+                Plugin = GetType().Namespace!,
+                Name = GetType().Name,
                 Description = "Race Challenge",
-                DataType = PluginDataType.EventWon,
+                DataType = PluginDataType.EventWin,
                 Opponent = Follower
             });
         }

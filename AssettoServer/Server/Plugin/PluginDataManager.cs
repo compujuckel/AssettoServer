@@ -6,18 +6,15 @@ public class PluginDataManager
     /// Fires when a shared event is initiated through a plugin.
     /// e.g. A player gets a new PB time or finishes a race challenge.
     /// </summary>
-    public event EventHandler<EntryCar, PluginDataEventArgs>? SharedData;
+    public event EventHandler<EntryCar, PluginDataEventArgs>? PluginEvent;
     
-    public void SendSharedCarData(EntryCar entryCar, PluginDataEventArgs eventArgs)
-        => SharedData?.Invoke(entryCar, eventArgs);
+    public void SendPluginEvent(EntryCar entryCar, PluginDataEventArgs eventArgs)
+        => PluginEvent?.Invoke(entryCar, eventArgs);
 }
 
 public enum PluginDataType
 {
-    PointsScored,
-    PointsPersonalBest,
-    TimeCompleted,
-    TimePersonalBest,
-    RatingUpdated,
-    EventWon
+    Points,
+    Time,
+    EventWin
 }

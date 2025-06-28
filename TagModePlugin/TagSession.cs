@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 using AssettoServer.Server;
-using Microsoft.Net.Http.Headers;
+using AssettoServer.Server.Plugin;
 using Serilog;
 
 namespace TagModePlugin;
@@ -14,7 +14,8 @@ public class TagSession
     private bool IsCancelled { get; set; }
     public bool HasEnded { get; private set; }
     private long StartTimeMilliseconds { get; set; }
-    
+
+    private readonly PluginDataManager _pluginDataManager;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly TagModePlugin _plugin;
@@ -23,12 +24,14 @@ public class TagSession
     public delegate TagSession Factory(EntryCar initialTagger);
     
     public TagSession(EntryCar initialTagger,
+        PluginDataManager pluginDataManager,
         SessionManager sessionManager,
         EntryCarManager entryCarManager,
         TagModePlugin plugin,
         TagModeConfiguration configuration)
     {
         InitialTagger = LastCaught = initialTagger;
+        _pluginDataManager = pluginDataManager;
         _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
         _plugin = plugin;
@@ -105,16 +108,41 @@ public class TagSession
             switch (_configuration.EnableEndlessMode)
             {
                 case false:
-                    var winners = _plugin.Instances.Any(car => car.Value is { IsTagged: false, IsConnected: true }) ? "Runners" : "Taggers";
+                    var winners = _plugin.Instances.Where(car => car.Value is
+                        {
+                            IsTagged: false,
+                            IsConnected: true
+                        }).ToDictionary();
 
-                    _entryCarManager.BroadcastChat($"The {winners} just won this game of tag.");
-                    Log.Information("The {Winners} just won this game of tag", winners);
+                    var winnerName = winners.Count != 0 ? "Runners" : "Taggers";
+                    _entryCarManager.BroadcastChat($"The {winnerName} just won this game of tag.");
+                    Log.Information("The {Winners} just won this game of tag", winnerName);
+
+                    foreach (var winnerCar in winners.Values)
+                    {
+                        _pluginDataManager.SendPluginEvent(winnerCar.EntryCar, new PluginDataEventArgs
+                        {
+                            Plugin = GetType().Namespace!,
+                            Name = GetType().Name,
+                            Description = "Tag mode time limited",
+                            DataType = PluginDataType.EventWin
+                        });
+                    }
                     break;
                 case true:
                     var winner = LastCaught.Client?.Name ?? $"Car #{LastCaught.SessionId}";
 
                     _entryCarManager.BroadcastChat($"'{winner}' just won this game of tag.");
                     Log.Information("{Winner} just won this game of tag", winner);
+                    
+                    
+                    _pluginDataManager.SendPluginEvent(LastCaught, new PluginDataEventArgs
+                    {
+                        Plugin = GetType().Namespace!,
+                        Name = GetType().Name,
+                        Description = "Tag mode endless",
+                        DataType = PluginDataType.EventWin
+                    });
                     break;
             }
         }

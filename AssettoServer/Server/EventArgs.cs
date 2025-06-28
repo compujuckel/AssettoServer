@@ -151,8 +151,15 @@ public class CarListResponseSendingEventArgs : EventArgs
 public class PluginDataEventArgs : EventArgs
 {
     public required PluginDataType DataType { get; init; }
-    public required string Source { get; init; }
+    public required string Plugin { get; init; }
+    public required string Name { get; init; }
     public string? Description { get; init; }
-    public int Value { get; init; }
+    
+    /// <summary>
+    /// Points: self-explanatory
+    /// Time: Time in milliseconds
+    /// EventWin: Can be left as 0
+    /// </summary>
+    public long Value { get; init; }
     public EntryCar? Opponent { get; init; }
 }

@@ -4,19 +4,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
-using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AssettoServer.Server.Ai;
 
-public class DynamicTrafficDensity : CriticalBackgroundService
+public class DynamicTrafficDensity : BackgroundService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly WeatherManager _weatherManager;
 
-    public DynamicTrafficDensity(ACServerConfiguration configuration, WeatherManager weatherManager, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public DynamicTrafficDensity(ACServerConfiguration configuration, WeatherManager weatherManager)
     {
         _configuration = configuration;
         _weatherManager = weatherManager;

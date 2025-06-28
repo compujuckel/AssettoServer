@@ -1,25 +1,23 @@
 ﻿using AssettoServer.Commands;
 using AssettoServer.Commands.Contexts;
-using AssettoServer.Server.Plugin;
-using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Qmmands;
 using Serilog;
 
 namespace CustomCommandPlugin;
 
-public class CustomCommand : CriticalBackgroundService, IAssettoServerAutostart
+public class CustomCommand : IHostedService
 {
     private readonly CustomCommandConfiguration _configuration;
     private readonly CommandService _commandService;
 
-    public CustomCommand(CustomCommandConfiguration configuration, CommandService commandService, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public CustomCommand(CustomCommandConfiguration configuration, CommandService commandService)
     {
         _configuration = configuration;
         _commandService = commandService;
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    public Task StartAsync(CancellationToken stoppingToken)
     {
         _commandService.AddModule<ACModuleBase>(m =>
         {
@@ -44,4 +42,6 @@ public class CustomCommand : CriticalBackgroundService, IAssettoServerAutostart
         
         return Task.CompletedTask;
     }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

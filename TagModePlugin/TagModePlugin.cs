@@ -4,15 +4,11 @@ using System.Reflection;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
-using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
-using Serilog;
-using TagModePlugin.Packets;
 
 namespace TagModePlugin;
 
-public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class TagModePlugin : BackgroundService
 {
     private const int MinPlayers = 2;
     
@@ -33,9 +29,7 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
         EntryCarManager entryCarManager,
         Func<EntryCar, EntryCarTagMode> entryCarTagModeFactory,
         TagSession.Factory sessionFactory,
-        CSPServerScriptProvider scriptProvider,
-        CSPClientMessageTypeManager clientMessageTypeManager,
-        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+        CSPServerScriptProvider scriptProvider)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;

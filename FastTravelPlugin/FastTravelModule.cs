@@ -1,5 +1,6 @@
 using AssettoServer.Server.Plugin;
 using Autofac;
+using Microsoft.Extensions.Hosting;
 
 namespace FastTravelPlugin;
 
@@ -7,7 +8,7 @@ public class FastTravelModule : AssettoServerModule<FastTravelConfiguration>
 {
     protected override void Load(ContainerBuilder builder)
     {
-        builder.RegisterType<FastTravelPlugin>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
+        builder.RegisterType<FastTravelPlugin>().AsSelf().As<IHostedService>().SingleInstance();
     }
 
     public override FastTravelConfiguration ReferenceConfiguration => new()

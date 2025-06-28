@@ -54,8 +54,34 @@ public class Startup
     {
         builder.RegisterInstance(_configuration);
         builder.RegisterInstance(_loader);
+        
+        // Registration order == order in which hosted services are started
+        builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
+        builder.RegisterType<SessionManager>().AsSelf().As<IHostedService>().SingleInstance();
+        builder.RegisterType<ACTcpServer>().AsSelf().As<IHostedService>().SingleInstance();
+        builder.RegisterType<ACUdpServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterModule(new WeatherModule(_configuration));
         builder.RegisterModule(new AiModule(_configuration));
+        builder.RegisterType<FileBasedUserGroupProvider>().AsSelf().As<IUserGroupProvider>().As<IHostedService>().SingleInstance();
+        builder.RegisterType<SignalHandler>().AsSelf().As<IHostedService>().SingleInstance();
+        //builder.RegisterType<TestService>().As<IHostedService>().SingleInstance();
+        builder.RegisterType<HttpInfoCache>().AsSelf().As<IHostedService>().SingleInstance();
+        RegisterLegacyPluginInterface();
+        RegisterSteam();
+        RegisterRcon();
+        
+        foreach (var plugin in _loader.LoadedPlugins)
+        {
+            if (plugin.ConfigurationType != null) builder.RegisterType(plugin.ConfigurationType).AsSelf();
+            builder.RegisterModule(plugin.Instance);
+        }
+        
+        // Do this last so we don't register before a plugin fails to start
+        builder.RegisterType<UpnpService>().AsSelf().As<IHostedService>().SingleInstance();
+        builder.RegisterType<KunosLobbyRegistration>().AsSelf().As<IHostedService>().SingleInstance();
+        
+        // No hosted services below this line
+        
         builder.RegisterType<HttpClient>().AsSelf();
         builder.RegisterType<ACTcpClient>().AsSelf();
         builder.RegisterType<EntryCar>().AsSelf();
@@ -65,10 +91,8 @@ public class Startup
         builder.RegisterType<ACClientTypeParser>().AsSelf();
         builder.RegisterType<ChatService>().AsSelf().SingleInstance().AutoActivate();
         builder.RegisterType<CSPFeatureManager>().AsSelf().SingleInstance();
-        builder.RegisterType<KunosLobbyRegistration>().AsSelf().SingleInstance();
         builder.RegisterType<UserGroupManager>().AsSelf().SingleInstance();
         builder.RegisterType<FileBasedUserGroup>().AsSelf();
-        builder.RegisterType<FileBasedUserGroupProvider>().AsSelf().As<IUserGroupProvider>().As<IHostedService>().SingleInstance();
         builder.RegisterType<AdminService>().As<IAdminService>().SingleInstance();
         builder.RegisterType<BlacklistService>().As<IBlacklistService>().SingleInstance();
         builder.RegisterType<WhitelistService>().As<IWhitelistService>().SingleInstance();
@@ -76,47 +100,18 @@ public class Startup
         builder.RegisterType<CSPServerScriptProvider>().AsSelf().SingleInstance();
         builder.RegisterType<CSPClientMessageTypeManager>().AsSelf().SingleInstance();
         builder.RegisterType<CSPClientMessageHandler>().AsSelf().SingleInstance();
-        builder.RegisterType<SessionManager>().AsSelf().SingleInstance();
         builder.RegisterType<VoteManager>().AsSelf().SingleInstance();
         builder.RegisterType<EntryCarManager>().AsSelf().SingleInstance();
         builder.RegisterType<IpApiGeoParamsProvider>().As<IGeoParamsProvider>();
         builder.RegisterType<GeoParamsManager>().AsSelf().SingleInstance();
         builder.RegisterType<ChecksumManager>().AsSelf().SingleInstance();
         builder.RegisterType<CSPServerExtraOptions>().AsSelf().SingleInstance();
-        builder.RegisterType<ACTcpServer>().AsSelf().SingleInstance(); // Not registered as IHostedService, this is hardcoded to start first
-        builder.RegisterType<ACUdpServer>().AsSelf().SingleInstance(); // Not registered as IHostedService, this is hardcoded to start first
-        builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<OpenSlotFilterChain>().AsSelf().SingleInstance();
         builder.RegisterType<WhitelistSlotFilter>().As<IOpenSlotFilter>();
         builder.RegisterType<GuidSlotFilter>().As<IOpenSlotFilter>();
-        builder.RegisterType<SignalHandler>().AsSelf().As<IHostedService>().SingleInstance();
-        builder.RegisterType<UpnpService>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         builder.RegisterType<ConfigurationSerializer>().AsSelf();
-        builder.RegisterType<HttpInfoCache>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
         builder.RegisterType<DefaultCMContentProvider>().As<ICMContentProvider>().SingleInstance();
         builder.RegisterType<CommandService>().AsSelf().SingleInstance();
-
-        if (_configuration.Extra.EnableLegacyPluginInterface)
-        {
-            builder.RegisterType<UdpPluginServer>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
-        }
-            
-        if (_configuration.Extra.UseSteamAuth)
-        {
-#if DISABLE_STEAM
-            builder.RegisterType<WebApiSteam>().As<ISteam>().SingleInstance();
-#else
-            builder.RegisterType<NativeSteam>().As<IHostedService>().As<ISteam>().SingleInstance();
-#endif
-            builder.RegisterType<SteamManager>().AsSelf().SingleInstance().AutoActivate();
-            builder.RegisterType<SteamSlotFilter>().As<IOpenSlotFilter>();
-        }
-
-        if (_configuration.Extra.RconPort != 0)
-        {
-            builder.RegisterType<RconClient>().AsSelf();
-            builder.RegisterType<RconServer>().AsSelf().As<IHostedService>().SingleInstance();
-        }
 
         if (_configuration.GeneratePluginConfigs)
         {
@@ -124,27 +119,59 @@ public class Startup
             loader.LoadPlugins(loader.AvailablePlugins.Select(p => p.Key).ToList());
             _configuration.LoadPluginConfiguration(loader, null);
         }
-        
-        foreach (var plugin in _loader.LoadedPlugins)
-        {
-            if (plugin.ConfigurationType != null) builder.RegisterType(plugin.ConfigurationType).AsSelf();
-            builder.RegisterModule(plugin.Instance);
-        }
 
         _configuration.LoadPluginConfiguration(_loader, builder);
+        return;
+        
+        void RegisterLegacyPluginInterface()
+        {
+            if (_configuration.Extra.EnableLegacyPluginInterface)
+            {
+                builder.RegisterType<UdpPluginServer>().AsSelf().As<IHostedService>().SingleInstance();
+            }
+        }
+
+        void RegisterSteam()
+        {
+            if (_configuration.Extra.UseSteamAuth)
+            {
+#if DISABLE_STEAM
+                builder.RegisterType<WebApiSteam>().As<ISteam>().SingleInstance();
+#else
+                builder.RegisterType<NativeSteam>().As<IHostedService>().As<ISteam>().SingleInstance();
+#endif
+                builder.RegisterType<SteamManager>().AsSelf().SingleInstance().AutoActivate();
+                builder.RegisterType<SteamSlotFilter>().As<IOpenSlotFilter>();
+            }
+        }
+
+        void RegisterRcon()
+        {
+            if (_configuration.Extra.RconPort != 0)
+            {
+                builder.RegisterType<RconClient>().AsSelf();
+                builder.RegisterType<RconServer>().AsSelf().As<IHostedService>().SingleInstance();
+            }
+        }
     }
     
     // This method gets called by the runtime. Use this method to add services to the container.
     // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
     public void ConfigureServices(IServiceCollection services)
     {
+        services.Configure<HostOptions>(options =>
+        {
+            options.ShutdownTimeout = TimeSpan.FromSeconds(5);
+            // This defaults to false, explicitly adding it here in case someone thinks it could be changed...
+            // We can't due to dependencies between hosted services
+            options.ServicesStartConcurrently = false;
+            // Same for shutdown, otherwise we might not get the server shutdown chat message out
+            options.ServicesStopConcurrently = false;
+        });
         services.AddCors(options =>
         {
-            options.AddPolicy(name: "ServerQueryPolicy",
-                policy =>
-                {
-                    policy.WithOrigins(_configuration.Extra.CorsAllowedOrigins?.ToArray() ?? Array.Empty<string>());
-                });
+            options.AddPolicy(name: "ServerQueryPolicy", 
+                policy => { policy.WithOrigins(_configuration.Extra.CorsAllowedOrigins?.ToArray() ?? []); });
         });
         services.AddAuthentication(o =>
             {

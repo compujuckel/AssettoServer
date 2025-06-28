@@ -1,14 +1,12 @@
-﻿using AssettoServer.Server.Plugin;
-using AssettoServer.Server.TrackParams;
+﻿using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather;
-using AssettoServer.Shared.Services;
 using AssettoServer.Shared.Weather;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace LiveWeatherPlugin;
 
-public class LiveWeatherProvider : CriticalBackgroundService, IAssettoServerAutostart
+public class LiveWeatherProvider : BackgroundService
 {
     private readonly LiveWeatherConfiguration _configuration;
     private readonly OpenWeatherMapWeatherProvider _liveWeatherProvider;
@@ -16,7 +14,7 @@ public class LiveWeatherProvider : CriticalBackgroundService, IAssettoServerAuto
     private readonly IWeatherTypeProvider _weatherTypeProvider;
     private TrackParams _trackParams = null!; 
 
-    public LiveWeatherProvider(LiveWeatherConfiguration configuration, WeatherManager weatherManager, IWeatherTypeProvider weatherTypeProvider, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public LiveWeatherProvider(LiveWeatherConfiguration configuration, WeatherManager weatherManager, IWeatherTypeProvider weatherTypeProvider)
     {
         _configuration = configuration;
         _weatherManager = weatherManager;

@@ -3,17 +3,13 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
-using AssettoServer.Shared.Services;
-using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AutoModerationPlugin;
 
-[UsedImplicitly]
-public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class AutoModerationPlugin : BackgroundService
 {
     private readonly List<EntryCarAutoModeration> _instances = [];
     private readonly AutoModerationConfiguration _configuration;
@@ -23,13 +19,11 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
 
     public AutoModerationPlugin(AutoModerationConfiguration configuration,
         EntryCarManager entryCarManager,
-        SessionManager sessionManager,
         WeatherManager weatherManager,
         ACServerConfiguration serverConfiguration,
         CSPServerScriptProvider scriptProvider,
         Func<EntryCar, EntryCarAutoModeration> entryCarAutoModerationFactory,
-        IHostApplicationLifetime applicationLifetime,
-        AiSpline? aiSpline = null) : base(applicationLifetime)
+        AiSpline? aiSpline = null)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;

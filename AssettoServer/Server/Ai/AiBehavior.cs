@@ -9,9 +9,7 @@ using AssettoServer.Network.Http;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Network.Packets.Outgoing;
-using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Prometheus;
@@ -19,14 +17,13 @@ using Serilog;
 
 namespace AssettoServer.Server.Ai;
 
-public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
+public class AiBehavior : BackgroundService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly AiSpline _spline;
     private readonly HttpInfoCache _httpInfoCache;
-    //private readonly EntryCar.Factory _entryCarFactory;
 
     private readonly JunctionEvaluator _junctionEvaluator;
 
@@ -38,10 +35,9 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     public AiBehavior(SessionManager sessionManager,
         ACServerConfiguration configuration,
         EntryCarManager entryCarManager,
-        IHostApplicationLifetime applicationLifetime,
-        //EntryCar.Factory entryCarFactory,
         CSPServerScriptProvider serverScriptProvider, 
-        AiSpline spline, HttpInfoCache httpInfoCache) : base(applicationLifetime)
+        AiSpline spline,
+        HttpInfoCache httpInfoCache)
     {
         _sessionManager = sessionManager;
         _configuration = configuration;
@@ -49,7 +45,6 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         _spline = spline;
         _httpInfoCache = httpInfoCache;
         _junctionEvaluator = new JunctionEvaluator(spline, false);
-        //_entryCarFactory = entryCarFactory;
 
         if (_configuration.Extra.AiParams.Debug)
         {

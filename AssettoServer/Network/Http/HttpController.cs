@@ -98,7 +98,7 @@ public class HttpController : ControllerBase
         bool guidValid = ulong.TryParse(guid, out ulong ulongGuid);
         bool isAdmin = guidValid && await _adminService.IsAdminAsync(ulongGuid);
 
-        List<EntryListResponseCar> cars = [];
+        var cars = new List<EntryListResponseCar>(_entryCarManager.EntryCars.Length);
         foreach (var ec in _entryCarManager.EntryCars)
         {
             cars.Add(new EntryListResponseCar
@@ -127,7 +127,7 @@ public class HttpController : ControllerBase
         bool guidValid = ulong.TryParse(guid, out ulong ulongGuid);
         bool isAdmin = guidValid && await _adminService.IsAdminAsync(ulongGuid);
         
-        List<DetailResponseCar> cars = [];
+        var cars = new List<DetailResponseCar>(_entryCarManager.EntryCars.Length);
         foreach (var ec in _entryCarManager.EntryCars)
         {
             cars.Add(new DetailResponseCar

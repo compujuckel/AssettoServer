@@ -9,6 +9,7 @@ using AssettoServer.Server.Admin;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.OpenSlotFilters;
+using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
@@ -18,12 +19,12 @@ namespace AssettoServer.Server;
 
 public class EntryCarManager
 {
-    public EntryCar[] EntryCars { get; private set; } = [];
+    public IEntryCar<IClient>[] EntryCars { get; private set; } = [];
     public ConcurrentDictionary<int, EntryCar> ConnectedCars { get; } = new();
 
     private readonly ACServerConfiguration _configuration;
     private readonly IBlacklistService _blacklist;
-    private readonly EntryCar.Factory _entryCarFactory;
+    private readonly Dictionary<string, IEntryCarFactory> _entryCarFactories;
     private readonly IAdminService _adminService;
     private readonly SemaphoreSlim _connectSemaphore = new(1, 1);
     private readonly Lazy<OpenSlotFilterChain> _openSlotFilterChain;
@@ -48,10 +49,10 @@ public class EntryCarManager
     /// </summary>
     public event EventHandler<ACTcpClient, EventArgs>? ClientDisconnected;
 
-    public EntryCarManager(ACServerConfiguration configuration, EntryCar.Factory entryCarFactory, IBlacklistService blacklist, IAdminService adminService, Lazy<OpenSlotFilterChain> openSlotFilterChain)
+    public EntryCarManager(ACServerConfiguration configuration, IEnumerable<IEntryCarFactory> entryCarFactories, IBlacklistService blacklist, IAdminService adminService, Lazy<OpenSlotFilterChain> openSlotFilterChain)
     {
         _configuration = configuration;
-        _entryCarFactory = entryCarFactory;
+        _entryCarFactories = entryCarFactories.ToDictionary(x => x.ClientType, x => x);
         _blacklist = blacklist;
         _adminService = adminService;
         _openSlotFilterChain = openSlotFilterChain;
@@ -151,9 +152,9 @@ public class EntryCarManager
     {
         foreach (var car in EntryCars)
         {
-            if (car.Client is { HasSentFirstUpdate: true } && car.Client != sender)
+            if (car.Client is ACTcpClient { HasSentFirstUpdate: true } client && client != sender)
             {
-                car.Client?.SendPacket(packet);
+                client.SendPacket(packet);
             }
         }
     }
@@ -165,9 +166,9 @@ public class EntryCarManager
     {
         foreach (var car in EntryCars)
         {
-            if (car.Client is { HasSentFirstUpdate: true, UdpEndpoint: not null } 
+            if (car is EntryCar { Client: { HasSentFirstUpdate: true, UdpEndpoint: not null } } entryCar
                 && (!skipSender || car.Client != sender)
-                && (!range.HasValue || (sender != null && sender.EntryCar.IsInRange(car, range.Value))))
+                && (!range.HasValue || (sender != null && sender.EntryCar.IsInRange(entryCar, range.Value))))
             {
                 car.Client?.SendPacketUdp(in packet);
             }
@@ -193,16 +194,16 @@ public class EntryCarManager
                 var requestedCarName = handshakeRequest.RequestedCar[..slotIndexSeparator];
                 var candidate = EntryCars.Where(c => c.Model == requestedCarName).ElementAtOrDefault(requestedSlotIndex);
 
-                if (candidate == null)
+                if (candidate is not EntryCar candidateCar)
                 {
                     return false;
                 }
                 
-                candidates = [candidate];
+                candidates = [candidateCar];
             }
             else
             {
-                candidates = EntryCars.Where(c => c.Model == handshakeRequest.RequestedCar);
+                candidates = EntryCars.Where(c => c.Model == handshakeRequest.RequestedCar && c is EntryCar).Select(c => (EntryCar)c);
             }
 
             var isAdmin = await _adminService.IsAdminAsync(handshakeRequest.Guid);
@@ -239,32 +240,18 @@ public class EntryCarManager
 
     internal void Initialize()
     {
-        EntryCars = new EntryCar[Math.Min(_configuration.Server.MaxClients, _configuration.EntryList.Cars.Count)];
+        EntryCars = new IEntryCar<IClient>[Math.Min(_configuration.Server.MaxClients, _configuration.EntryList.Cars.Count)];
         Log.Information("Loaded {Count} cars", EntryCars.Length);
         for (int i = 0; i < EntryCars.Length; i++)
         {
             var entry = _configuration.EntryList.Cars[i];
-            var driverOptions = CSPDriverOptions.Parse(entry.Skin);
-            var aiMode = _configuration.Extra.EnableAi ? entry.AiMode : AiMode.None;
 
-            var car = _entryCarFactory(entry.Model, entry.Skin, (byte)i);
-            car.SpectatorMode = entry.SpectatorMode;
-            car.Ballast = entry.Ballast;
-            car.Restrictor = entry.Restrictor;
-            car.FixedSetup = entry.FixedSetup;
-            car.DriverOptionsFlags = driverOptions;
-            car.AiMode = aiMode;
-            car.AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange);
-            car.AiControlled = aiMode != AiMode.None;
-            car.NetworkDistanceSquared = MathF.Pow(_configuration.Extra.NetworkBubbleDistance, 2);
-            car.OutsideNetworkBubbleUpdateRateMs = 1000 / _configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
-            car.LegalTyres = entry.LegalTyres ?? _configuration.Server.LegalTyres;
-            if (!string.IsNullOrWhiteSpace(entry.Guid))
+            if (!_entryCarFactories.TryGetValue(entry.ClientType, out var factory))
             {
-                car.AllowedGuids = entry.Guid.Split(';').Select(ulong.Parse).ToList();
+                throw new ConfigurationException();
             }
-
-            EntryCars[i] = car;
+            
+            EntryCars[i] = factory.Create(entry, (byte)i);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using AssettoServer.Shared.Model;
 using AssettoServer.Utils;
 using IniParser;
 using IniParser.Model;
@@ -13,7 +14,7 @@ public class EntryList
     [IniSection("CAR")] public IReadOnlyList<Entry> Cars { get; init; } = new List<Entry>();
     
     [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
-    public class Entry
+    public class Entry : IEntry
     {
         [IniField("MODEL")] public string Model { get; init; } = "";
         [IniField("SKIN")] public string? Skin { get; init; }
@@ -25,6 +26,7 @@ public class EntryList
         [IniField("FIXED_SETUP")] public string? FixedSetup { get; init; } = null;
         [IniField("GUID")] public string Guid { get; init; } = "";
         [IniField("AI")] public AiMode AiMode { get; internal set; } = AiMode.None;
+        [IniField("CLIENT_TYPE")] public string ClientType { get; init; } = "Default";
         [IniField("LEGAL_TYRES")] public string? LegalTyres { get; init; }
     }
     

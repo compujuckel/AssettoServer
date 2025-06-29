@@ -10,4 +10,18 @@ public interface IEntryCar<out TClient> where TClient : IClient
     public TClient? Client { get; }
     public bool AiControlled { get; }
     public string? AiName { get; }
+    public AiMode AiMode { get; }
+    public DriverOptionsFlags DriverOptionsFlags { get; }
+}
+
+public interface IConnectableEntryCar<out TClient> : IEntryCar<TClient> where TClient : IConnectableClient
+{
+}
+
+
+[Flags]
+public enum DriverOptionsFlags
+{
+    AllowColorChange = 0x10,
+    AllowTeleporting = 0x20
 }

@@ -17,9 +17,9 @@ public class AiUpdater
         for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
         {
             var entryCar = _entryCarManager.EntryCars[i];
-            if (entryCar.AiControlled)
+            if (entryCar is EntryCar { AiControlled: true} aiCar)
             {
-                entryCar.AiUpdate();
+                aiCar.AiUpdate();
             }
         }
     }

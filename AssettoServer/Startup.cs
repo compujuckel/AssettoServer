@@ -26,6 +26,7 @@ using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.UserGroup;
 using AssettoServer.Server.Weather;
 using AssettoServer.Server.Whitelist;
+using AssettoServer.Shared.Model;
 using Autofac;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
@@ -83,8 +84,9 @@ public class Startup
         // No hosted services below this line
         
         builder.RegisterType<HttpClient>().AsSelf();
-        builder.RegisterType<ACTcpClient>().AsSelf();
-        builder.RegisterType<EntryCar>().AsSelf();
+        builder.RegisterType<ACTcpClient>().As<IClient>().AsSelf();
+        builder.RegisterType<EntryCar>().As<IEntryCar<IClient>>().AsSelf();
+        builder.RegisterType<EntryCarFactory>().As<IEntryCarFactory>().AsSelf();
         builder.RegisterType<ChatCommandContext>().AsSelf();
         builder.RegisterType<RconCommandContext>().AsSelf();
         builder.RegisterType<SessionState>().AsSelf();

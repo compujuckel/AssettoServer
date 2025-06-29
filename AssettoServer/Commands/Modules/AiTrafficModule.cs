@@ -29,8 +29,9 @@ public class AiTrafficModule : ACModuleBase
             return;
         }
         
-        foreach (var aiCar in _entryCarManager.EntryCars.Where(car => car.AiControlled && car.Client == null))
+        foreach (var entryCar in _entryCarManager.EntryCars.Where(car => car is EntryCar { AiControlled: true, Client: null }))
         {
+            var aiCar = (EntryCar)entryCar;
             aiCar.SetAiOverbooking(count);
         }
         Reply($"AI overbooking set to {count}");

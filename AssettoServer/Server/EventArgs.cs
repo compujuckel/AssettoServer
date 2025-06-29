@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Numerics;
 using System.Text;
 using AssettoServer.Network.Tcp;
+using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Shared.Network.Packets.Shared;
@@ -73,12 +74,12 @@ public class SessionChangedEventArgs : EventArgs
 
 public class CollisionEventArgs : EventArgs
 {
-    public EntryCar? TargetCar { get; }
+    public IEntryCar<IClient>? TargetCar { get; }
     public float Speed { get; }
     public Vector3 Position { get; }
     public Vector3 RelPosition { get; }
 
-    public CollisionEventArgs(EntryCar? targetCar, float speed, Vector3 position, Vector3 relPosition)
+    public CollisionEventArgs(IEntryCar<IClient>? targetCar, float speed, Vector3 position, Vector3 relPosition)
     {
         TargetCar = targetCar;
         Speed = speed;

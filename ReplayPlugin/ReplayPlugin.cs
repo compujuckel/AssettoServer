@@ -2,9 +2,8 @@
 using System.Runtime.InteropServices;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
-using AssettoServer.Shared.Services;
+using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +14,7 @@ using Serilog;
 
 namespace ReplayPlugin;
 
-public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class ReplayPlugin : BackgroundService
 {
     private readonly ReplayConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
@@ -26,8 +25,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
     private readonly EntryCarExtraDataManager _extraData;
     private readonly ReplayMetadataProvider _metadata;
     
-    public ReplayPlugin(IHostApplicationLifetime applicationLifetime,
-        EntryCarManager entryCarManager,
+    public ReplayPlugin(EntryCarManager entryCarManager,
         WeatherManager weather,
         SessionManager session,
         ReplayManager replayManager,
@@ -35,7 +33,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
         CSPServerScriptProvider scriptProvider,
         CSPClientMessageTypeManager cspClientMessageTypeManager,
         EntryCarExtraDataManager extraData,
-        ReplayMetadataProvider metadata) : base(applicationLifetime)
+        ReplayMetadataProvider metadata)
     {
         _entryCarManager = entryCarManager;
         _weather = weather;
@@ -68,15 +66,15 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
         _state.TryReset();
 
         int numAiMappings = 0;
-        foreach (var entryCar in _entryCarManager.EntryCars)
+        foreach (var car in _entryCarManager.EntryCars)
         {
-            if (entryCar.Client?.HasSentFirstUpdate == true)
+            if (car.Client is IConnectableClient {HasSentFirstUpdate: true})
             {
-                _state.PlayerCars.Add((entryCar.SessionId, entryCar.Status));
-                _state.AiFrameMapping.Add(entryCar.SessionId, new List<short>());
+                _state.PlayerCars.Add((car.SessionId, car.Status));
+                _state.AiFrameMapping.Add(car.SessionId, new List<short>());
                 numAiMappings++;
             }
-            else if (entryCar.AiControlled)
+            else if (car is EntryCar { AiControlled: true } entryCar)
             {
                 for (int i = 0; i < entryCar.LastSeenAiState.Length; i++)
                 {

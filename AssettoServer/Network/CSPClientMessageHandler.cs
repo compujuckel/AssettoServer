@@ -149,9 +149,9 @@ public class CSPClientMessageHandler
             if (sessionId.HasValue)
             {
                 var client = _entryCarManager.EntryCars[sessionId.Value].Client;
-                if (client != null && (!range.HasValue || sender.EntryCar.IsInRange(client.EntryCar, range.Value)))
+                if (client is ACTcpClient acTcpClient && (!range.HasValue || sender.EntryCar.IsInRange(acTcpClient.EntryCar, range.Value)))
                 {
-                    client.SendPacketUdp(in clientMessage);
+                    acTcpClient.SendPacketUdp(in clientMessage);
                 }
             }
             else

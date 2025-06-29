@@ -120,7 +120,7 @@ public class ReportPlugin : IHostedService
     internal AuditLog GetAuditLog(DateTime timestamp)
     {
         DeleteOldEvents();
-        var entryList = _entryCarManager.EntryCars.Select(car => new AuditClient(car));
+        var entryList = _entryCarManager.EntryCars.OfType<EntryCar>().Select(car => new AuditClient(car));
         return new AuditLog(timestamp, entryList, _events.ToList());
     }
 

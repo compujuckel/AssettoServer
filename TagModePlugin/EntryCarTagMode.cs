@@ -50,9 +50,9 @@ public class EntryCarTagMode
 
     public void OnCollision(CollisionEventArgs args)
     {
-        if (IsTagged || _plugin.CurrentSession == null || args.TargetCar == null) return;
+        if (IsTagged || _plugin.CurrentSession == null || args.TargetCar is not EntryCar target) return;
         
-        var targetCar = _plugin.CurrentSession.GetCar(args.TargetCar);
+        var targetCar = _plugin.CurrentSession.GetCar(target);
 
         if (!targetCar.IsTagged) return;
         

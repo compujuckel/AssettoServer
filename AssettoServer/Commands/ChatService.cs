@@ -91,9 +91,9 @@ public partial class ChatService
                 
             foreach (var car in _entryCarManager.EntryCars)
             {
-                if (car.Client is { HasSentFirstUpdate: true })
+                if (car is EntryCar { Client.HasSentFirstUpdate: true } entryCar)
                 {
-                    car.Client?.SendPacket(car.Client?.CSPVersion < CSPVersion.V0_1_80_p389 ? oldVersionMessage : args.ChatMessage);
+                    entryCar.Client?.SendPacket(entryCar.Client?.CSPVersion < CSPVersion.V0_1_80_p389 ? oldVersionMessage : args.ChatMessage);
                 }
             }
         }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Configuration.Extra;
@@ -424,8 +425,8 @@ public class AiState : IDisposable
             float minDistance = float.MaxValue;
             for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
             {
-                var playerCar = _entryCarManager.EntryCars[i];
-                if (playerCar.Client?.HasSentFirstUpdate == true)
+                var iteratedCar = _entryCarManager.EntryCars[i];
+                if (iteratedCar is EntryCar {Client.HasSentFirstUpdate: true} playerCar)
                 {
                     float distance = Vector3.DistanceSquared(playerCar.Status.Position, Status.Position);
 

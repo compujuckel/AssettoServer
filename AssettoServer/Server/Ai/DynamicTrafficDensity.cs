@@ -35,7 +35,7 @@ public class DynamicTrafficDensity : BackgroundService
         return (float)MathUtils.Lerp(_configuration.Extra.AiParams.HourlyTrafficDensity![lowerBound], _configuration.Extra.AiParams.HourlyTrafficDensity![higherBound], hourOfDay - lowerBound);
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public override Task StartAsync(CancellationToken cancellationToken)
     {
         if (_configuration.Server.TimeOfDayMultiplier == 0 )
         {
@@ -50,6 +50,11 @@ public class DynamicTrafficDensity : BackgroundService
             }
         }
         
+        return base.StartAsync(cancellationToken);  
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
         while (!stoppingToken.IsCancellationRequested)
         {
             try

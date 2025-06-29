@@ -26,7 +26,8 @@ public class LiveWeatherProvider : BackgroundService
     {
         _trackParams = _weatherManager.TrackParams ?? throw new InvalidOperationException("No track params set for track");
         
-        while (!stoppingToken.IsCancellationRequested)
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_configuration.UpdateIntervalMilliseconds));
+        while (await timer.WaitForNextTickAsync(stoppingToken))
         {
             try
             {
@@ -35,10 +36,6 @@ public class LiveWeatherProvider : BackgroundService
             catch (Exception ex)
             {
                 Log.Error(ex, "Error during live weather update");
-            }
-            finally
-            {
-                await Task.Delay(_configuration.UpdateIntervalMilliseconds, stoppingToken);
             }
         }
     }

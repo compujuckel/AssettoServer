@@ -286,7 +286,17 @@ public class ACServer : BackgroundService, IHostedLifecycleService
         }
     }
 
-    public Task StartedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StartedAsync(CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(_geoParamsManager.GeoParams.Ip))
+        {
+            Log.Information("Invite link: {ServerInviteLink}", $"https://acstuff.club/s/q:race/online/join?ip={_geoParamsManager.GeoParams.Ip}&httpPort={_configuration.Server.HttpPort}");
+        }
+        
+        
+        Log.Information("Server startup completed");
+        return Task.CompletedTask;
+    }
 
     public async Task StartingAsync(CancellationToken cancellationToken)
     {

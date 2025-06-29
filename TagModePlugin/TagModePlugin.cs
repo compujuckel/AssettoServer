@@ -67,7 +67,7 @@ public class TagModePlugin : BackgroundService
     private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
         => Instances[sender.SessionId].OnCollision(args);
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public override async Task StartAsync(CancellationToken cancellationToken)
     {
         if (_entryCarManager.EntryCars.Any(entryCar => entryCar.DriverOptionsFlags.HasFlag(DriverOptionsFlags.AllowColorChange)))
         {
@@ -78,7 +78,12 @@ public class TagModePlugin : BackgroundService
         {
             Instances.Add(entryCar.SessionId, _entryCarTagModeFactory(entryCar));
         }
-
+        
+        await base.StartAsync(cancellationToken);
+    }
+    
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
         if (!_configuration.EnableLoop) return;
 
         while (!stoppingToken.IsCancellationRequested)

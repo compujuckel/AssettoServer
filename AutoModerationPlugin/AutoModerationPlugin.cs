@@ -66,7 +66,7 @@ public class AutoModerationPlugin : BackgroundService
         _instances[sender.SessionId].AdminReset();
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public override async Task StartAsync(CancellationToken cancellationToken)
     {
         foreach (var entryCar in _entryCarManager.EntryCars)
         {
@@ -77,7 +77,12 @@ public class AutoModerationPlugin : BackgroundService
         {
             throw new ConfigurationException("AutoModerationPlugin: No lights kick does not work with missing track params");
         }
+        
+        await base.StartAsync(cancellationToken);
+    }
 
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {

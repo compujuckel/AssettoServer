@@ -482,10 +482,6 @@ public class AiBehavior : BackgroundService
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         SetHttpDetailsExtensions();
-        
-        _ = UpdateAsync(stoppingToken);
-        _ = ObstacleDetectionAsync(stoppingToken);
-
-        return Task.CompletedTask;
+        return Task.WhenAll(UpdateAsync(stoppingToken), ObstacleDetectionAsync(stoppingToken));
     }
 }

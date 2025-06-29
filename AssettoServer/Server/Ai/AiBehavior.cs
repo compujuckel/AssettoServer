@@ -187,7 +187,7 @@ public class AiBehavior : BackgroundService
             var drivingTheRightWay = Vector3.Dot(_spline.Operations.GetForwardVector(currentSplinePointId), entryCar.Status.Velocity) > 0;
 
             if (entryCar is EntryCar { AiControlled: false } playerCar
-                && entryCar.Client?.HasSentFirstUpdate == true
+                && playerCar.Client?.HasSentFirstUpdate == true
                 && _sessionManager.ServerTimeMilliseconds - playerCar.LastActiveTime < _configuration.Extra.AiParams.PlayerAfkTimeoutMilliseconds
                 && (_configuration.Extra.AiParams.TwoWayTraffic || _configuration.Extra.AiParams.WrongWayTraffic || drivingTheRightWay))
             {
@@ -388,13 +388,19 @@ public class AiBehavior : BackgroundService
 
         for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
         {
-            var entryCar = _entryCarManager.EntryCars[i];
-            if (entryCar is EntryCar { AiControlled: true } aiCar && !aiCar.IsPositionSafe(pointId))
+            var car = _entryCarManager.EntryCars[i];
+            
+            if (car is not EntryCar entryCar)
+            {
+                return false;
+            }
+            
+            if (entryCar is { AiControlled: true } && !entryCar.IsPositionSafe(pointId))
             {
                 return false;
             }
 
-            if (entryCar.Client?.HasSentFirstUpdate == true
+            if (entryCar is { Client.HasSentFirstUpdate: true }
                 && Vector3.DistanceSquared(entryCar.Status.Position, ops.Points[pointId].Position) < _configuration.Extra.AiParams.SpawnSafetyDistanceToPlayerSquared)
             {
                 return false;
@@ -448,7 +454,7 @@ public class AiBehavior : BackgroundService
 
     private void AdjustOverbooking()
     {
-        int playerCount = _entryCarManager.EntryCars.Count(car => car.Client is { IsConnected: true });
+        int playerCount = _entryCarManager.EntryCars.Count(car => car.Client is IConnectableClient { IsConnected: true });
         var aiSlots = _entryCarManager.EntryCars.OfType<EntryCar>().Where(car => car.Client == null && car.AiControlled).ToList(); // client null check is necessary here so that slots where someone is connecting don't count
 
         if (aiSlots.Count == 0)

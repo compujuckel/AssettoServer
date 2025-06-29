@@ -33,7 +33,7 @@ using Serilog.Events;
 
 namespace AssettoServer.Network.Tcp;
 
-public class ACTcpClient : IClient
+public class ACTcpClient : IConnectableClient
 {
     private ACUdpServer UdpServer { get; }
     public ILogger Logger { get; }

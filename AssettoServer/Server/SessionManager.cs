@@ -317,7 +317,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
 
             if (CurrentSession.OverTimeMilliseconds == overTimeMilliseconds)
             {
-                if (_entryCarManager.EntryCars.Where(c => c.Client is ACTcpClient { HasSentFirstUpdate: true })
+                if (_entryCarManager.EntryCars.Where(c => c.Client is IConnectableClient { HasSentFirstUpdate: true })
                     .Any(car => CurrentSession.Results?[car.SessionId] is { HasCompletedLastLap: false }))
                 {
                     return;
@@ -331,7 +331,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
                 CurrentSession.OverTimeMilliseconds = overTimeMilliseconds;
 
             if (_entryCarManager.EntryCars
-                .Where(c => c.Client is ACTcpClient { HasSentFirstUpdate: true })
+                .Where(c => c.Client is IConnectableClient { HasSentFirstUpdate: true })
                 .Any(car => CurrentSession.Results?[car.SessionId] is { HasCompletedLastLap: false }
                             && car.Status.Velocity.LengthSquared() > 5))
             {
@@ -430,7 +430,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
     public bool RestartSession()
     {
         // StallSessionSwitch
-        if (_entryCarManager.EntryCars.Any(c => c.Client is ACTcpClient { HasSentFirstUpdate: false }))
+        if (_entryCarManager.EntryCars.Any(c => c.Client is IConnectableClient { HasSentFirstUpdate: false }))
             return false;
 
         SetSession(CurrentSessionIndex);
@@ -440,7 +440,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
     public bool NextSession()
     {
         // StallSessionSwitch
-        if (_entryCarManager.EntryCars.Any(c => c.Client is ACTcpClient { HasSentFirstUpdate: false }))
+        if (_entryCarManager.EntryCars.Any(c => c.Client is IConnectableClient { HasSentFirstUpdate: false }))
             return false;
 
         MustInvertGrid = false;

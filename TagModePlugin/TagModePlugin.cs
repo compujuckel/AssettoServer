@@ -116,7 +116,7 @@ public class TagModePlugin : BackgroundService
     {
         if (CurrentSession is { HasEnded: false }) return false;
         
-        if (_entryCarManager.EntryCars.Count(car => car.Client is ACTcpClient { HasSentFirstUpdate: true }) >= MinPlayers)
+        if (_entryCarManager.EntryCars.Count(car => car.Client is IConnectableClient { HasSentFirstUpdate: true }) >= MinPlayers)
         {
             if (tagger is null && !TryPickRandomTagger(out tagger))
                 return false;

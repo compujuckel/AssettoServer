@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Weather;
+using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
@@ -67,7 +68,7 @@ public class ReplayPlugin : BackgroundService
         int numAiMappings = 0;
         foreach (var car in _entryCarManager.EntryCars)
         {
-            if (car.Client?.HasSentFirstUpdate == true)
+            if (car.Client is IConnectableClient {HasSentFirstUpdate: true})
             {
                 _state.PlayerCars.Add((car.SessionId, car.Status));
                 _state.AiFrameMapping.Add(car.SessionId, new List<short>());

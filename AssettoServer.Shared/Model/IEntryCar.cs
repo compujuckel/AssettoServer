@@ -1,4 +1,5 @@
-﻿using AssettoServer.Shared.Network.Packets.Outgoing;
+﻿using System.Numerics;
+using AssettoServer.Shared.Network.Packets.Outgoing;
 
 namespace AssettoServer.Shared.Model;
 
@@ -29,6 +30,7 @@ public interface IEntryCar<out TClient> where TClient : IClient
 
 public interface IConnectableEntryCar<out TClient> : IEntryCar<TClient> where TClient : IConnectableClient
 {
+    // TODO idea is to not use EntryCar in code, only the interface
 }
 
 

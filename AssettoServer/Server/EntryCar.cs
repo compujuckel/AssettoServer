@@ -17,7 +17,7 @@ using Serilog.Events;
 
 namespace AssettoServer.Server;
 
-public partial class EntryCar : IEntryCar<ACTcpClient>
+public partial class EntryCar : IConnectableEntryCar<ACTcpClient>
 { 
     public ACTcpClient? Client { get; internal set; }
     public CarStatus Status { get; private set; } = new();

@@ -152,7 +152,7 @@ public class EntryCarManager
     {
         foreach (var car in EntryCars)
         {
-            if (car.Client is ACTcpClient { HasSentFirstUpdate: true } client && client != sender)
+            if (car.Client is IConnectableClient { HasSentFirstUpdate: true } client && client != sender)
             {
                 client.SendPacket(packet);
             }
@@ -248,7 +248,7 @@ public class EntryCarManager
 
             if (!_entryCarFactories.TryGetValue(entry.ClientType.ToUpper(), out var factory))
             {
-                throw new ConfigurationException();
+                throw new ConfigurationException($"No matching client type found for Entry {i}");
             }
             
             EntryCars[i] = factory.Create(entry, (byte)i);

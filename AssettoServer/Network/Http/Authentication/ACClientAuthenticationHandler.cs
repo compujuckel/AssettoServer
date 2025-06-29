@@ -44,7 +44,7 @@ public class ACClientAuthenticationHandler : AuthenticationHandler<ACClientAuthe
                 new(ClaimTypes.Name, client.Name!)
             };
 
-            if (client is ACTcpClient { IsAdministrator: true })
+            if (client is { IsAdministrator: true })
             {
                 claims.Add(new Claim(ClaimTypes.Role, "Administrator"));
             }

@@ -193,10 +193,10 @@ public class ACServer : BackgroundService, IHostedLifecycleService
                                 var toCar = _entryCarManager.EntryCars[j];
                                 var toClient = toCar.Client;
                                 if (toCar == fromCar 
-                                    || toClient == null || toClient is ACTcpClient { HasSentFirstUpdate: false } || toClient is ACTcpClient { UdpEndpoint: null }
+                                    || toClient == null || toClient is IConnectableClient { HasSentFirstUpdate: false } || toClient is IConnectableClient { HasUdpEndpoint: true }
                                     || !fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
 
-                                if (toClient.SupportsCSPCustomUpdate || fromCar.AiControlled)
+                                if (toClient is IConnectableClient { SupportsCSPCustomUpdate: true } || fromCar.AiControlled)
                                 {
                                     positionUpdates[toCar].Add(update);
                                 }
@@ -218,7 +218,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
                             const int chunkSize = 20;
                             for (int i = 0; i < updates.Count; i += chunkSize)
                             {
-                                if (toClient.SupportsCSPCustomUpdate)
+                                if (toClient is IConnectableClient { SupportsCSPCustomUpdate: true })
                                 {
                                     var packet = new CSPPositionUpdate(new ArraySegment<PositionUpdateOut>(updates.Array, i, Math.Min(chunkSize, updates.Count - i)));
                                     toClient.SendPacketUdp(in packet);

@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Shared.Network.Packets.Shared;
 using Microsoft.AspNetCore.Http;
@@ -22,7 +23,8 @@ public class ReportController : ControllerBase
     [HttpPost("/report")]
     public async Task<ActionResult> PostReport(Guid key, [FromHeader(Name = "X-Car-Index")] int sessionId)
     {
-        var reporterClient = _entryCarManager.EntryCars[sessionId].Client ?? throw new InvalidOperationException("Client not connected");
+        if (_entryCarManager.EntryCars[sessionId].Client is not ACTcpClient reporterClient)
+            throw new InvalidOperationException("Client not connected");
         var lastReport = _plugin.GetLastReplay(reporterClient);
 
         if (_plugin.Key != key

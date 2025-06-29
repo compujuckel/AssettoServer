@@ -246,7 +246,7 @@ public class EntryCarManager
         {
             var entry = _configuration.EntryList.Cars[i];
 
-            if (!_entryCarFactories.TryGetValue(entry.ClientType, out var factory))
+            if (!_entryCarFactories.TryGetValue(entry.ClientType.ToUpper(), out var factory))
             {
                 throw new ConfigurationException();
             }

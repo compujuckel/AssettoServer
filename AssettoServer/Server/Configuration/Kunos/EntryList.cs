@@ -26,7 +26,7 @@ public class EntryList
         [IniField("FIXED_SETUP")] public string? FixedSetup { get; init; } = null;
         [IniField("GUID")] public string Guid { get; init; } = "";
         [IniField("AI")] public AiMode AiMode { get; internal set; } = AiMode.None;
-        [IniField("CLIENT_TYPE")] public string ClientType { get; init; } = "Default";
+        [IniField("CLIENT_TYPE")] public string ClientType { get; init; } = "DEFAULT";
         [IniField("LEGAL_TYRES")] public string? LegalTyres { get; init; }
     }
     

@@ -1,5 +1,6 @@
 ﻿using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
+using AssettoServer.Shared.Model;
 using JetBrains.Annotations;
 
 namespace ReportPlugin;

@@ -4,6 +4,7 @@ namespace AssettoServer.Shared.Model;
 
 public interface IClient
 {
+    public byte SessionId { get; }
     public ulong Guid { get; }
     public string? Name { get; }
     public string? Team { get; }

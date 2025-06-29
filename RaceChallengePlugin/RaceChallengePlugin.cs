@@ -19,7 +19,7 @@ public class RaceChallengePlugin : IHostedService
     
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        foreach (var entryCar in _entryCarManager.EntryCars)
+        foreach (var entryCar in _entryCarManager.EntryCars.OfType<EntryCar>())
         {
             _instances.Add(entryCar.SessionId, _entryCarRaceFactory(entryCar));
         }

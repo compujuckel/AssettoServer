@@ -592,7 +592,7 @@ public class ACTcpClient : IClient
 
         foreach (var evt in clientEvent.ClientEvents)
         {
-            EntryCar? targetCar = null;
+            IEntryCar<IClient>? targetCar = null;
 
             switch (evt.Type)
             {

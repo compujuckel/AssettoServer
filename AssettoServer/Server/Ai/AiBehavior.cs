@@ -9,6 +9,7 @@ using AssettoServer.Network.Http;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
@@ -69,10 +70,10 @@ public class AiBehavior : BackgroundService
 
     private static void OnCollision(ACTcpClient sender, CollisionEventArgs args)
     {
-        if (args.TargetCar?.AiControlled == true)
+        if (args.TargetCar is EntryCar { AiControlled: true } targetCar)
         {
-            var targetAiState = args.TargetCar.GetClosestAiState(sender.EntryCar.Status.Position);
-            if (targetAiState.AiState != null && targetAiState.DistanceSquared < 25 * 25)
+            var targetAiState = targetCar.GetClosestAiState(sender.EntryCar.Status.Position);
+            if (targetAiState is { AiState: not null, DistanceSquared: < 25 * 25 })
             {
                 Task.Delay(Random.Shared.Next(100, 500)).ContinueWith(_ => targetAiState.AiState.StopForCollision());
             }
@@ -98,9 +99,9 @@ public class AiBehavior : BackgroundService
                 for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
                 {
                     var entryCar = _entryCarManager.EntryCars[i];
-                    if (entryCar.AiControlled)
+                    if (entryCar is EntryCar { AiControlled: true } aiCar)
                     {
-                        entryCar.AiObstacleDetection();
+                        aiCar.AiObstacleDetection();
                     }
                 }
 
@@ -135,9 +136,9 @@ public class AiBehavior : BackgroundService
 
             foreach (var car in _entryCarManager.EntryCars)
             {
-                if (!car.AiControlled) continue;
+                if (car is not EntryCar { AiControlled: true } aiCar) continue;
 
-                var (aiState, _) = car.GetClosestAiState(player.Status.Position);
+                var (aiState, _) = aiCar.GetClosestAiState(player.Status.Position);
                 if (aiState == null) continue;
 
                 sessionIds.Add(car.SessionId);
@@ -185,17 +186,17 @@ public class AiBehavior : BackgroundService
             var (currentSplinePointId, _) = _spline.WorldToSpline(entryCar.Status.Position);
             var drivingTheRightWay = Vector3.Dot(_spline.Operations.GetForwardVector(currentSplinePointId), entryCar.Status.Velocity) > 0;
 
-            if (!entryCar.AiControlled
+            if (entryCar is EntryCar { AiControlled: false } playerCar
                 && entryCar.Client?.HasSentFirstUpdate == true
-                && _sessionManager.ServerTimeMilliseconds - entryCar.LastActiveTime < _configuration.Extra.AiParams.PlayerAfkTimeoutMilliseconds
+                && _sessionManager.ServerTimeMilliseconds - playerCar.LastActiveTime < _configuration.Extra.AiParams.PlayerAfkTimeoutMilliseconds
                 && (_configuration.Extra.AiParams.TwoWayTraffic || _configuration.Extra.AiParams.WrongWayTraffic || drivingTheRightWay))
             {
-                _playerCars.Add(entryCar);
+                _playerCars.Add(playerCar);
             }
-            else if (entryCar.AiControlled)
+            else if (entryCar is EntryCar { AiControlled: true } aiCar)
             {
-                entryCar.RemoveUnsafeStates();
-                entryCar.GetInitializedStates(_initializedAiStates, _uninitializedAiStates);
+                aiCar.RemoveUnsafeStates();
+                aiCar.GetInitializedStates(_initializedAiStates, _uninitializedAiStates);
             }
             
         }
@@ -388,7 +389,7 @@ public class AiBehavior : BackgroundService
         for (var i = 0; i < _entryCarManager.EntryCars.Length; i++)
         {
             var entryCar = _entryCarManager.EntryCars[i];
-            if (entryCar.AiControlled && !entryCar.IsPositionSafe(pointId))
+            if (entryCar is EntryCar { AiControlled: true } aiCar && !aiCar.IsPositionSafe(pointId))
             {
                 return false;
             }
@@ -447,8 +448,8 @@ public class AiBehavior : BackgroundService
 
     private void AdjustOverbooking()
     {
-        int playerCount = _entryCarManager.EntryCars.Count(car => car.Client != null && car.Client.IsConnected);
-        var aiSlots = _entryCarManager.EntryCars.Where(car => car.Client == null && car.AiControlled).ToList(); // client null check is necessary here so that slots where someone is connecting don't count
+        int playerCount = _entryCarManager.EntryCars.Count(car => car.Client is { IsConnected: true });
+        var aiSlots = _entryCarManager.EntryCars.OfType<EntryCar>().Where(car => car.Client == null && car.AiControlled).ToList(); // client null check is necessary here so that slots where someone is connecting don't count
 
         if (aiSlots.Count == 0)
         {

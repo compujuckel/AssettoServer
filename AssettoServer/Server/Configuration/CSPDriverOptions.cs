@@ -1,4 +1,5 @@
 ﻿using System;
+using AssettoServer.Shared.Model;
 
 namespace AssettoServer.Server.Configuration;
 
@@ -23,11 +24,4 @@ public static class CSPDriverOptions
 
         return default;
     }
-}
-
-[Flags]
-public enum DriverOptionsFlags
-{
-    AllowColorChange = 0x10,
-    AllowTeleporting = 0x20
 }

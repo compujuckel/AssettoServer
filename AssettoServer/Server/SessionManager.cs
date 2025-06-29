@@ -317,7 +317,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
 
             if (CurrentSession.OverTimeMilliseconds == overTimeMilliseconds)
             {
-                if (_entryCarManager.EntryCars.Where(c => c.Client is { HasSentFirstUpdate: true })
+                if (_entryCarManager.EntryCars.Where(c => c.Client is ACTcpClient { HasSentFirstUpdate: true })
                     .Any(car => CurrentSession.Results?[car.SessionId] is { HasCompletedLastLap: false }))
                 {
                     return;
@@ -331,7 +331,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
                 CurrentSession.OverTimeMilliseconds = overTimeMilliseconds;
 
             if (_entryCarManager.EntryCars
-                .Where(c => c.Client is { HasSentFirstUpdate: true })
+                .Where(c => c.Client is ACTcpClient { HasSentFirstUpdate: true })
                 .Any(car => CurrentSession.Results?[car.SessionId] is { HasCompletedLastLap: false }
                             && car.Status.Velocity.LengthSquared() > 5))
             {
@@ -430,7 +430,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
     public bool RestartSession()
     {
         // StallSessionSwitch
-        if (_entryCarManager.EntryCars.Any(c => c.Client is { HasSentFirstUpdate: false }))
+        if (_entryCarManager.EntryCars.Any(c => c.Client is ACTcpClient { HasSentFirstUpdate: false }))
             return false;
 
         SetSession(CurrentSessionIndex);
@@ -440,7 +440,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
     public bool NextSession()
     {
         // StallSessionSwitch
-        if (_entryCarManager.EntryCars.Any(c => c.Client is { HasSentFirstUpdate: false }))
+        if (_entryCarManager.EntryCars.Any(c => c.Client is ACTcpClient { HasSentFirstUpdate: false }))
             return false;
 
         MustInvertGrid = false;
@@ -491,7 +491,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
 
         if (target == null)
         {
-            foreach (var car in _entryCarManager.EntryCars.Where(c => c.Client is { HasSentFirstUpdate: true }))
+            foreach (var car in _entryCarManager.EntryCars.Where(c => c is EntryCar { Client.HasSentFirstUpdate: true }).Select(c => (EntryCar)c))
             {
                 packet.StartTime = CurrentSession.StartTimeMilliseconds - car.TimeOffset;
                 car.Client?.SendPacket(packet);
@@ -508,7 +508,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
         if (ServerTimeMilliseconds >= CurrentSession.StartTimeMilliseconds + 5000
             && ServerTimeMilliseconds - CurrentSession.LastRaceStartUpdateMilliseconds <= 1000) return;
 
-        foreach (var car in _entryCarManager.EntryCars.Where(c => c.Client is { HasSentFirstUpdate: true }))
+        foreach (var car in _entryCarManager.EntryCars.Where(c => c is EntryCar { Client.HasSentFirstUpdate: true }).Select(c => (EntryCar)c))
         {
             car.Client?.SendPacketUdp(new RaceStart()
             {

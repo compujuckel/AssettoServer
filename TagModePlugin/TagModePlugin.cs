@@ -4,6 +4,7 @@ using System.Reflection;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Model;
 using Microsoft.Extensions.Hosting;
 
 namespace TagModePlugin;
@@ -74,7 +75,7 @@ public class TagModePlugin : BackgroundService
             throw new ConfigurationException("TagModePlugin doesn't support driver selected car color changes");
         }
         
-        foreach (var entryCar in _entryCarManager.EntryCars)
+        foreach (var entryCar in _entryCarManager.EntryCars.OfType<EntryCar>())
         {
             Instances.Add(entryCar.SessionId, _entryCarTagModeFactory(entryCar));
         }
@@ -100,7 +101,7 @@ public class TagModePlugin : BackgroundService
     
     public bool TryPickRandomTagger([NotNullWhen(true)] out EntryCar? randomTagger)
     {
-        var players = _entryCarManager.EntryCars.Where(car => car.Client is { HasSentFirstUpdate: true }).ToList();
+        var players = _entryCarManager.EntryCars.OfType<EntryCar>().Where(car => car.Client is { HasSentFirstUpdate: true }).ToList();
         if (players.Count < MinPlayers)
         {
             randomTagger = null;
@@ -115,7 +116,7 @@ public class TagModePlugin : BackgroundService
     {
         if (CurrentSession is { HasEnded: false }) return false;
         
-        if (_entryCarManager.EntryCars.Count(car => car.Client is { HasSentFirstUpdate: true }) >= MinPlayers)
+        if (_entryCarManager.EntryCars.Count(car => car.Client is ACTcpClient { HasSentFirstUpdate: true }) >= MinPlayers)
         {
             if (tagger is null && !TryPickRandomTagger(out tagger))
                 return false;

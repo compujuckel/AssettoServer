@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Admin;
 using AssettoServer.Server.CMContentProviders;
@@ -139,7 +140,7 @@ public class HttpController : ControllerBase
                 DriverTeam = ec.Client?.Team,
                 DriverNation = ec.Client?.NationCode,
                 IsConnected = ec.Client != null,
-                ID = ec.Client?.HashedGuid
+                ID = ec.Client is ACTcpClient playerClient ? playerClient.HashedGuid : null
             });
         }
         

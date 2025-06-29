@@ -26,7 +26,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public bool ForceLights { get; internal set; }
 
     public long LastActiveTime { get; internal set; }
-    public bool HasUpdateToSend { get; internal set; }
+    public bool HasUpdateToSend { get; set; }
     public int TimeOffset { get; internal set; }
     public byte SessionId { get; }
     public uint LastRemoteTimestamp { get; internal set; }
@@ -49,7 +49,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }
 
     internal long[] OtherCarsLastSentUpdateTime { get; }
-    public EntryCar? TargetCar { get; set; }
+    public IEntryCar<IClient>? TargetCar { get; set; }
     private long LastFallCheckTime{ get; set; }
 
     /// <summary>
@@ -217,15 +217,15 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         Status.NormalizedPosition = positionUpdate.NormalizedPosition;
     }
 
-    public bool GetPositionUpdateForCar(EntryCar toCar, out PositionUpdateOut positionUpdateOut)
+    public bool GetPositionUpdateForCar(IEntryCar<IClient> toCar, out PositionUpdateOut positionUpdateOut)
     {
         CarStatus targetCarStatus;
         var toTargetCar = toCar.TargetCar;
         if (toTargetCar != null)
         {
-            if (toTargetCar.AiControlled && toTargetCar.LastSeenAiState[toCar.SessionId] != null)
+            if (toTargetCar is EntryCar { AiControlled: true } toTargetCarAi && toTargetCarAi.LastSeenAiState[toCar.SessionId] != null)
             {
-                targetCarStatus = toTargetCar.LastSeenAiState[toCar.SessionId]!.Status;
+                targetCarStatus = toTargetCarAi.LastSeenAiState[toCar.SessionId]!.Status;
             }
             else
             {

@@ -68,7 +68,7 @@ public class AutoModerationPlugin : BackgroundService
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
-        foreach (var entryCar in _entryCarManager.EntryCars)
+        foreach (var entryCar in _entryCarManager.EntryCars.OfType<EntryCar>())
         {
             _instances.Add(_entryCarAutoModerationFactory(entryCar));
         }

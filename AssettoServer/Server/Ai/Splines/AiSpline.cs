@@ -25,8 +25,8 @@ public class AiSpline : IDisposable
     private readonly nint _lanesOffset;
 
     public AiSplineHeader Header { get; }
-    public ReadOnlySpan<SplinePoint> Points => _pointsPointer.ToSpan(Header.NumPoints);
-    public ReadOnlySpan<SplineJunction> Junctions => _junctionsPointer.ToSpan(Header.NumJunctions);
+    public ReadOnlySpan<SplinePoint> Points => _pointsPointer.AsSpan(Header.NumPoints);
+    public ReadOnlySpan<SplineJunction> Junctions => _junctionsPointer.AsSpan(Header.NumJunctions);
     public SlowestAiStates SlowestAiStates { get; }
     public KDTree<int> KdTree { get; }
     public SplinePointOperations Operations => new(Points);
@@ -74,7 +74,7 @@ public class AiSpline : IDisposable
         if (lanesId < 0) return ReadOnlySpan<int>.Empty;
         var offset = _fileAccessor.Pointer.Address + _lanesOffset + lanesId;
         var count = new Pointer<int>(offset).Value;
-        return new Pointer<int>(offset + sizeof(int)).ToSpan(count);
+        return new Pointer<int>(offset + sizeof(int)).AsSpan(count);
     }
     
     public (int PointId, float DistanceSquared) WorldToSpline(Vector3 position)

@@ -1,0 +1,22 @@
+﻿<Solution>
+  <Project Path="AssettoServer.Shared\AssettoServer.Shared.csproj" Type="Classic C#" />
+  <Project Path="AssettoServer.Tests\AssettoServer.Tests.csproj" Type="Classic C#" />
+  <Project Path="AssettoServer\AssettoServer.csproj" Type="Classic C#" />
+  <Project Path="AutoModerationPlugin\AutoModerationPlugin.csproj" Type="Classic C#" />
+  <Project Path="CustomCommandPlugin\CustomCommandPlugin.csproj" Type="Classic C#" />
+  <Project Path="DiscordAuditPlugin\DiscordAuditPlugin.csproj" Type="Classic C#" />
+  <Project Path="FastLaneUtils\FastLaneUtils.csproj" Type="Classic C#" />
+  <Project Path="FastTravelPlugin\FastTravelPlugin.csproj" Type="Classic C#" />
+  <Project Path="GeoIPPlugin\GeoIPPlugin.csproj" Type="Classic C#" />
+  <Project Path="LiveWeatherPlugin\LiveWeatherPlugin.csproj" Type="Classic C#" />
+  <Project Path="RaceChallengePlugin\RaceChallengePlugin.csproj" Type="Classic C#" />
+  <Project Path="RandomWeatherPlugin\RandomWeatherPlugin.csproj" Type="Classic C#" />
+  <Project Path="ReplayPlugin\ReplayPlugin.csproj" Type="Classic C#" />
+  <Project Path="ReportPlugin\ReportPlugin.csproj" Type="Classic C#" />
+  <Project Path="SamplePlugin\SamplePlugin.csproj" Type="Classic C#" />
+  <Project Path="TagModePlugin\TagModePlugin.csproj" Type="Classic C#" />
+  <Project Path="TimeDilationPlugin\TimeDilationPlugin.csproj" Type="Classic C#" />
+  <Project Path="VotingPresetPlugin\VotingPresetPlugin.csproj" Type="Classic C#" />
+  <Project Path="VotingWeatherPlugin\VotingWeatherPlugin.csproj" Type="Classic C#" />
+  <Project Path="WordFilterPlugin\WordFilterPlugin.csproj" Type="Classic C#" />
+</Solution>

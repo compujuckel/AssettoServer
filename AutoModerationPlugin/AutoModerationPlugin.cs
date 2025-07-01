@@ -62,7 +62,7 @@ public class AutoModerationPlugin : BackgroundService
 
     private void OnAdminLoggedIn(PlayerClient sender, EventArgs args)
     {
-        _instances[sender.SessionId].AdminReset();
+        _instances[sender.SessionId].AdminReset(sender);
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)

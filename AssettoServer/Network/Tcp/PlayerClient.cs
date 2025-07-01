@@ -35,7 +35,7 @@ namespace AssettoServer.Network.Tcp;
 
 public class PlayerClient : IClient
 {
-    public CarStatus Status { get; internal set; }
+    public CarStatus Status { get; set; }
     private ACUdpServer UdpServer { get; }
     public ILogger Logger { get; }
     public byte SessionId { get; set; }
@@ -174,11 +174,11 @@ public class PlayerClient : IClient
     /// </summary>
     public event EventHandler<PlayerClient, EventArgs>? LuaReady;
 
-    private class ACTcpClientLogEventEnricher : ILogEventEnricher
+    private class PlayerClientLogEventEnricher : ILogEventEnricher
     {
         private readonly PlayerClient _client;
 
-        public ACTcpClientLogEventEnricher(PlayerClient client)
+        public PlayerClientLogEventEnricher(PlayerClient client)
         {
             _client = client;
         }
@@ -215,7 +215,7 @@ public class PlayerClient : IClient
         UdpServer = udpServer;
         Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
-            .Enrich.With(new ACTcpClientLogEventEnricher(this))
+            .Enrich.With(new PlayerClientLogEventEnricher(this))
             .WriteTo.Logger(Log.Logger)
             .CreateLogger();
 

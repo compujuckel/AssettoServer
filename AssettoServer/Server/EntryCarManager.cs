@@ -156,9 +156,9 @@ public class EntryCarManager
     {
         foreach (var car in EntryCars)
         {
-            if (car.Client is { HasSentFirstUpdate: true } && car.Client != sender)
+            if (car.Client is PlayerClient { HasSentFirstUpdate: true } client && client != sender)
             {
-                car.Client?.SendPacket(packet);
+                client.SendPacket(packet);
             }
         }
     }
@@ -170,11 +170,11 @@ public class EntryCarManager
     {
         foreach (var car in EntryCars)
         {
-            if (car.Client is { HasSentFirstUpdate: true, HasUdpEndpoint: true } 
-                && (!skipSender || car.Client != sender)
+            if (car.Client is PlayerClient { HasSentFirstUpdate: true, HasUdpEndpoint: true } client
+                && (!skipSender || client != sender)
                 && (!range.HasValue || (sender != null && sender.EntryCar.IsInRange(car, range.Value))))
             {
-                car.Client?.SendPacketUdp(in packet);
+                client.SendPacketUdp(in packet);
             }
         }
     }

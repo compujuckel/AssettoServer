@@ -20,18 +20,14 @@ namespace AssettoServer.Server;
 public partial class EntryCar : IEntryCar
 { 
     public IClient? Client { get; set; }
-    public CarStatus Status { get; private set; } = new(); // TODO YEET THIS SHIT
     public bool EnableCollisions { get; private set; } = true;
-
     public bool ForceLights { get; set; }
-
     public long LastActiveTime { get; internal set; }
     public bool HasUpdateToSend { get; internal set; }
     public byte SessionId { get; }
     public uint LastRemoteTimestamp { get; internal set; }
     public DriverOptionsFlags DriverOptionsFlags { get; internal set; }
     public string LegalTyres { get; set; } = "";
-
     public bool IsSpectator { get; internal set; }
     public string Model { get; }
     public string Skin { get; }
@@ -40,10 +36,8 @@ public partial class EntryCar : IEntryCar
     public int Restrictor { get; set; }
     public string? FixedSetup { get; internal set; }
     public List<ulong> AllowedGuids { get; internal set; } = new();
-        
     public float NetworkDistanceSquared { get; internal set; }
     public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }
-
     internal long[] OtherCarsLastSentUpdateTime { get; }
     private long LastFallCheckTime{ get; set; }
 

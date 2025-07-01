@@ -31,11 +31,4 @@ public interface IClient
     public IEntryCar? TargetCar { get; set; }
     
     public ILogger Logger { get; }
-    
-
-    public Task DisconnectAsync();
-    public void SendFirstUpdate();
-    public void SendPacket<TPacket>(TPacket packet) where TPacket : IOutgoingNetworkPacket;
-    public void SendPacketUdp<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket, allows ref struct;
-    public void SendTeleportCarPacket(Vector3 position, Vector3 direction, Vector3 velocity = default);
 }

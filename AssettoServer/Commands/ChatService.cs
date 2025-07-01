@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AssettoServer.Commands.Contexts;
 using AssettoServer.Commands.TypeParsers;
-using AssettoServer.Network.Rcon;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Plugin;
+using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Utils;
 using Qmmands;
@@ -45,9 +44,14 @@ public partial class ChatService
         }
     }
 
-    private void OnClientConnected(PlayerClient sender, EventArgs args)
+    private void OnClientConnected(IClient sender, EventArgs args)
     {
-        sender.ChatMessageReceived += OnChatMessageReceived;
+        switch (sender)
+        {
+            case PlayerClient client:
+                client.ChatMessageReceived += OnChatMessageReceived;
+                break;
+        }
     }
 
     private async Task ProcessCommandAsync(PlayerClient client, ChatMessage message)
@@ -91,9 +95,9 @@ public partial class ChatService
                 
             foreach (var car in _entryCarManager.EntryCars)
             {
-                if (car.Client is { HasSentFirstUpdate: true })
+                if (car.Client is PlayerClient { HasSentFirstUpdate: true } playerClient)
                 {
-                    car.Client?.SendPacket(car.Client?.CSPVersion < CSPVersion.V0_1_80_p389 ? oldVersionMessage : args.ChatMessage);
+                    playerClient.SendPacket(car.Client?.CSPVersion < CSPVersion.V0_1_80_p389 ? oldVersionMessage : args.ChatMessage);
                 }
             }
         }

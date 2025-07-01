@@ -13,7 +13,6 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
 using AssettoServer.Server.Admin;
-using AssettoServer.Server.Ai;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.Configuration;
@@ -61,7 +60,6 @@ public class Startup
         builder.RegisterType<ACTcpServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<ACUdpServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterModule(new WeatherModule(_configuration));
-        builder.RegisterModule(new AiModule(_configuration));
         builder.RegisterType<FileBasedUserGroupProvider>().AsSelf().As<IUserGroupProvider>().As<IHostedService>().SingleInstance();
         builder.RegisterType<SignalHandler>().AsSelf().As<IHostedService>().SingleInstance();
         //builder.RegisterType<TestService>().As<IHostedService>().SingleInstance();

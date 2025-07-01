@@ -245,7 +245,6 @@ public class EntryCarManager
         {
             var entry = _configuration.EntryList.Cars[i];
             var driverOptions = CSPDriverOptions.Parse(entry.Skin);
-            var aiMode = _configuration.Extra.EnableAi ? entry.AiMode : AiMode.None;
 
             var car = _entryCarFactory(entry.Model, entry.Skin, (byte)i);
             car.SpectatorMode = entry.SpectatorMode;
@@ -253,9 +252,6 @@ public class EntryCarManager
             car.Restrictor = entry.Restrictor;
             car.FixedSetup = entry.FixedSetup;
             car.DriverOptionsFlags = driverOptions;
-            car.AiMode = aiMode;
-            car.AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange);
-            car.AiControlled = aiMode != AiMode.None;
             car.NetworkDistanceSquared = MathF.Pow(_configuration.Extra.NetworkBubbleDistance, 2);
             car.OutsideNetworkBubbleUpdateRateMs = 1000 / _configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
             car.LegalTyres = entry.LegalTyres ?? _configuration.Server.LegalTyres;

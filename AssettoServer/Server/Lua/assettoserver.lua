@@ -97,14 +97,6 @@ local teleportToPitsEvent = ac.OnlineEvent({
     end
 end)
 
-local requestResetCarEvent = ac.OnlineEvent({
-    ac.StructItem.key("AS_RequestResetCar"),
-    dummy = ac.StructItem.byte(),
-}, function (sender, message)
-    if sender ~= nil then return end
-    ac.debug("request_reset_car", message.dummy)
-end)
-
 local luaReadyEvent = ac.OnlineEvent({
     ac.StructItem.key("AS_LuaReady"),
     dummy = ac.StructItem.byte()
@@ -278,7 +270,13 @@ end
 
 ui.registerOnlineExtra(ui.Icons.Info, "AssettoServer", function () return true end, window_AssettoServer, nil, ui.OnlineExtraFlags.Tool)
 
-local resetCarControl = ac.ControlButton('__EXT_CMD_RESET', nil)
-resetCarControl:onPressed(function() requestResetCarEvent({}) end)
+local teleportToPitsEvent = ac.OnlineEvent({
+    ac.StructItem.key("AS_TeleportToPits"),
+    dummy = ac.StructItem.byte()
+}, function (sender, message)
+    if sender.index == 0 and ac.INIConfig.onlineExtras():get("EXTRA_RULES", "NO_BACK_TO_PITS", 0) == 0 then
+       physics.teleportCarTo(0, ac.SpawnSet.Pits) 
+    end
+end)
 
 luaReadyEvent({})

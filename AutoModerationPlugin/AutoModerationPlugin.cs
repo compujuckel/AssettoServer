@@ -1,11 +1,11 @@
 ﻿using System.Reflection;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using TrafficAiPlugin.Shared;
 
 namespace AutoModerationPlugin;
 
@@ -23,7 +23,7 @@ public class AutoModerationPlugin : BackgroundService
         ACServerConfiguration serverConfiguration,
         CSPServerScriptProvider scriptProvider,
         Func<EntryCar, EntryCarAutoModeration> entryCarAutoModerationFactory,
-        AiSpline? aiSpline = null)
+        IAiSpline? aiSpline = null)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;

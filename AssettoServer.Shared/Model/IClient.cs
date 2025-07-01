@@ -6,7 +6,7 @@ namespace AssettoServer.Shared.Model;
 
 public interface IClient
 {
-    public CarStatus Status { get; }
+    public CarStatus Status { get; set; }
     public byte SessionId { get; }
     public ulong Guid { get; }
     public string HashedGuid { get; }

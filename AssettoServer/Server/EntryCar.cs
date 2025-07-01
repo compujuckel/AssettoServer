@@ -20,7 +20,7 @@ namespace AssettoServer.Server;
 public partial class EntryCar : IEntryCar
 { 
     public IClient? Client { get; set; }
-    public CarStatus Status { get; private set; } = new(); // TODO YET THIS SHIT
+    public CarStatus Status { get; private set; } = new(); // TODO YEET THIS SHIT
     public bool EnableCollisions { get; private set; } = true;
 
     public bool ForceLights { get; set; }

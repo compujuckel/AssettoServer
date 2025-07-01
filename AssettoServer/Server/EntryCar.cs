@@ -49,7 +49,6 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }
 
     internal long[] OtherCarsLastSentUpdateTime { get; }
-    public EntryCar? TargetCar { get; set; }
     private long LastFallCheckTime{ get; set; }
 
     /// <summary>
@@ -155,7 +154,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
             P2PCount = (short)(_configuration.Extra.EnableUnlimitedP2P ? 99 : 15),
             MandatoryPit = _configuration.Server.PitWindowStart < _configuration.Server.PitWindowEnd,
         };
-        TargetCar = null;
+        if (Client != null) Client.TargetCar = null;
     }
 
     internal void SetActive()
@@ -220,7 +219,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public bool GetPositionUpdateForCar(EntryCar toCar, out PositionUpdateOut positionUpdateOut)
     {
         CarStatus targetCarStatus;
-        var toTargetCar = toCar.TargetCar;
+        var toTargetCar = toCar.Client?.TargetCar;
         if (toTargetCar != null)
         {
             if (toTargetCar.AiControlled && toTargetCar.LastSeenAiState[toCar.SessionId] != null)
@@ -272,7 +271,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         }
 
         float distanceSquared = Vector3.DistanceSquared(status.Position, targetCarStatus.Position);
-        if (TargetCar != null || distanceSquared > NetworkDistanceSquared)
+        if (Client?.TargetCar != null || distanceSquared > NetworkDistanceSquared)
         {
             if ((_sessionManager.ServerTimeMilliseconds - OtherCarsLastSentUpdateTime[toCar.SessionId]) < OutsideNetworkBubbleUpdateRateMs)
             {
@@ -308,7 +307,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     
     public bool IsInRange(EntryCar target, float range)
     {
-        var targetPosition = target.TargetCar != null ? target.TargetCar.Status.Position : target.Status.Position;
+        var targetPosition = target.Client?.TargetCar != null ? target.Client.TargetCar.Status.Position : target.Status.Position;
         return Vector3.DistanceSquared(Status.Position, targetPosition) < range * range;
     }
     

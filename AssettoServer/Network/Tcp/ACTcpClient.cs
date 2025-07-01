@@ -66,6 +66,7 @@ public class ACTcpClient : IClient
     public bool SupportsCSPCustomUpdate { get; private set; }
     public int? CSPVersion { get; private set; }
     internal string ApiKey { get; }
+    public EntryCar? TargetCar { get; set; }
 
     private static ThreadLocal<byte[]> UdpSendBuffer { get; } = new(() => GC.AllocateArray<byte>(1500, true));
     private byte[] TcpSendBuffer { get; }
@@ -624,11 +625,11 @@ public class ACTcpClient : IClient
         var spectatePacket = reader.ReadPacket<SpectateCar>();
         if (spectatePacket.SessionId == SessionId || spectatePacket.SessionId > _entryCarManager.EntryCars.Length)
         {
-            EntryCar.TargetCar = null;
+            TargetCar = null;
         }
         else
         {
-            EntryCar.TargetCar = _entryCarManager.EntryCars[spectatePacket.SessionId];
+            TargetCar = _entryCarManager.EntryCars[spectatePacket.SessionId];
         }
     }
 

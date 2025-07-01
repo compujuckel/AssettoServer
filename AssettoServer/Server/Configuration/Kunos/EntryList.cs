@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using AssettoServer.Shared.Model;
 using AssettoServer.Utils;
 using IniParser;
 using IniParser.Model;

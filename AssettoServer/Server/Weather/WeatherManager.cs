@@ -84,7 +84,7 @@ public class WeatherManager : BackgroundService, IHostedLifecycleService
         _weatherImplementation.SendWeather(CurrentWeather, CurrentDateTime);
     }
 
-    public void SendWeather(ACTcpClient? client = null) => _weatherImplementation.SendWeather(CurrentWeather, CurrentDateTime, client);
+    public void SendWeather(PlayerClient? client = null) => _weatherImplementation.SendWeather(CurrentWeather, CurrentDateTime, client);
 
     private void UpdateSunPosition()
     {

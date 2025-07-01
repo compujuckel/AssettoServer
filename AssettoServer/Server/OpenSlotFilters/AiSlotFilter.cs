@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Model;
 
 namespace AssettoServer.Server.OpenSlotFilters;
 

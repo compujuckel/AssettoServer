@@ -46,7 +46,7 @@ public class AdminModule : ACModuleBase
     }
 
     [Command("kick", "kick_id")]
-    public Task KickAsync(ACTcpClient player, [Remainder] string? reason = null)
+    public Task KickAsync(PlayerClient player, [Remainder] string? reason = null)
     {
         if (player.SessionId == Client?.SessionId)
             Reply("You cannot kick yourself.");
@@ -62,7 +62,7 @@ public class AdminModule : ACModuleBase
     }
 
     [Command("ban", "ban_id")]
-    public Task BanAsync(ACTcpClient player, [Remainder] string? reason = null)
+    public Task BanAsync(PlayerClient player, [Remainder] string? reason = null)
     {
         if (player.SessionId == Client?.SessionId)
             Reply("You cannot ban yourself.");
@@ -98,7 +98,7 @@ public class AdminModule : ACModuleBase
     }
     
     [Command("pit")]
-    public void TeleportToPits([Remainder] ACTcpClient player)
+    public void TeleportToPits([Remainder] PlayerClient player)
     {
         _sessionManager.SendCurrentSession(player);
         player.SendChatMessage("You have been teleported to the pits.");
@@ -183,13 +183,13 @@ public class AdminModule : ACModuleBase
     }
 
     [Command("distance"), RequireConnectedPlayer]
-    public void GetDistance([Remainder] ACTcpClient player)
+    public void GetDistance([Remainder] PlayerClient player)
     {
-        Reply(Vector3.Distance(Client!.EntryCar.Status.Position, player.EntryCar.Status.Position).ToString(CultureInfo.InvariantCulture));
+        Reply(Vector3.Distance(Client!.Status.Position, player.Status.Position).ToString(CultureInfo.InvariantCulture));
     }
 
     [Command("forcelights")]
-    public void ForceLights(string toggle, [Remainder] ACTcpClient player)
+    public void ForceLights(string toggle, [Remainder] PlayerClient player)
     {
         bool forceLights = toggle == "on";
         player.EntryCar.ForceLights = forceLights;
@@ -198,11 +198,11 @@ public class AdminModule : ACModuleBase
     }
 
     [Command("whois")]
-    public void WhoIs(ACTcpClient player)
+    public void WhoIs(PlayerClient player)
     {
         Reply($"IP: {((IPEndPoint?)player.TcpClient.Client.RemoteEndPoint)?.Redact(_configuration.Extra.RedactIpAddresses)}");
-        Reply($"Profile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {player.EntryCar.Ping}ms");
-        Reply($"Position: {player.EntryCar.Status.Position}\nVelocity: {(int)(player.EntryCar.Status.Velocity.Length() * 3.6)}kmh");
+        Reply($"Profile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {player.Ping}ms");
+        Reply($"Position: {player.Status.Position}\nVelocity: {(int)(player.Status.Velocity.Length() * 3.6)}kmh");
         if (player.OwnerGuid.HasValue && player.Guid != player.OwnerGuid)
         {
             Reply($"Steam Family Sharing Owner: https://steamcommunity.com/profiles/{player.OwnerGuid}");
@@ -211,7 +211,7 @@ public class AdminModule : ACModuleBase
 
     // keep restrict for backwards compatibility
     [Command("restrict", "restrictor")]
-    public void Restrict(ACTcpClient player, int restrictor)
+    public void Restrict(PlayerClient player, int restrictor)
     {
         if (restrictor is > 400 or < 0)
         {
@@ -225,7 +225,7 @@ public class AdminModule : ACModuleBase
     }
         
     [Command("ballast")]
-    public void Ballast(ACTcpClient? player = null, float? ballastKg = null)
+    public void Ballast(PlayerClient? player = null, float? ballastKg = null)
     {
         if (player == null || ballastKg == null)
         {

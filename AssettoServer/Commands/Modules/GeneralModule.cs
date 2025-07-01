@@ -30,7 +30,7 @@ public class GeneralModule : ACModuleBase
 
     [Command("ping"), RequireConnectedPlayer]
     public void Ping()
-        => Reply($"Pong! {Client!.EntryCar.Ping}ms.");
+        => Reply($"Pong! {Client!.Ping}ms.");
 
     [Command("time")]
     public void Time()

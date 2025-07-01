@@ -5,5 +5,5 @@ namespace AssettoServer.Server.Weather.Implementation;
 
 public interface IWeatherImplementation
 {
-    public void SendWeather(WeatherData weather, ZonedDateTime dateTime, ACTcpClient? client = null);
+    public void SendWeather(WeatherData weather, ZonedDateTime dateTime, PlayerClient? client = null);
 }

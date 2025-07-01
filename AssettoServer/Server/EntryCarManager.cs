@@ -9,6 +9,7 @@ using AssettoServer.Server.Admin;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.OpenSlotFilters;
+using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
@@ -31,22 +32,26 @@ public class EntryCarManager
     /// <summary>
     /// Fires when a client has secured a slot and established a TCP connection.
     /// </summary>
-    public event EventHandler<ACTcpClient, EventArgs>? ClientConnected;
+    public event EventHandler<PlayerClient, EventArgs>? ClientConnected;
+    /// <summary>
+    /// Fires when a client has connected to a spectator slot and established a TCP connection.
+    /// </summary>
+    public event EventHandler<SpectatorClient, EventArgs>? SpectatorConnected;
     
     /// <summary>
     /// Fires when a client has been kicked.
     /// </summary>
-    public event EventHandler<ACTcpClient, ClientAuditEventArgs>? ClientKicked;
+    public event EventHandler<PlayerClient, ClientAuditEventArgs>? ClientKicked;
         
     /// <summary>
     /// Fires when a client has been banned.
     /// </summary>
-    public event EventHandler<ACTcpClient, ClientAuditEventArgs>? ClientBanned;
+    public event EventHandler<PlayerClient, ClientAuditEventArgs>? ClientBanned;
     
     /// <summary>
     /// Fires when a player has disconnected.
     /// </summary>
-    public event EventHandler<ACTcpClient, EventArgs>? ClientDisconnected;
+    public event EventHandler<PlayerClient, EventArgs>? ClientDisconnected;
 
     public EntryCarManager(ACServerConfiguration configuration, EntryCar.Factory entryCarFactory, IBlacklistService blacklist, IAdminService adminService, Lazy<OpenSlotFilterChain> openSlotFilterChain)
     {
@@ -57,7 +62,7 @@ public class EntryCarManager
         _openSlotFilterChain = openSlotFilterChain;
     }
 
-    public async Task KickAsync(ACTcpClient? client, string? reason = null, ACTcpClient? admin = null)
+    public async Task KickAsync(PlayerClient? client, string? reason = null, PlayerClient? admin = null)
     {
         if (client == null) return;
         
@@ -67,7 +72,7 @@ public class EntryCarManager
         await KickAsync(client, KickReason.Kicked, reason, clientReason, broadcastReason, admin);
     }
     
-    public async Task BanAsync(ACTcpClient? client, string? reason = null, ACTcpClient? admin = null)
+    public async Task BanAsync(PlayerClient? client, string? reason = null, PlayerClient? admin = null)
     {
         if (client == null) return;
         
@@ -82,9 +87,9 @@ public class EntryCarManager
         }
     }
 
-    public async Task KickAsync(ACTcpClient? client, KickReason reason, string? auditReason = null, string? clientReason = null, string? broadcastReason = null, ACTcpClient? admin = null)
+    public async Task KickAsync(IClient? client, KickReason reason, string? auditReason = null, string? clientReason = null, string? broadcastReason = null, PlayerClient? admin = null)
     {
-        if (client != null && !client.IsDisconnectRequested)
+        if (client is PlayerClient { IsDisconnectRequested: false } playerClient)
         {
             if (broadcastReason != null)
             {
@@ -93,10 +98,10 @@ public class EntryCarManager
 
             if (clientReason != null)
             {
-                client.SendPacket(new CSPKickBanMessageOverride { Message = clientReason });
+                playerClient.SendPacket(new CSPKickBanMessageOverride { Message = clientReason });
             }
             
-            client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = reason });
+            playerClient.SendPacket(new KickCar { SessionId = playerClient.SessionId, Reason = reason });
             
             var args = new ClientAuditEventArgs
             {
@@ -106,20 +111,20 @@ public class EntryCarManager
             };
             if (reason is KickReason.Kicked or KickReason.VoteKicked)
             {
-                client.Logger.Information("{ClientName} was kicked. Reason: {Reason}", client.Name, auditReason ?? "No reason given.");
-                ClientKicked?.Invoke(client, args);
+                playerClient.Logger.Information("{ClientName} was kicked. Reason: {Reason}", playerClient.Name, auditReason ?? "No reason given.");
+                ClientKicked?.Invoke(playerClient, args);
             }
             else if (reason is KickReason.VoteBanned or KickReason.VoteBlacklisted)
             {
-                client.Logger.Information("{ClientName} was banned. Reason: {Reason}", client.Name, auditReason ?? "No reason given.");
-                ClientBanned?.Invoke(client, args);
+                playerClient.Logger.Information("{ClientName} was banned. Reason: {Reason}", playerClient.Name, auditReason ?? "No reason given.");
+                ClientBanned?.Invoke(playerClient, args);
             }
 
-            await client.DisconnectAsync();
+            await playerClient.DisconnectAsync();
         }
     }
 
-    internal async Task DisconnectClientAsync(ACTcpClient client)
+    internal async Task DisconnectClientAsync(PlayerClient client)
     {
         try
         {
@@ -147,7 +152,7 @@ public class EntryCarManager
         }
     }
 
-    public void BroadcastPacket<TPacket>(TPacket packet, ACTcpClient? sender = null) where TPacket : IOutgoingNetworkPacket
+    public void BroadcastPacket<TPacket>(TPacket packet, PlayerClient? sender = null) where TPacket : IOutgoingNetworkPacket
     {
         foreach (var car in EntryCars)
         {
@@ -161,11 +166,11 @@ public class EntryCarManager
     public void BroadcastChat(string message, byte senderId = 255) =>
         BroadcastPacket(new ChatMessage { SessionId = senderId, Message = message });
         
-    public void BroadcastPacketUdp<TPacket>(in TPacket packet, ACTcpClient? sender = null, float? range = null, bool skipSender = true) where TPacket : IOutgoingNetworkPacket
+    public void BroadcastPacketUdp<TPacket>(in TPacket packet, PlayerClient? sender = null, float? range = null, bool skipSender = true) where TPacket : IOutgoingNetworkPacket
     {
         foreach (var car in EntryCars)
         {
-            if (car.Client is { HasSentFirstUpdate: true, UdpEndpoint: not null } 
+            if (car.Client is { HasSentFirstUpdate: true, HasUdpEndpoint: true } 
                 && (!skipSender || car.Client != sender)
                 && (!range.HasValue || (sender != null && sender.EntryCar.IsInRange(car, range.Value))))
             {
@@ -174,7 +179,7 @@ public class EntryCarManager
         }
     }
 
-    internal async Task<bool> TrySecureSlotAsync(ACTcpClient client, HandshakeRequest handshakeRequest)
+    internal async Task<bool> TrySecureSlotAsync(PlayerClient client, HandshakeRequest handshakeRequest)
     {
         try
         {

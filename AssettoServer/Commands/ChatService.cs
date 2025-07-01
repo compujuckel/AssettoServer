@@ -19,13 +19,13 @@ namespace AssettoServer.Commands;
 public partial class ChatService
 {
     private readonly EntryCarManager _entryCarManager;
-    private readonly Func<ACTcpClient, ChatCommandContext> _chatContextFactory;
+    private readonly Func<PlayerClient, ChatCommandContext> _chatContextFactory;
     private readonly CommandService _commandService;
 
-    public event EventHandler<ACTcpClient, ChatEventArgs>? MessageReceived;
+    public event EventHandler<PlayerClient, ChatEventArgs>? MessageReceived;
 
     public ChatService(ACPluginLoader loader,
-        Func<ACTcpClient, ChatCommandContext> chatContextFactory,
+        Func<PlayerClient, ChatCommandContext> chatContextFactory,
         ACClientTypeParser acClientTypeParser,
         EntryCarManager entryCarManager,
         CommandService commandService)
@@ -45,12 +45,12 @@ public partial class ChatService
         }
     }
 
-    private void OnClientConnected(ACTcpClient sender, EventArgs args)
+    private void OnClientConnected(PlayerClient sender, EventArgs args)
     {
         sender.ChatMessageReceived += OnChatMessageReceived;
     }
 
-    private async Task ProcessCommandAsync(ACTcpClient client, ChatMessage message)
+    private async Task ProcessCommandAsync(PlayerClient client, ChatMessage message)
         => await ProcessCommandAsync(_chatContextFactory(client), message.Message);
 
     public async Task ProcessCommandAsync(BaseCommandContext context, string command)
@@ -74,7 +74,7 @@ public partial class ChatService
         return ValueTask.CompletedTask;
     }
     
-    private void OnChatMessageReceived(ACTcpClient sender, ChatMessageEventArgs args)
+    private void OnChatMessageReceived(PlayerClient sender, ChatMessageEventArgs args)
     {
         if (!CommandUtilities.HasPrefix(args.ChatMessage.Message, '/', out string commandStr))
         {

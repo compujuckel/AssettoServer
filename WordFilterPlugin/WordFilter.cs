@@ -21,7 +21,7 @@ public class WordFilter : OpenSlotFilterBase
         chatService.MessageReceived += OnChatMessageReceived;
     }
 
-    private void OnChatMessageReceived(ACTcpClient sender, ChatEventArgs args)
+    private void OnChatMessageReceived(PlayerClient sender, ChatEventArgs args)
     {
         if (_configuration.BannableChatPatterns.Any(regex => Regex.Match(args.Message, regex, RegexOptions.IgnoreCase).Success))
         {
@@ -36,7 +36,7 @@ public class WordFilter : OpenSlotFilterBase
         }
     }
     
-    public override Task<AuthFailedResponse?> ShouldAcceptConnectionAsync(ACTcpClient client, HandshakeRequest request)
+    public override Task<AuthFailedResponse?> ShouldAcceptConnectionAsync(PlayerClient client, HandshakeRequest request)
     {
         if (_configuration.ProhibitedUsernamePatterns.Any(regex => Regex.Match(request.Name, regex, RegexOptions.IgnoreCase).Success))
         {

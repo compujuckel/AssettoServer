@@ -27,7 +27,7 @@ public class VoteManager
     }
     
 
-    private void OnClientDisconnected(ACTcpClient sender, EventArgs args) => _state?.Votes.Remove(sender.SessionId);
+    private void OnClientDisconnected(PlayerClient sender, EventArgs args) => _state?.Votes.Remove(sender.SessionId);
     
     public async Task SetVote(byte sessionId, VoteType voteType, bool voteValue, byte target = 0)
     {

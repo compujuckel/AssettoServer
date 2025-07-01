@@ -53,7 +53,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
         scriptProvider.AddScript(streamReader.ReadToEnd(), "replay.lua");
     }
 
-    private void OnUploadData(ACTcpClient sender, UploadDataPacket packet)
+    private void OnUploadData(PlayerClient sender, UploadDataPacket packet)
     {
         var data = _extraData.Data[packet.CarId];
         data.WheelPositions = packet.WheelPositions;

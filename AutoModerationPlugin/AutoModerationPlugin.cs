@@ -56,12 +56,12 @@ public class AutoModerationPlugin : BackgroundService
         _entryCarManager.ClientConnected += (sender, _) => sender.LoggedInAsAdministrator += OnAdminLoggedIn;
     }
 
-    private void OnFirstUpdateSent(ACTcpClient sender, EventArgs args)
+    private void OnFirstUpdateSent(PlayerClient sender, EventArgs args)
     {
         _instances[sender.SessionId].SetActive();
     }
 
-    private void OnAdminLoggedIn(ACTcpClient sender, EventArgs args)
+    private void OnAdminLoggedIn(PlayerClient sender, EventArgs args)
     {
         _instances[sender.SessionId].AdminReset();
     }

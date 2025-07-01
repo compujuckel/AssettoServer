@@ -23,7 +23,7 @@ public class ReportPlugin : IHostedService
     private readonly CSPServerExtraOptions _cspServerExtraOptions;
     private readonly GeoParamsManager _geoParamsManager;
     private readonly ACServerConfiguration _serverConfiguration;
-    private readonly Dictionary<ACTcpClient, Replay> _reports = new();
+    private readonly Dictionary<PlayerClient, Replay> _reports = new();
     private readonly ConcurrentQueue<AuditEvent> _events = new();
 
     public ReportPlugin(
@@ -58,7 +58,7 @@ public class ReportPlugin : IHostedService
         Directory.CreateDirectory("reports");
     }
 
-    private void OnClientFirstUpdateSent(ACTcpClient sender, EventArgs args)
+    private void OnClientFirstUpdateSent(PlayerClient sender, EventArgs args)
     {
         try
         {
@@ -72,7 +72,7 @@ public class ReportPlugin : IHostedService
         }
     }
 
-    private void OnClientDisconnected(ACTcpClient sender, EventArgs args)
+    private void OnClientDisconnected(PlayerClient sender, EventArgs args)
     {
         try
         {
@@ -88,7 +88,7 @@ public class ReportPlugin : IHostedService
         }
     }
 
-    private void OnChatMessage(ACTcpClient sender, ChatEventArgs args)
+    private void OnChatMessage(PlayerClient sender, ChatEventArgs args)
     {
         try
         {
@@ -124,7 +124,7 @@ public class ReportPlugin : IHostedService
         return new AuditLog(timestamp, entryList, _events.ToList());
     }
 
-    internal async Task SubmitReport(ACTcpClient client, Replay replay, string reason)
+    internal async Task SubmitReport(PlayerClient client, Replay replay, string reason)
     {
         if (_webhook == null)
             return;
@@ -157,13 +157,13 @@ public class ReportPlugin : IHostedService
         await _webhook.SendAsync(msg, new FileInfo(Path.Join("reports", $"{replay.Guid}.zip")), new FileInfo(Path.Join("reports", $"{replay.Guid}.json")));
     }
     
-    public Replay? GetLastReplay(ACTcpClient client)
+    public Replay? GetLastReplay(PlayerClient client)
     {
         _reports.TryGetValue(client, out var report);
         return report;
     }
 
-    public void SetLastReplay(ACTcpClient client, Replay replay) => _reports[client] = replay;
+    public void SetLastReplay(PlayerClient client, Replay replay) => _reports[client] = replay;
     
     public Task StartAsync(CancellationToken cancellationToken)
     {

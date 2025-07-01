@@ -4,7 +4,7 @@ namespace AssettoServer.Shared.Network.Packets.Outgoing;
 
 public class DriverInfoUpdate : IOutgoingNetworkPacket
 {
-    public required IEnumerable<IEntryCar<IClient>> ConnectedCars { get; init; }
+    public required IEnumerable<IEntryCar> ConnectedCars { get; init; }
 
     public void ToWriter(ref PacketWriter writer)
     {

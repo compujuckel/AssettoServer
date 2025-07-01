@@ -51,7 +51,7 @@ public class Discord
         }
     }
 
-    private void OnClientConnected(ACTcpClient sender, EventArgs args)
+    private void OnClientConnected(PlayerClient sender, EventArgs args)
     {
         Task.Run(async () =>
         {
@@ -74,7 +74,7 @@ public class Discord
         });
     }
 
-    private void OnClientDisconnected(ACTcpClient sender, EventArgs args)
+    private void OnClientDisconnected(PlayerClient sender, EventArgs args)
     {
         Task.Run(async () =>
         {
@@ -97,7 +97,7 @@ public class Discord
         });
     }
 
-    private void OnClientBanned(ACTcpClient sender, ClientAuditEventArgs args)
+    private void OnClientBanned(PlayerClient sender, ClientAuditEventArgs args)
     {
         Task.Run(async () =>
         {
@@ -120,7 +120,7 @@ public class Discord
         });
     }
 
-    private void OnClientKicked(ACTcpClient sender, ClientAuditEventArgs args)
+    private void OnClientKicked(PlayerClient sender, ClientAuditEventArgs args)
     {
         if (args.Reason != KickReason.ChecksumFailed)
         {
@@ -146,7 +146,7 @@ public class Discord
         }
     }
 
-    private void OnChatMessageReceived(ACTcpClient sender, ChatEventArgs args)
+    private void OnChatMessageReceived(PlayerClient sender, ChatEventArgs args)
     {
         if (args.Message.StartsWith("\t\t\t\t$CSP0:")
             || string.IsNullOrWhiteSpace(args.Message)

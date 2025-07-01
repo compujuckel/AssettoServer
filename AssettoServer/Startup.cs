@@ -83,7 +83,7 @@ public class Startup
         // No hosted services below this line
         
         builder.RegisterType<HttpClient>().AsSelf();
-        builder.RegisterType<ACTcpClient>().AsSelf();
+        builder.RegisterType<PlayerClient>().AsSelf();
         builder.RegisterType<EntryCar>().AsSelf();
         builder.RegisterType<ChatCommandContext>().AsSelf();
         builder.RegisterType<RconCommandContext>().AsSelf();

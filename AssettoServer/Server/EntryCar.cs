@@ -17,22 +17,18 @@ using Serilog.Events;
 
 namespace AssettoServer.Server;
 
-public partial class EntryCar : IEntryCar<ACTcpClient>
+public partial class EntryCar : IEntryCar
 { 
-    public ACTcpClient? Client { get; internal set; }
-    public CarStatus Status { get; private set; } = new();
+    public IClient? Client { get; set; }
+    public CarStatus Status { get; private set; } = new(); // TODO YET THIS SHIT
     public bool EnableCollisions { get; private set; } = true;
 
-    public bool ForceLights { get; internal set; }
+    public bool ForceLights { get; set; }
 
     public long LastActiveTime { get; internal set; }
     public bool HasUpdateToSend { get; internal set; }
-    public int TimeOffset { get; internal set; }
     public byte SessionId { get; }
     public uint LastRemoteTimestamp { get; internal set; }
-    public long LastPingTime { get; internal set; }
-    public long LastPongTime { get; internal set; }
-    public ushort Ping { get; internal set; }
     public DriverOptionsFlags DriverOptionsFlags { get; internal set; }
     public string LegalTyres { get; set; } = "";
 
@@ -40,8 +36,8 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public string Model { get; }
     public string Skin { get; }
     public int SpectatorMode { get; internal set; }
-    public float Ballast { get; internal set; }
-    public int Restrictor { get; internal set; }
+    public float Ballast { get; set; }
+    public int Restrictor { get; set; }
     public string? FixedSetup { get; internal set; }
     public List<ulong> AllowedGuids { get; internal set; } = new();
         
@@ -137,27 +133,29 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     /// <summary>
     /// Only call this function to do a clean reset of this EntryCar, e.g. when a player disconnects
     /// </summary>
-    internal void Reset()
+    public void Reset()
     {
         ResetInvoked?.Invoke(this, EventArgs.Empty);
         IsSpectator = false;
         SpectatorMode = 0;
         LastActiveTime = 0;
         HasUpdateToSend = false;
-        TimeOffset = 0;
         LastRemoteTimestamp = 0;
-        LastPingTime = 0;
-        Ping = 0;
         ForceLights = false;
         Status = new CarStatus
         {
             P2PCount = (short)(_configuration.Extra.EnableUnlimitedP2P ? 99 : 15),
             MandatoryPit = _configuration.Server.PitWindowStart < _configuration.Server.PitWindowEnd,
         };
-        if (Client != null) Client.TargetCar = null;
+        
+        if (Client == null) return;
+        Client.TargetCar = null;
+        Client.Ping = 0;
+        Client.LastPingTime = 0;
+        Client.TimeOffset = 0;
     }
 
-    internal void SetActive()
+    public void SetActive()
     {
         LastActiveTime = _sessionManager.ServerTimeMilliseconds;
     }
@@ -197,7 +195,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
             Log.Debug("Status flag from {0:X} to {1:X}", Status.StatusFlag, positionUpdate.StatusFlag);
         }*/
 
-        Status.Timestamp = LastRemoteTimestamp + TimeOffset;
+        Status.Timestamp = LastRemoteTimestamp + Client?.TimeOffset ?? 0;
         Status.PakSequenceId = positionUpdate.PakSequenceId;
         Status.Position = positionUpdate.Position;
         Status.Rotation = positionUpdate.Rotation;
@@ -284,8 +282,8 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
 
         positionUpdateOut = new PositionUpdateOut(SessionId,
             AiControlled ? AiPakSequenceIds[toCar.SessionId]++ : status.PakSequenceId,
-            (uint)(status.Timestamp - toCar.TimeOffset),
-            Ping,
+            (uint)(status.Timestamp - Client?.TimeOffset ?? 0),
+            Client?.Ping ?? 0,
             status.Position,
             status.Rotation,
             status.Velocity,
@@ -305,9 +303,11 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         return true;
     }
     
-    public bool IsInRange(EntryCar target, float range)
+    public bool IsInRange(IEntryCar target, float range)
     {
-        var targetPosition = target.Client?.TargetCar != null ? target.Client.TargetCar.Status.Position : target.Status.Position;
+        var targetPosition = (target.Client?.TargetCar != null
+            ? target.Client.TargetCar.Client?.Status.Position
+            : target.Client?.Status.Position) ?? Vector3.Zero;
         return Vector3.DistanceSquared(Status.Position, targetPosition) < range * range;
     }
     

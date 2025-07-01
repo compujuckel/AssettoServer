@@ -120,7 +120,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
         }
     }
 
-    public bool OnLapCompleted(ACTcpClient client, LapCompletedIncoming lap)
+    public bool OnLapCompleted(PlayerClient client, LapCompletedIncoming lap)
     {
         int timestamp = (int)ServerTimeMilliseconds;
 
@@ -146,7 +146,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
         {
             entryCarResult.LastLap = lap.LapTime;
             entryCarResult.NumLaps++;
-            entryCarResult.TotalTime = (uint)(CurrentSession.SessionTimeMilliseconds - client.EntryCar.Ping / 2);
+            entryCarResult.TotalTime = (uint)(CurrentSession.SessionTimeMilliseconds - client.Ping / 2);
 
             if (lap.LapTime < entryCarResult.BestLap)
             {
@@ -342,7 +342,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
         CurrentSession.OverTimeMilliseconds = 1;
     }
 
-    private void OnClientConnected(ACTcpClient client, EventArgs eventArgs)
+    private void OnClientConnected(PlayerClient client, EventArgs eventArgs)
     {
         var currentResult = CurrentSession.Results;
         
@@ -480,7 +480,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
         return true;
     }
 
-    public void SendCurrentSession(ACTcpClient? target = null)
+    public void SendCurrentSession(IClient? target = null)
     {
         var packet = new CurrentSessionUpdate
         {
@@ -493,7 +493,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
         {
             foreach (var car in _entryCarManager.EntryCars.Where(c => c.Client is { HasSentFirstUpdate: true }))
             {
-                packet.StartTime = CurrentSession.StartTimeMilliseconds - car.TimeOffset;
+                packet.StartTime = CurrentSession.StartTimeMilliseconds - car.Client?.TimeOffset ?? 0;
                 car.Client?.SendPacket(packet);
             }
         }
@@ -512,9 +512,9 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
         {
             car.Client?.SendPacketUdp(new RaceStart()
             {
-                StartTime = (int)(CurrentSession.StartTimeMilliseconds - car.TimeOffset),
-                TimeOffset = (uint)(ServerTimeMilliseconds - car.TimeOffset),
-                Ping = car.Ping,
+                StartTime = (int)(CurrentSession.StartTimeMilliseconds - car.Client.TimeOffset),
+                TimeOffset = (uint)(ServerTimeMilliseconds - car.Client.TimeOffset),
+                Ping = car.Client.Ping,
             });
         }
 

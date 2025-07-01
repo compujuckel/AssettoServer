@@ -32,7 +32,7 @@ public class SessionState
     public bool HasSentRaceOverPacket { get; set; } = false;
     public long LastRaceStartUpdateMilliseconds { get; set; }
     public Dictionary<byte, EntryCarResult>? Results { get; set; }
-    public IEnumerable<IEntryCar<IClient>>? Grid { get; set; }
+    public IEnumerable<IEntryCar>? Grid { get; set; }
 
     private readonly SessionManager _timeSource;
 

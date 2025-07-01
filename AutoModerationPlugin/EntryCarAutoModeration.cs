@@ -119,8 +119,8 @@ public class EntryCarAutoModeration
 
     public void Update()
     {
-        var client = _entryCar.Client;
-        if (client == null || !client.HasSentFirstUpdate || client.IsAdministrator)
+        var carClient = _entryCar.Client;
+        if (carClient is not PlayerClient { HasSentFirstUpdate: true } client || client.IsAdministrator)
             return;
         
         var oldFlags = CurrentFlags;
@@ -138,7 +138,7 @@ public class EntryCarAutoModeration
         }
     }
 
-    private void UpdateAfkPenalty(ACTcpClient client)
+    private void UpdateAfkPenalty(PlayerClient client)
     {
         if (!_configuration.AfkPenalty.Enabled) return;
         
@@ -166,11 +166,11 @@ public class EntryCarAutoModeration
         }
     }
 
-    private void UpdateHighPingPenalty(ACTcpClient client)
+    private void UpdateHighPingPenalty(PlayerClient client)
     {
         if (!_configuration.HighPingPenalty.Enabled) return;
         
-        if (_entryCar.Ping > _configuration.HighPingPenalty.MaximumPingMilliseconds)
+        if (client.Ping > _configuration.HighPingPenalty.MaximumPingMilliseconds)
         {
             HighPingSeconds++;
                             
@@ -191,7 +191,7 @@ public class EntryCarAutoModeration
         }
     }
 
-    private void UpdateNoLightsPenalty(ACTcpClient client)
+    private void UpdateNoLightsPenalty(PlayerClient client)
     {
         if (!_configuration.NoLightsPenalty.Enabled) return;
         
@@ -235,7 +235,7 @@ public class EntryCarAutoModeration
         }
     }
 
-    private void UpdateWrongWayPenalty(ACTcpClient client)
+    private void UpdateWrongWayPenalty(PlayerClient client)
     {
         if (!_configuration.WrongWayPenalty.Enabled || _aiSpline == null) return;
         
@@ -276,7 +276,7 @@ public class EntryCarAutoModeration
         }
     }
 
-    private void UpdateBlockingRoadPenalty(ACTcpClient client)
+    private void UpdateBlockingRoadPenalty(PlayerClient client)
     {
         if (!_configuration.BlockingRoadPenalty.Enabled) return;
         
@@ -328,7 +328,7 @@ public class EntryCarAutoModeration
         }
     }
     
-    private void TeleportToPits(ACTcpClient player, string reason)
+    private void TeleportToPits(PlayerClient player, string reason)
     {
         _sessionManager.SendCurrentSession(player);
         player.SendChatMessage($"You have been teleported to the pits for {reason}.");

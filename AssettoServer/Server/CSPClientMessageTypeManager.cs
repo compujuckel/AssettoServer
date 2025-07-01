@@ -9,23 +9,23 @@ namespace AssettoServer.Server;
 
 public class CSPClientMessageTypeManager
 {
-    internal IReadOnlyDictionary<uint, Action<ACTcpClient, PacketReader>> MessageTypes => _types;
-    internal IReadOnlyDictionary<CSPClientMessageType, Action<ACTcpClient, PacketReader>> RawMessageTypes => _rawTypes;
+    internal IReadOnlyDictionary<uint, Action<PlayerClient, PacketReader>> MessageTypes => _types;
+    internal IReadOnlyDictionary<CSPClientMessageType, Action<PlayerClient, PacketReader>> RawMessageTypes => _rawTypes;
 
-    private readonly Dictionary<uint, Action<ACTcpClient, PacketReader>> _types = new();
-    private readonly Dictionary<CSPClientMessageType, Action<ACTcpClient, PacketReader>> _rawTypes = new();
+    private readonly Dictionary<uint, Action<PlayerClient, PacketReader>> _types = new();
+    private readonly Dictionary<CSPClientMessageType, Action<PlayerClient, PacketReader>> _rawTypes = new();
 
-    public void RegisterClientMessageType(uint type, Action<ACTcpClient, PacketReader> handler)
+    public void RegisterClientMessageType(uint type, Action<PlayerClient, PacketReader> handler)
     {
         _types.Add(type, handler);
     }
     
-    public void RegisterRawClientMessageType(CSPClientMessageType type, Action<ACTcpClient, PacketReader> handler)
+    public void RegisterRawClientMessageType(CSPClientMessageType type, Action<PlayerClient, PacketReader> handler)
     {
         _rawTypes.Add(type, handler);
     }
 
-    public void RegisterOnlineEvent<TEvent>(Action<ACTcpClient, TEvent> handler) where TEvent : OnlineEvent<TEvent>, new()
+    public void RegisterOnlineEvent<TEvent>(Action<PlayerClient, TEvent> handler) where TEvent : OnlineEvent<TEvent>, new()
     {
         _types.Add(OnlineEvent<TEvent>.PacketType, (sender, reader) =>
         {

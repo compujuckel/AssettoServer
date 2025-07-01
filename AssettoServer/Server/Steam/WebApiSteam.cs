@@ -22,7 +22,7 @@ public class WebApiSteam : ISteam
         }
     }
     
-    public async Task<SteamResult> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, ACTcpClient client)
+    public async Task<SteamResult> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, PlayerClient client)
     {
         if (sessionTicket == null) return new SteamResult { ErrorReason = "Missing session ticket" };
 

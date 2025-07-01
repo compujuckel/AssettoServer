@@ -58,13 +58,13 @@ public class TagModePlugin : BackgroundService
         NeutralColor = ColorTranslator.FromHtml(_configuration.NeutralColor);
     }
 
-    private void OnDisconnecting(ACTcpClient sender, EventArgs args)
+    private void OnDisconnecting(PlayerClient sender, EventArgs args)
         => Instances[sender.SessionId].OnDisconnecting();
 
-    private void OnLuaReady(ACTcpClient sender, EventArgs args)
+    private void OnLuaReady(PlayerClient sender, EventArgs args)
         => Instances[sender.SessionId].OnLuaReady();
 
-    private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
+    private void OnCollision(PlayerClient sender, CollisionEventArgs args)
         => Instances[sender.SessionId].OnCollision(args);
 
     public override async Task StartAsync(CancellationToken cancellationToken)

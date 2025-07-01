@@ -15,7 +15,7 @@ public class WeatherFxV1Implementation : IWeatherImplementation
         cspFeatureManager.Add(new CSPFeature { Name = "WEATHERFX_V1", Mandatory = true });
     }
 
-    public void SendWeather(WeatherData weather, ZonedDateTime dateTime, ACTcpClient? client = null)
+    public void SendWeather(WeatherData weather, ZonedDateTime dateTime, PlayerClient? client = null)
     {
         var newWeather = new CSPWeatherUpdate
         {

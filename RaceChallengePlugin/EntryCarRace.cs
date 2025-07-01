@@ -139,7 +139,7 @@ public class EntryCarRace
 
         foreach(EntryCar car in _entryCarManager.EntryCars)
         {
-            ACTcpClient? carClient = car.Client;
+            PlayerClient? carClient = car.Client;
             if(carClient != null && car != _entryCar)
             {
                 float challengedAngle = (float)(Math.Atan2(_entryCar.Status.Position.X - car.Status.Position.X, _entryCar.Status.Position.Z - car.Status.Position.Z) * 180 / Math.PI);

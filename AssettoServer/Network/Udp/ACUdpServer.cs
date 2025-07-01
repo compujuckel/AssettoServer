@@ -151,9 +151,9 @@ public class ACUdpServer : BackgroundService
                 else if (packetId == ACServerProtocol.PingPong)
                 {
                     long currentTime = _sessionManager.ServerTimeMilliseconds;
-                    car.Ping = (ushort)(currentTime - packetReader.Read<int>());
-                    car.TimeOffset = (int)currentTime - ((car.Ping / 2) + packetReader.Read<int>());
-                    car.LastPongTime = currentTime;
+                    client.Ping = (ushort)(currentTime - packetReader.Read<int>());
+                    client.TimeOffset = (int)currentTime - ((client.Ping / 2) + packetReader.Read<int>());
+                    client.LastPongTime = currentTime;
                 }
                 else if (_configuration.Extra.EnableUdpClientMessages && packetId == ACServerProtocol.Extended)
                 {
@@ -171,7 +171,7 @@ public class ACUdpServer : BackgroundService
         }
     }
 
-    private void OnClientDisconnecting(ACTcpClient sender, EventArgs args)
+    private void OnClientDisconnecting(PlayerClient sender, EventArgs args)
     {
         if (sender.UdpEndpoint != null)
         {

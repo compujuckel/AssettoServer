@@ -2,22 +2,21 @@
 using AssettoServer.Commands.Attributes;
 using AssettoServer.Network.Tcp;
 using Qmmands;
-using SerilogTimings;
 
 namespace ReplayPlugin;
 
 [RequireAdmin]
 public class ReplayCommandModule : ACModuleBase
 {
-    private readonly ReplayManager _replayManager;
+    private readonly ReplayService _replayService;
 
-    public ReplayCommandModule(ReplayManager replayManager)
+    public ReplayCommandModule(ReplayService replayService)
     {
-        _replayManager = replayManager;
+        _replayService = replayService;
     }
 
     [Command("replay")]
-    public void SaveReplay(int seconds, [Remainder] ACTcpClient? client = null)
+    public async Task SaveReplayAsync(int seconds, [Remainder] ACTcpClient? client = null)
     {
         var sessionId = client?.SessionId ?? Client?.SessionId;
         
@@ -27,18 +26,14 @@ public class ReplayCommandModule : ACModuleBase
             return;
         }
         
-        SaveReplayId(seconds, sessionId.Value);
+        await SaveReplayIdAsync(seconds, sessionId.Value);
     }
 
     [Command("replay_id")]
-    public void SaveReplayId(int seconds, byte sessionId)
+    public async Task SaveReplayIdAsync(int seconds, byte sessionId)
     {
         var filename = $"replay_{DateTime.Now:yyyyMMdd'T'HHmmss}_{sessionId}.acreplay";
-
-        using (var t = Operation.Time("Writing replay {0}", filename))
-        {
-            _replayManager.WriteReplay(seconds, sessionId, filename);
-        }
+        await _replayService.SaveReplayAsync(seconds, sessionId, filename);
         Reply($"Saved replay {filename}");
     }
 }

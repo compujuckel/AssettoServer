@@ -1,119 +1,42 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
-using Humanizer;
-using JetBrains.Annotations;
 using ReplayPlugin.Data;
 using ReplayPlugin.Utils;
-using Serilog;
 
 namespace ReplayPlugin;
 
-public class ReplayManager
+public class ReplayWriter
 {
-    private static readonly string SegmentPath = Path.Join("cache", "replay", Guid.NewGuid().ToString());
-    
     private readonly ReplayConfiguration _configuration;
     private readonly ACServerConfiguration _serverConfiguration;
     private readonly EntryCarManager _entryCarManager;
     private readonly WeatherManager _weather;
-    private readonly SessionManager _sessionManager;
     private readonly EntryCarExtraDataManager _extraData;
     private readonly ReplayMetadataProvider _metadata;
-
-    private readonly ConcurrentQueue<ReplaySegment> _segments = [];
-
-    private ReplaySegment _currentSegment;
+    private readonly ReplaySegmentManager _segmentManager;
     
     private static ReadOnlySpan<byte> CspMagic => "__AC_SHADERS_PATCH_v1__"u8;
     private static ReadOnlySpan<byte> CspExtraStreamMagic => "EXT_EXTRASTREAM_v1"u8;
     private static ReadOnlySpan<byte> CspExtraBlobMagic => "EXT_EXTRABLOB_v1"u8;
-    
-    public ReplayManager(EntryCarManager entryCarManager,
+
+    public ReplayWriter(ReplayConfiguration configuration,
         ACServerConfiguration serverConfiguration,
+        EntryCarManager entryCarManager,
         WeatherManager weather,
-        SessionManager sessionManager,
-        ReplayConfiguration configuration,
         EntryCarExtraDataManager extraData,
-        ReplayMetadataProvider metadata)
+        ReplayMetadataProvider metadata,
+        ReplaySegmentManager segmentManager)
     {
-        _entryCarManager = entryCarManager;
-        _serverConfiguration = serverConfiguration;
-        _weather = weather;
-        _sessionManager = sessionManager;
         _configuration = configuration;
+        _serverConfiguration = serverConfiguration;
+        _entryCarManager = entryCarManager;
+        _weather = weather;
         _extraData = extraData;
         _metadata = metadata;
-
-        Directory.CreateDirectory(SegmentPath);
-        AddSegment();
-    }
-
-    private void PrintStatistics()
-    {
-        var size = _currentSegment.Size.Bytes();
-        var duration = TimeSpan.FromMilliseconds(_currentSegment.EndTime - _currentSegment.StartTime);
-        Log.Debug("Last replay segment size {Size}, {Duration} - {Rate}", size, 
-            duration.Humanize(maxUnit: TimeUnit.Second), size.Per(duration).Humanize());
-    }
-
-    private void CleanupSegments()
-    {
-        var startTime = _sessionManager.ServerTimeMilliseconds - _configuration.ReplayDurationMilliseconds;
-        while (_segments.TryPeek(out var segment) && segment.EndTime < startTime)
-        {
-            Log.Debug("Removing old replay segment");
-            _segments.TryDequeue(out _);
-            segment.Dispose();
-            _metadata.Cleanup(segment.EndPlayerInfoIndex);
-        }
-    }
-
-    [MemberNotNull(nameof(_currentSegment))]
-    private void AddSegment()
-    {
-        CleanupSegments();
-        
-        var segmentSize = _configuration.MinSegmentSizeBytes;
-        if (_currentSegment != null)
-        {
-            PrintStatistics();
-            
-            var duration = _currentSegment.EndTime - _currentSegment.StartTime;
-            var size = _currentSegment.Size;
-            segmentSize = (int)Math.Round((double)size / duration * _configuration.SegmentTargetMilliseconds * 1.05);
-        }
-
-        segmentSize = Math.Clamp(segmentSize, _configuration.MinSegmentSizeBytes, _configuration.MaxSegmentSizeBytes);
-        Log.Debug("Target replay segment size: {Size}", segmentSize.Bytes());
-
-        var oldSegment = _currentSegment;
-        _currentSegment = new ReplaySegment(Path.Join(SegmentPath, $"{Guid.NewGuid()}.rs1"), segmentSize);
-        _segments.Enqueue(_currentSegment);
-        
-        oldSegment?.Unload();
-    }
-
-    public void AddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, uint playerInfoIndex, TState state,
-        [RequireStaticDelegate] ReplaySegment.ReplayFrameAction<TState> action)
-    {
-        if (!_currentSegment.TryAddFrame(numCarFrames, numAiFrames, numAiMappings, playerInfoIndex, state, action))
-        {
-            AddSegment();
-            AddFrame(numCarFrames, numAiFrames, numAiMappings, playerInfoIndex, state, action);
-        }
-    }
-
-    public void WriteReplay(int timeSeconds, byte targetSessionId, string filename)
-    {
-        var startTime = Math.Max(0, _sessionManager.ServerTimeMilliseconds - timeSeconds * 1000);
-        var endTime = _sessionManager.ServerTimeMilliseconds;
-        
-        WriteReplay(startTime, endTime, targetSessionId, filename);
+        _segmentManager = segmentManager;
     }
 
     private static uint GetTotalFrameCount(long startTime, long endTime, List<ReplaySegment> segments)
@@ -122,7 +45,9 @@ public class ReplayManager
         
         if (segments.Count == 1)
         {
-            foreach (var frame in segments[0])
+            var segment = segments[0];
+            using var segmentLock = segment.KeepLoaded();
+            foreach (var frame in segment)
             {
                 if (frame.Header.ServerTime >= startTime && frame.Header.ServerTime < endTime)
                 {
@@ -132,24 +57,32 @@ public class ReplayManager
         }
         else if (segments.Count > 1)
         {
-            foreach (var frame in segments[0])
+            var segment = segments[0];
+            using (var segmentLock = segment.KeepLoaded())
             {
-                if (frame.Header.ServerTime >= startTime)
+                foreach (var frame in segment)
                 {
-                    totalCount++;
+                    if (frame.Header.ServerTime >= startTime)
+                    {
+                        totalCount++;
+                    }
                 }
             }
-            
+
             for (int i = 1; i < segments.Count - 1; i++)
             {
                 totalCount += (uint)segments[i].Index.Count;
             }
             
-            foreach (var frame in segments[^1])
+            segment = segments[^1];
+            using (var segmentLock = segment.KeepLoaded())
             {
-                if (frame.Header.ServerTime < endTime)
+                foreach (var frame in segment)
                 {
-                    totalCount++;
+                    if (frame.Header.ServerTime < endTime)
+                    {
+                        totalCount++;
+                    }
                 }
             }
         }
@@ -157,21 +90,19 @@ public class ReplayManager
         return totalCount;
     }
 
-    public void WriteReplay(long startTime, long endTime, byte targetSessionId, string filename)
+    public void WriteReplay(long startTime, long endTime, byte targetSessionId, string outputPath)
     {
-        // TODO make sure no segments are deleted while writing replay
-        var segments = _segments
+        var segments = _segmentManager.Segments
             .SkipWhile(s => s.EndTime < startTime)
             .TakeWhile(s => s.StartTime < endTime)
             .ToList();
 
         if (segments.Count == 0)
         {
-            Log.Error("Trying to write replay but no replay segments present");
-            return;
+            throw new InvalidOperationException("Trying to write replay but no replay segments present");
         }
         
-        using var file = File.Create(filename);
+        using var file = File.Create(outputPath);
         using var writer = new BinaryWriter(file);
 
         using var playerInfoIndexStream = new MemoryStream();
@@ -216,25 +147,21 @@ public class ReplayManager
         var oldPosition = file.Position;
         foreach (var segment in segments)
         {
-            file.Seek(trackFramesPosition, SeekOrigin.Begin);
+            using var segmentLock = segment.KeepLoaded();
+            
             foreach (var frame in segment)
             {
                 if (frame.Header.ServerTime < startTime) continue;
                 if (frame.Header.ServerTime > endTime) break;
                 
+                file.Seek(trackFramesPosition, SeekOrigin.Begin);
                 writer.WriteStruct(new KunosReplayTrackFrame
                 {
                     SunAngle = frame.Header.SunAngle
                 });
+                trackFramesPosition = file.Position;
                 
                 playerInfoIndexWriter.Write(frame.Header.PlayerInfoIndex);
-            }
-            trackFramesPosition = file.Position;
-
-            foreach (var frame in segment)
-            {
-                if (frame.Header.ServerTime < startTime) continue;
-                if (frame.Header.ServerTime > endTime) break;
                 
                 var aiFrameMappings = Span<short>.Empty;
                 for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
@@ -279,11 +206,6 @@ public class ReplayManager
                     carFramePositions[i] = file.Position;
                 }
             }
-
-            if (segment != _currentSegment)
-            {
-                segment.Unload();
-            }
         }
             
         file.Seek(oldPosition, SeekOrigin.Begin);
@@ -292,15 +214,15 @@ public class ReplayManager
         var cspDataStartPosition = writer.BaseStream.Position;
         
         writer.WriteLengthPrefixed(CspExtraStreamMagic);
-        writer.WriteCspCompressedExtraData(0xB197F00E9828B262, w =>
+        writer.WriteCspCompressedExtraData(0xB197F00E9828B262, s =>
         {
-            playerInfoIndexStream.WriteTo(w.BaseStream);
+            playerInfoIndexStream.WriteTo(s);
         });
         
         writer.WriteLengthPrefixed(CspExtraBlobMagic);
-        writer.WriteCspCompressedExtraData(0x86CE5FCE612D18DF, w =>
+        writer.WriteCspCompressedExtraData(0x86CE5FCE612D18DF, s =>
         {
-            JsonSerializer.Serialize(w.BaseStream, _metadata.GenerateMetadata());
+            JsonSerializer.Serialize(s, _metadata.GenerateMetadata());
         });
         
         writer.Write(CspMagic);

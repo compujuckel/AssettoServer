@@ -25,7 +25,7 @@ public static class BinaryWriterExtensions
         writer.Write(data);
     }
 
-    public static void WriteCspCompressedExtraData(this BinaryWriter writer, ulong id, [InstantHandle] Action<BinaryWriter> writeAction)
+    public static void WriteCspCompressedExtraData(this BinaryWriter writer, ulong id, [InstantHandle] Action<Stream> writeAction)
     {
         var lengthPosition = writer.BaseStream.Position;
         writer.Write((uint)0);
@@ -34,8 +34,7 @@ public static class BinaryWriterExtensions
         
         using (var zlibStream = new ZLibStream(writer.BaseStream, CompressionMode.Compress, true))
         {
-            using var zlibWriter = new BinaryWriter(zlibStream);
-            writeAction(zlibWriter);
+            writeAction(zlibStream);
         }
         
         var afterPosition = writer.BaseStream.Position;

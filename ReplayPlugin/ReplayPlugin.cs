@@ -1,10 +1,7 @@
 ﻿using System.Reflection;
-using System.Runtime.InteropServices;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
-using AssettoServer.Shared.Services;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
@@ -15,32 +12,31 @@ using Serilog;
 
 namespace ReplayPlugin;
 
-public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class ReplayPlugin : BackgroundService
 {
     private readonly ReplayConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
     private readonly SessionManager _session;
     private readonly WeatherManager _weather;
-    private readonly ReplayManager _replayManager;
+    private readonly ReplaySegmentManager _replaySegmentManager;
     private readonly Summary _onUpdateTimer;
     private readonly EntryCarExtraDataManager _extraData;
     private readonly ReplayMetadataProvider _metadata;
     
-    public ReplayPlugin(IHostApplicationLifetime applicationLifetime,
-        EntryCarManager entryCarManager,
+    public ReplayPlugin(EntryCarManager entryCarManager,
         WeatherManager weather,
         SessionManager session,
-        ReplayManager replayManager,
+        ReplaySegmentManager replaySegmentManager,
         ReplayConfiguration configuration,
         CSPServerScriptProvider scriptProvider,
         CSPClientMessageTypeManager cspClientMessageTypeManager,
         EntryCarExtraDataManager extraData,
-        ReplayMetadataProvider metadata) : base(applicationLifetime)
+        ReplayMetadataProvider metadata)
     {
         _entryCarManager = entryCarManager;
         _weather = weather;
         _session = session;
-        _replayManager = replayManager;
+        _replaySegmentManager = replaySegmentManager;
         _configuration = configuration;
         _extraData = extraData;
         _metadata = metadata;
@@ -48,9 +44,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
         _onUpdateTimer = Metrics.CreateSummary("assettoserver_replayplugin_onupdate", "ReplayPlugin.OnUpdate Duration", MetricDefaults.DefaultQuantiles);
         
         cspClientMessageTypeManager.RegisterOnlineEvent<UploadDataPacket>(OnUploadData);
-        
-        using var streamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ReplayPlugin.lua.replay.lua")!);
-        scriptProvider.AddScript(streamReader.ReadToEnd(), "replay.lua");
+        scriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("ReplayPlugin.lua.replay.lua")!, "replay.lua");
     }
 
     private void OnUploadData(ACTcpClient sender, UploadDataPacket packet)
@@ -65,7 +59,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
     {
         using var timer = _onUpdateTimer.NewTimer();
         
-        _state.TryReset();
+        _state.Reset();
 
         int numAiMappings = 0;
         foreach (var entryCar in _entryCarManager.EntryCars)
@@ -73,7 +67,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
             if (entryCar.Client?.HasSentFirstUpdate == true)
             {
                 _state.PlayerCars.Add((entryCar.SessionId, entryCar.Status));
-                _state.AiFrameMapping.Add(entryCar.SessionId, new List<short>());
+                _state.AiFrameMapping.Add(entryCar.SessionId, []);
                 numAiMappings++;
             }
             else if (entryCar.AiControlled)
@@ -99,7 +93,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
             }
         }
 
-        _replayManager.AddFrame(_state.PlayerCars.Count, _state.AiCars.Count, numAiMappings, _metadata.Index, this, WriteFrame);
+        _replaySegmentManager.AddFrame(_state.PlayerCars.Count, _state.AiCars.Count, numAiMappings, _metadata.Index, this, WriteFrame);
     }
 
     private static void WriteFrame(ref ReplayFrame frame, ReplayPlugin self)
@@ -132,8 +126,6 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Log.Debug("ReplayCarFrame size {Size} bytes", Marshal.SizeOf<ReplayCarFrame>());
-
         _extraData.Initialize(_entryCarManager.EntryCars.Length);
         using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(1000.0 / _configuration.RefreshRateHz));
         while (await timer.WaitForNextTickAsync(stoppingToken))

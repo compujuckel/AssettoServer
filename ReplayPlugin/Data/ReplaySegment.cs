@@ -6,22 +6,27 @@ using Serilog;
 
 namespace ReplayPlugin.Data;
 
-public class ReplaySegment : IDisposable
+public sealed class ReplaySegment : IDisposable
 {
-    public long StartTime;
-    public long EndTime;
-    public uint StartPlayerInfoIndex;
-    public uint EndPlayerInfoIndex;
+    public long StartTime { get; private set; }
+    public long EndTime { get; private set; }
+    public uint StartPlayerInfoIndex { get; private set; }
+    public uint EndPlayerInfoIndex { get; private set; }
+    public List<int> Index { get; } = [];
+    public int Size { get; private set; }
+    public bool IsBusy => _lockCount > 0;
 
     private readonly string _path;
     private readonly int _size;
     private MemoryMappedFile? _file;
     private IMappedMemory? _fileAccessor;
     private Memory<byte>? _memory;
+    private int _lockCount;
+    private bool _isDisposed;
 
-    public readonly List<int> Index = [];
-    public int Size { get; private set; }
-
+    [MemberNotNullWhen(true, nameof(_file), nameof(_fileAccessor), nameof(_memory))]
+    private bool IsLoaded => _memory != null && _fileAccessor != null && _file != null;
+    
     public ReplaySegment(string path, int size)
     {
         _path = path;
@@ -29,39 +34,50 @@ public class ReplaySegment : IDisposable
         Load();
     }
 
+    public ReplaySegmentLock KeepLoaded()
+    {
+        return new ReplaySegmentLock(this);
+    }
+
     [MemberNotNull(nameof(_file), nameof(_fileAccessor), nameof(_memory))]
     private void Load()
     {
-        Log.Debug("Loading replay segment {0}", _path);
+        if (IsLoaded) return;
+        
+        Log.Debug("Loading replay segment {Path}", _path);
         _file = MemoryMappedFile.CreateFromFile(_path, FileMode.OpenOrCreate, null, _size, MemoryMappedFileAccess.ReadWrite);
         _fileAccessor = _file.CreateMemoryAccessor();
         _memory = _fileAccessor.Memory;
     }
-    
-    public void Unload()
+
+    private bool TryUnload()
     {
-        Log.Debug("Unloading replay segment {0}", _path);
+        if (_lockCount > 0) return false;
+        
+        Log.Debug("Unloading replay segment {Path}", _path);
         _memory = null;
         _fileAccessor?.Dispose();
         _fileAccessor = null;
         _file?.Dispose();
         _file = null;
+        return true;
     }
 
     [MemberNotNull(nameof(_file), nameof(_fileAccessor), nameof(_memory))]
-    private void EnsureLoaded()
+    private void ThrowIfUnloaded()
     {
-        if (_memory == null || _fileAccessor == null || _file == null)
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
+        if (!IsLoaded)
         {
-            Load();
+            throw new InvalidOperationException("Replay segment is not loaded");
         }
     }
 
     public delegate void ReplayFrameAction<in TState>(ref ReplayFrame frame, TState arg);
 
-    public bool TryAddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, uint playerInfoIndex, TState state, [RequireStaticDelegate] ReplayFrameAction<TState> action)
+    public bool TryAddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, uint playerInfoIndex, TState state, [RequireStaticDelegate, InstantHandle] ReplayFrameAction<TState> action)
     {
-        EnsureLoaded();
+        ThrowIfUnloaded();
         
         var size = ReplayFrame.GetSize(numCarFrames, numAiFrames, numAiMappings);
 
@@ -105,7 +121,7 @@ public class ReplaySegment : IDisposable
         {
             get
             {
-                segment.EnsureLoaded();
+                segment.ThrowIfUnloaded();
                 return new ReplayFrame(segment._memory.Value[segment.Index[_i]..]);
             }
         }
@@ -113,8 +129,43 @@ public class ReplaySegment : IDisposable
 
     public void Dispose()
     {
-        Log.Debug("Disposing replay segment {0}", _path);
-        Unload();
-        File.Delete(_path);
+        if (_isDisposed) return;
+        
+        if (TryUnload())
+        {
+            Log.Debug("Disposing replay segment {SegmentPath}", _path);
+            File.Delete(_path);
+        }
+        else
+        {
+            Log.Error("Cannot dispose and delete replay segment {SegmentPath} because it is locked", _path);
+        }
+
+        _isDisposed = true;
+    }
+    
+    public sealed class ReplaySegmentLock : IDisposable
+    {
+        private readonly ReplaySegment _segment;
+        private bool _isDisposed;
+
+        public ReplaySegmentLock(ReplaySegment segment)
+        {
+            _segment = segment;
+            Interlocked.Increment(ref _segment._lockCount);
+            _segment.Load();
+        }
+
+        ~ReplaySegmentLock() => Dispose();
+
+        public void Dispose()
+        {
+            if (_isDisposed) return;
+            Interlocked.Decrement(ref _segment._lockCount);
+            _segment.TryUnload();
+            
+            _isDisposed = true;
+            GC.SuppressFinalize(this);
+        }
     }
 }

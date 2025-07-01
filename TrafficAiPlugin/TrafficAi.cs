@@ -1,10 +1,7 @@
-﻿using AssettoServer.Network.ClientMessages;
-using AssettoServer.Network.Tcp;
+﻿using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Network.Packets.Outgoing;
-using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using TrafficAiPlugin.Packets;
@@ -14,7 +11,7 @@ namespace TrafficAiPlugin;
 
 using TrafficAiConfiguration = Configuration.TrafficAiConfiguration;
 
-public class TrafficAi : CriticalBackgroundService, IAssettoServerAutostart, ITrafficAi
+public class TrafficAi : BackgroundService, ITrafficAi
 {
     private readonly TrafficAiConfiguration _configuration;
     private readonly ACServerConfiguration _serverConfiguration;
@@ -29,8 +26,7 @@ public class TrafficAi : CriticalBackgroundService, IAssettoServerAutostart, ITr
         EntryCarManager entryCarManager,
         SessionManager sessionManager,
         Func<EntryCar, EntryCarTrafficAi> entryCarTrafficAiFactory,
-        CSPClientMessageTypeManager cspClientMessageTypeManager,
-        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+        CSPClientMessageTypeManager cspClientMessageTypeManager)
     {
         _configuration = configuration;
         _serverConfiguration = serverConfiguration;

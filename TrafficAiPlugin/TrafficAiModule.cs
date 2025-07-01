@@ -14,12 +14,12 @@ public class TrafficAiModule : AssettoServerModule<TrafficAiConfiguration>
     
     protected override void Load(ContainerBuilder builder)
     {
-        builder.RegisterType<TrafficAi>().AsSelf().As<IAssettoServerAutostart>().As<ITrafficAi>().SingleInstance();
+        builder.RegisterType<TrafficAi>().AsSelf().As<IHostedService>().As<ITrafficAi>().SingleInstance();
         builder.RegisterType<EntryCarTrafficAi>().AsSelf().As<IEntryCarTrafficAi>();
         
         builder.RegisterType<AiState>().AsSelf().As<IAiState>();
 
-        builder.RegisterType<AiBehavior>().AsSelf().As<IAssettoServerAutostart>().SingleInstance();
+        builder.RegisterType<AiBehavior>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<TrafficAiUpdater>().AsSelf().SingleInstance().AutoActivate();
         builder.RegisterType<AiSlotFilter>().As<IOpenSlotFilter>();
         

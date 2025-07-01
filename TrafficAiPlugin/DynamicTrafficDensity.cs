@@ -38,7 +38,7 @@ public class DynamicTrafficDensity : BackgroundService
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {
-        if (_configuration.HourlyTrafficDensity == null) return;
+        if (_configuration.HourlyTrafficDensity == null) return Task.CompletedTask;
         
         if (_serverConfiguration.Server.TimeOfDayMultiplier == 0 )
         {

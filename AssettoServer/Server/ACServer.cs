@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Blacklist;
@@ -66,8 +67,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
         {
             if (_configuration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_1_77)
             {
-                throw new ConfigurationException(
-                    "Client messages need a minimum required CSP version of 0.1.77 (1937)");
+                throw new ConfigurationException("Client messages need a minimum required CSP version of 0.1.77 (1937)");
             }
             
             cspFeatureManager.Add(new CSPFeature { Name = "CLIENT_MESSAGES", Mandatory = true });
@@ -76,6 +76,11 @@ public class ACServer : BackgroundService, IHostedLifecycleService
 
         if (_configuration.Extra.EnableUdpClientMessages)
         {
+            if (_configuration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_0)
+            {
+                throw new ConfigurationException("UDP Client messages need a minimum required CSP version of 0.2.0 (2651)");
+            }
+            
             cspFeatureManager.Add(new CSPFeature { Name = "CLIENT_UDP_MESSAGES" });
         }
 
@@ -83,9 +88,8 @@ public class ACServer : BackgroundService, IHostedLifecycleService
         {
             cspFeatureManager.Add(new CSPFeature { Name = "CUSTOM_UPDATE" });
         }
-
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Lua.assettoserver.lua")!;
-        cspServerScriptProvider.AddScript(stream, "assettoserver.lua");
+        
+        cspServerScriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Lua.assettoserver.lua")!, "assettoserver.lua");
 
         if (_configuration.Extra.EnableCarReset)
         {
@@ -146,10 +150,10 @@ public class ACServer : BackgroundService, IHostedLifecycleService
         int failedUpdateLoops = 0;
         int sleepMs = 1000 / _configuration.Server.RefreshRateHz;
         long nextTick = _sessionManager.ServerTimeMilliseconds;
-        Dictionary<EntryCar, CountedArray<PositionUpdateOut>> positionUpdates = new();
+        Dictionary<EntryCar, List<PositionUpdateOut>> positionUpdates = new();
         foreach (var entryCar in _entryCarManager.EntryCars)
         {
-            positionUpdates[entryCar] = new CountedArray<PositionUpdateOut>(_entryCarManager.EntryCars.Length);
+            positionUpdates[entryCar] = new List<PositionUpdateOut>(_entryCarManager.EntryCars.Length);
         }
 
         Log.Information("Starting update loop with an update rate of {RefreshRateHz}hz", _configuration.Server.RefreshRateHz);
@@ -219,13 +223,13 @@ public class ACServer : BackgroundService, IHostedLifecycleService
                             {
                                 if (toClient.SupportsCSPCustomUpdate)
                                 {
-                                    var packet = new CSPPositionUpdate(new ArraySegment<PositionUpdateOut>(updates.Array, i, Math.Min(chunkSize, updates.Count - i)));
+                                    var packet = new CSPPositionUpdate(CollectionsMarshal.AsSpan(updates).Slice(i, Math.Min(chunkSize, updates.Count - i)));
                                     toClient.SendPacketUdp(in packet);
                                 }
                                 else
                                 {
                                     var packet = new BatchedPositionUpdate((uint)(_sessionManager.ServerTimeMilliseconds - toCar.TimeOffset), toCar.Ping,
-                                        new ArraySegment<PositionUpdateOut>(updates.Array, i, Math.Min(chunkSize, updates.Count - i)));
+                                        CollectionsMarshal.AsSpan(updates).Slice(i, Math.Min(chunkSize, updates.Count - i)));
                                     toClient.SendPacketUdp(in packet);
                                 }
                             }

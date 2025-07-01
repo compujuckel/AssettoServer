@@ -48,8 +48,7 @@ public class AiBehavior : BackgroundService
 
         if (_configuration.Extra.AiParams.Debug)
         {
-            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Ai.ai_debug.lua")!;
-            serverScriptProvider.AddScript(stream, "ai_debug.lua");
+            serverScriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Ai.ai_debug.lua")!, "ai_debug.lua");
         }
 
         _updateDurationTimer = Metrics.CreateSummary("assettoserver_aibehavior_update", "AiBehavior.Update Duration", MetricDefaults.DefaultQuantiles);
@@ -118,21 +117,17 @@ public class AiBehavior : BackgroundService
 
     private void SendDebugPackets()
     {
-        CountedArray<byte> sessionIds = new(_entryCarManager.EntryCars.Length);
-        CountedArray<byte> currentSpeeds = new(_entryCarManager.EntryCars.Length);
-        CountedArray<byte> targetSpeeds = new(_entryCarManager.EntryCars.Length);
-        CountedArray<byte> maxSpeeds = new(_entryCarManager.EntryCars.Length);
-        CountedArray<short> closestAiObstacles = new(_entryCarManager.EntryCars.Length);
+        var sessionIds = new byte[_entryCarManager.EntryCars.Length];
+        var currentSpeeds = new byte[_entryCarManager.EntryCars.Length];
+        var targetSpeeds = new byte[_entryCarManager.EntryCars.Length];
+        var maxSpeeds = new byte[_entryCarManager.EntryCars.Length];
+        var closestAiObstacles = new short[_entryCarManager.EntryCars.Length];
+        
         foreach (var player in _entryCarManager.ConnectedCars.Values)
         {
             if (player.Client?.HasSentFirstUpdate == false) continue;
 
-            sessionIds.Clear();
-            currentSpeeds.Clear();
-            targetSpeeds.Clear();
-            maxSpeeds.Clear();
-            closestAiObstacles.Clear();
-
+            var count = 0;
             foreach (var car in _entryCarManager.EntryCars)
             {
                 if (!car.AiControlled) continue;
@@ -140,23 +135,24 @@ public class AiBehavior : BackgroundService
                 var (aiState, _) = car.GetClosestAiState(player.Status.Position);
                 if (aiState == null) continue;
 
-                sessionIds.Add(car.SessionId);
-                currentSpeeds.Add((byte)(aiState.CurrentSpeed * 3.6f));
-                targetSpeeds.Add((byte)(aiState.TargetSpeed * 3.6f));
-                maxSpeeds.Add((byte)(aiState.MaxSpeed * 3.6f));
-                closestAiObstacles.Add((short)aiState.ClosestAiObstacleDistance);
+                sessionIds[count] = car.SessionId;
+                currentSpeeds[count] = (byte)(aiState.CurrentSpeed * 3.6f);
+                targetSpeeds[count] = (byte)(aiState.TargetSpeed * 3.6f);
+                maxSpeeds[count] = (byte)(aiState.MaxSpeed * 3.6f);
+                closestAiObstacles[count] = (short)aiState.ClosestAiObstacleDistance;
+                count++;
             }
 
-            for (int i = 0; i < sessionIds.Count; i += AiDebugPacket.Length)
+            for (int i = 0; i < count; i += AiDebugPacket.Length)
             {
                 var packet = new AiDebugPacket();
                 Array.Fill(packet.SessionIds, (byte)255);
 
-                new ArraySegment<byte>(sessionIds.Array, i, Math.Min(AiDebugPacket.Length, sessionIds.Count - i)).CopyTo(packet.SessionIds);
-                new ArraySegment<short>(closestAiObstacles.Array, i, Math.Min(AiDebugPacket.Length, sessionIds.Count - i)).CopyTo(packet.ClosestAiObstacles);
-                new ArraySegment<byte>(currentSpeeds.Array, i, Math.Min(AiDebugPacket.Length, sessionIds.Count - i)).CopyTo(packet.CurrentSpeeds);
-                new ArraySegment<byte>(maxSpeeds.Array, i, Math.Min(AiDebugPacket.Length, sessionIds.Count - i)).CopyTo(packet.MaxSpeeds);
-                new ArraySegment<byte>(targetSpeeds.Array, i, Math.Min(AiDebugPacket.Length, sessionIds.Count - i)).CopyTo(packet.TargetSpeeds);
+                new ArraySegment<byte>(sessionIds, i, Math.Min(AiDebugPacket.Length, count - i)).CopyTo(packet.SessionIds);
+                new ArraySegment<short>(closestAiObstacles, i, Math.Min(AiDebugPacket.Length, count - i)).CopyTo(packet.ClosestAiObstacles);
+                new ArraySegment<byte>(currentSpeeds, i, Math.Min(AiDebugPacket.Length, count - i)).CopyTo(packet.CurrentSpeeds);
+                new ArraySegment<byte>(maxSpeeds, i, Math.Min(AiDebugPacket.Length, count - i)).CopyTo(packet.MaxSpeeds);
+                new ArraySegment<byte>(targetSpeeds, i, Math.Min(AiDebugPacket.Length, count - i)).CopyTo(packet.TargetSpeeds);
 
                 player.Client?.SendPacket(packet);
             }

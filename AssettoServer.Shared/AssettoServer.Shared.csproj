@@ -11,6 +11,6 @@
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
       <FrameworkReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
-      <PackageReference Include="Serilog" Version="4.2.0" />
+      <PackageReference Include="Serilog" Version="4.3.0" />
     </ItemGroup>
 </Project>

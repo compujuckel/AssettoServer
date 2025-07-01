@@ -62,10 +62,7 @@ public class VotingPresetPlugin : BackgroundService
         
         if (acServerConfiguration.Extra.EnableClientMessages && _configuration.EnableReconnect)
         {
-            using var streamReader = new StreamReader(Assembly.GetExecutingAssembly()
-                .GetManifestResourceStream("VotingPresetPlugin.lua.reconnectclient.lua")!);
-            var reconnectScript = streamReader.ReadToEnd();
-            scriptProvider.AddScript(reconnectScript, "reconnectclient.lua");
+            scriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("VotingPresetPlugin.lua.reconnectclient.lua")!, "reconnectclient.lua");
             
             cspFeatureManager.Add(new CSPFeature { Name = "FREQUENT_TRACK_CHANGES" });
         }

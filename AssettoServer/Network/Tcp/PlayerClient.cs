@@ -285,7 +285,7 @@ public class PlayerClient : IClient
         }
     }
 
-    public void SendPacketUdp<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket
+    public void SendPacketUdp<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket, allows ref struct
     {
         if (UdpEndpoint == null) return;
 

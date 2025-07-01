@@ -18,7 +18,11 @@ public class WebApiSteam : ISteam
         
         if (string.IsNullOrEmpty(_configuration.Extra.SteamWebApiKey))
         {
-            throw new ConfigurationException("Steam Web API key is required for Steam Authentication on this platform. Visit https://steamcommunity.com/dev/apikey to get a key");
+            throw new ConfigurationException(
+                "Steam Web API key is required for Steam Authentication on this platform. Visit https://steamcommunity.com/dev/apikey to get a key")
+            {
+                HelpLink = "https://steamcommunity.com/dev/apikey"
+            };
         }
     }
     

@@ -6,7 +6,7 @@ public class CurrentSessionUpdate : IOutgoingNetworkPacket
 {
     public Session? CurrentSession;
     public float TrackGrip;
-    public IEnumerable<IEntryCar<IClient>>? Grid;
+    public IEnumerable<IEntryCar>? Grid;
     public long StartTime;
 
     public void ToWriter(ref PacketWriter writer)

@@ -20,7 +20,7 @@ public class SteamManager
         });
     }
 
-    public async Task<bool> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, ACTcpClient client)
+    public async Task<bool> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, PlayerClient client)
     {
         var result = await _steam.ValidateSessionTicketAsync(sessionTicket, guid, client);
 

@@ -38,7 +38,7 @@ public class CSPServerScriptProvider
         extraOptions.CSPServerExtraOptionsSending += OnExtraOptionsSending;
     }
 
-    private async void OnExtraOptionsSending(ACTcpClient sender, CSPServerExtraOptionsSendingEventArgs args)
+    private async void OnExtraOptionsSending(PlayerClient sender, CSPServerExtraOptionsSendingEventArgs args)
     {
         using var _ = args.GetDeferral();
         if (_debugUserGroup != null && await _debugUserGroup.ContainsAsync(sender.Guid))

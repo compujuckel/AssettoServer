@@ -290,9 +290,10 @@ public class UdpPluginServer : BackgroundService
                 case UdpPluginProtocol.KickUser:
                 {
                     byte sessionId = packetReader.Read<byte>();
-                    if (_entryCarManager.ConnectedCars.TryGetValue(sessionId, out EntryCar? car))
+                    if (_entryCarManager.ConnectedCars.TryGetValue(sessionId, out EntryCar? car) &&
+                        car.Client is PlayerClient playerClient)
                     {
-                        _ = Task.Run(() => _entryCarManager.KickAsync(car.Client, "You have been kicked."));
+                        _ = Task.Run(() => _entryCarManager.KickAsync(playerClient, "You have been kicked."));
                     }
                     else
                     {
@@ -382,12 +383,12 @@ public class UdpPluginServer : BackgroundService
         });
     }
 
-    private void OnClientFirstUpdate(ACTcpClient sender, EventArgs args)
+    private void OnClientFirstUpdate(PlayerClient sender, EventArgs args)
     {
         SendPacket(new ClientFirstUpdate{ SessionId = sender.SessionId });
     }
 
-    private void OnClientDisconnected(ACTcpClient client, EventArgs args)
+    private void OnClientDisconnected(PlayerClient client, EventArgs args)
     {
         SendPacket(new CarDisconnected
         {
@@ -399,7 +400,7 @@ public class UdpPluginServer : BackgroundService
         });
     }
 
-    private void OnClientConnected(ACTcpClient client, EventArgs args)
+    private void OnClientConnected(PlayerClient client, EventArgs args)
     {
         client.FirstUpdateSent += OnClientFirstUpdate;
         client.LapCompleted += OnLapCompleted;
@@ -415,7 +416,7 @@ public class UdpPluginServer : BackgroundService
         });
     }
 
-    private void OnClientEvent(ACTcpClient sender, CollisionEventArgs args)
+    private void OnClientEvent(PlayerClient sender, CollisionEventArgs args)
     {
         SendPacket(new ClientEvent
         {
@@ -428,7 +429,7 @@ public class UdpPluginServer : BackgroundService
         });
     }
 
-    private void OnLapCompleted(ACTcpClient sender, LapCompletedEventArgs args)
+    private void OnLapCompleted(PlayerClient sender, LapCompletedEventArgs args)
     {
         SendPacket(args.Packet);
     }

@@ -9,6 +9,7 @@ using AssettoServer.Network.Http;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
@@ -66,19 +67,19 @@ public class AiBehavior : BackgroundService
         _sessionManager.SessionChanged += OnSessionChanged;
     }
 
-    private static void OnCollision(ACTcpClient sender, CollisionEventArgs args)
+    private static void OnCollision(PlayerClient sender, CollisionEventArgs args)
     {
         if (args.TargetCar?.AiControlled == true)
         {
-            var targetAiState = args.TargetCar.GetClosestAiState(sender.EntryCar.Status.Position);
-            if (targetAiState.AiState != null && targetAiState.DistanceSquared < 25 * 25)
+            var targetAiState = args.TargetCar.GetClosestAiState(sender.Status.Position);
+            if (targetAiState is { AiState: not null, DistanceSquared: < 25 * 25 })
             {
                 Task.Delay(Random.Shared.Next(100, 500)).ContinueWith(_ => targetAiState.AiState.StopForCollision());
             }
         }
     }
 
-    private void OnClientChecksumPassed(ACTcpClient sender, EventArgs args)
+    private void OnClientChecksumPassed(PlayerClient sender, EventArgs args)
     {
         sender.EntryCar.SetAiControl(false);
         AdjustOverbooking();
@@ -340,7 +341,7 @@ public class AiBehavior : BackgroundService
         }
     }
 
-    private void OnClientDisconnected(ACTcpClient sender, EventArgs args)
+    private void OnClientDisconnected(PlayerClient sender, EventArgs args)
     {
         if (sender.EntryCar.AiMode != AiMode.None)
         {

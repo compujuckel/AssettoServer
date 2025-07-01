@@ -22,7 +22,7 @@ public abstract class OpenSlotFilterBase : IOpenSlotFilter
         return await _nextFilter.IsSlotOpen(entryCar, guid);
     }
 
-    public virtual Task<AuthFailedResponse?> ShouldAcceptConnectionAsync(ACTcpClient client, HandshakeRequest request)
+    public virtual Task<AuthFailedResponse?> ShouldAcceptConnectionAsync(PlayerClient client, HandshakeRequest request)
     {
         return _nextFilter?.ShouldAcceptConnectionAsync(client, request) ?? Task.FromResult<AuthFailedResponse?>(null);
     }

@@ -68,7 +68,7 @@ public class NativeSteam : BackgroundService, ISteam
         }
     }
     
-    public async Task<SteamResult> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, ACTcpClient client)
+    public async Task<SteamResult> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, PlayerClient client)
     {
         if (sessionTicket == null) return new SteamResult { ErrorReason = "Missing session ticket" };
 
@@ -130,7 +130,7 @@ public class NativeSteam : BackgroundService, ISteam
         }
     }
 
-    private static void Client_OnDisconnecting(ACTcpClient sender, EventArgs args)
+    private static void Client_OnDisconnecting(PlayerClient sender, EventArgs args)
     {
         try
         {

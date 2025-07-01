@@ -6,12 +6,12 @@ using AssettoServer.Shared.Network.Packets.Shared;
 namespace AssettoServer.Commands.Contexts;
 
 public class ChatCommandContext(
-        ACTcpClient client,
+        PlayerClient client,
         EntryCarManager entryEntryCarManager,
         IServiceProvider? serviceProvider = null)
     : BaseCommandContext(entryEntryCarManager, serviceProvider)
 {
-    public ACTcpClient Client { get; } = client;
+    public PlayerClient Client { get; } = client;
 
     public override bool IsAdministrator => Client.IsAdministrator;
 

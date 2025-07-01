@@ -7,5 +7,5 @@ public interface ISteam
 {
     public const int AppId = 244210;
     
-    Task<SteamResult> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, ACTcpClient client);
+    Task<SteamResult> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, PlayerClient client);
 }

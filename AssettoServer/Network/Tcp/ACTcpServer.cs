@@ -12,9 +12,9 @@ namespace AssettoServer.Network.Tcp;
 public class ACTcpServer : BackgroundService
 {
     private readonly ACServerConfiguration _configuration;
-    private readonly Func<TcpClient, ACTcpClient> _acTcpClientFactory;
+    private readonly Func<TcpClient, PlayerClient> _acTcpClientFactory;
 
-    public ACTcpServer(Func<TcpClient, ACTcpClient> acTcpClientFactory, ACServerConfiguration configuration)
+    public ACTcpServer(Func<TcpClient, PlayerClient> acTcpClientFactory, ACServerConfiguration configuration)
     {
         _acTcpClientFactory = acTcpClientFactory;
         _configuration = configuration;
@@ -32,7 +32,7 @@ public class ACTcpServer : BackgroundService
             {
                 TcpClient tcpClient = await listener.AcceptTcpClientAsync(stoppingToken);
 
-                ACTcpClient acClient = _acTcpClientFactory(tcpClient);
+                PlayerClient acClient = _acTcpClientFactory(tcpClient);
                 await acClient.StartAsync();
             }
             catch (OperationCanceledException) { }

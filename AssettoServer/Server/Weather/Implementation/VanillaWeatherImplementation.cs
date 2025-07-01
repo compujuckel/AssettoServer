@@ -17,7 +17,7 @@ public class VanillaWeatherImplementation : IWeatherImplementation
         _entryCarManager = entryCarManager;
     }
     
-    public void SendWeather(WeatherData weather, ZonedDateTime dateTime, ACTcpClient? client = null)
+    public void SendWeather(WeatherData weather, ZonedDateTime dateTime, PlayerClient? client = null)
     {
         var wfxParams = new WeatherFxParams
         {

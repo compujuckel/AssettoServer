@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Blacklist;
@@ -137,9 +138,9 @@ public class ACServer : BackgroundService, IHostedLifecycleService
         {
             foreach (var client in _entryCarManager.ConnectedCars.Values.Select(c => c.Client))
             {
-                if (client != null && !await sender.IsWhitelistedAsync(client.Guid))
+                if (client is PlayerClient playerClient && !await sender.IsWhitelistedAsync(playerClient.Guid))
                 {
-                    _ = _entryCarManager.KickAsync(client, "not being whitelisted");
+                    _ = _entryCarManager.KickAsync(playerClient, "not being whitelisted");
                 }
             }
         });
@@ -175,12 +176,12 @@ public class ACServer : BackgroundService, IHostedLifecycleService
                     {
                         var fromCar = _entryCarManager.EntryCars[i];
                         var fromClient = fromCar.Client;
-                        if (fromClient != null && fromClient.HasSentFirstUpdate && (_sessionManager.ServerTimeMilliseconds - fromCar.LastPingTime) > 1000)
+                        if (fromClient != null && fromClient.HasSentFirstUpdate && (_sessionManager.ServerTimeMilliseconds - fromClient.LastPingTime) > 1000)
                         {
-                            fromCar.LastPingTime = _sessionManager.ServerTimeMilliseconds;
-                            fromClient.SendPacketUdp(new PingUpdate((uint)fromCar.LastPingTime, fromCar.Ping));
+                            fromClient.LastPingTime = _sessionManager.ServerTimeMilliseconds;
+                            fromClient.SendPacketUdp(new PingUpdate((uint)fromClient.LastPingTime, fromClient.Ping));
 
-                            if (_sessionManager.ServerTimeMilliseconds - fromCar.LastPongTime > 15000)
+                            if (_sessionManager.ServerTimeMilliseconds - fromClient.LastPongTime > 15000)
                             {
                                 fromClient.Logger.Information("{ClientName} has not sent a ping response for over 15 seconds", fromClient.Name);
                                 _ = fromClient.DisconnectAsync();
@@ -196,7 +197,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
                                 var toCar = _entryCarManager.EntryCars[j];
                                 var toClient = toCar.Client;
                                 if (toCar == fromCar 
-                                    || toClient == null || !toClient.HasSentFirstUpdate || toClient.UdpEndpoint == null
+                                    || toClient == null || !toClient.HasSentFirstUpdate || !toClient.HasUdpEndpoint
                                     || !fromCar.GetPositionUpdateForCar(toCar, out var update)) continue;
 
                                 if (toClient.SupportsCSPCustomUpdate || fromCar.AiControlled)
@@ -228,7 +229,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
                                 }
                                 else
                                 {
-                                    var packet = new BatchedPositionUpdate((uint)(_sessionManager.ServerTimeMilliseconds - toCar.TimeOffset), toCar.Ping,
+                                    var packet = new BatchedPositionUpdate((uint)(_sessionManager.ServerTimeMilliseconds - toClient.TimeOffset), toClient.Ping,
                                         CollectionsMarshal.AsSpan(updates).Slice(i, Math.Min(chunkSize, updates.Count - i)));
                                     toClient.SendPacketUdp(in packet);
                                 }

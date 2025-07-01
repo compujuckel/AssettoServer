@@ -33,8 +33,9 @@ using Serilog.Events;
 
 namespace AssettoServer.Network.Tcp;
 
-public class ACTcpClient : IClient
+public class PlayerClient : IClient
 {
+    public CarStatus Status { get; internal set; }
     private ACUdpServer UdpServer { get; }
     public ILogger Logger { get; }
     public byte SessionId { get; set; }
@@ -45,10 +46,14 @@ public class ACTcpClient : IClient
     public ulong Guid { get; internal set; }
     public string HashedGuid { get; private set; } = "";
     public ulong? OwnerGuid { get; internal set; }
-    public EntryCar EntryCar { get; internal set; } = null!;
+    public IEntryCar EntryCar { get; internal set; } = null!;
     public bool IsDisconnectRequested => _disconnectRequested == 1;
     [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode))]
     public bool HasSentFirstUpdate { get; private set; }
+    public ushort Ping { get; set; }
+    public int TimeOffset { get; set; }
+    public long LastPingTime { get; set; }
+    public long LastPongTime { get; set; }
     public bool IsConnected { get; set; }
     public TcpClient TcpClient { get; }
 
@@ -66,6 +71,7 @@ public class ACTcpClient : IClient
     public bool SupportsCSPCustomUpdate { get; private set; }
     public int? CSPVersion { get; private set; }
     internal string ApiKey { get; }
+    public IEntryCar? TargetCar { get; set; }
 
     private static ThreadLocal<byte[]> UdpSendBuffer { get; } = new(() => GC.AllocateArray<byte>(1500, true));
     private byte[] TcpSendBuffer { get; }
@@ -90,89 +96,89 @@ public class ACTcpClient : IClient
     /// <summary>
     /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
     /// </summary>
-    public event EventHandler<ACTcpClient, EventArgs>? ChecksumPassed;
+    public event EventHandler<PlayerClient, EventArgs>? ChecksumPassed;
 
     /// <summary>
     /// Fires when a client failed the checksum check.
     /// </summary>
-    public event EventHandler<ACTcpClient, EventArgs>? ChecksumFailed;
+    public event EventHandler<PlayerClient, EventArgs>? ChecksumFailed;
 
     /// <summary>
     /// Fires when a client has sent a chat message. Set ChatEventArgs.Cancel = true to stop it from being broadcast to other players.
     /// </summary>
-    public event EventHandler<ACTcpClient, ChatMessageEventArgs>? ChatMessageReceived;
+    public event EventHandler<PlayerClient, ChatMessageEventArgs>? ChatMessageReceived;
 
     /// <summary>
     /// Fires when a player has started disconnecting.
     /// </summary>
-    public event EventHandler<ACTcpClient, EventArgs>? Disconnecting;
+    public event EventHandler<PlayerClient, EventArgs>? Disconnecting;
 
     /// <summary>
     ///  Fires when a slot has been secured for a player and the handshake response is about to be sent.
     /// </summary>
-    public event EventHandler<ACTcpClient, HandshakeAcceptedEventArgs>? HandshakeAccepted;
+    public event EventHandler<PlayerClient, HandshakeAcceptedEventArgs>? HandshakeAccepted;
 
     /// <summary>
     /// Fires when a client has sent the first position update and is visible to other players.
     /// </summary>
-    public event EventHandler<ACTcpClient, EventArgs>? FirstUpdateSent;
+    public event EventHandler<PlayerClient, EventArgs>? FirstUpdateSent;
 
     /// <summary>
     /// Fires when a client collided with something. TargetCar will be null for environment collisions.
     /// There are up to 5 seconds delay before a collision is reported to the server.
     /// </summary>
-    public event EventHandler<ACTcpClient, CollisionEventArgs>? Collision;
+    public event EventHandler<PlayerClient, CollisionEventArgs>? Collision;
     
     /// <summary>
     /// Fires when a client has changed tyre compound
     /// </summary>
-    public event EventHandler<ACTcpClient, TyreCompoundChangeEventArgs>? TyreCompoundChange;
+    public event EventHandler<PlayerClient, TyreCompoundChangeEventArgs>? TyreCompoundChange;
     
     /// <summary>
     /// Fires when a client has received damage
     /// </summary>
-    public event EventHandler<ACTcpClient, DamageEventArgs>? Damage;
+    public event EventHandler<PlayerClient, DamageEventArgs>? Damage;
     
     /// <summary>
     /// Fires when a client has used P2P
     /// </summary>
-    public event EventHandler<ACTcpClient, Push2PassEventArgs>? Push2Pass;
+    public event EventHandler<PlayerClient, Push2PassEventArgs>? Push2Pass;
 
     /// <summary>
     /// Fires when a client received a penalty.
     /// </summary>
-    public event EventHandler<ACTcpClient, EventArgs>? JumpStartPenalty;
+    public event EventHandler<PlayerClient, EventArgs>? JumpStartPenalty;
 
     /// <summary>
     /// Fires when a client has completed a lap
     /// </summary>
-    public event EventHandler<ACTcpClient, LapCompletedEventArgs>? LapCompleted;
+    public event EventHandler<PlayerClient, LapCompletedEventArgs>? LapCompleted;
     
     /// <summary>
     /// Fires when a client has completed a sector
     /// </summary>
-    public event EventHandler<ACTcpClient, SectorSplitEventArgs>? SectorSplit;
+    public event EventHandler<PlayerClient, SectorSplitEventArgs>? SectorSplit;
 
     /// <summary>
     /// Fires before sending the car list response
     /// </summary>
-    public event EventHandler<ACTcpClient, CarListResponseSendingEventArgs>? CarListResponseSending;
+    public event EventHandler<PlayerClient, CarListResponseSendingEventArgs>? CarListResponseSending;
     
     /// <summary>
     /// Fires when a player has authorized for admin permissions.
     /// </summary>
-    public event EventHandler<ACTcpClient, EventArgs>? LoggedInAsAdministrator;
+    public event EventHandler<PlayerClient, EventArgs>? LoggedInAsAdministrator;
     
     /// <summary>
     /// Called when all Lua server scripts are loaded on the client. Warning: This can be called multiple times if scripts are reloaded!
     /// </summary>
-    public event EventHandler<ACTcpClient, EventArgs>? LuaReady;
+    public event EventHandler<PlayerClient, EventArgs>? LuaReady;
 
     private class ACTcpClientLogEventEnricher : ILogEventEnricher
     {
-        private readonly ACTcpClient _client;
+        private readonly PlayerClient _client;
 
-        public ACTcpClientLogEventEnricher(ACTcpClient client)
+        public ACTcpClientLogEventEnricher(PlayerClient client)
         {
             _client = client;
         }
@@ -191,7 +197,7 @@ public class ACTcpClient : IClient
         }
     }
 
-    public ACTcpClient(
+    public PlayerClient(
         ACUdpServer udpServer,
         TcpClient tcpClient,
         SessionManager sessionManager,
@@ -241,7 +247,7 @@ public class ACTcpClient : IClient
         LuaReady += OnLuaReady;
     }
 
-    private void OnLuaReady(ACTcpClient sender, EventArgs args)
+    private void OnLuaReady(PlayerClient sender, EventArgs args)
     {
         SendPacket(new ApiKeyPacket { Key = ApiKey });
         
@@ -624,11 +630,11 @@ public class ACTcpClient : IClient
         var spectatePacket = reader.ReadPacket<SpectateCar>();
         if (spectatePacket.SessionId == SessionId || spectatePacket.SessionId > _entryCarManager.EntryCars.Length)
         {
-            EntryCar.TargetCar = null;
+            TargetCar = null;
         }
         else
         {
-            EntryCar.TargetCar = _entryCarManager.EntryCars[spectatePacket.SessionId];
+            TargetCar = _entryCarManager.EntryCars[spectatePacket.SessionId];
         }
     }
 
@@ -701,7 +707,7 @@ public class ACTcpClient : IClient
     private void OnDamageUpdate(PacketReader reader)
     {
         DamageUpdateIncoming damageUpdate = reader.ReadPacket<DamageUpdateIncoming>();
-        EntryCar.Status.DamageZoneLevel = damageUpdate.DamageZoneLevel;
+        Status.DamageZoneLevel = damageUpdate.DamageZoneLevel;
 
         var update = new DamageUpdate
         {
@@ -716,7 +722,7 @@ public class ACTcpClient : IClient
     private void OnTyreCompoundChange(PacketReader reader)
     {
         TyreCompoundChangeRequest compoundChangeRequest = reader.ReadPacket<TyreCompoundChangeRequest>();
-        EntryCar.Status.CurrentTyreCompound = compoundChangeRequest.CompoundName;
+        Status.CurrentTyreCompound = compoundChangeRequest.CompoundName;
 
         var update = new TyreCompoundUpdate
         {
@@ -731,7 +737,7 @@ public class ACTcpClient : IClient
     private void OnMandatoryPitUpdate(PacketReader reader)
     {
         MandatoryPitRequest mandatoryPitRequest = reader.ReadPacket<MandatoryPitRequest>();
-        EntryCar.Status.MandatoryPit = mandatoryPitRequest.MandatoryPit;
+        Status.MandatoryPit = mandatoryPitRequest.MandatoryPit;
 
         _entryCarManager.BroadcastPacket(new MandatoryPitUpdate
         {
@@ -772,19 +778,19 @@ public class ACTcpClient : IClient
         {
             SendPacket(new P2PUpdate
             {
-                P2PCount = EntryCar.Status.P2PCount,
+                P2PCount = Status.P2PCount,
                 SessionId = SessionId
             });
         }
         else
         {
-            if (!_configuration.Extra.EnableUnlimitedP2P && EntryCar.Status.P2PCount > 0)
-                EntryCar.Status.P2PCount--;
+            if (!_configuration.Extra.EnableUnlimitedP2P && Status.P2PCount > 0)
+                Status.P2PCount--;
             
             var update = new P2PUpdate
             {
                 Active = push2Pass.Active,
-                P2PCount = EntryCar.Status.P2PCount,
+                P2PCount = Status.P2PCount,
                 SessionId = SessionId
             };
         
@@ -839,13 +845,13 @@ public class ACTcpClient : IClient
         }
     }
 
-    internal void SendFirstUpdate()
+    public void SendFirstUpdate()
     {
         if (HasSentFirstUpdate)
             return;
 
         TcpClient.ReceiveTimeout = 0;
-        EntryCar.LastPongTime = _sessionManager.ServerTimeMilliseconds;
+        LastPongTime = _sessionManager.ServerTimeMilliseconds;
         HasSentFirstUpdate = true;
 
         _ = Task.Run(SendFirstUpdateAsync);
@@ -969,7 +975,7 @@ public class ACTcpClient : IClient
         return true;
     }
 
-    internal async Task DisconnectAsync()
+    public async Task DisconnectAsync()
     {
         try
         {

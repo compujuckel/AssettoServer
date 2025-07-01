@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
@@ -35,10 +36,8 @@ public class ACClientAuthenticationHandler : AuthenticationHandler<ACClientAuthe
         }
         var apiKey = apiKeyHdr.ToString();
 
-        if (_entryCarManager.EntryCars[carId].Client?.ApiKey == apiKey)
+        if (_entryCarManager.EntryCars[carId].Client is PlayerClient client && client.ApiKey == apiKey)
         {
-            var client = _entryCarManager.EntryCars[carId].Client!;
-
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, client.Guid.ToString()),

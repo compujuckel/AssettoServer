@@ -39,7 +39,7 @@ public class ClientAuditEventArgs : EventArgs
 {
     public KickReason Reason { get; init; }
     public string? ReasonStr { get; init; }
-    public ACTcpClient? Admin { get; init; }
+    public PlayerClient? Admin { get; init; }
 }
 
 public class ChatEventArgs : CancelEventArgs

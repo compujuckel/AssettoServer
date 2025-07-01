@@ -6,7 +6,7 @@ namespace AssettoServer.Network.Http.Authentication;
 
 public class ACClientClaimsIdentity : ClaimsIdentity
 {
-    public required ACTcpClient Client { get; init; }
+    public required PlayerClient Client { get; init; }
 
     public ACClientClaimsIdentity(IEnumerable<Claim>? claims, string? authenticationType) : base(claims, authenticationType)
     {

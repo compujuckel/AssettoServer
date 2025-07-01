@@ -30,7 +30,7 @@ public class CSPClientMessageHandler
         cspClientMessageTypeManager.RegisterOnlineEvent<LuaReadyPacket>(OnLuaReady);
     }
     
-    public void OnCSPClientMessageUdp(ACTcpClient sender, PacketReader reader)
+    public void OnCSPClientMessageUdp(PlayerClient sender, PacketReader reader)
     {
         var packetType = reader.Read<CSPClientMessageType>();
         switch (packetType)
@@ -70,7 +70,7 @@ public class CSPClientMessageHandler
         }
     }
     
-    public void OnCSPClientMessageTcp(ACTcpClient sender, PacketReader reader)
+    public void OnCSPClientMessageTcp(PlayerClient sender, PacketReader reader)
     {
         var packetType = reader.Read<CSPClientMessageType>();
         
@@ -118,7 +118,7 @@ public class CSPClientMessageHandler
         }
     }
 
-    private void OnLuaMessage(ACTcpClient sender, PacketReader reader, CSPClientMessageType type, bool udp)
+    private void OnLuaMessage(PlayerClient sender, PacketReader reader, CSPClientMessageType type, bool udp)
     {
         float? range = IsRanged(type) ? (float)reader.Read<Half>() : null;
         byte? sessionId = IsTargeted(type) ? reader.Read<byte>() : null;
@@ -172,7 +172,7 @@ public class CSPClientMessageHandler
         }
     }
 
-    private static void OnHandshakeOut(ACTcpClient sender, PacketReader reader)
+    private static void OnHandshakeOut(PlayerClient sender, PacketReader reader)
     {
         var packet = reader.ReadPacket<CSPHandshakeOut>();
         sender.InputMethod = packet.InputMethod;
@@ -181,7 +181,7 @@ public class CSPClientMessageHandler
             sender.Name, sender.SessionId, packet.Version, packet.IsWeatherFxActive, packet.InputMethod, packet.IsRainFxActive, packet.UniqueKey);
     }
 
-    private void OnAdminPenaltyOut(ACTcpClient sender, PacketReader reader)
+    private void OnAdminPenaltyOut(PlayerClient sender, PacketReader reader)
     {
 
         if (sender.IsAdministrator)
@@ -201,13 +201,13 @@ public class CSPClientMessageHandler
         }
     }
 
-    private void OnResetCar(ACTcpClient sender, RequestResetPacket packet)
+    private void OnResetCar(PlayerClient sender, RequestResetPacket packet)
     {
         if (!_configuration.Extra.EnableCarReset) return;
         sender.EntryCar.TryResetPosition();
     }
 
-    private void OnLuaReady(ACTcpClient sender, LuaReadyPacket packet)
+    private void OnLuaReady(PlayerClient sender, LuaReadyPacket packet)
     {
         sender.FireLuaReady();
     }

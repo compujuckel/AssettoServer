@@ -13,10 +13,10 @@ public class CSPServerExtraOptions
 {
     private readonly ACServerConfiguration _configuration;
 
-    public event EventHandler<ACTcpClient, WelcomeMessageSendingEventArgs>? WelcomeMessageSending;
-    public event EventHandler<ACTcpClient, CSPServerExtraOptionsSendingEventArgs>? CSPServerExtraOptionsSending;
+    public event EventHandler<PlayerClient, WelcomeMessageSendingEventArgs>? WelcomeMessageSending;
+    public event EventHandler<PlayerClient, CSPServerExtraOptionsSendingEventArgs>? CSPServerExtraOptionsSending;
 
-    public event EventHandler<ACTcpClient, WelcomeMessageSentEventArgs>? WelcomeMessageSent; 
+    public event EventHandler<PlayerClient, WelcomeMessageSentEventArgs>? WelcomeMessageSent; 
 
     public string WelcomeMessage { get; set; }
     public string ExtraOptions { get; set; }
@@ -42,7 +42,7 @@ public class CSPServerExtraOptions
         }
     }
 
-    internal async Task<string> GenerateWelcomeMessageAsync(ACTcpClient client)
+    internal async Task<string> GenerateWelcomeMessageAsync(PlayerClient client)
     {
         var sb = new StringBuilder();
         sb.Append(WelcomeMessage);

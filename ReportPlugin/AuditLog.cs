@@ -40,7 +40,7 @@ public readonly struct AuditClient
     public readonly string CarModel;
     public readonly string Skin;
 
-    public AuditClient(ACTcpClient client)
+    public AuditClient(PlayerClient client)
     {
         Name = client.Name ?? "";
         SteamId = client.Guid;

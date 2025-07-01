@@ -15,7 +15,7 @@ public class GeoIP
         entryCarManager.ClientConnected += OnClientConnected;
     }
 
-    private void OnClientConnected(ACTcpClient sender, EventArgs args)
+    private void OnClientConnected(PlayerClient sender, EventArgs args)
     {
         try
         {

@@ -1,4 +1,4 @@
-﻿namespace AssettoServer.Network.Tcp;
+﻿namespace AssettoServer.Shared.Model;
 
 public enum ChecksumStatus
 {

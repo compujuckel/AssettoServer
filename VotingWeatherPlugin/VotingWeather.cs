@@ -14,7 +14,7 @@ public class VotingWeather : BackgroundService
     private readonly EntryCarManager _entryCarManager;
     private readonly VotingWeatherConfiguration _configuration;
     private readonly List<WeatherFxType> _weathers;
-    private readonly List<ACTcpClient> _alreadyVoted = new();
+    private readonly List<PlayerClient> _alreadyVoted = new();
     private readonly List<WeatherChoice> _availableWeathers = new();
 
     private bool _votingOpen = false;
@@ -63,7 +63,7 @@ public class VotingWeather : BackgroundService
         }
     }
 
-    internal void CountVote(ACTcpClient client, int choice)
+    internal void CountVote(PlayerClient client, int choice)
     {
         if (!_votingOpen)
         {

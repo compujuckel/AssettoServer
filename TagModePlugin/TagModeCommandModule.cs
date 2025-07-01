@@ -17,7 +17,7 @@ public class TagModeCommandModule : ACModuleBase
     }
 
     [Command("tagstart"), RequireConnectedPlayer, RequireAdmin]
-    public async ValueTask Start([Remainder] ACTcpClient? player = null)
+    public async ValueTask Start([Remainder] PlayerClient? player = null)
     {
         var starter = player?.EntryCar;
         if (starter == null && !_plugin.TryPickRandomTagger(out starter))

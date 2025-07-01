@@ -54,7 +54,7 @@ public class FastTravelPlugin : IHostedService
         cspClientMessageTypeManager.RegisterOnlineEvent<FastTravelPacket>(OnFastTravelPacket);
     }
 
-    private void OnFastTravelPacket(ACTcpClient client, FastTravelPacket packet)
+    private void OnFastTravelPacket(PlayerClient client, FastTravelPacket packet)
     {
         var (splinePointId, _) = _aiSpline.WorldToSpline(packet.Position);
 

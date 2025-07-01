@@ -16,7 +16,7 @@ public class RaceCommandModule : ACModuleBase
     }
 
     [Command("race"), RequireConnectedPlayer]
-    public void Race(ACTcpClient player)
+    public void Race(PlayerClient player)
         => _plugin.GetRace(Client!.EntryCar).ChallengeCar(player.EntryCar);
 
     [Command("accept"), RequireConnectedPlayer]

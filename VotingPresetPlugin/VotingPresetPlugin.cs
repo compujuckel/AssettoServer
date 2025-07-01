@@ -17,7 +17,7 @@ public class VotingPresetPlugin : BackgroundService
     private readonly VotingPresetConfiguration _configuration;
     
     private readonly List<PresetType> _votePresets;
-    private readonly List<ACTcpClient> _alreadyVoted = new();
+    private readonly List<PlayerClient> _alreadyVoted = new();
     private readonly List<PresetChoice> _availablePresets = new();
     private bool _votingOpen = false;
     

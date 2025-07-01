@@ -9,7 +9,7 @@ public static class LegalNotice
     public const string WelcomeMessage = "\n_____\nPowered by AssettoServer https://assettoserver.org\nType /legal for more details.";
 
     public const string LegalNoticeText =
-@"| Copyright (C) 2024  Niewiarowski, compujuckel
+@"| Copyright (C) 2025  Niewiarowski, compujuckel
 | 
 | This program is free software: you can redistribute it and/or modify
 | it under the terms of the GNU Affero General Public License as

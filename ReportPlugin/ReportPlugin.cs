@@ -5,16 +5,14 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Discord;
-using AssettoServer.Shared.Services;
 using CSharpDiscordWebhook.NET.Discord;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace ReportPlugin;
 
-public class ReportPlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class ReportPlugin : IHostedService
 {
     internal Guid Key { get; }
     
@@ -34,8 +32,7 @@ public class ReportPlugin : CriticalBackgroundService, IAssettoServerAutostart
         ChatService chatService,
         CSPServerExtraOptions cspServerExtraOptions,
         ACServerConfiguration serverConfiguration,
-        GeoParamsManager geoParamsManager,
-        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+        GeoParamsManager geoParamsManager)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;
@@ -59,14 +56,6 @@ public class ReportPlugin : CriticalBackgroundService, IAssettoServerAutostart
         
         Key = Guid.NewGuid();
         Directory.CreateDirectory("reports");
-    }
-    
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        // can't do this in constructor because geo params won't be initialized yet
-        string extraOptions = $"\n[REPLAY_CLIPS]\nUPLOAD_URL = 'http://{_geoParamsManager.GeoParams.Ip}:{_serverConfiguration.Server.HttpPort}/report?key={Key}'\nDURATION = {_configuration.ClipDurationSeconds}";
-        _cspServerExtraOptions.ExtraOptions += extraOptions;
-        return Task.CompletedTask;
     }
 
     private void OnClientFirstUpdateSent(ACTcpClient sender, EventArgs args)
@@ -175,4 +164,19 @@ public class ReportPlugin : CriticalBackgroundService, IAssettoServerAutostart
     }
 
     public void SetLastReplay(ACTcpClient client, Replay replay) => _reports[client] = replay;
+    
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        // Can't do this in constructor because geo params won't be initialized yet
+        var extraOptions = $"""
+                            [REPLAY_CLIPS]
+                            UPLOAD_URL = 'http://{_geoParamsManager.GeoParams.Ip}:{_serverConfiguration.Server.HttpPort}/report?key={Key}'
+                            DURATION = {_configuration.ClipDurationSeconds}
+                            """;
+        _cspServerExtraOptions.ExtraOptions += extraOptions;
+        
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

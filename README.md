@@ -20,7 +20,7 @@ AssettoServer is licensed under the GNU Affero General Public License v3.0, see 
 Additionally, you must preserve the legal notices and author attributions present in the server.
 
 ```
-Copyright (C)  2024 Niewiarowski, compujuckel
+Copyright (C)  2025 Niewiarowski, compujuckel
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published

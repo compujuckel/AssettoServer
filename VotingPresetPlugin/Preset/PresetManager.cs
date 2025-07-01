@@ -2,13 +2,12 @@ using AssettoServer;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Network.Packets.Outgoing;
-using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace VotingPresetPlugin.Preset;
 
-public class PresetManager : CriticalBackgroundService
+public class PresetManager : BackgroundService
 {
     private readonly ACServerConfiguration _acServerConfiguration;
     private readonly VotingPresetConfiguration _configuration;
@@ -19,8 +18,7 @@ public class PresetManager : CriticalBackgroundService
 
     public PresetManager(ACServerConfiguration acServerConfiguration, 
         VotingPresetConfiguration configuration,
-        EntryCarManager entryCarManager,
-        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+        EntryCarManager entryCarManager)
     {
         _acServerConfiguration = acServerConfiguration;
         _configuration = configuration;

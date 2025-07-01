@@ -5,7 +5,6 @@ using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.Weather.Implementation;
-using AssettoServer.Shared.Services;
 using AssettoServer.Shared.Weather;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
@@ -16,7 +15,7 @@ using SunCalcNet.Model;
 
 namespace AssettoServer.Server.Weather;
 
-public class WeatherManager : CriticalBackgroundService
+public class WeatherManager : BackgroundService, IHostedLifecycleService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly IWeatherImplementation _weatherImplementation;
@@ -32,8 +31,7 @@ public class WeatherManager : CriticalBackgroundService
         ACServerConfiguration configuration, 
         SessionManager timeSource, 
         RainHelper rainHelper,
-        CSPServerExtraOptions cspServerExtraOptions,
-        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+        CSPServerExtraOptions cspServerExtraOptions)
     {
         _weatherImplementation = weatherImplementation;
         _weatherTypeProvider = weatherTypeProvider;
@@ -136,64 +134,17 @@ public class WeatherManager : CriticalBackgroundService
         return true;
     }
 
-    private float GetFloatWithVariation(float baseValue, float variation)
+    private static float GetFloatWithVariation(float baseValue, float variation)
     {
         return GetRandomFloatInRange(baseValue - variation / 2, baseValue + variation / 2);
     }
 
-    private float GetRandomFloatInRange(float min, float max)
+    private static float GetRandomFloatInRange(float min, float max)
     {
         return (float) (Random.Shared.NextDouble() * (max - min) + min);
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        TrackParams = _trackParamsProvider.GetParamsForTrack(_configuration.Server.Track);
-
-        DateTimeZone? timeZone;
-        if (TrackParams == null || string.IsNullOrEmpty(TrackParams.Timezone))
-        {
-            if (_configuration.Extra.IgnoreConfigurationErrors.MissingTrackParams)
-            {
-                Log.Warning("Using UTC as default time zone");
-                timeZone = DateTimeZone.Utc;
-            }
-            else
-            {
-                throw new ConfigurationException($"No track params found for {_configuration.Server.Track}. More info: https://assettoserver.org/docs/common-configuration-errors#missing-track-params")
-                {
-                    HelpLink = "https://assettoserver.org/docs/common-configuration-errors#missing-track-params"
-                };
-            }
-        }
-        else
-        {
-            timeZone = DateTimeZoneProviders.Tzdb.GetZoneOrNull(TrackParams.Timezone);
-
-            if (timeZone == null)
-            {
-                throw new ConfigurationException($"Invalid time zone {TrackParams.Timezone} for track {_configuration.Server.Track}. Please enter a valid time zone for your track in cfg/data_track_params.ini.");
-            }
-        }
-
-        if (_configuration.Extra.ForceServerTrackParams && TrackParams != null)
-        {
-            _cspServerExtraOptions.ExtraOptions += $"\r\n[WEATHER_FX]\r\nTIMEZONE_ID = {TrackParams.Timezone}\r\nLATITUDE = {TrackParams.Latitude}\r\nLONGITUDE = {TrackParams.Longitude}\r\n";
-        }
-        
-        CurrentDateTime = SystemClock.Instance
-            .InZone(timeZone)
-            .GetCurrentDate()
-            .AtStartOfDayInZone(timeZone)
-            .PlusSeconds((long)WeatherUtils.SecondsFromSunAngle(_configuration.Server.SunAngle));
-        
-        if (!SetWeatherConfiguration(Random.Shared.Next(_configuration.Server.Weathers.Count)))
-            throw new InvalidOperationException("Could not set initial weather configuration");
-
-        await LoopAsync(stoppingToken);
-    }
-
-    private async Task LoopAsync(CancellationToken token)
+    protected override async Task ExecuteAsync(CancellationToken token)
     {
         var lastTimeUpdate = _timeSource.ServerTimeMilliseconds;
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
@@ -235,4 +186,56 @@ public class WeatherManager : CriticalBackgroundService
             }
         }
     }
+
+    public Task StartedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public async Task StartingAsync(CancellationToken cancellationToken)
+    {
+        await _trackParamsProvider.InitializeAsync();
+        TrackParams = _trackParamsProvider.GetParamsForTrack(_configuration.Server.Track);
+
+        DateTimeZone? timeZone;
+        if (TrackParams == null || string.IsNullOrEmpty(TrackParams.Timezone))
+        {
+            if (_configuration.Extra.IgnoreConfigurationErrors.MissingTrackParams)
+            {
+                Log.Warning("Using UTC as default time zone");
+                timeZone = DateTimeZone.Utc;
+            }
+            else
+            {
+                throw new ConfigurationException($"No track params found for {_configuration.Server.Track}. More info: https://assettoserver.org/docs/common-configuration-errors#missing-track-params")
+                {
+                    HelpLink = "https://assettoserver.org/docs/common-configuration-errors#missing-track-params"
+                };
+            }
+        }
+        else
+        {
+            timeZone = DateTimeZoneProviders.Tzdb.GetZoneOrNull(TrackParams.Timezone);
+
+            if (timeZone == null)
+            {
+                throw new ConfigurationException($"Invalid time zone {TrackParams.Timezone} for track {_configuration.Server.Track}. Please enter a valid time zone for your track in cfg/data_track_params.ini.");
+            }
+        }
+
+        if (_configuration.Extra.ForceServerTrackParams && TrackParams != null)
+        {
+            _cspServerExtraOptions.ExtraOptions += $"\r\n[WEATHER_FX]\r\nTIMEZONE_ID = {TrackParams.Timezone}\r\nLATITUDE = {TrackParams.Latitude}\r\nLONGITUDE = {TrackParams.Longitude}\r\n";
+        }
+        
+        CurrentDateTime = SystemClock.Instance
+            .InZone(timeZone)
+            .GetCurrentDate()
+            .AtStartOfDayInZone(timeZone)
+            .PlusSeconds((long)WeatherUtils.SecondsFromSunAngle(_configuration.Server.SunAngle));
+        
+        if (!SetWeatherConfiguration(Random.Shared.Next(_configuration.Server.Weathers.Count)))
+            throw new InvalidOperationException("Could not set initial weather configuration");
+    }
+
+    public Task StoppedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task StoppingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

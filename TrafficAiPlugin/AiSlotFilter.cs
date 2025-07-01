@@ -15,7 +15,7 @@ public class AiSlotFilter : OpenSlotFilterBase
         _configuration = configuration;
     }
 
-    public override bool IsSlotOpen(EntryCar entryCar, ulong guid)
+    public override async ValueTask<bool> IsSlotOpen(EntryCar entryCar, ulong guid)
     {
         if (entryCar.AiMode == AiMode.Fixed
             || (_configuration.MaxPlayerCount > 0 && _entryCarManager.ConnectedCars.Count >= _configuration.MaxPlayerCount))
@@ -23,6 +23,6 @@ public class AiSlotFilter : OpenSlotFilterBase
             return false;
         }
         
-        return base.IsSlotOpen(entryCar, guid);
+        return await base.IsSlotOpen(entryCar, guid);
     }
 }

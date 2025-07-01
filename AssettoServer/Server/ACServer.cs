@@ -4,19 +4,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reflection;
-using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.GeoParams;
-using AssettoServer.Server.Plugin;
-using AssettoServer.Server.TrackParams;
-using AssettoServer.Server.Weather;
 using AssettoServer.Server.Whitelist;
-using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
-using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Prometheus;
@@ -24,16 +18,14 @@ using Serilog;
 
 namespace AssettoServer.Server;
 
-public class ACServer : CriticalBackgroundService
+public class ACServer : BackgroundService, IHostedLifecycleService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly GeoParamsManager _geoParamsManager;
     private readonly ChecksumManager _checksumManager;
-    private readonly List<IHostedService> _autostartServices;
     private readonly IHostApplicationLifetime _applicationLifetime;
-    private readonly ITrackParamsProvider _trackParamsProvider;
 
     /// <summary>
     /// Fires on each server tick in the main loop. Don't do resource intensive / long running stuff in here!
@@ -46,17 +38,11 @@ public class ACServer : CriticalBackgroundService
         IWhitelistService whitelistService,
         SessionManager sessionManager,
         EntryCarManager entryCarManager,
-        WeatherManager weatherManager,
         GeoParamsManager geoParamsManager,
-        ITrackParamsProvider trackParamsProvider,
         ChecksumManager checksumManager,
-        ACTcpServer tcpServer,
-        ACUdpServer udpServer,
         CSPFeatureManager cspFeatureManager,
         CSPServerScriptProvider cspServerScriptProvider,
-        IEnumerable<IAssettoServerAutostart> autostartServices,
-        KunosLobbyRegistration kunosLobbyRegistration,
-        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+        IHostApplicationLifetime applicationLifetime)
     {
         Log.Information("Starting server");
             
@@ -66,13 +52,9 @@ public class ACServer : CriticalBackgroundService
         _geoParamsManager = geoParamsManager;
         _checksumManager = checksumManager;
         _applicationLifetime = applicationLifetime;
-        _trackParamsProvider = trackParamsProvider;
 
-        _autostartServices = [weatherManager, sessionManager, tcpServer, udpServer];
-        _autostartServices.AddRange(autostartServices);
-        _autostartServices.Add(kunosLobbyRegistration);
-
-        blacklistService.Changed += OnChanged;
+        blacklistService.Changed += OnBlacklistChanged;
+        whitelistService.Changed += OnWhitelistChanged;
 
         cspFeatureManager.Add(new CSPFeature { Name = "SPECTATING_AWARE" });
         cspFeatureManager.Add(new CSPFeature { Name = "LOWER_CLIENTS_SENDING_RATE" });
@@ -104,51 +86,22 @@ public class ACServer : CriticalBackgroundService
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Lua.assettoserver.lua")!;
         cspServerScriptProvider.AddScript(stream, "assettoserver.lua");
     }
-
-    private void OnApplicationStopping()
-    {
-        Log.Information("Server shutting down");
-        _entryCarManager.BroadcastChat("*** Server shutting down ***");
-
-        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        var tasks = new List<Task>();
-        
-        foreach (var service in _autostartServices)
-        {
-            tasks.Add(service.StopAsync(cts.Token));
-        }
-
-        try
-        {
-            Task.WaitAll(tasks.ToArray(), cts.Token);
-        }
-        catch (OperationCanceledException) { }
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Log.Information("Starting HTTP server on port {HttpPort}", _configuration.Server.HttpPort);
         
-        _entryCarManager.Initialize();
-        _checksumManager.Initialize();
-        await _trackParamsProvider.InitializeAsync();
-        await _geoParamsManager.InitializeAsync();
-
-        foreach (var service in _autostartServices)
-        {
-            await service.StartAsync(stoppingToken);
-        }
-
-        _ = _applicationLifetime.ApplicationStopping.Register(OnApplicationStopping);
         var mainThread = new Thread(() => MainLoop(stoppingToken))
         {
             Name = "MainLoop",
             Priority = ThreadPriority.AboveNormal
         };
         mainThread.Start();
+        
+        return Task.CompletedTask;
     }
 
-    private void OnChanged(IBlacklistService sender, EventArgs args)
+    private void OnBlacklistChanged(IBlacklistService sender, EventArgs args)
     {
         _ = Task.Run(async () =>
         {
@@ -159,6 +112,20 @@ public class ACServer : CriticalBackgroundService
                     client.Logger.Information("{ClientName} was banned after reloading blacklist", client.Name);
                     client.SendPacket(new KickCar { SessionId = client.SessionId, Reason = KickReason.VoteBlacklisted });
                     _ = client.DisconnectAsync();
+                }
+            }
+        });
+    }
+    
+    private void OnWhitelistChanged(IWhitelistService sender, EventArgs args)
+    {
+        _ = Task.Run(async () =>
+        {
+            foreach (var client in _entryCarManager.ConnectedCars.Values.Select(c => c.Client))
+            {
+                if (client != null && !await sender.IsWhitelistedAsync(client.Guid))
+                {
+                    _ = _entryCarManager.KickAsync(client, "not being whitelisted");
                 }
             }
         });
@@ -307,4 +274,33 @@ public class ACServer : CriticalBackgroundService
             }
         }
     }
+
+    public Task StartedAsync(CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(_geoParamsManager.GeoParams.Ip))
+        {
+            Log.Information("Invite link: {ServerInviteLink}", $"https://acstuff.club/s/q:race/online/join?ip={_geoParamsManager.GeoParams.Ip}&httpPort={_configuration.Server.HttpPort}");
+        }
+        
+        
+        Log.Information("Server startup completed");
+        return Task.CompletedTask;
+    }
+
+    public async Task StartingAsync(CancellationToken cancellationToken)
+    {
+        _entryCarManager.Initialize();
+        _checksumManager.Initialize();
+        await _geoParamsManager.InitializeAsync();
+    }
+
+    public Task StoppingAsync(CancellationToken cancellationToken)
+    {
+        Log.Information("Server shutting down");
+        _entryCarManager.BroadcastChat("*** Server shutting down ***");
+        
+        return Task.CompletedTask;
+    }
+    
+    public Task StoppedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

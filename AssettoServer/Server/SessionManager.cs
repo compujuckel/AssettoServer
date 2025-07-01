@@ -11,13 +11,12 @@ using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
-using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AssettoServer.Server;
 
-public class SessionManager : CriticalBackgroundService
+public class SessionManager : BackgroundService, IHostedLifecycleService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly Func<SessionConfiguration, SessionState> _sessionStateFactory;
@@ -49,7 +48,7 @@ public class SessionManager : CriticalBackgroundService
         Func<SessionConfiguration, SessionState> sessionStateFactory,
         EntryCarManager entryCarManager,
         Lazy<WeatherManager> weatherManager,
-        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+        IHostApplicationLifetime applicationLifetime)
     {
         _configuration = configuration;
         _sessionStateFactory = sessionStateFactory;
@@ -59,15 +58,8 @@ public class SessionManager : CriticalBackgroundService
 
         _entryCarManager.ClientConnected += OnClientConnected;
     }
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        _timeSource.Start();
-        NextSession();
 
-        await LoopAsync(stoppingToken);
-    }
-
-    private async Task LoopAsync(CancellationToken token)
+    protected override async Task ExecuteAsync(CancellationToken token)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
 
@@ -441,7 +433,6 @@ public class SessionManager : CriticalBackgroundService
         if (_entryCarManager.EntryCars.Any(c => c.Client is { HasSentFirstUpdate: false }))
             return false;
 
-
         SetSession(CurrentSessionIndex);
         return true;
     }
@@ -543,4 +534,18 @@ public class SessionManager : CriticalBackgroundService
         CurrentSession.HasSentRaceOverPacket = true;
         CurrentSession.OverTimeMilliseconds = ServerTimeMilliseconds;
     }
+
+    public Task StartedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task StartingAsync(CancellationToken cancellationToken)
+    {
+        _timeSource.Start();
+        NextSession();
+        
+        return Task.CompletedTask;
+    }
+
+    public Task StoppedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task StoppingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

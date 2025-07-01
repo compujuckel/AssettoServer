@@ -4,9 +4,7 @@ using AssettoServer.Network.Http;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Network.Packets.Outgoing;
-using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Prometheus;
@@ -16,7 +14,7 @@ using TrafficAiPlugin.Splines;
 
 namespace TrafficAiPlugin;
 
-public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
+public class AiBehavior : BackgroundService
 {
     private readonly ACServerConfiguration _serverConfiguration;
     private readonly TrafficAiConfiguration _configuration;
@@ -25,7 +23,6 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     private readonly TrafficAi _trafficAi;
     private readonly AiSpline _spline;
     private readonly HttpInfoCache _httpInfoCache;
-    //private readonly EntryCar.Factory _entryCarFactory;
 
     private readonly JunctionEvaluator _junctionEvaluator;
 
@@ -38,12 +35,10 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         ACServerConfiguration serverConfiguration,
         TrafficAiConfiguration configuration,
         EntryCarManager entryCarManager,
-        IHostApplicationLifetime applicationLifetime,
-        //EntryCar.Factory entryCarFactory,
         CSPServerScriptProvider serverScriptProvider,
         TrafficAi trafficAi, 
         AiSpline spline,
-        HttpInfoCache httpInfoCache) : base(applicationLifetime)
+        HttpInfoCache httpInfoCache)
     {
         _sessionManager = sessionManager;
         _serverConfiguration = serverConfiguration;
@@ -53,7 +48,6 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         _spline = spline;
         _httpInfoCache = httpInfoCache;
         _junctionEvaluator = new JunctionEvaluator(spline, false);
-        //_entryCarFactory = entryCarFactory;
 
         if (_configuration.Debug)
         {
@@ -421,7 +415,7 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
         return true;
     }
 
-    private int GetSpawnPoint(AssettoServer.Server.EntryCar playerCar)
+    private int GetSpawnPoint(EntryCar playerCar)
     {
         var result = _spline.WorldToSpline(playerCar.Status.Position);
         var ops = _spline.Operations;
@@ -501,10 +495,6 @@ public class AiBehavior : CriticalBackgroundService, IAssettoServerAutostart
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         SetHttpDetailsExtensions();
-        
-        _ = UpdateAsync(stoppingToken);
-        _ = ObstacleDetectionAsync(stoppingToken);
-
-        return Task.CompletedTask;
+        return Task.WhenAll(UpdateAsync(stoppingToken), ObstacleDetectionAsync(stoppingToken));
     }
 }

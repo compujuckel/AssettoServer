@@ -5,15 +5,13 @@ using System.Threading.Tasks;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Network.Http.Responses;
-using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Qommon.Collections.ReadOnly;
 
 namespace AssettoServer.Network.Http;
 
-public class HttpInfoCache : CriticalBackgroundService, IAssettoServerAutostart
+public class HttpInfoCache : IHostedService
 {
     private readonly GeoParamsManager _geoParamsManager;
     private readonly EntryCarManager _entryCarManager;
@@ -28,7 +26,7 @@ public class HttpInfoCache : CriticalBackgroundService, IAssettoServerAutostart
     public IReadOnlyList<string> Country { get; private set; } = null!;
     public Dictionary<string, object> Extensions { get; } = [];
 
-    public HttpInfoCache(ACServerConfiguration configuration, EntryCarManager entryCarManager, IHostApplicationLifetime lifetime, GeoParamsManager geoParamsManager) : base(lifetime)
+    public HttpInfoCache(ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager)
     {
         _entryCarManager = entryCarManager;
         _geoParamsManager = geoParamsManager;
@@ -53,10 +51,12 @@ public class HttpInfoCache : CriticalBackgroundService, IAssettoServerAutostart
         };
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
         Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct().ToReadOnlyList();
-        Country = new[] { _geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode };
+        Country = [_geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode];
         return Task.CompletedTask;
     }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

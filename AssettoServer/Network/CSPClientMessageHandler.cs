@@ -25,7 +25,7 @@ public class CSPClientMessageHandler
         _configuration = configuration;
         
         cspClientMessageTypeManager.RegisterOnlineEvent<CollisionUpdatePacket>((_, _) => { });
-        cspClientMessageTypeManager.RegisterOnlineEvent<TeleportCarPacket>(OnTeleportCar);
+        cspClientMessageTypeManager.RegisterOnlineEvent<TeleportCarPacket>((_, _) => { });
         cspClientMessageTypeManager.RegisterOnlineEvent<LuaReadyPacket>(OnLuaReady);
     }
     
@@ -198,12 +198,6 @@ public class CSPClientMessageHandler
             sender.Logger.Information("CSP admin penalty received from {ClientName} ({SessionId}): User is not admin", 
                 sender.Name, sender.SessionId);
         }
-    }
-
-    private void OnTeleportCar(ACTcpClient sender, TeleportCarPacket packet)
-    {
-        if (!sender.IsAdministrator) return;
-        _entryCarManager.EntryCars[packet.Target].Client?.SendPacket(packet);
     }
 
     private void OnLuaReady(ACTcpClient sender, LuaReadyPacket packet)

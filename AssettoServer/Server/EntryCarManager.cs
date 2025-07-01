@@ -208,7 +208,7 @@ public class EntryCarManager
             var isAdmin = await _adminService.IsAdminAsync(handshakeRequest.Guid);
             foreach (var entryCar in candidates)
             {
-                if (entryCar.Client == null && (isAdmin || _openSlotFilterChain.Value.IsSlotOpen(entryCar, handshakeRequest.Guid)))
+                if (entryCar.Client == null && (isAdmin || await _openSlotFilterChain.Value.IsSlotOpen(entryCar, handshakeRequest.Guid)))
                 {
                     entryCar.Reset();
                     entryCar.Client = client;

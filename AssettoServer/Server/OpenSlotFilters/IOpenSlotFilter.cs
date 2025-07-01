@@ -8,6 +8,6 @@ namespace AssettoServer.Server.OpenSlotFilters;
 public interface IOpenSlotFilter
 {
     void SetNextFilter(IOpenSlotFilter next);
-    bool IsSlotOpen(EntryCar entryCar, ulong guid);
+    ValueTask<bool> IsSlotOpen(EntryCar entryCar, ulong guid);
     Task<AuthFailedResponse?> ShouldAcceptConnectionAsync(ACTcpClient client, HandshakeRequest request);
 }

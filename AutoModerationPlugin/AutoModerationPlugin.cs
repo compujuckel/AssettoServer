@@ -2,18 +2,14 @@
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
-using AssettoServer.Shared.Services;
-using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using TrafficAiPlugin.Shared;
 
 namespace AutoModerationPlugin;
 
-[UsedImplicitly]
-public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class AutoModerationPlugin : BackgroundService
 {
     private readonly List<EntryCarAutoModeration> _instances = [];
     private readonly AutoModerationConfiguration _configuration;
@@ -23,13 +19,11 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
 
     public AutoModerationPlugin(AutoModerationConfiguration configuration,
         EntryCarManager entryCarManager,
-        SessionManager sessionManager,
         WeatherManager weatherManager,
         ACServerConfiguration serverConfiguration,
         CSPServerScriptProvider scriptProvider,
         Func<EntryCar, EntryCarAutoModeration> entryCarAutoModerationFactory,
-        IHostApplicationLifetime applicationLifetime,
-        IAiSpline? aiSpline = null) : base(applicationLifetime)
+        IAiSpline? aiSpline = null)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;
@@ -72,7 +66,7 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
         _instances[sender.SessionId].AdminReset();
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public override async Task StartAsync(CancellationToken cancellationToken)
     {
         foreach (var entryCar in _entryCarManager.EntryCars)
         {
@@ -83,7 +77,12 @@ public class AutoModerationPlugin : CriticalBackgroundService, IAssettoServerAut
         {
             throw new ConfigurationException("AutoModerationPlugin: No lights kick does not work with missing track params");
         }
+        
+        await base.StartAsync(cancellationToken);
+    }
 
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {

@@ -24,7 +24,7 @@ internal static class OnlineEventGenerator
         { typeof(sbyte), "char" },
         { typeof(ushort), "uint16_t" },
         { typeof(short), "int16_t" },
-        { typeof(uint), "uint" },
+        { typeof(uint), "uint32_t" },
         { typeof(int), "int" },
         { typeof(ulong), "uint64_t" },
         { typeof(long), "int64_t" },

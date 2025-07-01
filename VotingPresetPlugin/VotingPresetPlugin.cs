@@ -3,9 +3,6 @@ using AssettoServer.Commands.Contexts;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
-using AssettoServer.Shared.Network.Packets.Shared;
-using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -13,7 +10,7 @@ using VotingPresetPlugin.Preset;
 
 namespace VotingPresetPlugin;
 
-public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class VotingPresetPlugin : BackgroundService
 {
     private readonly EntryCarManager _entryCarManager;
     private readonly PresetManager _presetManager;
@@ -29,7 +26,7 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
     private bool _voteStarted = false;
     private int _extendVotingSeconds = 0;
     private short _finishVote = 0;
-    private CancellationToken _cancellationToken = default;
+    private CancellationToken _cancellationToken = CancellationToken.None;
 
     private class PresetChoice
     {
@@ -42,9 +39,8 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
         ACServerConfiguration acServerConfiguration,
         EntryCarManager entryCarManager,
         PresetManager presetManager,
-        IHostApplicationLifetime applicationLifetime,
         CSPServerScriptProvider scriptProvider,
-        CSPFeatureManager cspFeatureManager) : base(applicationLifetime)
+        CSPFeatureManager cspFeatureManager)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;
@@ -88,9 +84,7 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
                 if (_configuration.EnableVote)
                     await VotingAsync(stoppingToken);
             }
-            catch (TaskCanceledException)
-            {
-            }
+            catch (TaskCanceledException) { }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error during voting preset update");

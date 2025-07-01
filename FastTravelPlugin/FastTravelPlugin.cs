@@ -4,8 +4,6 @@ using System.Text.Json;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
-using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using FastTravelPlugin.Packets;
 using Microsoft.Extensions.Hosting;
@@ -13,7 +11,7 @@ using TrafficAiPlugin.Shared;
 
 namespace FastTravelPlugin;
 
-public class FastTravelPlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class FastTravelPlugin : IHostedService
 {
     private readonly IAiSpline _aiSpline;
 
@@ -21,8 +19,7 @@ public class FastTravelPlugin : CriticalBackgroundService, IAssettoServerAutosta
         ACServerConfiguration serverConfiguration,
         CSPServerScriptProvider scriptProvider,
         CSPClientMessageTypeManager cspClientMessageTypeManager,
-        IHostApplicationLifetime applicationLifetime,
-        IAiSpline? aiSpline = null) : base(applicationLifetime)
+        IAiSpline? aiSpline = null)
     {
         _aiSpline = aiSpline ?? throw new ConfigurationException("FastTravelPlugin does not work with AI traffic disabled");
         
@@ -75,8 +72,7 @@ public class FastTravelPlugin : CriticalBackgroundService, IAssettoServerAutosta
         });
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        return Task.CompletedTask;
-    }
+    public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

@@ -20,7 +20,7 @@ public class ReplaySegmentManager
     public bool PauseCleanup { get; set; }
     
     public ReplaySegment CurrentSegment { get; private set; }
-    private ReplaySegment.ReplaySegmentLock _currentSegmentLock;
+    private ReplaySegment.ReplaySegmentAccessor _currentSegmentAccessor;
     
     public ReplaySegmentManager(SessionManager sessionManager,
         ReplayConfiguration configuration,
@@ -58,7 +58,7 @@ public class ReplaySegmentManager
         }
     }
 
-    [MemberNotNull(nameof(CurrentSegment), nameof(_currentSegmentLock))]
+    [MemberNotNull(nameof(CurrentSegment), nameof(_currentSegmentAccessor))]
     private void AddSegment()
     {
         CleanupSegments();
@@ -77,17 +77,17 @@ public class ReplaySegmentManager
         Log.Debug("Target replay segment size: {Size}", segmentSize.Bytes());
         
         var newSegment = new ReplaySegment(Path.Join(SegmentPath, $"{Guid.NewGuid()}.rs1"), segmentSize);
-        var newSegmentLock = newSegment.KeepLoaded();
+        var newSegmentLock = newSegment.CreateAccessor();
         CurrentSegment = newSegment;
-        _currentSegmentLock?.Dispose();
-        _currentSegmentLock = newSegmentLock;
+        _currentSegmentAccessor?.Dispose();
+        _currentSegmentAccessor = newSegmentLock;
         Segments.Enqueue(CurrentSegment);
     }
 
     public void AddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, uint playerInfoIndex, TState state,
         [RequireStaticDelegate, InstantHandle] ReplaySegment.ReplayFrameAction<TState> action)
     {
-        if (!CurrentSegment.TryAddFrame(numCarFrames, numAiFrames, numAiMappings, playerInfoIndex, state, action))
+        if (!_currentSegmentAccessor.TryAddFrame(numCarFrames, numAiFrames, numAiMappings, playerInfoIndex, state, action))
         {
             AddSegment();
             AddFrame(numCarFrames, numAiFrames, numAiMappings, playerInfoIndex, state, action);

@@ -34,9 +34,9 @@ public sealed class ReplaySegment : IDisposable
         Load();
     }
 
-    public ReplaySegmentLock KeepLoaded()
+    public ReplaySegmentAccessor CreateAccessor()
     {
-        return new ReplaySegmentLock(this);
+        return new ReplaySegmentAccessor(this);
     }
 
     [MemberNotNull(nameof(_file), nameof(_fileAccessor), nameof(_memory))]
@@ -75,7 +75,7 @@ public sealed class ReplaySegment : IDisposable
 
     public delegate void ReplayFrameAction<in TState>(ref ReplayFrame frame, TState arg);
 
-    public bool TryAddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, uint playerInfoIndex, TState state, [RequireStaticDelegate, InstantHandle] ReplayFrameAction<TState> action)
+    private bool TryAddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, uint playerInfoIndex, TState state, [RequireStaticDelegate, InstantHandle] ReplayFrameAction<TState> action)
     {
         ThrowIfUnloaded();
         
@@ -105,7 +105,7 @@ public sealed class ReplaySegment : IDisposable
         return true;
     }
 
-    public Enumerator GetEnumerator() => new(this);
+    private Enumerator GetEnumerator() => new(this);
 
     public ref struct Enumerator(ReplaySegment segment)
     {
@@ -144,19 +144,24 @@ public sealed class ReplaySegment : IDisposable
         _isDisposed = true;
     }
     
-    public sealed class ReplaySegmentLock : IDisposable
+    public sealed class ReplaySegmentAccessor : IDisposable
     {
         private readonly ReplaySegment _segment;
         private bool _isDisposed;
+        
+        public bool TryAddFrame<TState>(int numCarFrames, int numAiFrames, int numAiMappings, uint playerInfoIndex, TState state, [RequireStaticDelegate, InstantHandle] ReplayFrameAction<TState> action) 
+            => _segment.TryAddFrame(numCarFrames, numAiFrames, numAiMappings, playerInfoIndex, state, action);
 
-        public ReplaySegmentLock(ReplaySegment segment)
+        public Enumerator GetEnumerator() => _segment.GetEnumerator();
+
+        public ReplaySegmentAccessor(ReplaySegment segment)
         {
             _segment = segment;
             Interlocked.Increment(ref _segment._lockCount);
             _segment.Load();
         }
 
-        ~ReplaySegmentLock() => Dispose();
+        ~ReplaySegmentAccessor() => Dispose();
 
         public void Dispose()
         {

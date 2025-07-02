@@ -60,7 +60,7 @@ public class ReplayService : BackgroundService
             {
                 job = _writerJobChannel.Reader.ReadAsync(stoppingToken).AsTask().Result;
                 var duration = (job.EndTime - job.StartTime) / 1000;
-                using var _ = Operation.Time("Saving replay {Path} with duration {Duration} seconds", job.Path, duration);
+                using var _ = Operation.Time("Saving replay {Path} with requested duration {Duration} seconds", job.Path, duration);
                 _replayWriter.WriteReplay(job.StartTime, job.EndTime, job.TargetSessionId, job.Path);
                 job.TaskCompletionSource.SetResult();
             }

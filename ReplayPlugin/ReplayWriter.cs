@@ -46,8 +46,8 @@ public class ReplayWriter
         if (segments.Count == 1)
         {
             var segment = segments[0];
-            using var segmentLock = segment.KeepLoaded();
-            foreach (var frame in segment)
+            using var accessor = segment.CreateAccessor();
+            foreach (var frame in accessor)
             {
                 if (frame.Header.ServerTime >= startTime && frame.Header.ServerTime < endTime)
                 {
@@ -58,9 +58,9 @@ public class ReplayWriter
         else if (segments.Count > 1)
         {
             var segment = segments[0];
-            using (var segmentLock = segment.KeepLoaded())
+            using (var accessor = segment.CreateAccessor())
             {
-                foreach (var frame in segment)
+                foreach (var frame in accessor)
                 {
                     if (frame.Header.ServerTime >= startTime)
                     {
@@ -75,9 +75,9 @@ public class ReplayWriter
             }
             
             segment = segments[^1];
-            using (var segmentLock = segment.KeepLoaded())
+            using (var accessor = segment.CreateAccessor())
             {
-                foreach (var frame in segment)
+                foreach (var frame in accessor)
                 {
                     if (frame.Header.ServerTime < endTime)
                     {
@@ -112,7 +112,7 @@ public class ReplayWriter
         
         var header = new KunosReplayHeader
         {
-            RecordingIntervalMs = 1000.0 / _configuration.RefreshRateHz,
+            RecordingIntervalMs = 1000.0 / ((float)_serverConfiguration.Server.RefreshRateHz / _configuration.RefreshRateDivisor),
             Weather = _weather.CurrentWeather.Type.Graphics,
             Track = _serverConfiguration.CSPTrackOptions.Track,
             TrackConfiguration = _serverConfiguration.Server.TrackConfig,
@@ -147,9 +147,9 @@ public class ReplayWriter
         var oldPosition = file.Position;
         foreach (var segment in segments)
         {
-            using var segmentLock = segment.KeepLoaded();
+            using var accessor = segment.CreateAccessor();
             
-            foreach (var frame in segment)
+            foreach (var frame in accessor)
             {
                 if (frame.Header.ServerTime < startTime) continue;
                 if (frame.Header.ServerTime > endTime) break;

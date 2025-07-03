@@ -1,9 +1,7 @@
 ﻿using FluentValidation;
-using JetBrains.Annotations;
 
 namespace FastTravelPlugin;
 
-[UsedImplicitly]
 public class FastTravelConfigurationValidator : AbstractValidator<FastTravelConfiguration>
 {
     public FastTravelConfigurationValidator()

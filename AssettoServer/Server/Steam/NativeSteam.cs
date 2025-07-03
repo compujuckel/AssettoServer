@@ -183,6 +183,11 @@ public class NativeSteam : BackgroundService, ISteam
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await Task.Run(Initialize, stoppingToken);
+        await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        
+        SteamServer.OnSteamServersConnected -= SteamServer_OnSteamServersConnected;
+        SteamServer.OnSteamServersDisconnected -= SteamServer_OnSteamServersDisconnected;
+        SteamServer.OnSteamServerConnectFailure -= SteamServer_OnSteamServerConnectFailure;
     }
 }
 

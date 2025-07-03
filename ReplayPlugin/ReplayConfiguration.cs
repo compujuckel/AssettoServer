@@ -1,8 +1,9 @@
-﻿using YamlDotNet.Serialization;
+﻿using AssettoServer.Server.Configuration;
+using YamlDotNet.Serialization;
 
 namespace ReplayPlugin;
 
-public class ReplayConfiguration
+public class ReplayConfiguration : IValidateConfiguration<ReplayConfigurationValidator>
 {
     public int MinSegmentSizeKilobytes { get; set; } = 250;
     public int MaxSegmentSizeKilobytes { get; set; } = 10_000;

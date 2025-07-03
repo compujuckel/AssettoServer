@@ -1,9 +1,7 @@
 ﻿using FluentValidation;
-using JetBrains.Annotations;
 
 namespace WordFilterPlugin;
 
-[UsedImplicitly]
 public class WordFilterConfigurationValidator : AbstractValidator<WordFilterConfiguration>
 {
     public WordFilterConfigurationValidator()

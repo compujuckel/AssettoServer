@@ -28,9 +28,12 @@ public class AiBehavior : BackgroundService
     private readonly JunctionEvaluator _junctionEvaluator;
 
     private readonly Gauge _aiStateCountMetric = Metrics.CreateGauge("assettoserver_aistatecount", "Number of AI states");
-
-    private readonly Summary _updateDurationTimer;
-    private readonly Summary _obstacleDetectionDurationTimer;
+    private readonly Summary _updateDurationTimer = Metrics.CreateSummary("assettoserver_aibehavior_update",
+        "AiBehavior.Update Duration",
+        MetricDefaults.DefaultQuantiles);
+    private readonly Summary _obstacleDetectionDurationTimer = Metrics.CreateSummary("assettoserver_aibehavior_obstacledetection", 
+        "AiBehavior.ObstacleDetection Duration", 
+        MetricDefaults.DefaultQuantiles);
 
     public AiBehavior(SessionManager sessionManager,
         ACServerConfiguration configuration,
@@ -51,18 +54,13 @@ public class AiBehavior : BackgroundService
             serverScriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Ai.ai_debug.lua")!, "ai_debug.lua");
         }
 
-        _updateDurationTimer = Metrics.CreateSummary("assettoserver_aibehavior_update", "AiBehavior.Update Duration", MetricDefaults.DefaultQuantiles);
-        _obstacleDetectionDurationTimer = Metrics.CreateSummary("assettoserver_aibehavior_obstacledetection", "AiBehavior.ObstacleDetection Duration", MetricDefaults.DefaultQuantiles);
-
         _entryCarManager.ClientConnected += (client, _) =>
         {
             client.ChecksumPassed += OnClientChecksumPassed;
             client.Collision += OnCollision;
         };
-
         _entryCarManager.ClientDisconnected += OnClientDisconnected;
         _configuration.Extra.AiParams.PropertyChanged += (_, _) => AdjustOverbooking();
-
         _sessionManager.SessionChanged += OnSessionChanged;
     }
 

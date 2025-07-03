@@ -7,7 +7,6 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Shared.Network.Http.Responses;
 using Microsoft.Extensions.Hosting;
-using Qommon.Collections.ReadOnly;
 
 namespace AssettoServer.Network.Http;
 
@@ -31,8 +30,8 @@ public class HttpInfoCache : IHostedService
         _entryCarManager = entryCarManager;
         _geoParamsManager = geoParamsManager;
         
-        Durations = configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps).ToReadOnlyList();
-        SessionTypes = configuration.Sessions.Select(s => (int)s.Type).ToReadOnlyList();
+        Durations = configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps).ToList();
+        SessionTypes = configuration.Sessions.Select(s => (int)s.Type).ToList();
         ServerName = configuration.Server.Name + (configuration.Extra.EnableServerDetails ? " ℹ" + configuration.Server.HttpPort : "");
         Track = configuration.Server.Track + (string.IsNullOrEmpty(configuration.Server.TrackConfig) ? null : "-" + configuration.Server.TrackConfig);
         PoweredBy = $"AssettoServer {configuration.ServerVersion}";
@@ -53,7 +52,7 @@ public class HttpInfoCache : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct().ToReadOnlyList();
+        Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct().ToList();
         Country = [_geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode];
         return Task.CompletedTask;
     }

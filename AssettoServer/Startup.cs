@@ -64,7 +64,6 @@ public class Startup
         builder.RegisterModule(new AiModule(_configuration));
         builder.RegisterType<FileBasedUserGroupProvider>().AsSelf().As<IUserGroupProvider>().As<IHostedService>().SingleInstance();
         builder.RegisterType<SignalHandler>().AsSelf().As<IHostedService>().SingleInstance();
-        //builder.RegisterType<TestService>().As<IHostedService>().SingleInstance();
         builder.RegisterType<HttpInfoCache>().AsSelf().As<IHostedService>().SingleInstance();
         RegisterLegacyPluginInterface();
         RegisterSteam();

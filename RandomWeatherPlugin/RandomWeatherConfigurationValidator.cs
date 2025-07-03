@@ -1,9 +1,7 @@
 ﻿using FluentValidation;
-using JetBrains.Annotations;
 
 namespace RandomWeatherPlugin;
 
-[UsedImplicitly]
 public class RandomWeatherConfigurationValidator : AbstractValidator<RandomWeatherConfiguration>
 {
     public RandomWeatherConfigurationValidator()

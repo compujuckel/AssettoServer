@@ -1,9 +1,7 @@
 ﻿using FluentValidation;
-using JetBrains.Annotations;
 
 namespace AutoModerationPlugin;
 
-[UsedImplicitly]
 public class AutoModerationConfigurationValidator : AbstractValidator<AutoModerationConfiguration>
 {
     public AutoModerationConfigurationValidator()

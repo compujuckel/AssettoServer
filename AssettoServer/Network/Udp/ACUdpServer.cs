@@ -150,9 +150,11 @@ public class ACUdpServer : BackgroundService
                 }
                 else if (packetId == ACServerProtocol.PingPong)
                 {
+                    var packet = packetReader.ReadPacket<PingResponse>();
+                    
                     long currentTime = _sessionManager.ServerTimeMilliseconds;
-                    car.Ping = (ushort)(currentTime - packetReader.Read<int>());
-                    car.TimeOffset = (int)currentTime - ((car.Ping / 2) + packetReader.Read<int>());
+                    car.Ping = (ushort)(currentTime - packet.Time);
+                    car.TimeOffset = (int)currentTime - ((car.Ping / 2) + packet.ClientTime);
                     car.LastPongTime = currentTime;
                 }
                 else if (_configuration.Extra.EnableUdpClientMessages && packetId == ACServerProtocol.Extended)

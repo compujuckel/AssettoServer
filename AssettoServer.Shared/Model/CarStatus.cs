@@ -15,11 +15,11 @@ public class CarStatus
     public Vector3 Rotation { get; set; }
     public Vector3 Velocity { get; set; }
     public long Timestamp { get; set; }
-    public byte[] TyreAngularSpeed { get; } = new byte[4];
-    public byte SteerAngle { get; set; }
-    public byte WheelAngle { get; set; }
+    public byte[] TyreAngularSpeed { get; } = [100, 100, 100, 100];
+    public byte SteerAngle { get; set; } = 127;
+    public byte WheelAngle { get; set; } = 127;
     public ushort EngineRpm { get; set; }
-    public byte Gear { get; set; }
+    public byte Gear { get; set; } = 1;
     public CarStatusFlags StatusFlag { get; set; }
     public short PerformanceDelta { get; set; }
     public byte Gas { get; set; }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using AssettoServer.Utils;
+using AssettoServer.Shared.Utils;
 using Serilog;
 
 namespace AssettoServer.Server.Ai.Splines;

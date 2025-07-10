@@ -79,14 +79,14 @@ public class AiSpline : IDisposable
     
     public (int PointId, float DistanceSquared) WorldToSpline(Vector3 position)
     {
-        var nearest = KdTree.NearestNeighbors(position, 1);
-        if (nearest.Length == 0)
+        var nearest = KdTree.NearestNeighbor(position);
+        if (nearest == null)
         {
             return (-1, float.PositiveInfinity);
         }
 
-        float dist = Vector3.DistanceSquared(position, Points[nearest[0].Item2].Position);
-        return (nearest[0].Item2, dist);
+        float dist = Vector3.DistanceSquared(position, Points[nearest.Value.Item2].Position);
+        return (nearest.Value.Item2, dist);
     }
 
     public int RandomLane(int pointId)

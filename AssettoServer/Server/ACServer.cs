@@ -284,6 +284,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
                 {
                     Log.Fatal(ex, "Cannot recover from update loop error, shutting down");
                     _applicationLifetime.StopApplication();
+                    return;
                 }
             }
         }

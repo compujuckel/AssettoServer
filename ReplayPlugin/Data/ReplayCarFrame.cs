@@ -29,28 +29,25 @@ public struct ReplayCarFrame
         return (MathF.Pow(10.0f, speed / sign / 20.0f) - 1.0f) * sign;
     }
     
-    public static ReplayCarFrame FromCarStatus(byte sessionId, CarStatus status)
+    public void FromCarStatus(byte sessionId, CarStatus status)
     {
         var angularSpeeds = new HalfArray4();
         for (int i = 0; i < 4; i++)
         {
             angularSpeeds[i] = (Half)DecodeAngularSpeed(status.TyreAngularSpeed[i]);
         }
-        
-        return new ReplayCarFrame
-        {
-            SessionId = sessionId,
-            WorldTranslation = status.Position,
-            WorldOrientation = new Vector3h(status.Rotation),
-            EngineRpm = (Half)status.EngineRpm,
-            Gas = status.Gas,
-            Brake = (byte)(status.StatusFlag.HasFlag(CarStatusFlags.BrakeLightsOn) ? byte.MaxValue : 0),
-            Gear = status.Gear,
-            Velocity = new Vector3h(status.Velocity),
-            WheelAngularSpeed = angularSpeeds,
-            Steer = (Half)(status.SteerAngle - 127),
-            AiMappingStartIndex = -1
-        };
+
+        SessionId = sessionId;
+        WorldTranslation = status.Position;
+        WorldOrientation = new Vector3h(status.Rotation);
+        EngineRpm = (Half)status.EngineRpm;
+        Gas = status.Gas;
+        Brake = (byte)(status.StatusFlag.HasFlag(CarStatusFlags.BrakeLightsOn) ? byte.MaxValue : 0);
+        Gear = status.Gear;
+        Velocity = new Vector3h(status.Velocity);
+        WheelAngularSpeed = angularSpeeds;
+        Steer = (Half)(status.SteerAngle - 127);
+        AiMappingStartIndex = -1;
     }
     
     public void ToWriter(BinaryWriter writer, bool connected, EntryCarExtraData extra)

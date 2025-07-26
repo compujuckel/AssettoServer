@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
@@ -101,132 +102,137 @@ public class ReplayWriter
         {
             throw new InvalidOperationException("Trying to write replay but no replay segments present");
         }
-        
-        using var file = File.Create(outputPath);
-        using var writer = new BinaryWriter(file);
 
-        using var playerInfoIndexStream = new MemoryStream();
-        using var playerInfoIndexWriter = new BinaryWriter(playerInfoIndexStream);
-        
-        var totalCount = GetTotalFrameCount(startTime, endTime, segments);
-        
-        var header = new KunosReplayHeader
+        var filename = Path.GetFileName(outputPath);
+        var tempDirectory = Directory.CreateTempSubdirectory("assettoserver-replay-");
+        try
         {
-            RecordingIntervalMs = 1000.0 / ((float)_serverConfiguration.Server.RefreshRateHz / _configuration.RefreshRateDivisor),
-            Weather = _weather.CurrentWeather.Type.Graphics,
-            Track = _serverConfiguration.CSPTrackOptions.Track,
-            TrackConfiguration = _serverConfiguration.Server.TrackConfig,
-            CarsNumber = (uint)_entryCarManager.EntryCars.Length,
-            CurrentRecordingIndex = totalCount,
-            RecordedFrames = totalCount
-        };
-        header.ToWriter(writer);
-
-        var trackFramesPosition = file.Position;
-        file.Seek(Unsafe.SizeOf<KunosReplayTrackFrame>() * totalCount, SeekOrigin.Current);
-        
-        
-        var carFramePositions = new List<long>();
-        for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
-        {
-            var carHeader = new KunosReplayCarHeader
+            using (var file = File.Create(Path.Join(tempDirectory.FullName, filename)))
+            using (var writer = new BinaryWriter(file)) 
+            using (var playerInfoIndexStream = new MemoryStream())
+            using (var playerInfoIndexWriter = new BinaryWriter(playerInfoIndexStream))
             {
-                CarId = _entryCarManager.EntryCars[i].Model,
-                DriverName = $"AssettoServer App Missing ({i})",
-                CarSkinId = _entryCarManager.EntryCars[i].Skin,
-                CarFrames = totalCount
-            };
-            carHeader.ToWriter(writer);
+                var totalCount = GetTotalFrameCount(startTime, endTime, segments);
 
-            carFramePositions.Add(file.Position);
-            file.Seek(Unsafe.SizeOf<KunosReplayCarFrame>() * totalCount, SeekOrigin.Current);
-            
-            writer.Write(0);
-        }
-
-        var oldPosition = file.Position;
-        foreach (var segment in segments)
-        {
-            using var accessor = segment.CreateAccessor();
-            
-            foreach (var frame in accessor)
-            {
-                if (frame.Header.ServerTime < startTime) continue;
-                if (frame.Header.ServerTime > endTime) break;
-                
-                file.Seek(trackFramesPosition, SeekOrigin.Begin);
-                writer.WriteStruct(new KunosReplayTrackFrame
+                var header = new KunosReplayHeader
                 {
-                    SunAngle = frame.Header.SunAngle
-                });
-                trackFramesPosition = file.Position;
-                
-                playerInfoIndexWriter.Write(frame.Header.PlayerInfoIndex);
-                
-                var aiFrameMappings = Span<short>.Empty;
+                    RecordingIntervalMs = 1000.0 / ((float)_serverConfiguration.Server.RefreshRateHz / _configuration.RefreshRateDivisor),
+                    Weather = _weather.CurrentWeather.Type.Graphics,
+                    Track = _serverConfiguration.CSPTrackOptions.Track,
+                    TrackConfiguration = _serverConfiguration.Server.TrackConfig,
+                    CarsNumber = (uint)_entryCarManager.EntryCars.Length,
+                    CurrentRecordingIndex = totalCount,
+                    RecordedFrames = totalCount
+                };
+                header.ToWriter(writer);
+
+                var trackFramesPosition = file.Position;
+                file.Seek(Unsafe.SizeOf<KunosReplayTrackFrame>() * totalCount, SeekOrigin.Current);
+
+
+                var carFramePositions = new List<long>();
                 for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
                 {
-                    file.Seek(carFramePositions[i], SeekOrigin.Begin);
-                    
-                    var foundFrame = false;
-                    var foundAiMapping = false;
-                    foreach (var carFrame in frame.CarFrames)
+                    var carHeader = new KunosReplayCarHeader
                     {
-                        if (carFrame.SessionId == i)
-                        {
-                            foundFrame = true;
-                            carFrame.ToWriter(writer, true, _extraData.Data[carFrame.SessionId]);
-                        }
+                        CarId = _entryCarManager.EntryCars[i].Model,
+                        DriverName = $"AssettoServer App Missing ({i})",
+                        CarSkinId = _entryCarManager.EntryCars[i].Skin,
+                        CarFrames = totalCount
+                    };
+                    carHeader.ToWriter(writer);
 
-                        if (carFrame.SessionId == targetSessionId)
-                        {
-                            foundAiMapping = true;
-                            aiFrameMappings = frame.GetAiFrameMappings(carFrame.AiMappingStartIndex);
-                        }
+                    carFramePositions.Add(file.Position);
+                    file.Seek(Unsafe.SizeOf<KunosReplayCarFrame>() * totalCount, SeekOrigin.Current);
 
-                        if (foundFrame && foundAiMapping) break;
-                    }
-
-                    foreach (var aiFrameMapping in aiFrameMappings)
-                    {
-                        ref var aiFrame = ref frame.AiFrames[aiFrameMapping];
-                        if (aiFrame.SessionId == i)
-                        {
-                            foundFrame = true;
-                            aiFrame.ToWriter(writer, true, _extraData.Data[aiFrame.SessionId]);
-                            break;
-                        }
-                    }
-
-                    if (!foundFrame)
-                    {
-                        new ReplayCarFrame().ToWriter(writer, false, EntryCarExtraData.Empty);
-                    }
-
-                    carFramePositions[i] = file.Position;
+                    writer.Write(0);
                 }
-            }
-        }
-            
-        file.Seek(oldPosition, SeekOrigin.Begin);
-        writer.Write(0);
 
-        var cspDataStartPosition = writer.BaseStream.Position;
-        
-        writer.WriteLengthPrefixed(CspExtraStreamMagic);
-        writer.WriteCspCompressedExtraData(0xB197F00E9828B262, s =>
+                var oldPosition = file.Position;
+                foreach (var segment in segments)
+                {
+                    using var accessor = segment.CreateAccessor();
+
+                    foreach (var frame in accessor)
+                    {
+                        if (frame.Header.ServerTime < startTime) continue;
+                        if (frame.Header.ServerTime > endTime) break;
+
+                        file.Seek(trackFramesPosition, SeekOrigin.Begin);
+                        writer.WriteStruct(new KunosReplayTrackFrame
+                        {
+                            SunAngle = frame.Header.SunAngle
+                        });
+                        trackFramesPosition = file.Position;
+
+                        playerInfoIndexWriter.Write(frame.Header.PlayerInfoIndex);
+
+                        var aiFrameMappings = Span<short>.Empty;
+                        for (int i = 0; i < _entryCarManager.EntryCars.Length; i++)
+                        {
+                            file.Seek(carFramePositions[i], SeekOrigin.Begin);
+
+                            var foundFrame = false;
+                            var foundAiMapping = false;
+                            foreach (var carFrame in frame.CarFrames)
+                            {
+                                if (carFrame.SessionId == i)
+                                {
+                                    foundFrame = true;
+                                    carFrame.ToWriter(writer, true, _extraData.Data[carFrame.SessionId]);
+                                }
+
+                                if (carFrame.SessionId == targetSessionId)
+                                {
+                                    foundAiMapping = true;
+                                    aiFrameMappings = frame.GetAiFrameMappings(carFrame.AiMappingStartIndex);
+                                }
+
+                                if (foundFrame && foundAiMapping) break;
+                            }
+
+                            foreach (var aiFrameMapping in aiFrameMappings)
+                            {
+                                ref var aiFrame = ref frame.AiFrames[aiFrameMapping];
+                                if (aiFrame.SessionId == i)
+                                {
+                                    foundFrame = true;
+                                    aiFrame.ToWriter(writer, true, _extraData.Data[aiFrame.SessionId]);
+                                    break;
+                                }
+                            }
+
+                            if (!foundFrame)
+                            {
+                                new ReplayCarFrame().ToWriter(writer, false, EntryCarExtraData.Empty);
+                            }
+
+                            carFramePositions[i] = file.Position;
+                        }
+                    }
+                }
+
+                file.Seek(oldPosition, SeekOrigin.Begin);
+                writer.Write(0);
+
+                var cspDataStartPosition = writer.BaseStream.Position;
+
+                writer.WriteLengthPrefixed(CspExtraStreamMagic);
+                writer.WriteCspCompressedExtraData(0xB197F00E9828B262, s => { playerInfoIndexStream.WriteTo(s); });
+
+                writer.WriteLengthPrefixed(CspExtraBlobMagic);
+                writer.WriteCspCompressedExtraData(0x86CE5FCE612D18DF, s => { JsonSerializer.Serialize(s, _metadata.GenerateMetadata()); });
+
+                writer.Write(CspMagic);
+                writer.Write((int)cspDataStartPosition);
+                writer.Write(1);
+            }
+            
+            ZipFile.CreateFromDirectory(tempDirectory.FullName, $"{outputPath}.zip");
+        }
+        finally
         {
-            playerInfoIndexStream.WriteTo(s);
-        });
-        
-        writer.WriteLengthPrefixed(CspExtraBlobMagic);
-        writer.WriteCspCompressedExtraData(0x86CE5FCE612D18DF, s =>
-        {
-            JsonSerializer.Serialize(s, _metadata.GenerateMetadata());
-        });
-        
-        writer.Write(CspMagic);
-        writer.Write((int)cspDataStartPosition);
-        writer.Write(1);
+            tempDirectory.Delete(true);
+        }
     }
 }

@@ -116,7 +116,7 @@ public class ReplayPlugin : IHostedService
         for (int i = 0; i < self._state.PlayerCars.Count; i++)
         {
             var status = self._state.PlayerCars[i];
-            frame.CarFrames[i] = ReplayCarFrame.FromCarStatus(status.Item1, status.Item2);
+            frame.CarFrames[i].FromCarStatus(status.Item1, status.Item2);
 
             if (self._state.AiFrameMapping.TryGetValue(status.Item1, out var aiFrameMapping))
             {
@@ -131,7 +131,7 @@ public class ReplayPlugin : IHostedService
         for (int i = 0; i < self._state.AiCars.Count; i++)
         {
             var status = self._state.AiCars[i];
-            frame.AiFrames[i] = ReplayCarFrame.FromCarStatus(status.Item1, status.Item2);
+            frame.AiFrames[i].FromCarStatus(status.Item1, status.Item2);
         }
     }
 

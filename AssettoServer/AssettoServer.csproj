@@ -51,15 +51,15 @@
             <NoWarn>NU1701</NoWarn>
         </PackageReference>
         <FrameworkReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
-        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
+        <PackageReference Include="JetBrains.Annotations" Version="2025.2.0" />
         <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="NJsonSchema" Version="11.3.2" />
+        <PackageReference Include="NJsonSchema" Version="11.4.0" />
         <PackageReference Include="NodaTime" Version="3.2.2" />
         <PackageReference Include="Open.NAT" Version="2.1.0">
             <NoWarn>NU1701</NoWarn>
         </PackageReference>
-        <PackageReference Include="Polly" Version="8.6.1" />
+        <PackageReference Include="Polly" Version="8.6.2" />
         <PackageReference Include="prometheus-net" Version="8.2.1" />
         <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
         <PackageReference Include="protobuf-net.Grpc" Version="1.2.2" />
@@ -77,8 +77,8 @@
         <PackageReference Include="SerilogTimings" Version="3.1.0" />
         <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.9" />
         <PackageReference Include="Sigil" Version="5.0.0" />
-        <PackageReference Include="SunCalcNet" Version="1.2.2" />
-        <PackageReference Include="System.IO.Hashing" Version="9.0.6" />
+        <PackageReference Include="SunCalcNet" Version="1.2.3" />
+        <PackageReference Include="System.IO.Hashing" Version="9.0.7" />
         <PackageReference Include="YamlDotNet" Version="16.3.0" />
         <PackageReference Include="MinVer" Version="6.0.0">
             <PrivateAssets>all</PrivateAssets>

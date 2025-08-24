@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using AssettoServer.Commands;
 using AssettoServer.Commands.Contexts;
@@ -29,6 +30,7 @@ using AssettoServer.Server.Whitelist;
 using Autofac;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -58,7 +60,6 @@ public class Startup
         // Registration order == order in which hosted services are started
         builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<SessionManager>().AsSelf().As<IHostedService>().SingleInstance();
-        builder.RegisterType<ACTcpServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<ACUdpServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterModule(new WeatherModule(_configuration));
         builder.RegisterModule(new AiModule(_configuration));
@@ -111,6 +112,12 @@ public class Startup
         builder.RegisterType<ConfigurationSerializer>().AsSelf();
         builder.RegisterType<DefaultCMContentProvider>().As<ICMContentProvider>().SingleInstance();
         builder.RegisterType<CommandService>().AsSelf().SingleInstance();
+        
+        builder.Register<Func<ConnectionDelegate, ConnectionDelegate>>(ctx =>
+        {
+            var factory = ctx.Resolve<Func<Stream, IPEndPoint, ACTcpClient>>();
+            return next => new TcpConnectionMiddleware(next, factory).OnConnectionAsync;
+        });
 
         if (_configuration.GeneratePluginConfigs)
         {

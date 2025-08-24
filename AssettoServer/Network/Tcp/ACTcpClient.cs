@@ -50,9 +50,9 @@ public class ACTcpClient : IClient
     [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode))]
     public bool HasSentFirstUpdate { get; private set; }
     public bool IsConnected { get; set; }
-    public TcpClient TcpClient { get; }
+    public IPEndPoint RemoteEndPoint { get; }
 
-    private NetworkStream TcpStream { get; }
+    private Stream TcpStream { get; }
     [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode))]
     public bool HasStartedHandshake { get; private set; }
     public ChecksumStatus ChecksumStatus { get; private set; } = ChecksumStatus.Pending;
@@ -86,6 +86,7 @@ public class ACTcpClient : IClient
     private readonly OpenSlotFilterChain _openSlotFilter;
     private readonly CSPClientMessageHandler _clientMessageHandler;
     private readonly VoteManager _voteManager;
+    private readonly TaskCompletionSource _disconnectedTcs = new();
 
     /// <summary>
     /// Fires when a client passed the checksum checks. This does not mean that the player has finished loading, use ClientFirstUpdateSent for that.
@@ -179,7 +180,7 @@ public class ACTcpClient : IClient
 
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
         {
-            var endpoint = (IPEndPoint)_client.TcpClient.Client.RemoteEndPoint!;
+            var endpoint = _client.RemoteEndPoint;
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientName", _client.Name));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientSteamId", _client.Guid));
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ClientIpAddress", endpoint.Address));
@@ -193,7 +194,8 @@ public class ACTcpClient : IClient
 
     public ACTcpClient(
         ACUdpServer udpServer,
-        TcpClient tcpClient,
+        Stream tcpStream,
+        IPEndPoint remoteEndPoint,
         SessionManager sessionManager,
         WeatherManager weatherManager,
         ACServerConfiguration configuration,
@@ -212,8 +214,7 @@ public class ACTcpClient : IClient
             .Enrich.With(new ACTcpClientLogEventEnricher(this))
             .WriteTo.Logger(Log.Logger)
             .CreateLogger();
-
-        TcpClient = tcpClient;
+        
         _sessionManager = sessionManager;
         _weatherManager = weatherManager;
         _configuration = configuration;
@@ -226,12 +227,8 @@ public class ACTcpClient : IClient
         _clientMessageHandler = clientMessageHandler;
         _voteManager = voteManager;
 
-        tcpClient.ReceiveTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
-        tcpClient.SendTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
-        tcpClient.LingerState = new LingerOption(true, 2);
-        tcpClient.NoDelay = true;
-
-        TcpStream = tcpClient.GetStream();
+        TcpStream = tcpStream;
+        RemoteEndPoint = remoteEndPoint;
 
         TcpSendBuffer = GC.AllocateArray<byte>(ushort.MaxValue + 2, true);
         OutgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(256);
@@ -255,12 +252,12 @@ public class ACTcpClient : IClient
         }
     }
 
-    internal Task StartAsync()
+    internal Task RunAsync()
     {
         SendLoopTask = Task.Run(SendLoopAsync);
         _ = Task.Run(ReceiveLoopAsync);
 
-        return Task.CompletedTask;
+        return _disconnectedTcs.Task;
     }
 
     public void SendPacket<TPacket>(TPacket packet) where TPacket : IOutgoingNetworkPacket
@@ -350,13 +347,12 @@ public class ACTcpClient : IClient
     private async Task ReceiveLoopAsync()
     {
         byte[] buffer = new byte[2046];
-        NetworkStream stream = TcpStream;
 
         try
         {
             while (!DisconnectTokenSource.IsCancellationRequested)
             {
-                PacketReader reader = new PacketReader(stream, buffer);
+                PacketReader reader = new PacketReader(TcpStream, buffer);
                 reader.SliceBuffer(await reader.ReadPacketAsync());
 
                 if (reader.Buffer.Length == 0)
@@ -385,7 +381,7 @@ public class ACTcpClient : IClient
                         Guid = handshakeRequest.Guid = GuidFromName(Name);
                     HashedGuid = IdFromGuid(Guid);
 
-                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, (IPEndPoint?)TcpClient.Client.RemoteEndPoint, handshakeRequest.RequestedCar);
+                    Logger.Information("{ClientName} ({ClientSteamId} - {ClientIpEndpoint}) is attempting to connect ({CarModel})", handshakeRequest.Name, handshakeRequest.Guid, RemoteEndPoint, handshakeRequest.RequestedCar);
 
                     List<string> cspFeatures;
                     if (!string.IsNullOrEmpty(handshakeRequest.Features))
@@ -845,7 +841,6 @@ public class ACTcpClient : IClient
         if (HasSentFirstUpdate)
             return;
 
-        TcpClient.ReceiveTimeout = 0;
         EntryCar.LastPongTime = _sessionManager.ServerTimeMilliseconds;
         HasSentFirstUpdate = true;
 
@@ -981,7 +976,7 @@ public class ACTcpClient : IClient
 
             if (!string.IsNullOrEmpty(Name))
             {
-                Logger.Debug("Disconnecting {ClientName} ({ClientSteamId} - {ClientIpEndpoint})", Name, Guid, (IPEndPoint?)TcpClient.Client.RemoteEndPoint);
+                Logger.Debug("Disconnecting {ClientName} ({ClientSteamId} - {ClientIpEndpoint})", Name, Guid, RemoteEndPoint);
                 Disconnecting?.Invoke(this, EventArgs.Empty);
             }
 
@@ -998,7 +993,7 @@ public class ACTcpClient : IClient
             if (IsConnected)
                 await _entryCarManager.DisconnectClientAsync(this);
 
-            TcpClient.Dispose();
+            _disconnectedTcs.SetResult();
         }
         catch (Exception ex)
         {

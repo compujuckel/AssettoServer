@@ -200,7 +200,7 @@ public class AdminModule : ACModuleBase
     [Command("whois")]
     public void WhoIs(ACTcpClient player)
     {
-        Reply($"IP: {((IPEndPoint?)player.TcpClient.Client.RemoteEndPoint)?.Redact(_configuration.Extra.RedactIpAddresses)}");
+        Reply($"IP: {player.RemoteEndPoint.Redact(_configuration.Extra.RedactIpAddresses)}");
         Reply($"Profile: https://steamcommunity.com/profiles/{player.Guid}\nPing: {player.EntryCar.Ping}ms");
         Reply($"Position: {player.EntryCar.Status.Position}\nVelocity: {(int)(player.EntryCar.Status.Velocity.Length() * 3.6)}kmh");
         if (player.OwnerGuid.HasValue && player.Guid != player.OwnerGuid)

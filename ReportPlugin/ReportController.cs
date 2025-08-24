@@ -26,7 +26,7 @@ public class ReportController : ControllerBase
         var lastReport = _plugin.GetLastReplay(reporterClient);
 
         if (_plugin.Key != key
-            || !(IPAddress.IsLoopback(Request.HttpContext.Connection.RemoteIpAddress!) || Equals((reporterClient.TcpClient.Client.RemoteEndPoint as IPEndPoint)?.Address, Request.HttpContext.Connection.RemoteIpAddress)))
+            || !(IPAddress.IsLoopback(Request.HttpContext.Connection.RemoteIpAddress!) || Equals(reporterClient.RemoteEndPoint.Address, Request.HttpContext.Connection.RemoteIpAddress)))
         {
             return StatusCode(StatusCodes.Status403Forbidden);
         }

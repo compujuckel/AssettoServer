@@ -51,11 +51,11 @@ public class RainHelper
         return MathUtils.Lerp(value1, value2, tmp);
     }
 
-    private void CalcWater(WeatherData condition, double sun, double dt, bool calcHumidity = false)
+    private void CalcWater(WeatherData condition, double sun, double sunAngle, double dt, bool calcHumidity = false)
     {
         double dryingForce = Math.Max(0, WetnessDryingAirtempK * TempInterpol(condition.TemperatureAmbient, WetnessDryingAirtempMin, -1, 2)) +
                              Math.Max(0, WetnessDryingRoadtempK * TempInterpol(condition.TemperatureRoad, WetnessDryingRoadtempMin, -1, 2)) + 
-                             (WetnessDryingSunK * sun); // TODO add sun angle
+                             (WetnessDryingSunK * sun * Math.Clamp((sunAngle + 208) / (16 * 24), 0, 1)); 
 
         double tempWetting = dt * TimeK * (-dryingForce + (WetnessRainWettingK * Math.Pow(condition.RainIntensity, 1.7)) +
                                            Math.Max(0, WetnessHumidityWettingK * condition.Humidity * TempInterpol(condition.TemperatureAmbient, WetnessDryingAirtempMin, 1, -1)));
@@ -107,7 +107,7 @@ public class RainHelper
         condition.TrackGrip = (float) (baseGrip - MathUtils.Lerp(0, rainTrackGripReduction * 0.3, condition.RainWetness) - MathUtils.Lerp(0, rainTrackGripReduction * 0.7, condition.RainWater));
     }
 
-    public void Update(WeatherData weather, double baseGrip, double rainTrackGripReduction, long dt)
+    public void Update(WeatherData weather, double sunAngle, double baseGrip, double rainTrackGripReduction, long dt)
     {
         if (weather.Type.WeatherFxType != weather.UpcomingType.WeatherFxType)
         {
@@ -127,7 +127,7 @@ public class RainHelper
             }
         }
             
-        CalcWater(weather, MathUtils.Lerp(weather.Type.Sun, weather.UpcomingType.Sun, weather.TransitionValueInternal), dt / 1000.0);
+        CalcWater(weather, MathUtils.Lerp(weather.Type.Sun, weather.UpcomingType.Sun, weather.TransitionValueInternal), sunAngle, dt / 1000.0);
         CalcGrip(weather, baseGrip, rainTrackGripReduction);
     }
 }

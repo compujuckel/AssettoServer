@@ -349,7 +349,7 @@ public class UdpPluginServer : BackgroundService
         {
             sessionConfig = currentSession.Configuration;
         }
-        else if (sessionId > 0 && sessionId < _configuration.Sessions.Count)
+        else if (sessionId >= 0 && sessionId < _configuration.Sessions.Count)
         {
             sessionConfig = _configuration.Sessions[sessionId];
         }

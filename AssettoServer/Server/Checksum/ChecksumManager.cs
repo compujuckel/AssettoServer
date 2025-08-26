@@ -4,10 +4,11 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
 using Serilog;
 
-namespace AssettoServer.Server;
+namespace AssettoServer.Server.Checksum;
 
 public class ChecksumManager
 {
@@ -17,15 +18,20 @@ public class ChecksumManager
 
     private readonly ACServerConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
-    
-    public ChecksumManager(ACServerConfiguration configuration, EntryCarManager entryCarManager)
+    private readonly ChecksumProvider _checksumProvider;
+
+    public ChecksumManager(ACServerConfiguration configuration,
+        EntryCarManager entryCarManager,
+        ChecksumProvider checksumProvider)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;
+        _checksumProvider = checksumProvider;
     }
     
-    public void Initialize()
+    public async Task Initialize()
     {
+        await _checksumProvider.InitializeAsync();
         CalculateTrackChecksums(_configuration.Server.Track, _configuration.Server.TrackConfig);
         Log.Information("Initialized {Count} track checksums", TrackChecksums.Count);
 
@@ -108,7 +114,7 @@ public class ChecksumManager
                     if (TryCreateChecksum(file, out byte[]? checksum))
                     {
                         checksums.Add(file, checksum);
-                        Log.Debug("Added checksum for {Path}", file);
+                        Log.Debug("Added checksum ({Checksum}) for {Path}", Convert.ToHexStringLower(checksum), file);
                     }
                 }
             }
@@ -118,7 +124,7 @@ public class ChecksumManager
                 if (TryCreateChecksum(acdPath, out byte[]? checksum))
                 {
                     checksums.Add(acdPath, checksum);
-                    Log.Debug("Added checksum for {Path}", car);
+                    Log.Debug("Added checksum ({Checksum}) for {Path}", Convert.ToHexStringLower(checksum), car);
                 }
             }
 
@@ -165,7 +171,7 @@ public class ChecksumManager
         if (TryCreateChecksum(filePath, out byte[]? checksum, surfaceFix))
         {
             dict.Add(name ?? filePath, checksum);
-            Log.Debug("Added checksum for {Path}", name ?? filePath);
+            Log.Debug("Added checksum ({Checksum}) for {Path}", Convert.ToHexStringLower(checksum), name ?? filePath);
         }
     }
     

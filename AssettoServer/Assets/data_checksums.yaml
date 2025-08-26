@@ -1,0 +1,65 @@
+Tracks:
+    imola:
+        Default:
+            CSP:
+                models.ini:
+                    MD5: b3919ed35facb1aa35cf1e97d4215fb8
+                    SHA256: cf38314153349cc5344e3dee0a1c359ad15d236c7fcd9e03c09fb4b7a1db4c61
+                data/surfaces.ini:
+                    MD5: 005074e40a627589a2a465a0a2e798c4
+                    SHA256: 025bb92de7ed72904582523309cf18d506f5c6ec63516ecb7ba1af75d2e37103
+                imola.kn5:
+                    MD5: 0199ee2ea2005cc47e93d757b37f5268
+                    SHA256: 2e16a658d6d0bcab9f2f0fb7e63f3ebb0755b1566cc8d68c1288acbd56f00708
+            Vanilla:
+                models.ini:
+                    MD5: b3919ed35facb1aa35cf1e97d4215fb8
+                    SHA256: cf38314153349cc5344e3dee0a1c359ad15d236c7fcd9e03c09fb4b7a1db4c61
+                data/surfaces.ini:
+                    MD5: e1b7060d2b15a5a47d8487dcd41307e7
+                    SHA256: dc9e3bee9200cf405fb637cbdabdf43ace4fcf344cd4fc70e318711637bfa3b3
+                imola.kn5:
+                    MD5: 0199ee2ea2005cc47e93d757b37f5268
+                    SHA256: 2e16a658d6d0bcab9f2f0fb7e63f3ebb0755b1566cc8d68c1288acbd56f00708
+    mugello:
+        Default:
+            CSP:
+            Vanilla:
+                models.ini:
+                    MD5: a83ef42688cae28d51c3cce66add3c10
+                    SHA256: ac2069480297e11222c13438d613b8c0b5e9f565bcdc820cdefb4dcd59d584d6
+                data/surfaces.ini:
+                    MD5: 4538a80ed3d8f6033458a9a5f0e16ea4
+                    SHA256: ed20345acc449edaa450fb17dd9e58381d42c9b8e189b6975437cac095152692
+                mugello.kn5:
+                    MD5: 02905dac3553a14893dee29f482ff326
+                    SHA256: b90c1af553eefdff1cc740e30a74629923727240bc557f6db5a395c8e993f1a3
+    shuto_revival_project_beta: # i don't know which version i have
+        Layout:
+            main_layout:
+                CSP:
+                    main_layout/data/surfaces.ini:
+                        MD5: 66165bbb541406542ce0400b37efc974
+                        SHA256: d17e87f4aad039ba918bcdd036ce9a60df6d4dae75d34c7b1bafc60342f5af32
+                Vanilla:
+                    main_layout/data/surfaces.ini:
+                        MD5: f32449acd76c27ce88eb870803c402cb
+                        SHA256: 8a943b4e77d9a48ed8dbab6790ac2a9d64852104f9db596a44581ac1e930d4d9
+                    
+                    
+    
+Cars:
+    abarth500:
+        collider.kn5:
+            MD5: 649d029efd5104401039510768cf9e53
+            SHA256: 4a57827d319c9daf1b363c27f38b61f13320e3e9a90beb0b08a94b29e91b7419
+        data.acd:
+            MD5: f6327e6ca542c9ec00b332da054dd529
+            SHA256: 9d1639791a9f20d23c3833b47be63d8d191d9bb17170f5cbc5a3ccfb1815e8e0
+            
+Other:
+    system/data/surfaces.ini:
+        MD5: 41949b9f7045cad2af3f5eb951d170a9
+        SHA256: 5bf54158eeded67d9183995270d86a2698e47aeba5c2c1779c9de9020348e18d
+            
+        

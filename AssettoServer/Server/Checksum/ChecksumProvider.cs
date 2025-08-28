@@ -4,7 +4,6 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Serilog;
-using YamlDotNet.Serialization;
 
 namespace AssettoServer.Server.Checksum;
 
@@ -51,18 +50,14 @@ public class ChecksumProvider
             }
         }
         
-        var deserializer = new DeserializerBuilder().Build();
-        using var checksumsFile = File.OpenText(ChecksumsPath);
-        _checksums = deserializer.Deserialize<ChecksumsFile>(checksumsFile);
+        _checksums = ChecksumsFile.FromFile(ChecksumsPath);
     }
         
     public TrackLayoutChecksum? GetChecksumsForTrack(string track, string? layout)
     {
         if (_checksums == null) return null;
-            
-        var cleanTrack = track.Substring(track.LastIndexOf('/') + 1);
 
-        if (_checksums.Tracks.TryGetValue(cleanTrack, out var checksum))
+        if (_checksums.Tracks.TryGetValue(track, out var checksum))
         {
             if (string.IsNullOrEmpty(layout))
             {
@@ -87,11 +82,11 @@ public class ChecksumProvider
         return null;
     }
         
-    public ChecksumItem? GetChecksumsForOther(string car)
+    public ChecksumItem? GetChecksumsForOther(string path)
     {
         if (_checksums == null) return null;
         
-        if (_checksums.Other.TryGetValue(car, out var checksum))
+        if (_checksums.Other.TryGetValue(path, out var checksum))
         {
             return checksum;
         }

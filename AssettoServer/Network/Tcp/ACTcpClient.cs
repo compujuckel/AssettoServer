@@ -16,6 +16,7 @@ using AssettoServer.Network.ClientMessages;
 using AssettoServer.Network.Udp;
 using AssettoServer.Server;
 using AssettoServer.Server.Blacklist;
+using AssettoServer.Server.Checksum;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;

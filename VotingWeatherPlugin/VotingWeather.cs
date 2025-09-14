@@ -122,6 +122,12 @@ public class VotingWeather : BackgroundService
         var winner = weathers[Random.Shared.Next(weathers.Count)];
         var winnerType = _weatherTypeProvider.GetWeatherType(winner);
 
+        if (maxVotes == 0 && _configuration.KeepWeatherOnNoVotes)
+        {
+            _entryCarManager.BroadcastChat("Weather vote ended without any votes cast. Not changing weather.");
+            return;
+        }
+        
         _entryCarManager.BroadcastChat($"Weather vote ended. Next weather: {winner}");
 
         _weatherManager.SetWeather(new WeatherData(last.Type, winnerType)

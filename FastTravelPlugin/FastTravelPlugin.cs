@@ -23,12 +23,12 @@ public class FastTravelPlugin : IHostedService
     {
         _aiSpline = aiSpline ?? throw new ConfigurationException("FastTravelPlugin does not work with AI traffic disabled");
         
-        if (configuration.RequireCollisionDisable && serverConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_8)
+        if (configuration.DisableCollisions && serverConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_8)
         {
             throw new ConfigurationException("FastTravelPlugin needs a minimum required CSP version of 0.2.8 (3424)");
         }
         
-        if (!configuration.RequireCollisionDisable && serverConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_0)
+        if (!configuration.DisableCollisions && serverConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_0)
         {
             throw new ConfigurationException("FastTravelPlugin needs a minimum required CSP version of 0.2.0 (2651)");
         }
@@ -48,7 +48,8 @@ public class FastTravelPlugin : IHostedService
             ["mapFixedTargetPosition"] = $"\"{JsonSerializer.Serialize(configuration.MapFixedTargetPosition)}\"",
             ["mapZoomValues"] = $"\"{JsonSerializer.Serialize(configuration.MapZoomValues)}\"",
             ["mapMoveSpeeds"] = $"\"{JsonSerializer.Serialize(configuration.MapMoveSpeeds)}\"",
-            ["showMapImg"] = configuration.ShowMapImage ? "true" : "false"
+            ["showMapImg"] = configuration.ShowMapImage ? "true" : "false",
+            ["disableCollisions"] =  configuration.DisableCollisions ? "true" : "false"
         });
         
         cspClientMessageTypeManager.RegisterOnlineEvent<FastTravelPacket>(OnFastTravelPacket);

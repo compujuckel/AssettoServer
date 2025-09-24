@@ -6,10 +6,11 @@
 --thisguyStan: moved a few settings into AssettoServer
 
 local config = ac.configValues({
+    disableCollisions = true,
     mapFixedTargetPosition = "", -- { -2100, 0, 3200 },
-    mapZoomValues = "", -- { 100, 1000, 4000, 15000 },
-    mapMoveSpeeds = "", -- { 1, 5, 20, 0 },
-    showMapImg = true
+    mapZoomValues = "",          -- { 100, 1000, 4000, 15000 },
+    mapMoveSpeeds = "",          -- { 1, 5, 20, 0 },
+    showMapImg = true,
 })
 
 local parsedTargetPos = JSON.parse(config.mapFixedTargetPosition)
@@ -101,15 +102,6 @@ local hoverCID = -1
 local hoverCSP = vec2()
 local hoverDelay = 0
 
-local function ease_in_out(estimate, start, change, duration)
-    estimate = estimate / duration / 2.0
-    if estimate < 1 then
-        return change / 2.0 * estimate * estimate + start
-    end
-    estimate = estimate - 1
-    return -change / 2.0 * (estimate * (estimate - 2) - 1) + start
-end
-
 local disabledCollisionEvent = ac.OnlineEvent({
         ac.StructItem.key('disabledCollisionEvent'),
         disabled = ac.StructItem.boolean()
@@ -118,7 +110,7 @@ local disabledCollisionEvent = ac.OnlineEvent({
         if sender == nil then return end
         if sender.index == 0 then return end
         if supportAPI_collision then
-            ac.log(string.format('%s collision: [%d]%s', (data.disabled and 'disabled' or 'enabled'), sender.index, ac.getDriverName(sender.index)))
+            ac.log(string.format('%s collision: [%d] %s', (data.disabled and 'Disabled' or 'Enabled'), sender.index, ac.getDriverName(sender.index)))
             physics.disableCarCollisions(sender.index, data.disabled)
             physics.disableCarCollisions(0, data.disabled)
         end
@@ -186,8 +178,8 @@ function script.drawUI(dt)
         if mapCamera then
             mapCamera.transform.position.y = math.applyLag(mapCamera.transform.position.y, lastPos.y + mapZoomValue[mapZoom], 0.8, dt)
             if hoverCID >= 0 and mapZoom < #mapZoomValue then
-                local hoverdCar = ac.getCar(hoverCID)
-                local pos_diff = hoverdCar.position - lastPlayersPos[hoverCID]
+                local hoveredCar = ac.getCar(hoverCID)
+                local pos_diff = hoveredCar.position - lastPlayersPos[hoverCID]
                 mapCamera.transform.position.x = mapCamera.transform.position.x + pos_diff.x
                 mapCamera.transform.position.z = mapCamera.transform.position.z + pos_diff.z
             else
@@ -235,10 +227,10 @@ function script.drawUI(dt)
                 local screen_center = screenSize / 2
                 local map_offset = vec2(screen_center.x - map_size.x / 2, screen_center.y - map_size.y / 2)
                 map_opacity = mapTargetEstimate > 0.2 and math.applyLag(map_opacity, 0.25, 0.8, dt) or 0
-                ui.setShadingOffset(1, 1, 2, 0) --c1xtz: this makes sure that the track image is actually white
-                ui.beginOutline()
+                ui.setShadingOffset(1, 1, 2, 0)    --c1xtz: this makes sure that the track image is actually white
+                ui.beginOutline()                  --c1xtz: added outline to make text more readable
                 ui.drawImage(trackMapImage, map_offset, map_size + map_offset, rgbm(1, 1, 1, map_opacity))
-                ui.endOutline(rgbm(1, 1, 1, 1), 2)
+                ui.endOutline(rgbm(1, 1, 1, 1), 2) --c1xtz: added outline to make text more readable
                 ui.resetShadingOffset()
             else
                 map_opacity = 0
@@ -302,8 +294,8 @@ function script.drawUI(dt)
                     ui.endOutline(rgb.colors.black, 0.5) --c1xtz: added outline to make text more readable
                     ui.popDWriteFont()
                 else
-                    nametag = onlineTeleports[hoverMark][2]
                     --c1xtz: added the name of the teleport point
+                    nametag = onlineTeleports[hoverMark][2]
                     ui.pushDWriteFont(font)
                     ui.beginOutline()
                     ui.dwriteDrawText(onlineTeleports[hoverMark][5], 18, nametag_pos + vec2(0, 30), rgbm(1, 1, 1, 1))
@@ -350,9 +342,12 @@ function script.update(dt)
         end
     end
     if mapMode then
-        if supportAPI_collision then physics.disableCarCollisions(0, true) end
         if supportAPI_physics then physics.setGentleStop(0, true) end
-        if not disabledCollision then
+        if config.disableCollisions and not disabledCollision then
+            if supportAPI_collision then
+                ac.log('Disabled own collisions')
+                physics.disableCarCollisions(0, true)
+            end
             disabledCollisionEvent({ disabled = true })
             disabledCollision = true
         end
@@ -364,7 +359,7 @@ function script.update(dt)
     if teleportEstimate > 1 then
         if supportAPI_physics then physics.setGentleStop(0, false) end
     end
-    if disabledCollision and teleportEstimate > 5 then
+    if config.disableCollisions and disabledCollision and teleportEstimate > 5 then
         local closer = false
         for i = 1, sim.carsCount - 1 do
             local carState = ac.getCar(i)
@@ -376,8 +371,11 @@ function script.update(dt)
             end
         end
         if not closer then
-            if supportAPI_collision then physics.disableCarCollisions(0, false) end
             if disabledCollision then
+                if supportAPI_collision then
+                    ac.log('Enabled own collisions')
+                    physics.disableCarCollisions(0, false)
+                end
                 disabledCollisionEvent({ disabled = false })
                 disabledCollision = false
             end

@@ -537,12 +537,9 @@ function script.update(dt)
         end
     end
 
-    --c1xtz: make sure player is admin, then register onlineExtra
+    --c1xtz: register admin debug onlineExtra
     if ac.getSim().isAdmin and debugOnlineExtra == nil then
         debugOnlineExtra = ui.registerOnlineExtra(ui.Icons.SettingsAlt, "FastTravelPlugin Debug", function() return true end, window_FastTravelDebug, nil, ui.OnlineExtraFlags.Tool)
-    elseif not ac.getSim().isAdmin and debugOnlineExtra ~= nil then
-        debugOnlineExtra:dispose()
-        debugOnlineExtra = nil
     end
 end
 

@@ -107,6 +107,7 @@ local debugOrigPos = mapFixedTargetPosition:clone()
 local debugZoom, debugOrigZoom = table.clone(mapZoomValue), table.clone(mapZoomValue)
 local debugSpeed, debugOrigSpeed = table.clone(mapMoveSpeed), table.clone(mapMoveSpeed)
 local debugOnlineExtra = nil
+local debugWindowOpen = false
 
 local disabledCollisionEvent = ac.OnlineEvent({
         ac.StructItem.key('disabledCollisionEvent'),
@@ -180,7 +181,8 @@ end
 
 --c1xtz: registerOnlineExtra debug window for plugin config params
 local function window_FastTravelDebug()
-    ui.textColored("Changes are only visible to you and are not saved", rgbm.colors.red)
+    if not debugWindowOpen then debugWindowOpen = true end
+    ui.textColored("Changes are only visible to you and are not saved\nWhile this window is open you cannot teleport", rgbm.colors.red)
     ui.tabBar('FastTravelDebugTabs', function()
         ui.text("Current Zoom Level: " .. mapZoom)
         ui.text('Shift+Drag sliders for fine control, Control+Click to type in values.')
@@ -539,7 +541,7 @@ function script.update(dt)
 
     --c1xtz: register admin debug onlineExtra
     if ac.getSim().isAdmin and debugOnlineExtra == nil then
-        debugOnlineExtra = ui.registerOnlineExtra(ui.Icons.SettingsAlt, "FastTravelPlugin Debug", function() return true end, window_FastTravelDebug, nil, ui.OnlineExtraFlags.Tool)
+        debugOnlineExtra = ui.registerOnlineExtra(ui.Icons.SettingsAlt, "FastTravelPlugin Debug", function() return true end, window_FastTravelDebug, function() debugWindowOpen = false end, ui.OnlineExtraFlags.Tool)
     end
 end
 
@@ -679,7 +681,7 @@ function inputCheck()
             pos = mpr
             rot = vec3(1, 0, 0)
         end
-        if teleportAvailable then
+        if teleportAvailable and not debugWindowOpen then
             if ui.mouseClicked(ui.MouseButton.Left) then
                 apiWaiting = true
                 mapTargetPos = pos

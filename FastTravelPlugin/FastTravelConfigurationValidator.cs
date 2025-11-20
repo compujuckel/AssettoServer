@@ -13,7 +13,7 @@ public class FastTravelConfigurationValidator : AbstractValidator<FastTravelConf
             .Equal(cfg => cfg.MapZoomValues.Count)
             .WithMessage("MapMoveSpeeds and MapZoomValues must contain the same number of values");
         RuleFor(cfg => cfg.MapZoomValues)
-            .Must(x =>x.SequenceEqual(x.Order().ToList()))
+            .Must(x => x.SequenceEqual(x.Order().ToList()))
             .WithMessage("Values should not be lower than previous ones");
         RuleFor(cfg => cfg.MapMoveSpeeds)
             .Must(x => x[..^1].SequenceEqual(x[..^1].Order().ToList()))

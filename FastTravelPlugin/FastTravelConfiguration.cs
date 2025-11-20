@@ -1,6 +1,5 @@
 ﻿using AssettoServer.Server.Configuration;
 using JetBrains.Annotations;
-using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 
 namespace FastTravelPlugin;
@@ -20,6 +19,6 @@ public class FastTravelConfiguration : IValidateConfiguration<FastTravelConfigur
     [YamlMember(Description = "Show the map.png of the track layout when in the last zoom level.\nDon't change if using Shutoko Revival Project")]
     public bool ShowMapImage { get; set; } = true;
 
-    [YamlMember(Description = "Last zoom level has a fixed position, the track should be aligned to the center of the screen.\nIf map image is shown, prioritize aligning the track with the map image.\nDon't change the values if using Shutoko Revival Project")] 
+    [YamlMember(Description = "Last zoom level has a fixed position, the track should be aligned to the center of the screen.\nIf map image is shown, prioritize aligning the track with the map image.\nDon't change the values if using Shutoko Revival Project")]
     public List<int> MapFixedTargetPosition = [-2100, 0, 3200];
 }

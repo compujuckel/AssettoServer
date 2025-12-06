@@ -16,9 +16,9 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.x
+        dotnet-version: 9.0.3xx
     - name: test
-      run: pwd; ls -la; dotnet --version
+      run: pwd; ls -la; dotnet --version; dotnet --list-sdks
     - name: Publish (Linux x64)
       run: dotnet publish --runtime linux-x64 -c Release AssettoServer.slnx
     - name: Publish (Linux arm64)

@@ -6,10 +6,11 @@
 --thisguyStan: moved a few settings into AssettoServer
 
 local config = ac.configValues({
+    disableCollisions = true,
     mapFixedTargetPosition = "", -- { -2100, 0, 3200 },
-    mapZoomValues = "", -- { 100, 1000, 4000, 15000 },
-    mapMoveSpeeds = "", -- { 1, 5, 20, 0 },
-    showMapImg = true
+    mapZoomValues = "",          -- { 100, 1000, 4000, 15000 },
+    mapMoveSpeeds = "",          -- { 1, 5, 20, 0 },
+    showMapImg = true,
 })
 
 local parsedTargetPos = JSON.parse(config.mapFixedTargetPosition)
@@ -81,7 +82,6 @@ local mapCameraOwn = 0
 local mapMode = false
 local mapZoom = 1
 local mapFOV = 90
-local mapAlpha = { 0.5, 1, 1, 1 }
 local mapMovePower = vec2()
 local mapTargetPos = vec3()
 local mapTargetEstimate = 0
@@ -101,14 +101,13 @@ local hoverCID = -1
 local hoverCSP = vec2()
 local hoverDelay = 0
 
-local function ease_in_out(estimate, start, change, duration)
-    estimate = estimate / duration / 2.0
-    if estimate < 1 then
-        return change / 2.0 * estimate * estimate + start
-    end
-    estimate = estimate - 1
-    return -change / 2.0 * (estimate * (estimate - 2) - 1) + start
-end
+--c1xtz: debug variables
+local debugPos = mapFixedTargetPosition:clone()
+local debugOrigPos = mapFixedTargetPosition:clone()
+local debugZoom, debugOrigZoom = table.clone(mapZoomValue), table.clone(mapZoomValue)
+local debugSpeed, debugOrigSpeed = table.clone(mapMoveSpeed), table.clone(mapMoveSpeed)
+local debugOnlineExtra = nil
+local debugWindowOpen = false
 
 local disabledCollisionEvent = ac.OnlineEvent({
         ac.StructItem.key('disabledCollisionEvent'),
@@ -118,7 +117,7 @@ local disabledCollisionEvent = ac.OnlineEvent({
         if sender == nil then return end
         if sender.index == 0 then return end
         if supportAPI_collision then
-            ac.log(string.format('%s collision: [%d]%s', (data.disabled and 'disabled' or 'enabled'), sender.index, ac.getDriverName(sender.index)))
+            ac.log(string.format('%s collision: [%d] %s', (data.disabled and 'Disabled' or 'Enabled'), sender.index, ac.getDriverName(sender.index)))
             physics.disableCarCollisions(sender.index, data.disabled)
             physics.disableCarCollisions(0, data.disabled)
         end
@@ -180,14 +179,165 @@ local function projectPoint(position)
     return screenPos
 end
 
+--c1xtz: registerOnlineExtra debug window for plugin config params
+local function window_FastTravelDebug()
+    if not debugWindowOpen then debugWindowOpen = true end
+    ui.textColored("Changes are only visible to you and are not saved\nWhile this window is open you cannot teleport", rgbm.colors.red)
+    ui.tabBar('FastTravelDebugTabs', function()
+        ui.text("Current Zoom Level: " .. mapZoom)
+        ui.text('Shift+Drag sliders for fine control, Control+Click to type in values.')
+
+        ui.tabItem('Map Image Position', function()
+            ui.separator()
+            if ui.checkbox("Show Map Image", config.showMapImg) then config.showMapImg = not config.showMapImg end
+            if config.showMapImg then
+                ui.separator()
+
+                local changedPos = false
+                local xSlider, movedX = ui.slider("##posX", debugPos.x, -25000, 25000, "X: %.0f")
+                if movedX then
+                    debugPos.x = xSlider
+                    changedPos = true
+                end
+                local ySlider, movedY = ui.slider("##posY", debugPos.y, -25000, 25000, "Y: %.0f")
+                if movedY then
+                    debugPos.y = ySlider
+                    changedPos = true
+                end
+                local zSlider, movedZ = ui.slider("##posZ", debugPos.z, -25000, 25000, "Z: %.0f")
+                if movedZ then
+                    debugPos.z = zSlider
+                    changedPos = true
+                end
+                if changedPos then
+                    mapFixedTargetPosition = debugPos:clone()
+                    config.mapFixedTargetPosition = string.format('[ %.0f, %.0f, %.0f ]', debugPos.x, debugPos.y, debugPos.z)
+                    if mapMode and mapZoom == #mapZoomValue then
+                        mapTargetPos = mapFixedTargetPosition:clone()
+                        mapTargetEstimate = 0
+                    end
+                end
+
+                if ui.button("Reset") then
+                    debugPos = debugOrigPos:clone()
+                    mapFixedTargetPosition = debugOrigPos:clone()
+                    if mapMode and mapZoom == #mapZoomValue then
+                        mapTargetPos = mapFixedTargetPosition:clone()
+                        mapTargetEstimate = 0
+                    end
+                end
+            end
+        end)
+
+        ui.tabItem('Zoom & Move Speed Levels', function()
+            ui.separator()
+            local changedZoom, changedSpeed = false, false
+            for i = 1, #mapZoomValue do
+                ui.pushItemWidth(200)
+                local value, moved = ui.slider("##zoom" .. i, debugZoom[i] or mapZoomValue[i], 0, 25000, "Zoom " .. i .. ": %.0f")
+                ui.popItemWidth()
+                if moved then
+                    debugZoom[i] = value
+                    changedZoom = true
+                end
+                ui.sameLine(0, 10)
+                if i < #mapMoveSpeed then
+                    ui.pushItemWidth(200)
+                    local speedValue, speedMoved = ui.slider("##move" .. i, debugSpeed[i] or mapMoveSpeed[i], 0, 100, "Speed " .. i .. ": %.0f")
+                    ui.popItemWidth()
+                    if speedMoved then
+                        debugSpeed[i] = speedValue
+                        changedSpeed = true
+                    end
+                else
+                    ui.text("Speed " .. i .. " has to be 0")
+                    debugSpeed[i] = 0
+                end
+            end
+            if changedZoom then
+                for i = 1, #debugZoom do mapZoomValue[i] = debugZoom[i] end
+                config.mapZoomValues = debugZoom
+            end
+            if changedSpeed then
+                for i = 1, #debugSpeed do mapMoveSpeed[i] = debugSpeed[i] end
+                config.mapMoveSpeeds = debugSpeed
+            end
+
+            ui.separator()
+
+            if ui.button("Add Level") then
+                local newZoom = debugZoom[#debugZoom] or 1000
+                local newSpeed = debugSpeed[#debugSpeed - 1] or 1
+                table.insert(debugZoom, newZoom)
+                table.insert(mapZoomValue, newZoom)
+                table.insert(debugSpeed, newSpeed)
+                table.insert(mapMoveSpeed, newSpeed)
+                debugSpeed[#debugSpeed], mapMoveSpeed[#mapMoveSpeed] = 0, 0
+                config.mapZoomValues = debugZoom
+                config.mapMoveSpeeds = debugSpeed
+            end
+
+            ui.sameLine()
+            local removeDisabled = #mapZoomValue <= 1
+            if ui.button("Remove Level", vec2(0, 0), removeDisabled and ui.ButtonFlags.Disabled or ui.ButtonFlags.None) then
+                if not removeDisabled then
+                    if mapZoom > #mapZoomValue - 1 then mapZoom = #mapZoomValue - 1 end
+                    table.remove(debugZoom)
+                    table.remove(mapZoomValue)
+                    if #debugSpeed > 1 then table.remove(debugSpeed, #debugSpeed - 1) end
+                    if #mapMoveSpeed > 1 then table.remove(mapMoveSpeed, #mapMoveSpeed - 1) end
+                    debugSpeed[#debugSpeed], mapMoveSpeed[#mapMoveSpeed] = 0, 0
+                    config.mapZoomValues = debugZoom
+                    config.mapMoveSpeeds = debugSpeed
+                end
+            end
+
+            if ui.button("Reset") then
+                if mapZoom > #debugOrigZoom then mapZoom = #debugOrigZoom end
+                debugZoom, debugSpeed, mapZoomValue, mapMoveSpeed = {}, {}, {}, {}
+                for i = 1, #debugOrigZoom do
+                    debugZoom[i] = debugOrigZoom[i]
+                    mapZoomValue[i] = debugOrigZoom[i]
+                end
+                for i = 1, #debugOrigSpeed do
+                    debugSpeed[i] = debugOrigSpeed[i]
+                    mapMoveSpeed[i] = debugOrigSpeed[i]
+                end
+                debugSpeed[#debugSpeed], mapMoveSpeed[#mapMoveSpeed] = 0, 0
+                config.mapZoomValues = debugZoom
+                config.mapMoveSpeeds = debugSpeed
+            end
+        end)
+
+        if ui.button("Copy Settings to Clipboard") then
+            local exportConfig = {}
+            exportConfig[#exportConfig + 1] = "MapZoomValues:"
+            for i = 1, #mapZoomValue do
+                exportConfig[#exportConfig + 1] = "- " .. math.round(mapZoomValue[i])
+            end
+            exportConfig[#exportConfig + 1] = "MapMoveSpeeds:"
+            for i = 1, #mapMoveSpeed do
+                exportConfig[#exportConfig + 1] = "- " .. math.round(mapMoveSpeed[i])
+            end
+            exportConfig[#exportConfig + 1] = "ShowMapImage: " .. tostring(config.showMapImg)
+            exportConfig[#exportConfig + 1] = "MapFixedTargetPosition:"
+            exportConfig[#exportConfig + 1] = "- " .. math.round(mapFixedTargetPosition.x)
+            exportConfig[#exportConfig + 1] = "- " .. math.round(mapFixedTargetPosition.y)
+            exportConfig[#exportConfig + 1] = "- " .. math.round(mapFixedTargetPosition.z)
+            exportConfig[#exportConfig + 1] = "RequireCollisionDisable: " .. tostring(config.disableCollisions)
+            ac.setClipboardText(table.concat(exportConfig, "\n"))
+        end
+    end)
+end
+
 function script.drawUI(dt)
     if dt == nil then dt = ac.getSim().dt end
     if mapMode then
         if mapCamera then
             mapCamera.transform.position.y = math.applyLag(mapCamera.transform.position.y, lastPos.y + mapZoomValue[mapZoom], 0.8, dt)
             if hoverCID >= 0 and mapZoom < #mapZoomValue then
-                local hoverdCar = ac.getCar(hoverCID)
-                local pos_diff = hoverdCar.position - lastPlayersPos[hoverCID]
+                local hoveredCar = ac.getCar(hoverCID)
+                local pos_diff = hoveredCar.position - lastPlayersPos[hoverCID]
                 mapCamera.transform.position.x = mapCamera.transform.position.x + pos_diff.x
                 mapCamera.transform.position.z = mapCamera.transform.position.z + pos_diff.z
             else
@@ -220,14 +370,13 @@ function script.drawUI(dt)
             local mp = ui.mousePos() - screenOffset
             mapShot:setShadersType(render.ShadersType.Simplest)
             mapFullShot:setShadersType(render.ShadersType.Simplest)
-            mapAlpha[1] = 0.5
             ui.drawRectFilled(vec2(), screenSize, rgbm(0, 0, 0, 0.5))
             if mapZoom == 1 then
                 ui.drawImage(mapFullShot, vec2(), screenSize)
             else
                 ui.drawImage(mapShot, vec2(), screenSize)
             end
-            ui.drawImage(roadsShot, vec2(), screenSize, rgbm(0, 0.9, 1, mapAlpha[mapZoom]))
+            ui.drawImage(roadsShot, vec2(), screenSize, rgbm(0, 0.9, 1, 1))
 
             if mapZoom == #mapZoomValue and config.showMapImg then
                 local map_mult = (screenSize.y - (screenSize.y * 0.1)) / trackMapImageSize.y
@@ -235,10 +384,10 @@ function script.drawUI(dt)
                 local screen_center = screenSize / 2
                 local map_offset = vec2(screen_center.x - map_size.x / 2, screen_center.y - map_size.y / 2)
                 map_opacity = mapTargetEstimate > 0.2 and math.applyLag(map_opacity, 0.25, 0.8, dt) or 0
-                ui.setShadingOffset(1, 1, 2, 0) --c1xtz: this makes sure that the track image is actually white
-                ui.beginOutline()
+                ui.setShadingOffset(1, 1, 2, 0)    --c1xtz: this makes sure that the track image is actually white
+                ui.beginOutline()                  --c1xtz: added outline to make text more readable
                 ui.drawImage(trackMapImage, map_offset, map_size + map_offset, rgbm(1, 1, 1, map_opacity))
-                ui.endOutline(rgbm(1, 1, 1, 1), 2)
+                ui.endOutline(rgbm(1, 1, 1, 1), 2) --c1xtz: added outline to make text more readable
                 ui.resetShadingOffset()
             else
                 map_opacity = 0
@@ -302,8 +451,8 @@ function script.drawUI(dt)
                     ui.endOutline(rgb.colors.black, 0.5) --c1xtz: added outline to make text more readable
                     ui.popDWriteFont()
                 else
-                    nametag = onlineTeleports[hoverMark][2]
                     --c1xtz: added the name of the teleport point
+                    nametag = onlineTeleports[hoverMark][2]
                     ui.pushDWriteFont(font)
                     ui.beginOutline()
                     ui.dwriteDrawText(onlineTeleports[hoverMark][5], 18, nametag_pos + vec2(0, 30), rgbm(1, 1, 1, 1))
@@ -350,9 +499,12 @@ function script.update(dt)
         end
     end
     if mapMode then
-        if supportAPI_collision then physics.disableCarCollisions(0, true) end
         if supportAPI_physics then physics.setGentleStop(0, true) end
-        if not disabledCollision then
+        if config.disableCollisions and not disabledCollision then
+            if supportAPI_collision then
+                ac.log('Disabled own collisions')
+                physics.disableCarCollisions(0, true)
+            end
             disabledCollisionEvent({ disabled = true })
             disabledCollision = true
         end
@@ -364,7 +516,7 @@ function script.update(dt)
     if teleportEstimate > 1 then
         if supportAPI_physics then physics.setGentleStop(0, false) end
     end
-    if disabledCollision and teleportEstimate > 5 then
+    if config.disableCollisions and disabledCollision and teleportEstimate > 5 then
         local closer = false
         for i = 1, sim.carsCount - 1 do
             local carState = ac.getCar(i)
@@ -376,12 +528,20 @@ function script.update(dt)
             end
         end
         if not closer then
-            if supportAPI_collision then physics.disableCarCollisions(0, false) end
             if disabledCollision then
+                if supportAPI_collision then
+                    ac.log('Enabled own collisions')
+                    physics.disableCarCollisions(0, false)
+                end
                 disabledCollisionEvent({ disabled = false })
                 disabledCollision = false
             end
         end
+    end
+
+    --c1xtz: register admin debug onlineExtra
+    if ac.getSim().isAdmin and debugOnlineExtra == nil then
+        debugOnlineExtra = ui.registerOnlineExtra(ui.Icons.SettingsAlt, "FastTravelPlugin Debug", function() return true end, window_FastTravelDebug, function() debugWindowOpen = false end, ui.OnlineExtraFlags.Tool)
     end
 end
 
@@ -521,7 +681,7 @@ function inputCheck()
             pos = mpr
             rot = vec3(1, 0, 0)
         end
-        if teleportAvailable then
+        if teleportAvailable and not debugWindowOpen then
             if ui.mouseClicked(ui.MouseButton.Left) then
                 apiWaiting = true
                 mapTargetPos = pos

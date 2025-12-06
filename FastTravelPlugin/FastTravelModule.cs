@@ -13,6 +13,7 @@ public class FastTravelModule : AssettoServerModule<FastTravelConfiguration>
 
     public override FastTravelConfiguration ReferenceConfiguration => new()
     {
+        DisableCollisions = false,
         MapZoomValues = [100, 200, 400, 600],
         MapMoveSpeeds = [1, 2, 3, 0],
         ShowMapImage = false,

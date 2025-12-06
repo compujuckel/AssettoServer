@@ -28,15 +28,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Autofac" Version="8.3.0" />
+        <PackageReference Include="Autofac" Version="9.0.0" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
         <PackageReference Include="CommunityToolkit.Common" Version="8.4.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
         <PackageReference Include="CXuesong.Luaon" Version="0.2.7" />
         <PackageReference Include="CXuesong.Luaon.Json" Version="0.2.1" />
-        <PackageReference Include="DotNext.IO" Version="5.23.0" />
-        <PackageReference Include="DotNext.Unsafe" Version="5.23.0" />
+        <PackageReference Include="DotNext.IO" Version="5.26.1" />
+        <PackageReference Include="DotNext.Unsafe" Version="5.26.1" />
         <PackageReference Include="ErrorProne.NET.CoreAnalyzers" Version="0.6.1-beta.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -45,40 +45,40 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="FluentValidation" Version="12.0.0" />
-        <PackageReference Include="Humanizer.Core" Version="3.0.0-beta.54" />
+        <PackageReference Include="FluentValidation" Version="12.1.1" />
+        <PackageReference Include="Humanizer.Core" Version="3.0.1" />
         <PackageReference Include="ini-parser" Version="2.5.2">
             <NoWarn>NU1701</NoWarn>
         </PackageReference>
         <FrameworkReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
-        <PackageReference Include="JetBrains.Annotations" Version="2025.2.0" />
+        <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
         <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="NJsonSchema" Version="11.4.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+        <PackageReference Include="NJsonSchema" Version="11.5.2" />
         <PackageReference Include="NodaTime" Version="3.2.2" />
         <PackageReference Include="Open.NAT" Version="2.1.0">
             <NoWarn>NU1701</NoWarn>
         </PackageReference>
-        <PackageReference Include="Polly" Version="8.6.2" />
+        <PackageReference Include="Polly" Version="8.6.5" />
         <PackageReference Include="prometheus-net" Version="8.2.1" />
         <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
         <PackageReference Include="protobuf-net.Grpc" Version="1.2.2" />
         <PackageReference Include="Qmmands" Version="5.0.2" />
-        <PackageReference Include="Scriban" Version="6.2.1" />
+        <PackageReference Include="Scriban" Version="6.5.2" />
         <PackageReference Include="Serilog" Version="4.3.0" />
-        <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+        <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
         <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-        <PackageReference Include="Serilog.Enrichers.Sensitive" Version="1.7.3" />
+        <PackageReference Include="Serilog.Enrichers.Sensitive" Version="2.1.0" />
         <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
         <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
         <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.1" />
         <PackageReference Include="SerilogTimings" Version="3.1.0" />
         <PackageReference Include="compujuckel.Supercluster.KDTree" Version="1.0.9" />
         <PackageReference Include="Sigil" Version="5.0.0" />
         <PackageReference Include="SunCalcNet" Version="1.2.3" />
-        <PackageReference Include="System.IO.Hashing" Version="9.0.7" />
+        <PackageReference Include="System.IO.Hashing" Version="10.0.0" />
         <PackageReference Include="YamlDotNet" Version="16.3.0" />
         <PackageReference Include="MinVer" Version="6.0.0">
             <PrivateAssets>all</PrivateAssets>

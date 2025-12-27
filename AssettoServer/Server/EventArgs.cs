@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Numerics;
 using System.Text;
 using AssettoServer.Network.Tcp;
+using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
 using AssettoServer.Shared.Network.Packets.Shared;
@@ -145,4 +146,19 @@ public class CarListResponseSendingEventArgs : EventArgs
     {
         Packet = packet;
     }
+}
+
+public class PluginDataEventArgs : EventArgs
+{
+    public required PluginDataType DataType { get; init; }
+    public required string Plugin { get; init; }
+    public required string Name { get; init; }
+    
+    /// <summary>
+    /// Points: self-explanatory
+    /// Time: Time in milliseconds
+    /// EventWin: Can be left as 0
+    /// </summary>
+    public long Value { get; init; }
+    public EntryCar? Opponent { get; init; }
 }

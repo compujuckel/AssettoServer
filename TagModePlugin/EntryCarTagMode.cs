@@ -10,15 +10,15 @@ public class EntryCarTagMode
     private readonly EntryCarManager _entryCarManager;
     private readonly TagModeConfiguration _configuration;
     private readonly TagModePlugin _plugin;
-    private readonly EntryCar _entryCar;
+    public readonly EntryCar EntryCar;
     public bool IsTagged { get; private set; } = false;
 
-    public bool IsConnected => _entryCar.Client is { HasSentFirstUpdate: true };
+    public bool IsConnected => EntryCar.Client is { HasSentFirstUpdate: true };
     public Color CurrentColor { get; private set; } = Color.Empty;
 
     public EntryCarTagMode(EntryCar entryCar, EntryCarManager entryCarManager, TagModeConfiguration configuration, TagModePlugin plugin)
     {
-        _entryCar = entryCar;
+        EntryCar = entryCar;
         _entryCarManager = entryCarManager;
         _configuration = configuration;
         _plugin = plugin;
@@ -57,20 +57,20 @@ public class EntryCarTagMode
         if (!targetCar.IsTagged) return;
         
         SetTagged();
-        _plugin.CurrentSession.LastCaught = _entryCar;
+        _plugin.CurrentSession.LastCaught = EntryCar;
     }
 
     public void SetTagged(bool val = true)
     {
-        if (_entryCar.Client == null) return;
+        if (EntryCar.Client == null) return;
         
         IsTagged = val;
         
         if (!IsTagged) return;
         
         UpdateColor(_plugin.TaggedColor);
-        _entryCar.Client.SendChatMessage("You are now a tagger.");
-        _entryCar.Logger.Information("{Player} is now a tagger", _entryCar.Client.Name);
+        EntryCar.Client.SendChatMessage("You are now a tagger.");
+        EntryCar.Logger.Information("{Player} is now a tagger", EntryCar.Client.Name);
     }
 
     public void UpdateColor(Color color, bool disconnect = false)
@@ -79,7 +79,7 @@ public class EntryCarTagMode
         var packet = new TagModeColorPacket
         {
             Color = color,
-            SessionId = _entryCar.SessionId,
+            SessionId = EntryCar.SessionId,
             Disconnect = disconnect
         };
          _entryCarManager.BroadcastPacket(packet);

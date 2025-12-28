@@ -266,39 +266,30 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
             return CurrentSession.TimeLeftMilliseconds == 0;
         }
 
-        if (ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds)
+        if (CurrentSession.Configuration.Type is SessionType.Practice or SessionType.Qualifying)
         {
             return false;
         }
 
-        var connectedCount = _entryCarManager.EntryCars.Count(e => e.Client != null);
-
-        if (CurrentSession.Configuration.Type != SessionType.Race)
+        var connectedCount = _entryCarManager.ConnectedCars.Count;
+        
+        switch (CurrentSession.Configuration.IsOpen)
         {
-            return false;
-        }
-
-        if (CurrentSession.Configuration.IsOpen == IsOpenMode.Closed && connectedCount < 2)
-        {
-            Log.Information("Skipping race session: didn't reach minimum player count before cutoff ({PlayerCount}/2). Use 'IS_OPEN=1' to allow joining during the race", connectedCount);
-            return true;
-        }
-
-        if (CurrentSession.Configuration.IsOpen != IsOpenMode.CloseAtStart)
-        {
-            if (connectedCount > 0) return false;
-            
-            Log.Information("Skipping race session: no player connected");
-            return true;
-        }
-
-        if (connectedCount < 2 && CurrentSession.IsCutoffReached)
-        {
-            Log.Information("Skipping race session: didn't reach minimum player count before cutoff ({PlayerCount}/2). Use 'IS_OPEN=1' to allow joining during the race", connectedCount);
-            return true;
+            case IsOpenMode.Closed when connectedCount < 2:
+                Log.Information("Skipping race session: didn't reach minimum player count before cutoff ({PlayerCount}/2). Use 'IS_OPEN=1' to allow joining during the race", connectedCount);
+                return true;
+            case IsOpenMode.Closed:
+                return false;
+            case IsOpenMode.CloseAtStart when connectedCount >= 2 ||
+                                              ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds:
+                return false;
+            case IsOpenMode.Open when connectedCount > 0 ||
+                                      ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds:
+                return false;
         }
         
-        return false;
+        Log.Information("Skipping session: no player connected");
+        return true;
     }
 
     private void CalcOverTime()

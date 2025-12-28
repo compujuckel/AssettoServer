@@ -39,7 +39,7 @@ public class ServerConfiguration
     [IniField("SERVER", "RACE_PIT_WINDOW_END")] public short PitWindowEnd { get; init; }
     [IniField("SERVER", "STABILITY_ALLOWED")] public bool StabilityAllowed { get; init; }
     [IniField("SERVER", "RACE_OVER_TIME")] public int RaceOverTime { get; init; }
-    [IniField("SERVER", "RESULT_SCREEN_TIME")] public int ResultScreenTime { get; init; }
+    [IniField("SERVER", "RESULT_SCREEN_TIME")] public int ResultScreenTime { get; init; } = 1;
     [IniField("SERVER", "TYRE_WEAR_RATE", Percent = true)] public float TyreConsumptionRate { get; init; }
     [IniField("SERVER", "MAX_CONTACTS_PER_KM", IgnoreParsingErrors = true)] public byte MaxContactsPerKm { get; init; }
     [IniField("SERVER", "LEGAL_TYRES")] public string LegalTyres { get; init; } = "";

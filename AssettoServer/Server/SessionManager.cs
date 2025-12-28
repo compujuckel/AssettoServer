@@ -288,7 +288,7 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
                 return false;
         }
         
-        Log.Information("Skipping session: no player connected");
+        Log.Information("Skipping race session: no player connected");
         return true;
     }
 

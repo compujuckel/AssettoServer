@@ -197,7 +197,6 @@ end
 
 --c1xtz: registerOnlineExtra debug window for plugin config params
 local function window_FastTravelDebug()
-    if not debugWindowOpen then debugWindowOpen = true end
     ui.textColored("Changes are only visible to you and are not saved\nWhile this window is open you cannot teleport", rgbm.colors.red)
     ui.tabBar('FastTravelDebugTabs', function()
         ui.text("Current Zoom Level: " .. mapZoom)
@@ -628,7 +627,24 @@ function script.update(dt)
 
     --c1xtz: register admin debug onlineExtra
     if ac.getSim().isAdmin and debugOnlineExtra == nil then
-        debugOnlineExtra = ui.registerOnlineExtra(ui.Icons.SettingsAlt, "FastTravelPlugin Debug", function() return true end, window_FastTravelDebug, function() debugWindowOpen = false end, ui.OnlineExtraFlags.Tool)
+        debugOnlineExtra = ui.registerOnlineExtra(
+            ui.Icons.SettingsAlt,
+            "FastTravelPlugin Debug",
+
+            function()
+                if not debugWindowOpen then debugWindowOpen = true end
+                return true
+            end,
+
+            window_FastTravelDebug,
+
+            function()
+                if debugWindowOpen then debugWindowOpen = false end
+                return false
+            end,
+
+            ui.OnlineExtraFlags.Tool
+        )
     end
 end
 

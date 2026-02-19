@@ -3,6 +3,7 @@
   <Project Path="AssettoServer.Tests\AssettoServer.Tests.csproj" Type="Classic C#" />
   <Project Path="AssettoServer\AssettoServer.csproj" Type="Classic C#" />
   <Project Path="AutoModerationPlugin\AutoModerationPlugin.csproj" Type="Classic C#" />
+  <Project Path="ChecksumUtils\ChecksumUtils.csproj" Type="Classic C#" />
   <Project Path="CustomCommandPlugin\CustomCommandPlugin.csproj" Type="Classic C#" />
   <Project Path="DiscordAuditPlugin\DiscordAuditPlugin.csproj" Type="Classic C#" />
   <Project Path="FastLaneUtils\FastLaneUtils.csproj" Type="Classic C#" />

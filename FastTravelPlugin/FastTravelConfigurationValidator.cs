@@ -21,5 +21,8 @@ public class FastTravelConfigurationValidator : AbstractValidator<FastTravelConf
         RuleFor(cfg => cfg.MapMoveSpeeds)
             .Must(x => x.Last() == 0)
             .WithMessage("Last Move Speed Value must be 0");
+        RuleFor(cfg => cfg.DistanceModeRange)
+            .GreaterThan(0)
+            .WithMessage("DistanceModeRange must be greater than 0");
     }
 }

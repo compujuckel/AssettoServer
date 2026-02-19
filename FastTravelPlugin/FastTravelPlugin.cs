@@ -48,7 +48,10 @@ public class FastTravelPlugin : IHostedService
             ["mapZoomValues"] = $"\"{JsonSerializer.Serialize(configuration.MapZoomValues)}\"",
             ["mapMoveSpeeds"] = $"\"{JsonSerializer.Serialize(configuration.MapMoveSpeeds)}\"",
             ["showMapImg"] = configuration.ShowMapImage ? "true" : "false",
-            ["disableCollisions"] = configuration.DisableCollisions ? "true" : "false"
+            ["disableCollisions"] = configuration.DisableCollisions ? "true" : "false",
+            ["useGroupInheritance"] = configuration.UseGroupInheritance ? "true" : "false",
+            ["useGroupDrawMode"] = configuration.UseGroupDrawMode ? "true" : "false",
+            ["distanceModeRange"] = configuration.DistanceModeRange
         });
 
         cspClientMessageTypeManager.RegisterOnlineEvent<FastTravelPacket>(OnFastTravelPacket);

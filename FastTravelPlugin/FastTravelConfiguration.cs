@@ -21,4 +21,13 @@ public class FastTravelConfiguration : IValidateConfiguration<FastTravelConfigur
 
     [YamlMember(Description = "Last zoom level has a fixed position, the track should be aligned to the center of the screen.\nIf map image is shown, prioritize aligning the track with the map image.\nDon't change the values if using Shutoko Revival Project")]
     public List<int> MapFixedTargetPosition = [-2100, 0, 3200];
+
+    [YamlMember(Description = "If set to true, points without a type inherit the type of the last explicitly typed point within their group.")]
+    public bool UseGroupInheritance { get; set; } = true;
+
+    [YamlMember(Description = "How teleport icons should cluster when zoomed out.\nTrue (Group mode): Displays only the first point of each type within a group.\nFalse (Distance mode): Displays one point of each type based on proximity, ignoring group names.")]
+    public bool UseGroupDrawMode { get; set; } = true;
+
+    [YamlMember(Description = "The required distance between icons of the same type to prevent them from clustering.")]
+    public int DistanceModeRange { get; set; } = 100;
 }

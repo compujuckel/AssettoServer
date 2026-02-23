@@ -3,6 +3,7 @@ using AssettoServer.Commands;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Plugin;
 using AssettoServer.Shared.Discord;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using CSharpDiscordWebhook.NET.Discord;
@@ -18,8 +19,13 @@ public class Discord
 
     private DiscordWebhook? AuditHook { get; }
     private DiscordWebhook? ChatHook { get; }
+    private DiscordWebhook? PluginEventHook { get; }
 
-    public Discord(DiscordConfiguration configuration, EntryCarManager entryCarManager, ACServerConfiguration serverConfiguration, ChatService chatService)
+    public Discord(DiscordConfiguration configuration,
+        EntryCarManager entryCarManager,
+        PluginDataManager pluginDataManager,
+        ACServerConfiguration serverConfiguration,
+        ChatService chatService)
     {
         _serverNameSanitized = DiscordUtils.SanitizeUsername(serverConfiguration.Server.Name);
         _configuration = configuration;
@@ -48,6 +54,16 @@ public class Discord
             };
 
             chatService.MessageReceived += OnChatMessageReceived;
+        }
+        
+        if (!string.IsNullOrEmpty(_configuration.PluginEventUrl))
+        {
+            PluginEventHook = new DiscordWebhook
+            {
+                Uri = new Uri(_configuration.PluginEventUrl)
+            };
+
+            pluginDataManager.PluginEvent += OnPluginEvent;
         }
     }
 
@@ -231,5 +247,46 @@ public class Discord
             message.Embeds[0].Fields.Add(new EmbedField { Name = "Message", Value = DiscordUtils.Sanitize(reason) });
 
         return message;
+    }
+    
+    private void OnPluginEvent(EntryCar sender, PluginDataEventArgs args)
+    {
+        if (sender.Client == null) return;
+
+        string title;
+        switch (args.DataType)
+        {
+            case PluginDataType.Points:
+                title = $":joystick: Scored {args.Value} points";
+                break;
+            case PluginDataType.Time:
+                title = $":stopwatch: Time of {TimeSpan.FromMilliseconds(args.Value)}";
+                break;
+            case PluginDataType.EventWin:
+                title = ":trophy: Winner of Event";
+                break;
+            default:
+                return;
+        }
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                await PluginEventHook!.SendAsync(PrepareAuditMessage(
+                    title,
+                    _serverNameSanitized,
+                    sender.Client.Guid, 
+                    sender.Client.Name,
+                    $"Event {args.Name} from plugin {args.Plugin}",
+                    Color.Blue,
+                    null
+                ));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error in Discord webhook");
+            }
+        });
     }
 }

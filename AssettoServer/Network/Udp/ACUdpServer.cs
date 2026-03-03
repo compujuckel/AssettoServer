@@ -137,14 +137,15 @@ public class ACUdpServer : BackgroundService
                 }
                 else if (packetId == ACServerProtocol.PositionUpdate)
                 {
-                    // Pass checksum first before sending first update + welcome message.
+                    // Receive checksums first before sending first update + welcome message.
                     // Plugins might rely on checksums to generate CSP extra options
-                    if (client.ChecksumStatus != ChecksumStatus.Succeeded) return;
+                    if (client.ChecksumStatus == ChecksumStatus.Pending) return;
                     
+                    // Checksum kick only works after we sent the first update, so this must be reachable even if checksum failed already
                     if (!client.HasSentFirstUpdate)
                         client.SendFirstUpdate();
                     
-                    if (client.SecurityLevel < _configuration.Extra.MandatoryClientSecurityLevel) return;
+                    if (client.ChecksumStatus == ChecksumStatus.Failed || client.SecurityLevel < _configuration.Extra.MandatoryClientSecurityLevel) return;
 
                     car.UpdatePosition(packetReader.Read<PositionUpdateIn>());
                 }

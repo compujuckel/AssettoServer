@@ -217,17 +217,10 @@ public static class Program
                 && backgroundTask.IsCanceled
                 && aggregateException.InnerExceptions.All(e => e is TaskCanceledException))
             {
-                return;
+                continue;
             }
-
-            if (aggregateException.InnerExceptions.Count == 1)
-            {
-                exceptions.Add(aggregateException.InnerExceptions[0]);
-            }
-            else
-            {
-                exceptions.AddRange(aggregateException.InnerExceptions);
-            }
+            
+            exceptions.AddRange(aggregateException.InnerExceptions);
         }
         
         if (exceptions.Count == 0) return;

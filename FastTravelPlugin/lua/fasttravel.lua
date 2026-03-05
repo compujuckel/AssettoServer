@@ -118,6 +118,7 @@ local debugSpeed, debugOrigSpeed = table.clone(mapMoveSpeed), table.clone(mapMov
 
 local debugUseGroupDrawMode, debugOrigUseGroupDrawMode = config.useGroupDrawMode, config.useGroupDrawMode
 local debugDistanceModeRange, debugOrigDistanceModeRange = config.distanceModeRange, config.distanceModeRange
+local debugHideUntypedPoints, debugOrigHideUntypedPoints = config.hideUntypedPoints, config.hideUntypedPoints
 local debugOnlineExtra = nil
 local debugWindowOpen = false
 
@@ -321,6 +322,12 @@ local function window_FastTravelDebug()
 
         ui.tabItem("Point Display Settings", function()
 
+            if ui.checkbox("Hide Untyped Points", debugHideUntypedPoints) then
+                debugHideUntypedPoints = not debugHideUntypedPoints
+                config.hideUntypedPoints = debugHideUntypedPoints
+                getTeleports()
+            end
+
             if ui.checkbox("Use Group Draw Mode", debugUseGroupDrawMode) then
                 debugUseGroupDrawMode = not debugUseGroupDrawMode
                 config.useGroupDrawMode = debugUseGroupDrawMode
@@ -336,10 +343,9 @@ local function window_FastTravelDebug()
 
             ui.separator()
             if ui.button("Reset") then
-                debugUseGroupDrawMode = debugOrigUseGroupDrawMode
-                config.useGroupDrawMode = debugOrigUseGroupDrawMode
-                debugDistanceModeRange = debugOrigDistanceModeRange
-                config.distanceModeRange = debugOrigDistanceModeRange
+                debugHideUntypedPoints, config.hideUntypedPoints = debugOrigHideUntypedPoints, debugOrigHideUntypedPoints
+                debugUseGroupDrawMode, config.useGroupDrawMode = debugOrigUseGroupDrawMode, debugOrigUseGroupDrawMode
+                debugDistanceModeRange, config.distanceModeRange = debugOrigDistanceModeRange, debugOrigDistanceModeRange
             end
         end)
 

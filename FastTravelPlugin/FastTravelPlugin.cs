@@ -49,7 +49,6 @@ public class FastTravelPlugin : IHostedService
             ["mapMoveSpeeds"] = $"\"{JsonSerializer.Serialize(configuration.MapMoveSpeeds)}\"",
             ["showMapImg"] = configuration.ShowMapImage ? "true" : "false",
             ["disableCollisions"] = configuration.DisableCollisions ? "true" : "false",
-            ["useGroupInheritance"] = configuration.UseGroupInheritance ? "true" : "false",
             ["useGroupDrawMode"] = configuration.UseGroupDrawMode ? "true" : "false",
             ["distanceModeRange"] = configuration.DistanceModeRange
         });

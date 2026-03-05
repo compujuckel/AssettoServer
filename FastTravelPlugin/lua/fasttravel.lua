@@ -11,7 +11,7 @@ local config = ac.configValues({
     mapZoomValues = "",          -- { 100, 1000, 4000, 15000 },
     mapMoveSpeeds = "",          -- { 1, 5, 20, 0 },
     showMapImg = true,
-    useGroupInheritance = true,
+    hideUntypedPoints = false,
     useGroupDrawMode = true,
     distanceModeRange = 100
 })
@@ -31,17 +31,15 @@ local trackCompassOffset = 24 -- for SRP
 local font = 'Segoe UI'
 local fontBold = 'Segoe UI;Weight=Bold'
 
---c1xtz: read teleports from server options, requires 'POINT_<num>_TYPE = PA/ST' to be added to the teleports in csp_extra_options.ini to not show up as the default.
---c1xtz: additional custom types can be created as long as a corresponding 'mapicon_<type>.png' is in the images folder. example: 'POINT_1_TYPE = GS' & 'mapicon_gs.png' for a gas station type.
---c1xtz: points inside of group inherite the type of the point before, meaning if 'POINT_1_TYPE = PA' and POINT_2 is not specifically given a type, it will inherit the PA type from point 1.
---c1xtz: this makes it possible to have multiple types per group, although only the first point per unique type is shown (see tpdrawing:)
+--c1xtz: read teleports from server options, requires 'POINT_X_TYPE = PA/ST' to be added to the teleports in csp_extra_options.ini, otherwise they show up as the default.
+--c1xtz: additional custom types can be created as long as a corresponding 'mapicon_<type>.png' is in the wwwwroot folder. example: 'POINT_1_TYPE = GS' + 'mapicon_gs.png' for a gas station type.
 local extraOptions = ac.INIConfig.onlineExtras()
-local onlineTeleports, encounteredTypes = {}, {}
+local onlineTeleports = {}
 local defaultType = 'sp'
 
 local function getTeleports()
     if not extraOptions then return end
-    onlineTeleports, encounteredTypes = {}, {}
+    onlineTeleports = {}
     for _, points in extraOptions:iterateValues('TELEPORT_DESTINATIONS', 'POINT') do
         if points:match('_POS$') then
             local pointName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', ''), '')
@@ -49,12 +47,10 @@ local function getTeleports()
             local position = extraOptions:get('TELEPORT_DESTINATIONS', points, vec3())
             local heading = tonumber(extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_HEADING'), 0))
             local typeName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_TYPE'), ''):lower()
-            if typeName == '' then
-                typeName = (config.useGroupInheritance and encounteredTypes[groupName]) or defaultType
-            else
-                if config.useGroupInheritance then encounteredTypes[groupName] = typeName end
+            if typeName == '' and not config.hideUntypedPoints then typeName = defaultType end
+            if typeName ~= '' then
+                table.insert(onlineTeleports, { typeName, groupName, position, heading, pointName })
             end
-            table.insert(onlineTeleports, { typeName, groupName, position, heading, pointName })
         end
     end
 end
@@ -119,9 +115,10 @@ local debugPos = mapFixedTargetPosition:clone()
 local debugOrigPos = mapFixedTargetPosition:clone()
 local debugZoom, debugOrigZoom = table.clone(mapZoomValue), table.clone(mapZoomValue)
 local debugSpeed, debugOrigSpeed = table.clone(mapMoveSpeed), table.clone(mapMoveSpeed)
-local debugUseGroupInheritance, debugOrigUseGroupInheritance = config.useGroupInheritance, config.useGroupInheritance
+
 local debugUseGroupDrawMode, debugOrigUseGroupDrawMode = config.useGroupDrawMode, config.useGroupDrawMode
 local debugDistanceModeRange, debugOrigDistanceModeRange = config.distanceModeRange, config.distanceModeRange
+local debugHideUntypedPoints, debugOrigHideUntypedPoints = config.hideUntypedPoints, config.hideUntypedPoints
 local debugOnlineExtra = nil
 local debugWindowOpen = false
 
@@ -324,9 +321,10 @@ local function window_FastTravelDebug()
         end)
 
         ui.tabItem("Point Display Settings", function()
-            if ui.checkbox("Use Group Inheritance", debugUseGroupInheritance) then
-                debugUseGroupInheritance = not debugUseGroupInheritance
-                config.useGroupInheritance = debugUseGroupInheritance
+
+            if ui.checkbox("Hide Untyped Points", debugHideUntypedPoints) then
+                debugHideUntypedPoints = not debugHideUntypedPoints
+                config.hideUntypedPoints = debugHideUntypedPoints
                 getTeleports()
             end
 
@@ -335,21 +333,19 @@ local function window_FastTravelDebug()
                 config.useGroupDrawMode = debugUseGroupDrawMode
             end
 
-            local rangeValue, rangeChanged = ui.slider("##distanceRange", debugDistanceModeRange, 1, 1000, "Distance Mode Range: %.0f")
-            if rangeChanged then
-                debugDistanceModeRange = rangeValue
-                config.distanceModeRange = debugDistanceModeRange
+            if not debugUseGroupDrawMode then 
+                local rangeValue, rangeChanged = ui.slider("##distanceRange", debugDistanceModeRange, 1, 1000, "Distance Mode Range: %.0f")
+                if rangeChanged then
+                    debugDistanceModeRange = rangeValue
+                    config.distanceModeRange = debugDistanceModeRange
+                end
             end
 
             ui.separator()
             if ui.button("Reset") then
-                debugUseGroupInheritance = debugOrigUseGroupInheritance
-                config.useGroupInheritance = debugOrigUseGroupInheritance
-                debugUseGroupDrawMode = debugOrigUseGroupDrawMode
-                config.useGroupDrawMode = debugOrigUseGroupDrawMode
-                debugDistanceModeRange = debugOrigDistanceModeRange
-                config.distanceModeRange = debugOrigDistanceModeRange
-                getTeleports()
+                debugHideUntypedPoints, config.hideUntypedPoints = debugOrigHideUntypedPoints, debugOrigHideUntypedPoints
+                debugUseGroupDrawMode, config.useGroupDrawMode = debugOrigUseGroupDrawMode, debugOrigUseGroupDrawMode
+                debugDistanceModeRange, config.distanceModeRange = debugOrigDistanceModeRange, debugOrigDistanceModeRange
             end
         end)
 
@@ -369,7 +365,6 @@ local function window_FastTravelDebug()
             exportConfig[#exportConfig + 1] = "- " .. math.round(mapFixedTargetPosition.y)
             exportConfig[#exportConfig + 1] = "- " .. math.round(mapFixedTargetPosition.z)
             exportConfig[#exportConfig + 1] = "RequireCollisionDisable: " .. tostring(config.disableCollisions)
-            exportConfig[#exportConfig + 1] = "UseGroupInheritance: " .. tostring(config.useGroupInheritance)
             exportConfig[#exportConfig + 1] = "UseGroupDrawMode: " .. tostring(config.useGroupDrawMode)
             exportConfig[#exportConfig + 1] = "DistanceModeRange: " .. math.round(config.distanceModeRange)
             ac.setClipboardText(table.concat(exportConfig, "\n"))
@@ -440,7 +435,6 @@ function script.drawUI(dt)
                 map_opacity = 0
             end
 
-            --c1xtz: tpdrawing: if config.useGroupDrawMode is true, only draws the first point of each unique type per group, otherwise only draw the first icon of each type based on config.distanceModeRange distance.
             hoverMark = -1
             local selected = {}
             local displayedPoints = {}
@@ -453,6 +447,7 @@ function script.drawUI(dt)
                     local picked = false
 
                     if mapZoom > 2 then
+                        --c1xtz: if config.useGroupDrawMode is true, only draws the first point of each unique type per group, otherwise only draw the first icon of each type based on config.distanceModeRange distance.
                         if config.useGroupDrawMode then
                             local group = teleport[2]
                             displayedPoints[group] = displayedPoints[group] or {}
@@ -488,13 +483,13 @@ function script.drawUI(dt)
                 end
             end
 
-            --c1xtz: draw order stuff, making sure POINT_1 would be drawn ABOVE POINT_2
+            --c1xtz: draw order fixing, making sure POINT_1 would be drawn ABOVE POINT_2
             for i = #selected, 1, -1 do
                 local point = selected[i]
                 ui.drawImage(baseUrl .. 'mapicon_' .. point.teleport[1] .. '.png', point.screenPos - vec2(40, 40), point.screenPos + vec2(40, 40))
             end
 
-            --c1xtz: draw order stuff 2, making sure that when hovering over a teleport icon while zooming in the mouse keeps sticking to the hovered point
+            --c1xtz: more draw order fixing, making sure that when hovering over a teleport icon while zooming in the mouse keeps sticking to the hovered point
             for i = 1, #selected do
                 local point = selected[i]
                 if mp > point.screenPos - vec2(30, 30) and mp < point.screenPos + vec2(30, 30) then

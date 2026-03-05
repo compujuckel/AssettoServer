@@ -18,6 +18,7 @@ public class FastTravelModule : AssettoServerModule<FastTravelConfiguration>
         MapMoveSpeeds = [1, 2, 3, 0],
         ShowMapImage = false,
         MapFixedTargetPosition = [0, 0, 0],
+        HideUntypedPoints = false,
         UseGroupDrawMode = true,
         DistanceModeRange = 100
     };

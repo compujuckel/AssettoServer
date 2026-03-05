@@ -11,6 +11,7 @@ local config = ac.configValues({
     mapZoomValues = "",          -- { 100, 1000, 4000, 15000 },
     mapMoveSpeeds = "",          -- { 1, 5, 20, 0 },
     showMapImg = true,
+    hideUntypedPoints = false,
     useGroupDrawMode = true,
     distanceModeRange = 100
 })
@@ -46,8 +47,10 @@ local function getTeleports()
             local position = extraOptions:get('TELEPORT_DESTINATIONS', points, vec3())
             local heading = tonumber(extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_HEADING'), 0))
             local typeName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_TYPE'), ''):lower()
-            if typeName == '' then typeName = defaultType end
-            table.insert(onlineTeleports, { typeName, groupName, position, heading, pointName })
+            if typeName == '' and not config.hideUntypedPoints then typeName = defaultType end
+            if typeName ~= '' then
+                table.insert(onlineTeleports, { typeName, groupName, position, heading, pointName })
+            end
         end
     end
 end

@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Blacklist;
+using AssettoServer.Server.Checksum;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Whitelist;
 using AssettoServer.Shared.Network.Packets.Outgoing;
@@ -305,7 +306,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
     public async Task StartingAsync(CancellationToken cancellationToken)
     {
         _entryCarManager.Initialize();
-        _checksumManager.Initialize();
+        await _checksumManager.Initialize();
         await _geoParamsManager.InitializeAsync();
     }
 

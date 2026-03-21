@@ -25,6 +25,8 @@ public static class ReferenceConfigurationHelper
 
         var builder = new SerializerBuilder()
             .WithEventEmitter(next => new YamlFlowStyleEmitter<Vector3>(next))
+            .WithEmissionPhaseObjectGraphVisitor(args => new YamlNoRepeatingCommentsGraphVisitor(args.InnerVisitor))
+            .WithoutEmissionPhaseObjectGraphVisitor<CommentsObjectGraphVisitor>()
             .WithoutEmissionPhaseObjectGraphVisitor<DefaultValuesObjectGraphVisitor>()
             .Build();
             

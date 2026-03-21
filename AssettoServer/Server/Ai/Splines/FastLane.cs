@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace AssettoServer.Server.Ai.Splines;
+﻿namespace AssettoServer.Server.Ai.Splines;
 
 public class FastLane
 {

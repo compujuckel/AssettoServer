@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 
 namespace AssettoServer.Server;

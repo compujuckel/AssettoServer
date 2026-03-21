@@ -1,6 +1,5 @@
 ﻿using System;
 using AssettoServer.Server;
-using AssettoServer.Shared.Network.Packets.Shared;
 using Qmmands;
 using Serilog;
 

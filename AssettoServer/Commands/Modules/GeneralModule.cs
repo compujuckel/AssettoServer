@@ -8,7 +8,6 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using AssettoServer.Utils;
 using JetBrains.Annotations;
-using Serilog;
 
 namespace AssettoServer.Commands.Modules;
 

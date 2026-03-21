@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using AssettoServer.Server.Configuration.Kunos;
 using AssettoServer.Shared.Model;
 

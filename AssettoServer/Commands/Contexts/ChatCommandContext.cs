@@ -1,7 +1,6 @@
 ﻿using System;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using AssettoServer.Shared.Network.Packets.Shared;
 
 namespace AssettoServer.Commands.Contexts;
 

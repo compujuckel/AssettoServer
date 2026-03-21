@@ -5,7 +5,6 @@ using System.IO;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
-using AssettoServer.Server;
 using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Utils;

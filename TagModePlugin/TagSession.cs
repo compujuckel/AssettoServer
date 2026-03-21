@@ -1,6 +1,5 @@
 ﻿using System.Drawing;
 using AssettoServer.Server;
-using Microsoft.Net.Http.Headers;
 using Serilog;
 
 namespace TagModePlugin;

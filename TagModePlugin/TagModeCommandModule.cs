@@ -1,7 +1,6 @@
 ﻿using AssettoServer.Commands;
 using AssettoServer.Commands.Attributes;
 using AssettoServer.Network.Tcp;
-using AssettoServer.Server;
 using Qmmands;
 
 namespace TagModePlugin;

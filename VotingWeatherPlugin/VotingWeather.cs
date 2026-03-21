@@ -14,8 +14,8 @@ public class VotingWeather : BackgroundService
     private readonly EntryCarManager _entryCarManager;
     private readonly VotingWeatherConfiguration _configuration;
     private readonly List<WeatherFxType> _weathers;
-    private readonly List<ACTcpClient> _alreadyVoted = new();
-    private readonly List<WeatherChoice> _availableWeathers = new();
+    private readonly List<ACTcpClient> _alreadyVoted = [];
+    private readonly List<WeatherChoice> _availableWeathers = [];
 
     private bool _votingOpen = false;
 

@@ -58,7 +58,7 @@ public class CSPClientMessageHandler
 
                     if (_configuration.Extra.DebugClientMessages)
                     {
-                        Log.Verbose("UDP client message received from {ClientName} ({SessionId}), type {Type}, data {Data}",
+                        sender.Logger.Verbose("UDP client message received from {ClientName} ({SessionId}), type {Type}, data {Data}",
                             sender.Name, sender.SessionId, packetType, clientMessage.Data);
                     }
 

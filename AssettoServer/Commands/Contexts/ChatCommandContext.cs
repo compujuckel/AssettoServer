@@ -6,9 +6,9 @@ namespace AssettoServer.Commands.Contexts;
 
 public class ChatCommandContext(
         ACTcpClient client,
-        EntryCarManager entryEntryCarManager,
+        EntryCarManager entryCarManager,
         IServiceProvider? serviceProvider = null)
-    : BaseCommandContext(entryEntryCarManager, serviceProvider)
+    : BaseCommandContext(entryCarManager, serviceProvider)
 {
     public ACTcpClient Client { get; } = client;
 

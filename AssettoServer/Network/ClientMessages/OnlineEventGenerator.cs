@@ -48,7 +48,7 @@ internal static class OnlineEventGenerator
             }
         }
 
-        var hash = CSPXxHash3.Hash64(stream.ToArray());
+        var hash = CSPXxHash3.Hash64(stream.GetSpan());
         return (uint)hash ^ (uint)(hash >> 32);
     }
 

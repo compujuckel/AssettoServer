@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Numerics;
 using AssettoServer.Utils;
+using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.ObjectGraphVisitors;
 
@@ -24,6 +25,7 @@ public static class ReferenceConfigurationHelper
         writer.WriteLine();
 
         var builder = new SerializerBuilder()
+            .WithDefaultScalarStyle(ScalarStyle.DoubleQuoted)
             .WithEventEmitter(next => new YamlFlowStyleEmitter<Vector3>(next))
             .WithEmissionPhaseObjectGraphVisitor(args => new YamlNoRepeatingCommentsGraphVisitor(args.InnerVisitor))
             .WithoutEmissionPhaseObjectGraphVisitor<CommentsObjectGraphVisitor>()

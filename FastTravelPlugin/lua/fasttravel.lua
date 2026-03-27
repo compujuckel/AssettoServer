@@ -331,6 +331,7 @@ local function window_FastTravelDebug()
             if ui.checkbox("Use Group Draw Mode", debugUseGroupDrawMode) then
                 debugUseGroupDrawMode = not debugUseGroupDrawMode
                 config.useGroupDrawMode = debugUseGroupDrawMode
+                getTeleports()
             end
 
             if not debugUseGroupDrawMode then 
@@ -346,6 +347,7 @@ local function window_FastTravelDebug()
                 debugHideUntypedPoints, config.hideUntypedPoints = debugOrigHideUntypedPoints, debugOrigHideUntypedPoints
                 debugUseGroupDrawMode, config.useGroupDrawMode = debugOrigUseGroupDrawMode, debugOrigUseGroupDrawMode
                 debugDistanceModeRange, config.distanceModeRange = debugOrigDistanceModeRange, debugOrigDistanceModeRange
+                getTeleports()
             end
         end)
 

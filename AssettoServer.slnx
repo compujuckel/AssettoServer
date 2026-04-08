@@ -1,0 +1,24 @@
+﻿<Solution>
+  <Project Path="AssettoServer.Shared\AssettoServer.Shared.csproj" />
+  <Project Path="AssettoServer.Tests\AssettoServer.Tests.csproj" />
+  <Project Path="AssettoServer\AssettoServer.csproj" />
+  <Project Path="AutoModerationPlugin\AutoModerationPlugin.csproj" />
+  <Project Path="CustomCommandPlugin\CustomCommandPlugin.csproj" />
+  <Project Path="DiscordAuditPlugin\DiscordAuditPlugin.csproj" />
+  <Project Path="FastLaneUtils\FastLaneUtils.csproj" />
+  <Project Path="FastTravelPlugin\FastTravelPlugin.csproj" />
+  <Project Path="GeoIPPlugin\GeoIPPlugin.csproj" />
+  <Project Path="LiveWeatherPlugin\LiveWeatherPlugin.csproj" />
+  <Project Path="RaceChallengePlugin\RaceChallengePlugin.csproj" />
+  <Project Path="RandomWeatherPlugin\RandomWeatherPlugin.csproj" />
+  <Project Path="ReplayPlugin\ReplayPlugin.csproj">
+    <Build Project="false" />
+  </Project>
+  <Project Path="ReportPlugin\ReportPlugin.csproj" />
+  <Project Path="SamplePlugin\SamplePlugin.csproj" />
+  <Project Path="TagModePlugin\TagModePlugin.csproj" />
+  <Project Path="TimeDilationPlugin\TimeDilationPlugin.csproj" />
+  <Project Path="VotingPresetPlugin\VotingPresetPlugin.csproj" />
+  <Project Path="VotingWeatherPlugin\VotingWeatherPlugin.csproj" />
+  <Project Path="WordFilterPlugin\WordFilterPlugin.csproj" />
+</Solution>

@@ -4,18 +4,17 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AssettoServer.Network.Tcp;
 
-public class ACTcpServer : CriticalBackgroundService
+public class ACTcpServer : BackgroundService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly Func<TcpClient, ACTcpClient> _acTcpClientFactory;
 
-    public ACTcpServer(Func<TcpClient, ACTcpClient> acTcpClientFactory, ACServerConfiguration configuration, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public ACTcpServer(Func<TcpClient, ACTcpClient> acTcpClientFactory, ACServerConfiguration configuration)
     {
         _acTcpClientFactory = acTcpClientFactory;
         _configuration = configuration;

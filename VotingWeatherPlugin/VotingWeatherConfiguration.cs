@@ -16,6 +16,9 @@ public class VotingWeatherConfiguration : IValidateConfiguration<VotingWeatherCo
     public int VotingIntervalMinutes { get; init; } = 10;
     [YamlMember(Description = "How long the vote stays open")]
     public int VotingDurationSeconds { get; init; } = 30;
+    
+    [YamlMember(Description = "Should the weather be kept when no vote has been counted")]
+    public bool KeepWeatherOnNoVotes { get; init; } = false;
 
     [YamlIgnore] public int VotingIntervalMilliseconds => VotingIntervalMinutes * 60_000;
     [YamlIgnore] public int VotingDurationMilliseconds => VotingDurationSeconds * 1000;

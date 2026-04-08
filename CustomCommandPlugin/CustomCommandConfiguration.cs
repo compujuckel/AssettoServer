@@ -1,5 +1,4 @@
-﻿using AssettoServer.Server.Configuration;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using YamlDotNet.Serialization;
 
 namespace CustomCommandPlugin;

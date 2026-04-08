@@ -1,9 +1,7 @@
 ﻿using FluentValidation;
-using JetBrains.Annotations;
 
 namespace VotingPresetPlugin;
 
-[UsedImplicitly]
 public class VotingPresetConfigurationValidator : AbstractValidator<VotingPresetConfiguration>
 {
     public VotingPresetConfigurationValidator()

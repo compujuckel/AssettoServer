@@ -1,13 +1,11 @@
-﻿using AssettoServer.Server.Plugin;
-using AssettoServer.Shared.Services;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace SamplePlugin;
 
-public class Sample : CriticalBackgroundService, IAssettoServerAutostart
+public class Sample : BackgroundService
 {
-    public Sample(SampleConfiguration configuration, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public Sample(SampleConfiguration configuration)
     {
         Log.Debug("Sample plugin constructor called! Hello: {Hello}", configuration.Hello);
     }

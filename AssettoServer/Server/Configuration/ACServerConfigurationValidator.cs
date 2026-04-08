@@ -62,6 +62,7 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
             server.RuleFor(s => s.KickQuorum).InclusiveBetween((ushort)0, (ushort)90);
             server.RuleFor(s => s.VotingQuorum).InclusiveBetween((ushort)0, (ushort)100);
             server.RuleFor(s => s.QualifyMaxWait).GreaterThanOrEqualTo((ushort)100);
+            server.RuleFor(s => s.ResultScreenTime).GreaterThanOrEqualTo(1);
 
             server.RuleForEach(s => s.Weathers).ChildRules(weather =>
             {

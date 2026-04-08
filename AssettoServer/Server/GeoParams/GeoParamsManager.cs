@@ -27,7 +27,6 @@ public class GeoParamsManager
             if (ret != null)
             {
                 GeoParams = ret;
-                Log.Information("Server invite link: {ServerInviteLink}", $"https://acstuff.club/s/q:race/online/join?ip={GeoParams.Ip}&httpPort={_configuration.Server.HttpPort}");
             }
         }
         catch (TaskCanceledException) { }

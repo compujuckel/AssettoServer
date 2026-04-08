@@ -1,15 +1,13 @@
 ﻿using System.Globalization;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
-using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace TimeDilationPlugin;
 
-public class TimeDilationPlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class TimeDilationPlugin : BackgroundService
 {
     private readonly WeatherManager _weatherManager;
     private readonly ACServerConfiguration _serverConfiguration;
@@ -17,8 +15,7 @@ public class TimeDilationPlugin : CriticalBackgroundService, IAssettoServerAutos
 
     public TimeDilationPlugin(TimeDilationConfiguration configuration,
         WeatherManager weatherManager,
-        ACServerConfiguration serverConfiguration,
-        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+        ACServerConfiguration serverConfiguration)
     {
         _weatherManager = weatherManager;
         _serverConfiguration = serverConfiguration;

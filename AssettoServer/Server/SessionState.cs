@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using AssettoServer.Server.Configuration.Kunos;
 using AssettoServer.Shared.Model;
 
@@ -16,7 +15,7 @@ public class SessionState
     public uint TargetLap { get; set; } = 0;
     public uint LeaderLapCount { get; set; } = 0;
     public bool LeaderHasCompletedLastLap { get; set; } = false;
-    public bool IsCutoffReached => _timeSource.ServerTimeMilliseconds > StartTimeMilliseconds - 20_000;
+    public bool IsCutoffReached => _timeSource.ServerTimeMilliseconds > StartTimeMilliseconds - Math.Max(30_000, Configuration.WaitTime * 1000);
 
     public bool SessionOverFlag => Configuration switch
     {

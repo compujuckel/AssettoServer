@@ -4,15 +4,11 @@ using System.Reflection;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
-using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
-using Serilog;
-using TagModePlugin.Packets;
 
 namespace TagModePlugin;
 
-public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class TagModePlugin : BackgroundService
 {
     private const int MinPlayers = 2;
     
@@ -33,9 +29,7 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
         EntryCarManager entryCarManager,
         Func<EntryCar, EntryCarTagMode> entryCarTagModeFactory,
         TagSession.Factory sessionFactory,
-        CSPServerScriptProvider scriptProvider,
-        CSPClientMessageTypeManager clientMessageTypeManager,
-        IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+        CSPServerScriptProvider scriptProvider)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;
@@ -54,10 +48,7 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
             throw new ConfigurationException("TagModePlugin requires enabled client messages");
         }
 
-        using var streamReader = new StreamReader(Assembly.GetExecutingAssembly()
-                .GetManifestResourceStream("TagModePlugin.lua.tagmode.lua")!);
-        var reconnectScript = streamReader.ReadToEnd();
-        scriptProvider.AddScript(reconnectScript, "tagmode.lua");
+        scriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("TagModePlugin.lua.tagmode.lua")!, "tagmode.lua");
         
         TaggedColor = ColorTranslator.FromHtml(_configuration.TaggedColor);
         RunnerColor = ColorTranslator.FromHtml(_configuration.RunnerColor);
@@ -73,7 +64,7 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
     private void OnCollision(ACTcpClient sender, CollisionEventArgs args)
         => Instances[sender.SessionId].OnCollision(args);
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public override async Task StartAsync(CancellationToken cancellationToken)
     {
         if (_entryCarManager.EntryCars.Any(entryCar => entryCar.DriverOptionsFlags.HasFlag(DriverOptionsFlags.AllowColorChange)))
         {
@@ -84,7 +75,12 @@ public class TagModePlugin : CriticalBackgroundService, IAssettoServerAutostart
         {
             Instances.Add(entryCar.SessionId, _entryCarTagModeFactory(entryCar));
         }
-
+        
+        await base.StartAsync(cancellationToken);
+    }
+    
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
         if (!_configuration.EnableLoop) return;
 
         while (!stoppingToken.IsCancellationRequested)

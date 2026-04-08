@@ -29,7 +29,7 @@ public struct PacketWriter
         _writePosition = 0;
     }
 
-    public int WritePacket<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket
+    public int WritePacket<TPacket>(in TPacket packet) where TPacket : IOutgoingNetworkPacket, allows ref struct
     {
         packet.ToWriter(ref this);
         return _writePosition;

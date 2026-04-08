@@ -1,9 +1,7 @@
 ﻿using FluentValidation;
-using JetBrains.Annotations;
 
 namespace TimeDilationPlugin;
 
-[UsedImplicitly]
 public class TimeDilationConfigurationValidator : AbstractValidator<TimeDilationConfiguration>
 {
     public TimeDilationConfigurationValidator()

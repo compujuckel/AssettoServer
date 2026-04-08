@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using AssettoServer.Utils;
-using CommunityToolkit.Mvvm.ComponentModel;
 using JetBrains.Annotations;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
@@ -13,10 +12,10 @@ using YamlDotNet.Serialization;
 namespace AssettoServer.Server.Configuration.Extra;
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
-public partial class ACExtraConfiguration : ObservableObject
+public class ACExtraConfiguration
 {
     [YamlMember(Description = "Override minimum CSP version required to join this server. Leave this empty to not require CSP.")]
-    public uint? MinimumCSPVersion { get; init; } = CSPVersion.V0_1_77;
+    public uint? MinimumCSPVersion { get; init; } = CSPVersion.V0_2_0;
     [YamlMember(Description = "Enable Steam ticket validation. Requires CSP 0.1.75+ and a recent version of Content Manager")]
     public bool UseSteamAuth { get; init; } = false;
     [YamlMember(Description = "Enable generation of Guid from name instead of SteamID. Required for ACPro", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
@@ -25,7 +24,7 @@ public partial class ACExtraConfiguration : ObservableObject
     public string? SteamWebApiKey { get; init; }
     [YamlMember(Description = "List of DLC App IDs that are required to join. Steam auth must be enabled. Possible values: https://steamdb.info/app/244210/dlc/")]
     public List<int> ValidateDlcOwnership { get; init; } = [];
-    [YamlMember(Description = "Enable protection against cheats/hacks. 0 = No protection. 1 = Block all public cheats as of 2023-11-18 (ClientSecurityPlugin and CSP 0.2.0+ required)")]
+    [YamlMember(Description = "Enable protection against cheats/hacks. 0 = No protection. 1 = Block all public cheats as of 2023-11-18 (ClientSecurityPlugin and CSP 0.2.0+ required)", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public int MandatoryClientSecurityLevel { get; internal set; }
     [YamlMember(Description = "Force headlights on for all cars")]
     public bool ForceLights { get; set; }
@@ -68,10 +67,10 @@ public partial class ACExtraConfiguration : ObservableObject
     [YamlMember(Description = "Enable CSP client messages feature. Requires CSP 0.1.77+")]
     public bool EnableClientMessages { get; init; } = true;
     [YamlMember(Description = "Enable CSP UDP client messages feature. Required for VR head/hand syncing. Requires CSP 0.2.0+")]
-    public bool EnableUdpClientMessages { get; init; } = false;
+    public bool EnableUdpClientMessages { get; init; } = true;
     [YamlMember(Description = "Log unknown CSP Lua client messages / online events", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool DebugClientMessages { get; set; } = false;
-    [YamlMember(Description = "Enable CSP custom position updates. This is an improved version of batched position updates, reducing network traffic even further. CSP 0.1.77+ required")]
+    [YamlMember(Description = "Enable CSP custom position updates. This is an improved version of batched position updates, reducing network traffic even further. Requires CSP 0.1.77+")]
     public bool EnableCustomUpdate { get; set; } = true;
     [YamlMember(Description = "Maximum time a player can spend on the loading screen before being disconnected")]
     public int PlayerLoadingTimeoutMinutes { get; set; } = 10;
@@ -85,7 +84,7 @@ public partial class ACExtraConfiguration : ObservableObject
     public bool DebugWelcomeMessage { get; init; } = false;
     [YamlMember(Description = "Server scripts for this user group will be loaded locally and script checksums disabled. For debug purposes only.", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public string? DebugScriptUserGroup { get; init; }
-    [YamlMember(Description = "Force clients to use track params (coordinates, time zone) specified on the server. CSP 0.1.79+ required")]
+    [YamlMember(Description = "Force clients to use track params (coordinates, time zone) specified on the server. Requires CSP 0.1.79+")]
     public bool ForceServerTrackParams { get; init; } = false;
     [YamlMember(Description = "Allow cars to have multiple data checksums. Instead of a single checksummed data.acd, you can have multiple data*.acd files in the car folder and players can join with any of these files")]
     public bool EnableAlternativeCarChecksums { get; init; } = false;
@@ -128,7 +127,10 @@ public partial class ACExtraConfiguration : ObservableObject
     public void ToStream(StreamWriter writer)
     {
         var builder = new SerializerBuilder();
-        builder.Build().Serialize(writer, this);
+        builder
+            .WithEventEmitter(next => new YamlFlowStyleEmitter<Vector3>(next))
+            .Build()
+            .Serialize(writer, this);
     }
         
     public static ACExtraConfiguration FromFile(string path)

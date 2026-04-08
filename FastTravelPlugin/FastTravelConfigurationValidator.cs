@@ -1,9 +1,7 @@
 ﻿using FluentValidation;
-using JetBrains.Annotations;
 
 namespace FastTravelPlugin;
 
-[UsedImplicitly]
 public class FastTravelConfigurationValidator : AbstractValidator<FastTravelConfiguration>
 {
     public FastTravelConfigurationValidator()
@@ -15,7 +13,7 @@ public class FastTravelConfigurationValidator : AbstractValidator<FastTravelConf
             .Equal(cfg => cfg.MapZoomValues.Count)
             .WithMessage("MapMoveSpeeds and MapZoomValues must contain the same number of values");
         RuleFor(cfg => cfg.MapZoomValues)
-            .Must(x =>x.SequenceEqual(x.Order().ToList()))
+            .Must(x => x.SequenceEqual(x.Order().ToList()))
             .WithMessage("Values should not be lower than previous ones");
         RuleFor(cfg => cfg.MapMoveSpeeds)
             .Must(x => x[..^1].SequenceEqual(x[..^1].Order().ToList()))
@@ -23,5 +21,8 @@ public class FastTravelConfigurationValidator : AbstractValidator<FastTravelConf
         RuleFor(cfg => cfg.MapMoveSpeeds)
             .Must(x => x.Last() == 0)
             .WithMessage("Last Move Speed Value must be 0");
+        RuleFor(cfg => cfg.DistanceModeRange)
+            .GreaterThan(0)
+            .WithMessage("DistanceModeRange must be greater than 0");
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using AssettoServer.Server.Configuration.Extra;
@@ -334,7 +335,9 @@ public partial class ACServerConfiguration
                 }
                 else
                 {
-                    var serializer = new SerializerBuilder().Build();
+                    var serializer = new SerializerBuilder()
+                        .WithEventEmitter(next => new YamlFlowStyleEmitter<Vector3>(next))
+                        .Build();
                     using var file = File.CreateText(configPath);
                     ConfigurationSchemaGenerator.WriteModeLine(file, BaseFolder, schemaPath);
                     var configObj = Activator.CreateInstance(plugin.ConfigurationType)!;

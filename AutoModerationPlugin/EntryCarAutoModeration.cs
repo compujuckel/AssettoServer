@@ -6,9 +6,7 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
-using AssettoServer.Shared.Network.Packets.Shared;
 using AutoModerationPlugin.Packets;
-using Serilog;
 
 namespace AutoModerationPlugin;
 

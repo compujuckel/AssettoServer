@@ -52,7 +52,7 @@ public static partial class CSPServerExtraOptionsParser
             d.Write(data);
         }
         
-        return m.GetBuffer().AsMemory(0, (int)m.Position);
+        return m.GetMemory();
     }
     
     private static string DecompressZlib(byte[] data)
@@ -64,6 +64,6 @@ public static partial class CSPServerExtraOptionsParser
             d.CopyTo(output);
         }
         
-        return Encoding.UTF8.GetString(output.GetBuffer().AsSpan(0, (int)output.Position));
+        return Encoding.UTF8.GetString(output.GetSpan());
     }
 }

@@ -1,9 +1,7 @@
 ﻿using FluentValidation;
-using JetBrains.Annotations;
 
 namespace LiveWeatherPlugin;
 
-[UsedImplicitly]
 public class LiveWeatherConfigurationValidator : AbstractValidator<LiveWeatherConfiguration>
 {
     public LiveWeatherConfigurationValidator()

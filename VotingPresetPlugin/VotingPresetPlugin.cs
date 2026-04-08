@@ -3,9 +3,6 @@ using AssettoServer.Commands.Contexts;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
-using AssettoServer.Shared.Network.Packets.Shared;
-using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -13,15 +10,15 @@ using VotingPresetPlugin.Preset;
 
 namespace VotingPresetPlugin;
 
-public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class VotingPresetPlugin : BackgroundService
 {
     private readonly EntryCarManager _entryCarManager;
     private readonly PresetManager _presetManager;
     private readonly VotingPresetConfiguration _configuration;
     
     private readonly List<PresetType> _votePresets;
-    private readonly List<ACTcpClient> _alreadyVoted = new();
-    private readonly List<PresetChoice> _availablePresets = new();
+    private readonly List<ACTcpClient> _alreadyVoted = [];
+    private readonly List<PresetChoice> _availablePresets = [];
     private bool _votingOpen = false;
     
     private readonly List<PresetType> _adminPresets;
@@ -29,7 +26,7 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
     private bool _voteStarted = false;
     private int _extendVotingSeconds = 0;
     private short _finishVote = 0;
-    private CancellationToken _cancellationToken = default;
+    private CancellationToken _cancellationToken = CancellationToken.None;
 
     private class PresetChoice
     {
@@ -42,9 +39,8 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
         ACServerConfiguration acServerConfiguration,
         EntryCarManager entryCarManager,
         PresetManager presetManager,
-        IHostApplicationLifetime applicationLifetime,
         CSPServerScriptProvider scriptProvider,
-        CSPFeatureManager cspFeatureManager) : base(applicationLifetime)
+        CSPFeatureManager cspFeatureManager)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;
@@ -66,10 +62,7 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
         
         if (acServerConfiguration.Extra.EnableClientMessages && _configuration.EnableReconnect)
         {
-            using var streamReader = new StreamReader(Assembly.GetExecutingAssembly()
-                .GetManifestResourceStream("VotingPresetPlugin.lua.reconnectclient.lua")!);
-            var reconnectScript = streamReader.ReadToEnd();
-            scriptProvider.AddScript(reconnectScript, "reconnectclient.lua");
+            scriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("VotingPresetPlugin.lua.reconnectclient.lua")!, "reconnectclient.lua");
             
             cspFeatureManager.Add(new CSPFeature { Name = "FREQUENT_TRACK_CHANGES" });
         }
@@ -88,9 +81,7 @@ public class VotingPresetPlugin : CriticalBackgroundService, IAssettoServerAutos
                 if (_configuration.EnableVote)
                     await VotingAsync(stoppingToken);
             }
-            catch (TaskCanceledException)
-            {
-            }
+            catch (TaskCanceledException) { }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error during voting preset update");

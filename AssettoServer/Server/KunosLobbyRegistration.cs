@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Shared.Services;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Polly;
@@ -13,14 +12,14 @@ using Serilog;
 
 namespace AssettoServer.Server;
 
-public class KunosLobbyRegistration : CriticalBackgroundService
+public class KunosLobbyRegistration : BackgroundService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly HttpClient _httpClient;
 
-    public KunosLobbyRegistration(ACServerConfiguration configuration, SessionManager sessionManager, EntryCarManager entryCarManager, HttpClient httpClient, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public KunosLobbyRegistration(ACServerConfiguration configuration, SessionManager sessionManager, EntryCarManager entryCarManager, HttpClient httpClient)
     {
         _configuration = configuration;
         _sessionManager = sessionManager;

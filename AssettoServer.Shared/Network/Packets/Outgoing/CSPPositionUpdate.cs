@@ -1,6 +1,6 @@
 ﻿namespace AssettoServer.Shared.Network.Packets.Outgoing;
 
-public readonly struct CSPPositionUpdate : IOutgoingNetworkPacket
+public readonly ref struct CSPPositionUpdate : IOutgoingNetworkPacket
 {
     public const string CustomUpdateFormat = @"packet:
   group:
@@ -23,9 +23,9 @@ public readonly struct CSPPositionUpdate : IOutgoingNetworkPacket
     gas: byte, /255
     performanceDelta: short";
     
-    public readonly ArraySegment<PositionUpdateOut> Updates;
+    public readonly ReadOnlySpan<PositionUpdateOut> Updates;
 
-    public CSPPositionUpdate(ArraySegment<PositionUpdateOut> updates)
+    public CSPPositionUpdate(ReadOnlySpan<PositionUpdateOut> updates)
     {
         Updates = updates;
     }
@@ -34,8 +34,8 @@ public readonly struct CSPPositionUpdate : IOutgoingNetworkPacket
     {
         writer.Write((byte)ACServerProtocol.Extended);
         writer.Write((byte)CSPMessageTypeUdp.CustomUpdate);
-        writer.Write((byte)Updates.Count);
-        for (int i = 0; i < Updates.Count; i++)
+        writer.Write((byte)Updates.Length);
+        for (int i = 0; i < Updates.Length; i++)
         {
             Updates[i].ToWriterCustom(ref writer);
         }

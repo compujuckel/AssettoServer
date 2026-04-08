@@ -1,10 +1,7 @@
 ﻿using System.Reflection;
-using System.Runtime.InteropServices;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
-using AssettoServer.Server.Plugin;
 using AssettoServer.Server.Weather;
-using AssettoServer.Shared.Services;
 using AssettoServer.Shared.Weather;
 using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
@@ -15,42 +12,41 @@ using Serilog;
 
 namespace ReplayPlugin;
 
-public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
+public class ReplayPlugin : IHostedService
 {
     private readonly ReplayConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
     private readonly SessionManager _session;
     private readonly WeatherManager _weather;
-    private readonly ReplayManager _replayManager;
+    private readonly ReplaySegmentManager _replaySegmentManager;
     private readonly Summary _onUpdateTimer;
     private readonly EntryCarExtraDataManager _extraData;
     private readonly ReplayMetadataProvider _metadata;
     
-    public ReplayPlugin(IHostApplicationLifetime applicationLifetime,
-        EntryCarManager entryCarManager,
+    public ReplayPlugin(EntryCarManager entryCarManager,
         WeatherManager weather,
         SessionManager session,
-        ReplayManager replayManager,
+        ReplaySegmentManager replaySegmentManager,
         ReplayConfiguration configuration,
         CSPServerScriptProvider scriptProvider,
         CSPClientMessageTypeManager cspClientMessageTypeManager,
         EntryCarExtraDataManager extraData,
-        ReplayMetadataProvider metadata) : base(applicationLifetime)
+        ReplayMetadataProvider metadata,
+        ACServer server)
     {
         _entryCarManager = entryCarManager;
         _weather = weather;
         _session = session;
-        _replayManager = replayManager;
+        _replaySegmentManager = replaySegmentManager;
         _configuration = configuration;
         _extraData = extraData;
         _metadata = metadata;
 
         _onUpdateTimer = Metrics.CreateSummary("assettoserver_replayplugin_onupdate", "ReplayPlugin.OnUpdate Duration", MetricDefaults.DefaultQuantiles);
+        server.Update += Update;
         
         cspClientMessageTypeManager.RegisterOnlineEvent<UploadDataPacket>(OnUploadData);
-        
-        using var streamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ReplayPlugin.lua.replay.lua")!);
-        scriptProvider.AddScript(streamReader.ReadToEnd(), "replay.lua");
+        scriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("ReplayPlugin.lua.replay.lua")!, "replay.lua");
     }
 
     private void OnUploadData(ACTcpClient sender, UploadDataPacket packet)
@@ -60,46 +56,55 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
     }
 
     private readonly ReplayFrameState _state = new();
+    private long _counter;
 
-    private void Update()
+    private void Update(ACServer sender, EventArgs args)
     {
-        using var timer = _onUpdateTimer.NewTimer();
-        
-        _state.TryReset();
+        if (_counter++ % _configuration.RefreshRateDivisor != 0) return;
 
-        int numAiMappings = 0;
-        foreach (var entryCar in _entryCarManager.EntryCars)
+        try
         {
-            if (entryCar.Client?.HasSentFirstUpdate == true)
-            {
-                _state.PlayerCars.Add((entryCar.SessionId, entryCar.Status));
-                _state.AiFrameMapping.Add(entryCar.SessionId, new List<short>());
-                numAiMappings++;
-            }
-            else if (entryCar.AiControlled)
-            {
-                for (int i = 0; i < entryCar.LastSeenAiState.Length; i++)
-                {
-                    var aiState = entryCar.LastSeenAiState[i];
-                    if (aiState == null) continue;
-                    
-                    if (!_state.AiStateMapping.TryGetValue(aiState, out var aiStateId))
-                    {
-                        aiStateId = (short)_state.AiCars.Count;
-                        _state.AiStateMapping.Add(aiState, aiStateId);
-                        _state.AiCars.Add((aiState.EntryCar.SessionId, aiState.Status));
-                    }
+            using var timer = _onUpdateTimer.NewTimer();
+            _state.Reset();
 
-                    if (_state.AiFrameMapping.TryGetValue((byte)i, out var aiFrameMappingList))
+            int numAiMappings = 0;
+            foreach (var entryCar in _entryCarManager.EntryCars)
+            {
+                if (entryCar.Client?.HasSentFirstUpdate == true)
+                {
+                    _state.PlayerCars.Add((entryCar.SessionId, entryCar.Status));
+                    _state.AiFrameMapping.Add(entryCar.SessionId, []);
+                    numAiMappings++;
+                }
+                else if (entryCar.AiControlled)
+                {
+                    for (int i = 0; i < entryCar.LastSeenAiState.Length; i++)
                     {
-                        aiFrameMappingList.Add(aiStateId);
-                        numAiMappings++;
+                        var aiState = entryCar.LastSeenAiState[i];
+                        if (aiState == null) continue;
+
+                        if (!_state.AiStateMapping.TryGetValue(aiState, out var aiStateId))
+                        {
+                            aiStateId = (short)_state.AiCars.Count;
+                            _state.AiStateMapping.Add(aiState, aiStateId);
+                            _state.AiCars.Add((aiState.EntryCar.SessionId, aiState.Status));
+                        }
+
+                        if (_state.AiFrameMapping.TryGetValue((byte)i, out var aiFrameMappingList))
+                        {
+                            aiFrameMappingList.Add(aiStateId);
+                            numAiMappings++;
+                        }
                     }
                 }
             }
-        }
 
-        _replayManager.AddFrame(_state.PlayerCars.Count, _state.AiCars.Count, numAiMappings, _metadata.Index, this, WriteFrame);
+            _replaySegmentManager.AddFrame(_state.PlayerCars.Count, _state.AiCars.Count, numAiMappings, _metadata.Index, this, WriteFrame);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during replay update");
+        }
     }
 
     private static void WriteFrame(ref ReplayFrame frame, ReplayPlugin self)
@@ -111,7 +116,7 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
         for (int i = 0; i < self._state.PlayerCars.Count; i++)
         {
             var status = self._state.PlayerCars[i];
-            frame.CarFrames[i] = ReplayCarFrame.FromCarStatus(status.Item1, status.Item2);
+            frame.CarFrames[i].FromCarStatus(status.Item1, status.Item2);
 
             if (self._state.AiFrameMapping.TryGetValue(status.Item1, out var aiFrameMapping))
             {
@@ -126,26 +131,15 @@ public class ReplayPlugin : CriticalBackgroundService, IAssettoServerAutostart
         for (int i = 0; i < self._state.AiCars.Count; i++)
         {
             var status = self._state.AiCars[i];
-            frame.AiFrames[i] = ReplayCarFrame.FromCarStatus(status.Item1, status.Item2);
+            frame.AiFrames[i].FromCarStatus(status.Item1, status.Item2);
         }
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        Log.Debug("ReplayCarFrame size {Size} bytes", Marshal.SizeOf<ReplayCarFrame>());
-
         _extraData.Initialize(_entryCarManager.EntryCars.Length);
-        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(1000.0 / _configuration.RefreshRateHz));
-        while (await timer.WaitForNextTickAsync(stoppingToken))
-        {
-            try
-            {
-                Update();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error during replay update");
-            }
-        }
+        return Task.CompletedTask;
     }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

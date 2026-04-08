@@ -1,5 +1,4 @@
-﻿using System.IO.Compression;
-using System.Numerics;
+﻿using System.Numerics;
 using Serilog;
 
 namespace FastLaneUtils;

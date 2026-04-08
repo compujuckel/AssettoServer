@@ -1,9 +1,7 @@
 ﻿using FluentValidation;
-using JetBrains.Annotations;
 
 namespace TagModePlugin;
 
-[UsedImplicitly]
 public class TagModeConfigurationValidator : AbstractValidator<TagModeConfiguration>
 {
     public TagModeConfigurationValidator()

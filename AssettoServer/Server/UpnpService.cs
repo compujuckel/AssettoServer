@@ -4,13 +4,13 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Server.Plugin;
+using Microsoft.Extensions.Hosting;
 using Open.Nat;
 using Serilog;
 
 namespace AssettoServer.Server;
 
-public class UpnpService : IAssettoServerAutostart
+public class UpnpService : IHostedService
 {
     private readonly List<Mapping> _mappings;
     private readonly bool _isEnabled;
@@ -24,12 +24,12 @@ public class UpnpService : IAssettoServerAutostart
                                     configuration.Server.RegisterToLobby &&
                                     RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
 
-        _mappings = new List<Mapping>
-        {
-            new(Protocol.Tcp, configuration.Server.TcpPort, configuration.Server.TcpPort, "AssettoServer"),
-            new(Protocol.Udp, configuration.Server.UdpPort, configuration.Server.UdpPort, "AssettoServer"),
-            new(Protocol.Tcp, configuration.Server.HttpPort, configuration.Server.HttpPort, "AssettoServer")
-        };
+        _mappings =
+        [
+            new Mapping(Protocol.Tcp, configuration.Server.TcpPort, configuration.Server.TcpPort, "AssettoServer"),
+            new Mapping(Protocol.Udp, configuration.Server.UdpPort, configuration.Server.UdpPort, "AssettoServer"),
+            new Mapping(Protocol.Tcp, configuration.Server.HttpPort, configuration.Server.HttpPort, "AssettoServer")
+        ];
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)

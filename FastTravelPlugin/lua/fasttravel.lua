@@ -6,10 +6,14 @@
 --thisguyStan: moved a few settings into AssettoServer
 
 local config = ac.configValues({
+    disableCollisions = true,
     mapFixedTargetPosition = "", -- { -2100, 0, 3200 },
-    mapZoomValues = "", -- { 100, 1000, 4000, 15000 },
-    mapMoveSpeeds = "", -- { 1, 5, 20, 0 },
-    showMapImg = true
+    mapZoomValues = "",          -- { 100, 1000, 4000, 15000 },
+    mapMoveSpeeds = "",          -- { 1, 5, 20, 0 },
+    showMapImg = true,
+    hideUntypedPoints = false,
+    useGroupDrawMode = true,
+    distanceModeRange = 100
 })
 
 local parsedTargetPos = JSON.parse(config.mapFixedTargetPosition)
@@ -27,25 +31,31 @@ local trackCompassOffset = 24 -- for SRP
 local font = 'Segoe UI'
 local fontBold = 'Segoe UI;Weight=Bold'
 
---c1xtz: read teleports from server options, requires 'POINT_<num>_TYPE = PA/ST' to be added to the teleports in csp_extra_options.ini to not show up as the default.
---c1xtz: additional custom types can be created as long as a corresponding 'mapicon_<type>.png' is in the images folder. example: 'POINT_1_TYPE = GS' & 'mapicon_gs.png' for a gas station type.
---c1xtz: points inside of group inherite the type of the point before, meaning if 'POINT_1_TYPE = PA' and POINT_2 is not specifically given a type, it will inherit the PA type from point 1.
---c1xtz: this makes it possible to have multiple types per group, although only the first point per unique type is shown (see tpdrawing:)
+--c1xtz: read teleports from server options, requires 'POINT_X_TYPE = PA/ST' to be added to the teleports in csp_extra_options.ini, otherwise they show up as the default.
+--c1xtz: additional custom types can be created as long as a corresponding 'mapicon_<type>.png' is in the wwwwroot folder. example: 'POINT_1_TYPE = GS' + 'mapicon_gs.png' for a gas station type.
 local extraOptions = ac.INIConfig.onlineExtras()
-local onlineTeleports, encounteredTypes = {}, {}
+local onlineTeleports = {}
 local defaultType = 'sp'
 
-for _, points in extraOptions:iterateValues('TELEPORT_DESTINATIONS', 'POINT') do
-    if points:match('_POS$') then
-        local pointName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', ''), '')
-        local groupName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_GROUP'), '')
-        local position = extraOptions:get('TELEPORT_DESTINATIONS', points, vec3())
-        local heading = tonumber(extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_HEADING'), 0))
-        local typeName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_TYPE'), ''):lower()
-        if typeName == '' then typeName = encounteredTypes[groupName] or defaultType else encounteredTypes[groupName] = typeName end
-        table.insert(onlineTeleports, { typeName, groupName, position, heading, pointName })
+local function getTeleports()
+    if not extraOptions then return end
+    onlineTeleports = {}
+    for _, points in extraOptions:iterateValues('TELEPORT_DESTINATIONS', 'POINT') do
+        if points:match('_POS$') then
+            local pointName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', ''), '')
+            local groupName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_GROUP'), '')
+            local position = extraOptions:get('TELEPORT_DESTINATIONS', points, vec3())
+            local heading = tonumber(extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_HEADING'), 0))
+            local typeName = extraOptions:get('TELEPORT_DESTINATIONS', points:gsub('_POS$', '_TYPE'), ''):lower()
+            if typeName == '' and not config.hideUntypedPoints then typeName = defaultType end
+            if typeName ~= '' then
+                table.insert(onlineTeleports, { typeName, groupName, position, heading, pointName })
+            end
+        end
     end
 end
+
+getTeleports()
 
 local sim = ac.getSim()
 local screenSize = vec2(sim.windowWidth, sim.windowHeight)
@@ -81,7 +91,6 @@ local mapCameraOwn = 0
 local mapMode = false
 local mapZoom = 1
 local mapFOV = 90
-local mapAlpha = { 0.5, 1, 1, 1 }
 local mapMovePower = vec2()
 local mapTargetPos = vec3()
 local mapTargetEstimate = 0
@@ -101,14 +110,17 @@ local hoverCID = -1
 local hoverCSP = vec2()
 local hoverDelay = 0
 
-local function ease_in_out(estimate, start, change, duration)
-    estimate = estimate / duration / 2.0
-    if estimate < 1 then
-        return change / 2.0 * estimate * estimate + start
-    end
-    estimate = estimate - 1
-    return -change / 2.0 * (estimate * (estimate - 2) - 1) + start
-end
+--c1xtz: debug variables
+local debugPos = mapFixedTargetPosition:clone()
+local debugOrigPos = mapFixedTargetPosition:clone()
+local debugZoom, debugOrigZoom = table.clone(mapZoomValue), table.clone(mapZoomValue)
+local debugSpeed, debugOrigSpeed = table.clone(mapMoveSpeed), table.clone(mapMoveSpeed)
+
+local debugUseGroupDrawMode, debugOrigUseGroupDrawMode = config.useGroupDrawMode, config.useGroupDrawMode
+local debugDistanceModeRange, debugOrigDistanceModeRange = config.distanceModeRange, config.distanceModeRange
+local debugHideUntypedPoints, debugOrigHideUntypedPoints = config.hideUntypedPoints, config.hideUntypedPoints
+local debugOnlineExtra = nil
+local debugWindowOpen = false
 
 local disabledCollisionEvent = ac.OnlineEvent({
         ac.StructItem.key('disabledCollisionEvent'),
@@ -118,7 +130,7 @@ local disabledCollisionEvent = ac.OnlineEvent({
         if sender == nil then return end
         if sender.index == 0 then return end
         if supportAPI_collision then
-            ac.log(string.format('%s collision: [%d]%s', (data.disabled and 'disabled' or 'enabled'), sender.index, ac.getDriverName(sender.index)))
+            ac.log(string.format('%s collision: [%d] %s', (data.disabled and 'Disabled' or 'Enabled'), sender.index, ac.getDriverName(sender.index)))
             physics.disableCarCollisions(sender.index, data.disabled)
             physics.disableCarCollisions(0, data.disabled)
         end
@@ -180,14 +192,194 @@ local function projectPoint(position)
     return screenPos
 end
 
+--c1xtz: registerOnlineExtra debug window for plugin config params
+local function window_FastTravelDebug()
+    ui.textColored("Changes are only visible to you and are not saved\nWhile this window is open you cannot teleport", rgbm.colors.red)
+    ui.tabBar('FastTravelDebugTabs', function()
+        ui.text("Current Zoom Level: " .. mapZoom)
+        ui.text('Shift+Drag sliders for fine control, Control+Click to type in values.')
+        ui.separator()
+
+        ui.tabItem('Map Image Position', function()
+            if ui.checkbox("Show Map Image", config.showMapImg) then config.showMapImg = not config.showMapImg end
+            if config.showMapImg then
+                ui.separator()
+
+                local changedPos = false
+                local xSlider, movedX = ui.slider("##posX", debugPos.x, -25000, 25000, "X: %.0f")
+                if movedX then
+                    debugPos.x = xSlider
+                    changedPos = true
+                end
+                local ySlider, movedY = ui.slider("##posY", debugPos.y, -25000, 25000, "Y: %.0f")
+                if movedY then
+                    debugPos.y = ySlider
+                    changedPos = true
+                end
+                local zSlider, movedZ = ui.slider("##posZ", debugPos.z, -25000, 25000, "Z: %.0f")
+                if movedZ then
+                    debugPos.z = zSlider
+                    changedPos = true
+                end
+                if changedPos then
+                    mapFixedTargetPosition = debugPos:clone()
+                    config.mapFixedTargetPosition = string.format('[ %.0f, %.0f, %.0f ]', debugPos.x, debugPos.y, debugPos.z)
+                    if mapMode and mapZoom == #mapZoomValue then
+                        mapTargetPos = mapFixedTargetPosition:clone()
+                        mapTargetEstimate = 0
+                    end
+                end
+
+                if ui.button("Reset") then
+                    debugPos = debugOrigPos:clone()
+                    mapFixedTargetPosition = debugOrigPos:clone()
+                    if mapMode and mapZoom == #mapZoomValue then
+                        mapTargetPos = mapFixedTargetPosition:clone()
+                        mapTargetEstimate = 0
+                    end
+                end
+            end
+        end)
+
+        ui.tabItem('Zoom & Move Speed Levels', function()
+            local changedZoom, changedSpeed = false, false
+            for i = 1, #mapZoomValue do
+                ui.pushItemWidth(200)
+                local value, moved = ui.slider("##zoom" .. i, debugZoom[i] or mapZoomValue[i], 0, 25000, "Zoom " .. i .. ": %.0f")
+                ui.popItemWidth()
+                if moved then
+                    debugZoom[i] = value
+                    changedZoom = true
+                end
+                ui.sameLine(0, 10)
+                if i < #mapMoveSpeed then
+                    ui.pushItemWidth(200)
+                    local speedValue, speedMoved = ui.slider("##move" .. i, debugSpeed[i] or mapMoveSpeed[i], 0, 100, "Speed " .. i .. ": %.0f")
+                    ui.popItemWidth()
+                    if speedMoved then
+                        debugSpeed[i] = speedValue
+                        changedSpeed = true
+                    end
+                else
+                    ui.text("Speed " .. i .. " has to be 0")
+                    debugSpeed[i] = 0
+                end
+            end
+            if changedZoom then
+                for i = 1, #debugZoom do mapZoomValue[i] = debugZoom[i] end
+                config.mapZoomValues = debugZoom
+            end
+            if changedSpeed then
+                for i = 1, #debugSpeed do mapMoveSpeed[i] = debugSpeed[i] end
+                config.mapMoveSpeeds = debugSpeed
+            end
+
+            ui.separator()
+
+            if ui.button("Add Level") then
+                local newZoom = debugZoom[#debugZoom] or 1000
+                local newSpeed = debugSpeed[#debugSpeed - 1] or 1
+                table.insert(debugZoom, newZoom)
+                table.insert(mapZoomValue, newZoom)
+                table.insert(debugSpeed, newSpeed)
+                table.insert(mapMoveSpeed, newSpeed)
+                debugSpeed[#debugSpeed], mapMoveSpeed[#mapMoveSpeed] = 0, 0
+                config.mapZoomValues = debugZoom
+                config.mapMoveSpeeds = debugSpeed
+            end
+
+            ui.sameLine()
+            local removeDisabled = #mapZoomValue <= 1
+            if ui.button("Remove Level", vec2(0, 0), removeDisabled and ui.ButtonFlags.Disabled or ui.ButtonFlags.None) then
+                if not removeDisabled then
+                    if mapZoom > #mapZoomValue - 1 then mapZoom = #mapZoomValue - 1 end
+                    table.remove(debugZoom)
+                    table.remove(mapZoomValue)
+                    if #debugSpeed > 1 then table.remove(debugSpeed, #debugSpeed - 1) end
+                    if #mapMoveSpeed > 1 then table.remove(mapMoveSpeed, #mapMoveSpeed - 1) end
+                    debugSpeed[#debugSpeed], mapMoveSpeed[#mapMoveSpeed] = 0, 0
+                    config.mapZoomValues = debugZoom
+                    config.mapMoveSpeeds = debugSpeed
+                end
+            end
+
+            if ui.button("Reset") then
+                if mapZoom > #debugOrigZoom then mapZoom = #debugOrigZoom end
+                debugZoom, debugSpeed, mapZoomValue, mapMoveSpeed = {}, {}, {}, {}
+                for i = 1, #debugOrigZoom do
+                    debugZoom[i] = debugOrigZoom[i]
+                    mapZoomValue[i] = debugOrigZoom[i]
+                end
+                for i = 1, #debugOrigSpeed do
+                    debugSpeed[i] = debugOrigSpeed[i]
+                    mapMoveSpeed[i] = debugOrigSpeed[i]
+                end
+                debugSpeed[#debugSpeed], mapMoveSpeed[#mapMoveSpeed] = 0, 0
+                config.mapZoomValues = debugZoom
+                config.mapMoveSpeeds = debugSpeed
+            end
+        end)
+
+        ui.tabItem("Point Display Settings", function()
+
+            if ui.checkbox("Hide Untyped Points", debugHideUntypedPoints) then
+                debugHideUntypedPoints = not debugHideUntypedPoints
+                config.hideUntypedPoints = debugHideUntypedPoints
+                getTeleports()
+            end
+
+            if ui.checkbox("Use Group Draw Mode", debugUseGroupDrawMode) then
+                debugUseGroupDrawMode = not debugUseGroupDrawMode
+                config.useGroupDrawMode = debugUseGroupDrawMode
+            end
+
+            if not debugUseGroupDrawMode then 
+                local rangeValue, rangeChanged = ui.slider("##distanceRange", debugDistanceModeRange, 1, 1000, "Distance Mode Range: %.0f")
+                if rangeChanged then
+                    debugDistanceModeRange = rangeValue
+                    config.distanceModeRange = debugDistanceModeRange
+                end
+            end
+
+            ui.separator()
+            if ui.button("Reset") then
+                debugHideUntypedPoints, config.hideUntypedPoints = debugOrigHideUntypedPoints, debugOrigHideUntypedPoints
+                debugUseGroupDrawMode, config.useGroupDrawMode = debugOrigUseGroupDrawMode, debugOrigUseGroupDrawMode
+                debugDistanceModeRange, config.distanceModeRange = debugOrigDistanceModeRange, debugOrigDistanceModeRange
+            end
+        end)
+
+        if ui.button("Copy Settings to Clipboard") then
+            local exportConfig = {}
+            exportConfig[#exportConfig + 1] = "MapZoomValues:"
+            for i = 1, #mapZoomValue do
+                exportConfig[#exportConfig + 1] = "- " .. math.round(mapZoomValue[i])
+            end
+            exportConfig[#exportConfig + 1] = "MapMoveSpeeds:"
+            for i = 1, #mapMoveSpeed do
+                exportConfig[#exportConfig + 1] = "- " .. math.round(mapMoveSpeed[i])
+            end
+            exportConfig[#exportConfig + 1] = "ShowMapImage: " .. tostring(config.showMapImg)
+            exportConfig[#exportConfig + 1] = "MapFixedTargetPosition:"
+            exportConfig[#exportConfig + 1] = "- " .. math.round(mapFixedTargetPosition.x)
+            exportConfig[#exportConfig + 1] = "- " .. math.round(mapFixedTargetPosition.y)
+            exportConfig[#exportConfig + 1] = "- " .. math.round(mapFixedTargetPosition.z)
+            exportConfig[#exportConfig + 1] = "RequireCollisionDisable: " .. tostring(config.disableCollisions)
+            exportConfig[#exportConfig + 1] = "UseGroupDrawMode: " .. tostring(config.useGroupDrawMode)
+            exportConfig[#exportConfig + 1] = "DistanceModeRange: " .. math.round(config.distanceModeRange)
+            ac.setClipboardText(table.concat(exportConfig, "\n"))
+        end
+    end)
+end
+
 function script.drawUI(dt)
     if dt == nil then dt = ac.getSim().dt end
     if mapMode then
         if mapCamera then
             mapCamera.transform.position.y = math.applyLag(mapCamera.transform.position.y, lastPos.y + mapZoomValue[mapZoom], 0.8, dt)
             if hoverCID >= 0 and mapZoom < #mapZoomValue then
-                local hoverdCar = ac.getCar(hoverCID)
-                local pos_diff = hoverdCar.position - lastPlayersPos[hoverCID]
+                local hoveredCar = ac.getCar(hoverCID)
+                local pos_diff = hoveredCar.position - lastPlayersPos[hoverCID]
                 mapCamera.transform.position.x = mapCamera.transform.position.x + pos_diff.x
                 mapCamera.transform.position.z = mapCamera.transform.position.z + pos_diff.z
             else
@@ -220,14 +412,13 @@ function script.drawUI(dt)
             local mp = ui.mousePos() - screenOffset
             mapShot:setShadersType(render.ShadersType.Simplest)
             mapFullShot:setShadersType(render.ShadersType.Simplest)
-            mapAlpha[1] = 0.5
             ui.drawRectFilled(vec2(), screenSize, rgbm(0, 0, 0, 0.5))
             if mapZoom == 1 then
                 ui.drawImage(mapFullShot, vec2(), screenSize)
             else
                 ui.drawImage(mapShot, vec2(), screenSize)
             end
-            ui.drawImage(roadsShot, vec2(), screenSize, rgbm(0, 0.9, 1, mapAlpha[mapZoom]))
+            ui.drawImage(roadsShot, vec2(), screenSize, rgbm(0, 0.9, 1, 1))
 
             if mapZoom == #mapZoomValue and config.showMapImg then
                 local map_mult = (screenSize.y - (screenSize.y * 0.1)) / trackMapImageSize.y
@@ -235,13 +426,78 @@ function script.drawUI(dt)
                 local screen_center = screenSize / 2
                 local map_offset = vec2(screen_center.x - map_size.x / 2, screen_center.y - map_size.y / 2)
                 map_opacity = mapTargetEstimate > 0.2 and math.applyLag(map_opacity, 0.25, 0.8, dt) or 0
-                ui.setShadingOffset(1, 1, 2, 0) --c1xtz: this makes sure that the track image is actually white
-                ui.beginOutline()
+                ui.setShadingOffset(1, 1, 2, 0)    --c1xtz: this makes sure that the track image is actually white
+                ui.beginOutline()                  --c1xtz: added outline to make text more readable
                 ui.drawImage(trackMapImage, map_offset, map_size + map_offset, rgbm(1, 1, 1, map_opacity))
-                ui.endOutline(rgbm(1, 1, 1, 1), 2)
+                ui.endOutline(rgbm(1, 1, 1, 1), 2) --c1xtz: added outline to make text more readable
                 ui.resetShadingOffset()
             else
                 map_opacity = 0
+            end
+
+            hoverMark = -1
+            local selected = {}
+            local displayedPoints = {}
+
+            for i = 1, #onlineTeleports do
+                local teleport = onlineTeleports[i]
+                local pointType = teleport[1]
+
+                if not (pointType == defaultType and mapZoom == #mapZoomValue) then
+                    local picked = false
+
+                    if mapZoom > 2 then
+                        --c1xtz: if config.useGroupDrawMode is true, only draws the first point of each unique type per group, otherwise only draw the first icon of each type based on config.distanceModeRange distance.
+                        if config.useGroupDrawMode then
+                            local group = teleport[2]
+                            displayedPoints[group] = displayedPoints[group] or {}
+                            if not displayedPoints[group][pointType] then
+                                displayedPoints[group][pointType] = true
+                                picked = true
+                            end
+                        else
+                            displayedPoints[pointType] = displayedPoints[pointType] or {}
+                            local isTooClose = false
+                            for _, drawnPos in ipairs(displayedPoints[pointType]) do
+                                if teleport[3]:distance(drawnPos) < config.distanceModeRange then
+                                    isTooClose = true
+                                    break
+                                end
+                            end
+                            if not isTooClose then
+                                table.insert(displayedPoints[pointType], teleport[3])
+                                picked = true
+                            end
+                        end
+                    else
+                        picked = true
+                    end
+
+                    if picked then
+                        local screenPos = projectPoint(teleport[3])
+                        if 0 < screenPos.x and screenPos.x < 1 and 0 < screenPos.y and screenPos.y < 1 then
+                            screenPos = screenPos * screenSize
+                            table.insert(selected, { index = i, teleport = teleport, screenPos = screenPos })
+                        end
+                    end
+                end
+            end
+
+            --c1xtz: draw order fixing, making sure POINT_1 would be drawn ABOVE POINT_2
+            for i = #selected, 1, -1 do
+                local point = selected[i]
+                ui.drawImage(baseUrl .. 'mapicon_' .. point.teleport[1] .. '.png', point.screenPos - vec2(40, 40), point.screenPos + vec2(40, 40))
+            end
+
+            --c1xtz: more draw order fixing, making sure that when hovering over a teleport icon while zooming in the mouse keeps sticking to the hovered point
+            for i = 1, #selected do
+                local point = selected[i]
+                if mp > point.screenPos - vec2(30, 30) and mp < point.screenPos + vec2(30, 30) then
+                    hoverMark = point.index
+                    hoverCID = -1
+                    hoverCSP = point.screenPos
+                    break
+                end
             end
 
             hoverCID = -1
@@ -263,32 +519,6 @@ function script.drawUI(dt)
                 end
             end
 
-            hoverMark = -1
-            --c1xtz: tpdrawing: only shows first point of a unique type per group when zoomed out (hope this makes sense)
-            local displayedPoints = {}
-            for i, teleports in ipairs(onlineTeleports) do
-                local pointType, group = teleports[1], teleports[2]
-                if pointType == defaultType and mapZoom == #mapZoomValue then goto continue end
-
-                if mapZoom > 2 then
-                    displayedPoints[group] = displayedPoints[group] or {}
-                    if displayedPoints[group][pointType] then goto continue end
-                    displayedPoints[group][pointType] = true
-                end
-
-                local screenPos = projectPoint(teleports[3])
-                if 0 < screenPos.x and screenPos.x < 1 and 0 < screenPos.y and screenPos.y < 1 then
-                    screenPos = screenPos * screenSize
-                    if mp > screenPos - vec2(30, 30) and mp < screenPos + vec2(30, 30) and hoverMark == -1 then
-                        hoverMark = i
-                        hoverCID = -1
-                        hoverCSP = screenPos
-                    end
-                    ui.drawImage(baseUrl .. 'mapicon_' .. pointType .. '.png', screenPos - vec2(40, 40), screenPos + vec2(40, 40))
-                end
-                ::continue::
-            end
-
             ui.setMouseCursor(ui.MouseCursor.None)
             if hoverCID >= 0 or hoverMark >= 0 then
                 local nametag
@@ -302,8 +532,8 @@ function script.drawUI(dt)
                     ui.endOutline(rgb.colors.black, 0.5) --c1xtz: added outline to make text more readable
                     ui.popDWriteFont()
                 else
-                    nametag = onlineTeleports[hoverMark][2]
                     --c1xtz: added the name of the teleport point
+                    nametag = onlineTeleports[hoverMark][2]
                     ui.pushDWriteFont(font)
                     ui.beginOutline()
                     ui.dwriteDrawText(onlineTeleports[hoverMark][5], 18, nametag_pos + vec2(0, 30), rgbm(1, 1, 1, 1))
@@ -350,9 +580,12 @@ function script.update(dt)
         end
     end
     if mapMode then
-        if supportAPI_collision then physics.disableCarCollisions(0, true) end
         if supportAPI_physics then physics.setGentleStop(0, true) end
-        if not disabledCollision then
+        if config.disableCollisions and not disabledCollision then
+            if supportAPI_collision then
+                ac.log('Disabled own collisions')
+                physics.disableCarCollisions(0, true)
+            end
             disabledCollisionEvent({ disabled = true })
             disabledCollision = true
         end
@@ -364,7 +597,7 @@ function script.update(dt)
     if teleportEstimate > 1 then
         if supportAPI_physics then physics.setGentleStop(0, false) end
     end
-    if disabledCollision and teleportEstimate > 5 then
+    if config.disableCollisions and disabledCollision and teleportEstimate > 5 then
         local closer = false
         for i = 1, sim.carsCount - 1 do
             local carState = ac.getCar(i)
@@ -376,12 +609,37 @@ function script.update(dt)
             end
         end
         if not closer then
-            if supportAPI_collision then physics.disableCarCollisions(0, false) end
             if disabledCollision then
+                if supportAPI_collision then
+                    ac.log('Enabled own collisions')
+                    physics.disableCarCollisions(0, false)
+                end
                 disabledCollisionEvent({ disabled = false })
                 disabledCollision = false
             end
         end
+    end
+
+    --c1xtz: register admin debug onlineExtra
+    if ac.getSim().isAdmin and debugOnlineExtra == nil then
+        debugOnlineExtra = ui.registerOnlineExtra(
+            ui.Icons.SettingsAlt,
+            "FastTravelPlugin Debug",
+
+            function()
+                if not debugWindowOpen then debugWindowOpen = true end
+                return true
+            end,
+
+            window_FastTravelDebug,
+
+            function()
+                if debugWindowOpen then debugWindowOpen = false end
+                return false
+            end,
+
+            ui.OnlineExtraFlags.Tool
+        )
     end
 end
 
@@ -412,7 +670,7 @@ local fastTravelEvent = ac.OnlineEvent(
 function inputCheck()
     local sim = ac.getSim()
     local carState = ac.getCar(0)
-    if ui.keyboardButtonPressed(ui.KeyIndex.M, false) and not ui.anyItemFocused() and not ui.anyItemActive() then
+    if ui.keyboardButtonPressed(ui.KeyIndex.M, false) and not ui.anyItemFocused() and not ui.anyItemActive() and not sim.isPaused then
         mapMode = not mapMode
         if mapMode then
             if not mapCamera then
@@ -431,6 +689,11 @@ function inputCheck()
     end
 
     if mapMode and mapCamera then
+        if sim.isPaused then
+            mapMode = false
+            return
+        end
+
         local mp = ui.mousePos()
         local mpScale = vec2(sim.windowWidth, sim.windowHeight) / screenSize
         local mw = ui.mouseWheel()
@@ -516,7 +779,7 @@ function inputCheck()
             pos = mpr
             rot = vec3(1, 0, 0)
         end
-        if teleportAvailable then
+        if teleportAvailable and not debugWindowOpen then
             if ui.mouseClicked(ui.MouseButton.Left) then
                 apiWaiting = true
                 mapTargetPos = pos

@@ -6,20 +6,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
 using AssettoServer.Server.Configuration;
-using AssettoServer.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Steamworks;
 
 namespace AssettoServer.Server.Steam;
 
-public class NativeSteam : CriticalBackgroundService, ISteam
+public class NativeSteam : BackgroundService, ISteam
 {
     private readonly ACServerConfiguration _configuration;
 
     private bool _firstRun = true;
     
-    public NativeSteam(ACServerConfiguration configuration, IHostApplicationLifetime lifetime) : base(lifetime)
+    public NativeSteam(ACServerConfiguration configuration)
     {
         _configuration = configuration;
     }
@@ -184,6 +183,11 @@ public class NativeSteam : CriticalBackgroundService, ISteam
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await Task.Run(Initialize, stoppingToken);
+        await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        
+        SteamServer.OnSteamServersConnected -= SteamServer_OnSteamServersConnected;
+        SteamServer.OnSteamServersDisconnected -= SteamServer_OnSteamServersDisconnected;
+        SteamServer.OnSteamServerConnectFailure -= SteamServer_OnSteamServerConnectFailure;
     }
 }
 

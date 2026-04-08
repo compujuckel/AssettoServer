@@ -1,13 +1,12 @@
 ﻿using System;
 using AssettoServer.Server;
-using AssettoServer.Shared.Network.Packets.Shared;
 using Qmmands;
 using Serilog;
 
 namespace AssettoServer.Commands.Contexts;
 
 public abstract class BaseCommandContext(
-        EntryCarManager entryEntryCarManager,
+        EntryCarManager entryCarManager,
         IServiceProvider? serviceProvider = null)
     : CommandContext(serviceProvider)
 {
@@ -18,6 +17,6 @@ public abstract class BaseCommandContext(
     public virtual void Broadcast(string message)
     {
         Log.Information("Broadcast: {Message}", message);
-        entryEntryCarManager.BroadcastChat(message);
+        entryCarManager.BroadcastChat(message);
     }
 }

@@ -51,12 +51,17 @@ public class CSPServerScriptProvider
         }
     }
 
-    public virtual void AddScript(Stream stream, string? debugFilename = null, Dictionary<string, object>? configuration = null)
+    public virtual void AddScript(Stream stream, string? debugFilename = null, Dictionary<string, object>? configuration = null, bool leaveOpen = false)
     {
         using var memory = new MemoryStream();
         stream.CopyTo(memory);
         var bytes = memory.ToArray();
         AddScript(bytes, debugFilename, configuration);
+
+        if (!leaveOpen)
+        {
+            stream.Dispose();
+        }
     }
 
     public virtual void AddScriptFile(string path, string? debugFilename = null, Dictionary<string, object>? configuration = null)

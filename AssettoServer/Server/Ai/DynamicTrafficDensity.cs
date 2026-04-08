@@ -4,19 +4,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Weather;
-using AssettoServer.Shared.Services;
-using AssettoServer.Utils;
+using AssettoServer.Shared.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AssettoServer.Server.Ai;
 
-public class DynamicTrafficDensity : CriticalBackgroundService
+public class DynamicTrafficDensity : BackgroundService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly WeatherManager _weatherManager;
 
-    public DynamicTrafficDensity(ACServerConfiguration configuration, WeatherManager weatherManager, IHostApplicationLifetime applicationLifetime) : base(applicationLifetime)
+    public DynamicTrafficDensity(ACServerConfiguration configuration, WeatherManager weatherManager)
     {
         _configuration = configuration;
         _weatherManager = weatherManager;
@@ -36,7 +35,7 @@ public class DynamicTrafficDensity : CriticalBackgroundService
         return (float)MathUtils.Lerp(_configuration.Extra.AiParams.HourlyTrafficDensity![lowerBound], _configuration.Extra.AiParams.HourlyTrafficDensity![higherBound], hourOfDay - lowerBound);
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public override Task StartAsync(CancellationToken cancellationToken)
     {
         if (_configuration.Server.TimeOfDayMultiplier == 0 )
         {
@@ -51,6 +50,11 @@ public class DynamicTrafficDensity : CriticalBackgroundService
             }
         }
         
+        return base.StartAsync(cancellationToken);  
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
         while (!stoppingToken.IsCancellationRequested)
         {
             try

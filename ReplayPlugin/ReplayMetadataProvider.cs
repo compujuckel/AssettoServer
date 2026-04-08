@@ -1,14 +1,18 @@
-﻿using AssettoServer.Server;
+﻿using System.Collections.Concurrent;
+using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
+using Serilog;
 using SystemClock = NodaTime.SystemClock;
 
 namespace ReplayPlugin;
 
 public class ReplayMetadataProvider
 {
-    public uint Index { get; private set; }
-    public Dictionary<uint, Dictionary<byte, ReplayPlayerInfo>> PlayerInfos { get; } = new();
+    public uint Index => _index;
+    private uint _index;
+
+    private ConcurrentDictionary<uint, Dictionary<byte, ReplayPlayerInfo>> PlayerInfos { get; } = new();
     
     private readonly EntryCarManager _entryCarManager;
     private readonly ACServerConfiguration _configuration;
@@ -43,29 +47,36 @@ public class ReplayMetadataProvider
         var toDelete = PlayerInfos.Keys.Where(key => key < before);
         foreach (var key in toDelete)
         {
-            PlayerInfos.Remove(key);
+            PlayerInfos.Remove(key, out _);
         }
     }
 
     private void UpdatePlayerInfo()
     {
-        Index++;
-
-        var infos = new Dictionary<byte, ReplayPlayerInfo>();
-        foreach (var car in _entryCarManager.ConnectedCars)
+        try
         {
-            var client = car.Value.Client;
-            if (client == null) continue;
-            
-            infos.Add((byte)car.Key, new ReplayPlayerInfo
+            var index = Interlocked.Increment(ref _index);
+
+            var infos = new Dictionary<byte, ReplayPlayerInfo>();
+            foreach (var car in _entryCarManager.ConnectedCars)
             {
-                Name = client.Name ?? "",
-                Guid = client.Guid.ToString(),
-                OwnerGuid = client.OwnerGuid?.ToString(),
-                NationCode = client.NationCode
-            });
+                var client = car.Value.Client;
+                if (client == null) continue;
+
+                infos.Add((byte)car.Key, new ReplayPlayerInfo
+                {
+                    Name = client.Name ?? "",
+                    Guid = client.Guid.ToString(),
+                    OwnerGuid = client.OwnerGuid?.ToString(),
+                    NationCode = client.NationCode
+                });
+            }
+
+            PlayerInfos.TryAdd(index, infos);
         }
-        
-        PlayerInfos.Add(Index, infos);
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error updating replay metadata info");
+        }
     }
 }

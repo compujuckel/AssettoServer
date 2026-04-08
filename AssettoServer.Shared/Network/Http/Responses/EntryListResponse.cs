@@ -5,7 +5,7 @@ namespace AssettoServer.Shared.Network.Http.Responses;
 public class EntryListResponseCar
 {
     [JsonPropertyName("Model")]
-    public string? Model { get; set; }
+    public required string Model { get; set; }
     [JsonPropertyName("Skin")]
     public string? Skin { get; set; }
     [JsonPropertyName("DriverName")]

@@ -119,13 +119,15 @@ public class RandomWeather : BackgroundService
     {
         int weatherDuration = 1000;
         int transitionDuration = 1000;
+        bool firstRun = true;
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 weatherDuration = Random.Shared.Next(_configuration.MinWeatherDurationMilliseconds, _configuration.MaxWeatherDurationMilliseconds);
-                transitionDuration = Random.Shared.Next(_configuration.MinTransitionDurationMilliseconds, _configuration.MaxTransitionDurationMilliseconds);
+                transitionDuration = (firstRun && _configuration.RandomizeInitialWeather) ? 0 : Random.Shared.Next(_configuration.MinTransitionDurationMilliseconds, _configuration.MaxTransitionDurationMilliseconds);
+                firstRun = false;
 
                 var next = PickRandom();
                 var nextWeatherType = _weatherTypeProvider.GetWeatherType(next);

@@ -21,6 +21,9 @@ public class RandomWeatherConfiguration : IValidateConfiguration<RandomWeatherCo
     [YamlMember(Description = "Maximum weather transition duration")]
     public int MaxTransitionDurationSeconds { get; set; } = 600;
     
+    [YamlMember(Description = "If true, the server will start and apply the first random weather instantly, skipping the initial transition from the weather configured in server_cfg.ini")]
+    public bool RandomizeInitialWeather { get; set; } = false;
+    
     [YamlMember(Description = "Weights for weather transition, only listed weathers will be counted\nCheck the reference config to see the structure")]
     public Dictionary<WeatherFxType, Dictionary<WeatherFxType, float>> WeatherTransitions { get; init; } = new();
     [YamlMember(Description = "Weights for random weather selection, removing a weight or setting it to 0 blacklists a weather\nYou can also use decimals like 0.1")]

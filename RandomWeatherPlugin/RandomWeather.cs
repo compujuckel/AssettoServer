@@ -47,7 +47,7 @@ public class RandomWeather : BackgroundService
                 RainWater = last.RainWater,
                 TrackGrip = last.TrackGrip
             });
-        
+
             RecalculateWeights(_configuration.WeatherTransitions[next.WeatherFxType]);
         }
         else if (_configuration.Mode == RandomWeatherMode.Default)
@@ -62,7 +62,10 @@ public class RandomWeather : BackgroundService
     }
 
     private void RecalculateWeights(Dictionary<WeatherFxType,float> input)
+    private void RecalculateWeights(Dictionary<WeatherFxType, float> input)
     {
+        _weathers.Clear();
+
         float weightSum = input
             .Select(w => w.Value)
             .Sum();
@@ -138,7 +141,7 @@ public class RandomWeather : BackgroundService
                     nextWeatherType.WeatherFxType,
                     Math.Round(transitionDuration / 1000.0f),
                     Math.Round(weatherDuration / 60_000.0f, 1));
-                
+
                 _weatherManager.SetWeather(new WeatherData(last.Type, nextWeatherType)
                 {
                     TransitionDuration = transitionDuration,
@@ -154,7 +157,7 @@ public class RandomWeather : BackgroundService
                     RainWater = last.RainWater,
                     TrackGrip = last.TrackGrip
                 });
-                
+
                 if (_configuration.Mode == RandomWeatherMode.TransitionTable)
                     RecalculateWeights(_configuration.WeatherTransitions[next]);
             }

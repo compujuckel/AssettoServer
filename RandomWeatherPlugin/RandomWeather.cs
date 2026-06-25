@@ -27,9 +27,6 @@ public class RandomWeather : BackgroundService
 
         if (_configuration.Mode == RandomWeatherMode.TransitionTable)
         {
-            if (_configuration.WeatherTransitions.Count == 0)
-                throw new ConfigurationException("No entries were found in the WeatherTransitions list");
-            
             var next = _weatherTypeProvider.GetWeatherType(_configuration.WeatherTransitions.First().Key);
             var last = _weatherManager.CurrentWeather;
             _weatherManager.SetWeather(new WeatherData(last.Type, next)
@@ -52,16 +49,10 @@ public class RandomWeather : BackgroundService
         }
         else if (_configuration.Mode == RandomWeatherMode.Default)
         {
-            if (_configuration.WeatherWeights.Count == 0)
-                throw new ConfigurationException("No entries were found in the WeatherWeights list");
-
-            _configuration.WeatherWeights[WeatherFxType.None] = 0;
-
             RecalculateWeights(_configuration.WeatherWeights);
         }
     }
 
-    private void RecalculateWeights(Dictionary<WeatherFxType,float> input)
     private void RecalculateWeights(Dictionary<WeatherFxType, float> input)
     {
         _weathers.Clear();
@@ -73,7 +64,7 @@ public class RandomWeather : BackgroundService
         float prefixSum = 0.0f;
         foreach (var (weather, weight) in input)
         {
-            if (weight > 0)
+            if (weight > 0 && weather != WeatherFxType.None)
             {
                 prefixSum += weight / weightSum;
                 _weathers.Add(new WeatherWeight

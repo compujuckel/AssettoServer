@@ -12,14 +12,18 @@ public class RandomWeatherConfigurationValidator : AbstractValidator<RandomWeath
         When(cfg => cfg.Mode == RandomWeatherMode.TransitionTable, () =>
         {
             RuleFor(cfg => cfg.WeatherTransitions)
-                .NotNull()
+                .NotEmpty()
                 .DependentRules(() =>
                 {
                     RuleFor(cfg => cfg.WeatherTransitions)
-                        .NotEmpty();
+                        .Must(wt => !wt.ContainsKey(WeatherFxType.None))
+                        .WithMessage("WeatherFX Type \"None\" cannot be used as a weather");
                     RuleForEach(cfg => cfg.WeatherTransitions)
-                        .Must(x => x.Value.Values.Any(v => v > 0))
-                        .WithMessage("Each WeatherTransitions entry must contain at least one destination weather with a weight greater than 0");
+                        .Must(x => !x.Value.ContainsKey(WeatherFxType.None) || x.Value[WeatherFxType.None] <= 0)
+                        .WithMessage("WeatherFX Type \"None\" cannot be used as a weather");
+                    RuleForEach(cfg => cfg.WeatherTransitions)
+                        .Must(wt => wt.Value.Values.Any(v => v > 0))
+                        .WithMessage("Every WeatherTransitions entry must contain at least one destination weather with a weight greater than 0");
                     RuleFor(cfg => cfg.WeatherTransitions)
                         .Must(wt =>
                         {
@@ -31,17 +35,17 @@ public class RandomWeatherConfigurationValidator : AbstractValidator<RandomWeath
         When(cfg => cfg.Mode == RandomWeatherMode.Default, () =>
         {
             RuleFor(cfg => cfg.WeatherWeights)
-                .NotNull()
+                .NotEmpty()
                 .DependentRules(() =>
                 {
+                    RuleFor(cfg => cfg.WeatherWeights)
+                        .Must(ww => !ww.ContainsKey(WeatherFxType.None) || ww[WeatherFxType.None] <= 0)
+                        .WithMessage("WeatherFX Type \"None\" cannot be used as a weather");
                     RuleFor(cfg => cfg.WeatherWeights)
                         .Must(ww => ww.Values.Any(v => v > 0))
                         .WithMessage("At least one entry in WeatherWeights must have a weight greater than 0");
                     RuleForEach(cfg => cfg.WeatherWeights)
                         .ChildRules(ww => { ww.RuleFor(w => w.Value).GreaterThanOrEqualTo(0); });
-                    RuleFor(cfg => cfg.WeatherWeights)
-                        .Must(ww => !ww.ContainsKey(WeatherFxType.None) || ww[WeatherFxType.None] <= 0)
-                        .WithMessage("WeatherFX Type \"None\" cannot be used as a weather weight");
                 });
         });
     }

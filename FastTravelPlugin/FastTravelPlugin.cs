@@ -23,14 +23,13 @@ public class FastTravelPlugin : IHostedService
     {
         _aiSpline = aiSpline ?? throw new ConfigurationException("FastTravelPlugin does not work with AI traffic disabled");
 
-        if (configuration.DisableCollisions && serverConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_8)
-        {
-            throw new ConfigurationException("FastTravelPlugin needs a minimum required CSP version of 0.2.8 (3424)");
-        }
+        var requiredVersion = configuration.DisableCollisions ? CSPVersion.V0_2_8 : CSPVersion.V0_2_0;
+        var requiredVersionString = configuration.DisableCollisions ? "0.2.8 (3424)" : "0.2.0 (2651)";
+        var minimumVersion = serverConfiguration.CSPTrackOptions.MinimumCSPVersion ?? throw new ConfigurationException($"FastTravelPlugin needs a minimum required CSP version of {requiredVersionString}");
 
-        if (!configuration.DisableCollisions && serverConfiguration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_0)
+        if (minimumVersion < requiredVersion)
         {
-            throw new ConfigurationException("FastTravelPlugin needs a minimum required CSP version of 0.2.0 (2651)");
+            throw new ConfigurationException($"FastTravelPlugin needs a minimum required CSP version of {requiredVersionString}");
         }
 
         if (!serverConfiguration.Extra.EnableClientMessages)

@@ -26,7 +26,7 @@ local baseUrl = 'http://' .. ac.getServerIP() .. ':' .. ac.getServerPortHTTP() .
 local supportAPI_physics = physics.setGentleStop ~= nil
 local supportAPI_collision = physics.disableCarCollisions ~= nil
 local supportAPI_matrix = ac.getPatchVersionCode() >= 3037
-local trackCompassOffset = 24 -- for SRP
+local trackCompassOffset = ac.getCompassAngle(vec3(0, 0, -1))
 
 local font = 'Segoe UI'
 local fontBold = 'Segoe UI;Weight=Bold'

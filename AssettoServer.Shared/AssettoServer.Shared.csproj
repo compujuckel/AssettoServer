@@ -1,16 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net11.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <SelfContained>false</SelfContained>
         <DebugType>embedded</DebugType>
         <PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
+        <Features>runtime-async=on</Features>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
       <FrameworkReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
-      <PackageReference Include="Serilog" Version="4.3.1" />
+      <PackageReference Include="Serilog" Version="4.4.0" />
     </ItemGroup>
 </Project>

@@ -2,13 +2,16 @@
 
 public static class MemoryStreamExtensions
 {
-    public static Span<byte> GetSpan(this MemoryStream stream)
+    extension(MemoryStream stream)
     {
-        return stream.GetBuffer().AsSpan(0, (int)stream.Length);
-    }
-    
-    public static Memory<byte> GetMemory(this MemoryStream stream)
-    {
-        return stream.GetBuffer().AsMemory(0, (int)stream.Length);
+        public Span<byte> GetSpan()
+        {
+            return stream.GetBuffer().AsSpan(0, (int)stream.Length);
+        }
+
+        public Memory<byte> GetMemory()
+        {
+            return stream.GetBuffer().AsMemory(0, (int)stream.Length);
+        }
     }
 }

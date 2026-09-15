@@ -8,21 +8,24 @@ public static class SocketAddressExtensions
     private static readonly GetIPv4AddressMethod GetIPv4AddressDelegate;
     private delegate uint GetIPv4AddressMethod(ReadOnlySpan<byte> buffer);
     
-    public static SocketAddress Clone(this SocketAddress address)
+    extension(SocketAddress address)
     {
-        var clone = new SocketAddress(address.Family, address.Size);
-        address.Buffer.CopyTo(clone.Buffer);
-        return clone;
-    }
+        public SocketAddress Clone()
+        {
+            var clone = new SocketAddress(address.Family, address.Size);
+            address.Buffer.CopyTo(clone.Buffer);
+            return clone;
+        }
 
-    public static bool IpEquals(this SocketAddress address, SocketAddress other)
-    {
-        return address.GetIPv4Address() == other.GetIPv4Address();
-    }
+        public bool IpEquals(SocketAddress other)
+        {
+            return address.GetIPv4Address() == other.GetIPv4Address();
+        }
 
-    public static uint GetIPv4Address(this SocketAddress address)
-    {
-        return GetIPv4AddressDelegate(address.Buffer.Span);
+        public uint GetIPv4Address()
+        {
+            return GetIPv4AddressDelegate(address.Buffer.Span);
+        }
     }
 
     static SocketAddressExtensions()

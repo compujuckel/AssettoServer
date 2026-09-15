@@ -159,7 +159,7 @@ public class RconClient
             _isDisconnectRequested = true;
 
             _outgoingPacketChannel.Writer.TryComplete();
-            _ = await Task.WhenAny(Task.Delay(2000), SendLoopTask);
+            await SendLoopTask.WaitAsync(TimeSpan.FromSeconds(2));
 
             try
             {

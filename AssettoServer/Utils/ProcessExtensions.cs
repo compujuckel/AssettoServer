@@ -5,10 +5,13 @@ namespace AssettoServer.Utils;
 
 public static class ProcessExtensions
 {
-    public static int GetParentProcessId(this Process process)
+    extension(Process process)
     {
-        return (int)typeof(Process)
-            .GetProperty("ParentProcessId", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(process)!;
+        public int GetParentProcessId()
+        {
+            return (int)typeof(Process)
+                .GetProperty("ParentProcessId", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(process)!;
+        }
     }
 }

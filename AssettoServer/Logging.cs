@@ -36,7 +36,6 @@ internal static class Logging
                     Login = lokiSettings.Login!,
                     Password = lokiSettings.Password!
                 },
-                useInternalTimestamp: true,
                 textFormatter: new LokiJsonTextFormatter(),
                 propertiesAsLabels: ["MachineName", "Preset"])
             .CreateLogger();

@@ -986,7 +986,7 @@ public class ACTcpClient : IClient
             }
 
             OutgoingPacketChannel.Writer.TryComplete();
-            _ = await Task.WhenAny(Task.Delay(2000), SendLoopTask);
+            await SendLoopTask.WaitAsync(TimeSpan.FromSeconds(2));
 
             try
             {

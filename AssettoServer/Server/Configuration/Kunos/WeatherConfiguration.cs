@@ -7,15 +7,17 @@ namespace AssettoServer.Server.Configuration.Kunos;
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public class WeatherConfiguration
 {
-    [IniField("GRAPHICS")] public string Graphics
+    [IniField("GRAPHICS")]
+    public string Graphics
     {
-        get => _graphics;
+        get;
         set
         {
-            _graphics = value;
+            field = value;
             WeatherFxParams = WeatherFxParams.FromString(value);
         }
-    }
+    } = "";
+
     [IniField("BASE_TEMPERATURE_AMBIENT")] public float BaseTemperatureAmbient { get; init; }
     [IniField("BASE_TEMPERATURE_ROAD")] public float BaseTemperatureRoad { get; init; }
     [IniField("VARIATION_AMBIENT")] public float VariationAmbient { get; init; }
@@ -25,6 +27,4 @@ public class WeatherConfiguration
     [IniField("WIND_BASE_DIRECTION")] public int WindBaseDirection { get; init; }
     [IniField("WIND_VARIATION_DIRECTION")] public int WindVariationDirection { get; init; }
     public WeatherFxParams WeatherFxParams { get; private set; } = null!;
-
-    private string _graphics = "";
 }

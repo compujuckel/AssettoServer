@@ -21,7 +21,7 @@ public class GeoIP
         {
             if(sender.TcpClient.Client.RemoteEndPoint is IPEndPoint endpoint && _database.TryCity(endpoint.Address, out var response))
             {
-                sender.Logger.Information("GeoIP results for {ClientName}: {Country} ({CountryCode}) [{Lat},{Lon}]", sender.Name, response!.Country.Name, response.Country.IsoCode, response.Location.Latitude, response.Location.Longitude);
+                sender.Logger.Information("GeoIP results for {ClientName}: {Country} ({CountryCode}) [{Lat},{Lon}]", sender.Name, response.Country.Name, response.Country.IsoCode, response.Location.Latitude, response.Location.Longitude);
             }
             else
             {

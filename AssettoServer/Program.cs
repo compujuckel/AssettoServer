@@ -201,7 +201,6 @@ public static class Program
         }
     }
     
-    // This handles all exceptions thrown in BackgroundService.ExecuteAsync after the first await
     private static void OnApplicationStopped(IHostApplicationLifetime applicationLifetime, IEnumerable<IHostedService> services)
     {
         var exceptions = new List<Exception>();

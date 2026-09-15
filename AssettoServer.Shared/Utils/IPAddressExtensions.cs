@@ -4,19 +4,25 @@ namespace AssettoServer.Shared.Utils;
 
 public static class IPAddressExtensions
 {
-    public static string Redact(this IPAddress ip, bool redact)
+    extension(IPAddress ip)
     {
-        if (!redact)
-            return ip.ToString();
+        public string Redact(bool redact)
+        {
+            if (!redact)
+                return ip.ToString();
         
-        var privacyIp = ip.GetAddressBytes();
-        privacyIp[3] = 0;
+            var privacyIp = ip.GetAddressBytes();
+            privacyIp[3] = 0;
         
-        return new IPAddress(privacyIp).ToString();
+            return new IPAddress(privacyIp).ToString();
+        }
     }
     
-    public static string Redact(this IPEndPoint ip, bool redact)
+    extension(IPEndPoint ip)
     {
-        return $"{ip.Address.Redact(redact)}:{ip.Port}";
+        public string Redact(bool redact)
+        {
+            return $"{ip.Address.Redact(redact)}:{ip.Port}";
+        }
     }
 }

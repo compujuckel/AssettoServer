@@ -45,13 +45,12 @@ public class WeatherManager : BackgroundService, IHostedLifecycleService
     public TrackParams.TrackParams? TrackParams { get; private set; }
     public WeatherData CurrentWeather { get; private set; } = new(new WeatherType(), new WeatherType());
 
-    private ZonedDateTime _currentDateTime;
     public ZonedDateTime CurrentDateTime
     {
-        get => _currentDateTime;
+        get;
         set
         {
-            _currentDateTime = value;
+            field = value;
             UpdateSunPosition();
         }
     }

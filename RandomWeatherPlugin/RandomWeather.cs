@@ -27,9 +27,6 @@ public class RandomWeather : BackgroundService
 
         if (_configuration.Mode == RandomWeatherMode.TransitionTable)
         {
-            if (_configuration.WeatherTransitions.Count == 0)
-                throw new ConfigurationException("No entries were found in the WeatherTransitions list");
-            
             var next = _weatherTypeProvider.GetWeatherType(_configuration.WeatherTransitions.First().Key);
             var last = _weatherManager.CurrentWeather;
             _weatherManager.SetWeather(new WeatherData(last.Type, next)
@@ -47,22 +44,19 @@ public class RandomWeather : BackgroundService
                 RainWater = last.RainWater,
                 TrackGrip = last.TrackGrip
             });
-        
+
             RecalculateWeights(_configuration.WeatherTransitions[next.WeatherFxType]);
         }
         else if (_configuration.Mode == RandomWeatherMode.Default)
         {
-            if (_configuration.WeatherWeights.Count == 0)
-                throw new ConfigurationException("No entries were found in the WeatherWeights list");
-
-            _configuration.WeatherWeights[WeatherFxType.None] = 0;
-
             RecalculateWeights(_configuration.WeatherWeights);
         }
     }
 
-    private void RecalculateWeights(Dictionary<WeatherFxType,float> input)
+    private void RecalculateWeights(Dictionary<WeatherFxType, float> input)
     {
+        _weathers.Clear();
+
         float weightSum = input
             .Select(w => w.Value)
             .Sum();
@@ -70,7 +64,7 @@ public class RandomWeather : BackgroundService
         float prefixSum = 0.0f;
         foreach (var (weather, weight) in input)
         {
-            if (weight > 0)
+            if (weight > 0 && weather != WeatherFxType.None)
             {
                 prefixSum += weight / weightSum;
                 _weathers.Add(new WeatherWeight
@@ -119,13 +113,15 @@ public class RandomWeather : BackgroundService
     {
         int weatherDuration = 1000;
         int transitionDuration = 1000;
+        bool firstRun = true;
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 weatherDuration = Random.Shared.Next(_configuration.MinWeatherDurationMilliseconds, _configuration.MaxWeatherDurationMilliseconds);
-                transitionDuration = Random.Shared.Next(_configuration.MinTransitionDurationMilliseconds, _configuration.MaxTransitionDurationMilliseconds);
+                transitionDuration = (firstRun && _configuration.RandomizeInitialWeather) ? 0 : Random.Shared.Next(_configuration.MinTransitionDurationMilliseconds, _configuration.MaxTransitionDurationMilliseconds);
+                firstRun = false;
 
                 var next = PickRandom();
                 var nextWeatherType = _weatherTypeProvider.GetWeatherType(next);
@@ -136,7 +132,7 @@ public class RandomWeather : BackgroundService
                     nextWeatherType.WeatherFxType,
                     Math.Round(transitionDuration / 1000.0f),
                     Math.Round(weatherDuration / 60_000.0f, 1));
-                
+
                 _weatherManager.SetWeather(new WeatherData(last.Type, nextWeatherType)
                 {
                     TransitionDuration = transitionDuration,
@@ -152,7 +148,7 @@ public class RandomWeather : BackgroundService
                     RainWater = last.RainWater,
                     TrackGrip = last.TrackGrip
                 });
-                
+
                 if (_configuration.Mode == RandomWeatherMode.TransitionTable)
                     RecalculateWeights(_configuration.WeatherTransitions[next]);
             }

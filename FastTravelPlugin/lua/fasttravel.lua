@@ -26,7 +26,7 @@ local baseUrl = 'http://' .. ac.getServerIP() .. ':' .. ac.getServerPortHTTP() .
 local supportAPI_physics = physics.setGentleStop ~= nil
 local supportAPI_collision = physics.disableCarCollisions ~= nil
 local supportAPI_matrix = ac.getPatchVersionCode() >= 3037
-local trackCompassOffset = 24 -- for SRP
+local trackCompassOffset = ac.getCompassAngle(vec3(0, 0, -1))
 
 local font = 'Segoe UI'
 local fontBold = 'Segoe UI;Weight=Bold'
@@ -331,6 +331,7 @@ local function window_FastTravelDebug()
             if ui.checkbox("Use Group Draw Mode", debugUseGroupDrawMode) then
                 debugUseGroupDrawMode = not debugUseGroupDrawMode
                 config.useGroupDrawMode = debugUseGroupDrawMode
+                getTeleports()
             end
 
             if not debugUseGroupDrawMode then 
@@ -346,6 +347,7 @@ local function window_FastTravelDebug()
                 debugHideUntypedPoints, config.hideUntypedPoints = debugOrigHideUntypedPoints, debugOrigHideUntypedPoints
                 debugUseGroupDrawMode, config.useGroupDrawMode = debugOrigUseGroupDrawMode, debugOrigUseGroupDrawMode
                 debugDistanceModeRange, config.distanceModeRange = debugOrigDistanceModeRange, debugOrigDistanceModeRange
+                getTeleports()
             end
         end)
 

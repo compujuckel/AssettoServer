@@ -1,13 +1,10 @@
 ﻿using System.Net;
-using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace AssettoServer.Shared.Utils;
 
 public static class SocketAddressExtensions
 {
-    private static readonly GetIPv4AddressMethod GetIPv4AddressDelegate;
-    private delegate uint GetIPv4AddressMethod(ReadOnlySpan<byte> buffer);
-    
     extension(SocketAddress address)
     {
         public SocketAddress Clone()
@@ -24,15 +21,10 @@ public static class SocketAddressExtensions
 
         public uint GetIPv4Address()
         {
-            return GetIPv4AddressDelegate(address.Buffer.Span);
+            return GetIPv4Address(null, address.Buffer.Span);
         }
     }
 
-    static SocketAddressExtensions()
-    {
-        GetIPv4AddressDelegate = Assembly.GetAssembly(typeof(SocketAddress))!
-            .GetType("System.Net.SocketAddressPal")!
-            .GetMethod("GetIPv4Address", BindingFlags.Public | BindingFlags.Static)!
-            .CreateDelegate<GetIPv4AddressMethod>();
-    }
+    [UnsafeAccessor(UnsafeAccessorKind.StaticMethod)]
+    private static extern uint GetIPv4Address([UnsafeAccessorType("System.Net.SocketAddressPal, System.Net.Primitives")] object? a, ReadOnlySpan<byte> buffer);
 }

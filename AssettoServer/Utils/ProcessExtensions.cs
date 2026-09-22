@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
-using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.Versioning;
 
 namespace AssettoServer.Utils;
 
@@ -7,11 +8,18 @@ public static class ProcessExtensions
 {
     extension(Process process)
     {
-        public int GetParentProcessId()
+        [SupportedOSPlatform("windows")]
+        public int ParentProcessId
         {
-            return (int)typeof(Process)
-                .GetProperty("ParentProcessId", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .GetValue(process)!;
+            get
+            {
+                _ = process.TryGetParentProcessId(out var id);
+                return id;
+            }
         }
+        
+        [UnsafeAccessor(UnsafeAccessorKind.Method)]
+        [SupportedOSPlatform("windows")]
+        private extern bool TryGetParentProcessId(out int parentProcessId);
     }
 }

@@ -267,14 +267,18 @@ public static class Program
 
     private static void DetectContentManager()
     {
+        if (!OperatingSystem.IsWindows()) return;
+        
         try
         {
-            var parentId = Process.GetCurrentProcess().GetParentProcessId();
+            var parentId = Process.GetCurrentProcess().ParentProcessId;
             IsContentManager = Process.GetProcessById(parentId).ProcessName == "Content Manager";
         }
         catch (Exception)
         {
-            // ignored
+            #if DEBUG
+            throw;
+            #endif
         }
     }
 }

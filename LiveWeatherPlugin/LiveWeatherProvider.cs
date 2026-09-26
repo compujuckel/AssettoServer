@@ -26,17 +26,9 @@ public class LiveWeatherProvider : BackgroundService
     {
         _trackParams = _weatherManager.TrackParams ?? throw new InvalidOperationException("No track params set for track");
 
-        try
-        {
-            await UpdateAsync();
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error during live weather update");
-        }
-
         using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_configuration.UpdateIntervalMilliseconds));
-        while (await timer.WaitForNextTickAsync(stoppingToken))
+
+        do
         {
             try
             {
@@ -46,7 +38,7 @@ public class LiveWeatherProvider : BackgroundService
             {
                 Log.Error(ex, "Error during live weather update");
             }
-        }
+        } while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 
     private async Task UpdateAsync()

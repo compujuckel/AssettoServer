@@ -1,9 +1,12 @@
-using System.Diagnostics;
-using System.Reflection;
 using System.Text;
 using AssettoServer.Network.ClientMessages;
 using AssettoServer.Shared.Utils;
 using AutoModerationPlugin.Packets;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Running;
+using BenchmarkDotNet.Toolchains.InProcess.NoEmit;
 using FastTravelPlugin.Packets;
 using ReplayPlugin.Packets;
 using TagModePlugin.Packets;
@@ -91,46 +94,35 @@ public class CSPXxHash3MigrationTests
     }
 
     [Test]
-    public void Hash64_ReportsManagedAndNativePerformance()
+    public void Hash64_DoesNotAllocate()
     {
-        byte[][] inputs =
-        [
-            MakeKeyInput(OnlineEventGenerator.ParseClientMessage(typeof(TestMessage3)).Structure),
-            CreateInput(129),
-            CreateInput(4097)
-        ];
-
-        foreach (byte[] input in inputs)
+        foreach (int length in new[] { 0, 3, 8, 16, 53, 129, 4097 })
         {
-            _ = Measure(input, true);
-            _ = Measure(input, false);
+            byte[] input = CreateInput(length);
+            for (int i = 0; i < 2000; i++)
+                _ = CspXXHash3.Hash64(input);
 
-            var managed = Measure(input, true);
-            var native = Measure(input, false);
-            Assert.That(managed.Checksum, Is.EqualTo(native.Checksum), $"Length {input.Length}");
-            Assert.That(managed.AllocatedBytes, Is.Zero, $"Managed hashing allocated for length {input.Length}");
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 2000; i++)
+                _ = CspXXHash3.Hash64(input);
 
-            TestContext.Out.WriteLine(
-                $"Length {input.Length}: C# {managed.NanosecondsPerHash:F1} ns/hash, {managed.AllocatedBytes} B; " +
-                $"C++ {native.NanosecondsPerHash:F1} ns/hash, {native.AllocatedBytes} B; " +
-                $"ratio {managed.NanosecondsPerHash / native.NanosecondsPerHash:F2}x");
+            Assert.That(GC.GetAllocatedBytesForCurrentThread() - before, Is.Zero,
+                $"Managed hashing allocated for length {length}");
         }
     }
 
-    private static (double NanosecondsPerHash, long AllocatedBytes, long Checksum) Measure(byte[] input, bool managed)
+    [Test]
+    public void Hash64_BenchmarkManagedAndNativePerformance()
     {
-        const int iterations = 20_000;
-        long beforeAllocations = GC.GetAllocatedBytesForCurrentThread();
-        long start = Stopwatch.GetTimestamp();
-        long checksum = 0;
-        for (int i = 0; i < iterations; i++)
-            checksum = unchecked(checksum + (managed
-                ? CspXXHash3.Hash64(input)
-                : LegacyCppCSPXxHash3.Hash64(input)));
-
-        long elapsed = Stopwatch.GetTimestamp() - start;
-        long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - beforeAllocations;
-        return ((double)elapsed * 1_000_000_000 / Stopwatch.Frequency / iterations, allocatedBytes, checksum);
+#if DEBUG
+        Assert.Ignore("BenchmarkDotNet requires optimized assemblies; run this test with -c Release.");
+#endif
+        // BenchmarkDotNet 0.15.8 does not recognize the .NET 11 preview SDK for out-of-process jobs.
+        var config = ManualConfig.Create(DefaultConfig.Instance)
+            .AddJob(Job.ShortRun.WithToolchain(InProcessNoEmitToolchain.Instance));
+        var summary = BenchmarkRunner.Run<CSPXxHash3Benchmarks>(config);
+        Assert.That(summary.HasCriticalValidationErrors, Is.False);
+        Assert.That(summary.Reports.Count(report => report.ResultStatistics != null), Is.EqualTo(6));
     }
 
     private static byte[] CreateInput(int length)
@@ -161,4 +153,27 @@ public class CSPXxHash3MigrationTests
 
         return result.AsSpan(0, position).ToArray();
     }
+}
+
+[MemoryDiagnoser]
+public class CSPXxHash3Benchmarks
+{
+    [Params(53, 129, 4097)]
+    public int Length { get; set; }
+
+    private byte[] _input = null!;
+
+    [GlobalSetup]
+    public void SetUp()
+    {
+        _input = new byte[Length];
+        for (int i = 0; i < _input.Length; i++)
+            _input[i] = (byte)(i * 31);
+    }
+
+    [Benchmark(Baseline = true)]
+    public long Native() => LegacyCppCSPXxHash3.Hash64(_input);
+
+    [Benchmark]
+    public long Managed() => CspXXHash3.Hash64(_input);
 }

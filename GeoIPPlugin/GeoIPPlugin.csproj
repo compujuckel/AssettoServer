@@ -19,7 +19,7 @@
     <ItemGroup>
         <ProjectReference Include="..\AssettoServer\AssettoServer.csproj">
             <Private>false</Private>
-            <ExcludeAssets>runtime</ExcludeAssets>
+            <ExcludeAssets>runtime; native</ExcludeAssets>
         </ProjectReference>
     </ItemGroup>
 

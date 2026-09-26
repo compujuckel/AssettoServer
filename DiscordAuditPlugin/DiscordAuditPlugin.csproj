@@ -19,11 +19,11 @@
     <ItemGroup>
       <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj">
           <Private>false</Private>
-          <ExcludeAssets>runtime</ExcludeAssets>
+          <ExcludeAssets>runtime; native</ExcludeAssets>
       </ProjectReference>
       <ProjectReference Include="..\AssettoServer\AssettoServer.csproj">
         <Private>false</Private>
-        <ExcludeAssets>runtime</ExcludeAssets>
+        <ExcludeAssets>runtime; native</ExcludeAssets>
       </ProjectReference>
       <PackageReference Include="CSharpDiscordWebhookAsync" Version="1.0.2" />
     </ItemGroup>

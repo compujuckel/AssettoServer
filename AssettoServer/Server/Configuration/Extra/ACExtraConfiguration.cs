@@ -20,8 +20,6 @@ public class ACExtraConfiguration
     public bool UseSteamAuth { get; init; } = false;
     [YamlMember(Description = "Enable generation of Guid from name instead of SteamID. Required for ACPro", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool EnableACProSupport { get; init; } = false;
-    [YamlMember(Description = "Steam Web API key for Steam authentication. You only need this on platforms that don't support Steam natively (e.g. ARM64)", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
-    public string? SteamWebApiKey { get; init; }
     [YamlMember(Description = "List of DLC App IDs that are required to join. Steam auth must be enabled. Possible values: https://steamdb.info/app/244210/dlc/")]
     public List<int> ValidateDlcOwnership { get; init; } = [];
     [YamlMember(Description = "Enable protection against cheats/hacks. 0 = No protection. 1 = Block all public cheats as of 2023-11-18 (ClientSecurityPlugin and CSP 0.2.0+ required)", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]

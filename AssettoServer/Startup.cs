@@ -134,11 +134,7 @@ public class Startup
         {
             if (_configuration.Extra.UseSteamAuth)
             {
-#if DISABLE_STEAM
-                builder.RegisterType<WebApiSteam>().As<ISteam>().SingleInstance();
-#else
                 builder.RegisterType<NativeSteam>().As<IHostedService>().As<ISteam>().SingleInstance();
-#endif
                 builder.RegisterType<SteamManager>().AsSelf().SingleInstance().AutoActivate();
                 builder.RegisterType<SteamSlotFilter>().As<IOpenSlotFilter>();
             }

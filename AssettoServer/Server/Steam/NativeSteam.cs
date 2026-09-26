@@ -35,9 +35,10 @@ public class NativeSteam : BackgroundService, ISteam
         {
             SteamServer.Init(ISteam.AppId, serverInit);
         }
-        catch
+        catch (Exception ex)
         {
-            // ignored
+            if (_firstRun) throw;
+            Log.Error(ex, "Error trying to initialize SteamServer");
         }
 
         try

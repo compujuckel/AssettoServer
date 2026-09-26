@@ -7,7 +7,15 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Windows')) AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64' ">win-x64</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Linux')) AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64' ">linux-x64</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Linux')) AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64' ">linux-arm64</RuntimeIdentifier>
     </PropertyGroup>
+
+    <ItemGroup>
+        <RedistFiles Include="Redist\$(RuntimeIdentifier)\*" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
@@ -23,9 +31,18 @@
         </PackageReference>
     </ItemGroup>
 
+    <Target Name="CopyRedistFilesOnBuild" AfterTargets="AfterBuild">
+        <Copy SourceFiles="@(RedistFiles)" DestinationFolder="$(OutDir)" />
+    </Target>
+
     <ItemGroup>
       <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj" />
       <ProjectReference Include="..\AssettoServer\AssettoServer.csproj" />
+      <ProjectReference Include="..\AutoModerationPlugin\AutoModerationPlugin.csproj" />
+      <ProjectReference Include="..\FastTravelPlugin\FastTravelPlugin.csproj" />
+      <ProjectReference Include="..\ReplayPlugin\ReplayPlugin.csproj" />
+      <ProjectReference Include="..\TagModePlugin\TagModePlugin.csproj" />
+      <ProjectReference Include="..\VotingPresetPlugin\VotingPresetPlugin.csproj" />
     </ItemGroup>
 
 </Project>

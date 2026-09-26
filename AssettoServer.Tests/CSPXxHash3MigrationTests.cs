@@ -6,7 +6,6 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
-using BenchmarkDotNet.Toolchains.InProcess.NoEmit;
 using FastTravelPlugin.Packets;
 using ReplayPlugin.Packets;
 using TagModePlugin.Packets;
@@ -120,9 +119,8 @@ public class CSPXxHash3MigrationTests
 #if DEBUG
         Assert.Ignore("BenchmarkDotNet requires optimized assemblies; run this test with -c Release.");
 #endif
-        // BenchmarkDotNet 0.15.8 does not recognize the .NET 11 preview SDK for out-of-process jobs.
         var config = ManualConfig.Create(DefaultConfig.Instance)
-            .AddJob(Job.ShortRun.WithToolchain(InProcessNoEmitToolchain.Instance));
+            .AddJob(Job.ShortRun);
         var summary = BenchmarkRunner.Run<CSPXxHash3Benchmarks>(config);
         Assert.That(summary.HasCriticalValidationErrors, Is.False);
         Assert.That(summary.Reports.Count(report => report.ResultStatistics != null), Is.EqualTo(6));

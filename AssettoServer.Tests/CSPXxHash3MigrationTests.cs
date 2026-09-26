@@ -96,6 +96,9 @@ public class CSPXxHash3MigrationTests
     [Test]
     public void Hash64_DoesNotAllocate()
     {
+#if DEBUG
+        Assert.Ignore("This test requires optimized assemblies; run this test with -c Release.");
+#endif
         foreach (int length in new[] { 0, 3, 8, 16, 53, 129, 4097 })
         {
             byte[] input = CreateInput(length);

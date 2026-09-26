@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace AssettoServer.Vendor.CSPXxHash3;
+namespace AssettoServer.Tests;
 
-internal static unsafe partial class CSPXxHash3
+internal static unsafe partial class LegacyCppCSPXxHash3
 {
     [LibraryImport("csp_xxhash3", EntryPoint = "XXH3_64bits")]
     private static partial long Hash64Internal(void* data, UIntPtr len);

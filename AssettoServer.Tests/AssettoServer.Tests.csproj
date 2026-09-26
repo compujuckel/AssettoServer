@@ -7,9 +7,18 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Windows')) AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64' ">win-x64</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Linux')) AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64' ">linux-x64</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Linux')) AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64' ">linux-arm64</RuntimeIdentifier>
     </PropertyGroup>
 
     <ItemGroup>
+        <None Update="Redist\$(RuntimeIdentifier)\*" CopyToOutputDirectory="PreserveNewest" TargetPath="%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.16.0-preview.2" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
         <PackageReference Include="NUnit" Version="4.6.1" />
         <PackageReference Include="NUnit3TestAdapter" Version="6.3.0" />
@@ -26,6 +35,11 @@
     <ItemGroup>
       <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj" />
       <ProjectReference Include="..\AssettoServer\AssettoServer.csproj" />
+      <ProjectReference Include="..\AutoModerationPlugin\AutoModerationPlugin.csproj" />
+      <ProjectReference Include="..\FastTravelPlugin\FastTravelPlugin.csproj" />
+      <ProjectReference Include="..\ReplayPlugin\ReplayPlugin.csproj" />
+      <ProjectReference Include="..\TagModePlugin\TagModePlugin.csproj" />
+      <ProjectReference Include="..\VotingPresetPlugin\VotingPresetPlugin.csproj" />
     </ItemGroup>
 
 </Project>

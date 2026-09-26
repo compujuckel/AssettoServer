@@ -26,5 +26,5 @@
             <ExcludeAssets>runtime</ExcludeAssets>
         </ProjectReference>
     </ItemGroup>
-    
+
 </Project>

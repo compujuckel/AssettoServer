@@ -12,7 +12,7 @@ public class LiveWeatherProvider : BackgroundService
     private readonly OpenWeatherMapWeatherProvider _liveWeatherProvider;
     private readonly WeatherManager _weatherManager;
     private readonly IWeatherTypeProvider _weatherTypeProvider;
-    private TrackParams _trackParams = null!; 
+    private TrackParams _trackParams = null!;
 
     public LiveWeatherProvider(LiveWeatherConfiguration configuration, WeatherManager weatherManager, IWeatherTypeProvider weatherTypeProvider)
     {
@@ -25,7 +25,16 @@ public class LiveWeatherProvider : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _trackParams = _weatherManager.TrackParams ?? throw new InvalidOperationException("No track params set for track");
-        
+
+        try
+        {
+            await UpdateAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during live weather update");
+        }
+
         using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_configuration.UpdateIntervalMilliseconds));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
@@ -45,12 +54,12 @@ public class LiveWeatherProvider : BackgroundService
         var last = _weatherManager.CurrentWeather;
         var response = await _liveWeatherProvider.GetWeatherAsync(_trackParams.Latitude, _trackParams.Longitude);
         var weatherType = _weatherTypeProvider.GetWeatherType(response.WeatherType);
-            
+
         Log.Debug("Live weather: {WeatherType}, ambient {TemperatureAmbient}°C", response.WeatherType, response.TemperatureAmbient);
 
         _weatherManager.SetWeather(new WeatherData(last.Type, weatherType)
         {
-            TransitionDuration = 120000.0,
+            TransitionDuration = _configuration.TransitionDurationMilliseconds,
             TemperatureAmbient = response.TemperatureAmbient,
             TemperatureRoad = (float)WeatherUtils.GetRoadTemperature(_weatherManager.CurrentDateTime.TimeOfDay.TickOfDay / 10_000_000.0, response.TemperatureAmbient,
                 weatherType.TemperatureCoefficient),

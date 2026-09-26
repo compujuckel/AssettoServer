@@ -23,8 +23,14 @@ jobs:
       run: dotnet publish --runtime linux-arm64 -c Release
     - name: Publish (Windows x64)
       run: dotnet publish --runtime win-x64 -c Release
+    # Let me know if there is a better way to force Steam to look into the current directory for steamclient.so
+    # I'd rather not tell everyone to manually set LD_LIBRARY_PATH when starting AssettoServer
+    - name: Set libsteam_api.so rpath (Linux x64)
+      run: patchelf --set-rpath . out-linux-x64/libsteam_api.so
     - name: Package (Linux x64)
       run: cd out-linux-x64 && tar -czf assetto-server-linux-x64.tar.gz * && cd ..
+    - name: Set libsteam_api.so rpath (Linux arm64)
+      run: patchelf --set-rpath . out-linux-arm64/libsteam_api.so
     - name: Package (Linux arm64)
       run: cd out-linux-arm64 && tar -czf assetto-server-linux-arm64.tar.gz * && cd ..
     - name: Package (Windows x64)

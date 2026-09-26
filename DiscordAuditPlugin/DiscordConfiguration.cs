@@ -12,6 +12,8 @@ public class DiscordConfiguration
     public string? AuditUrl { get; init; }
     [YamlMember(Description = "Discord webhook URL for chat messages")]
     public string? ChatUrl { get; init; }
+    [YamlMember(Description = "Discord webhook URL for plugin events")]
+    public string? PluginEventUrl { get; init; }
     [YamlMember(Description = "Set this to true if the Discord username of the bot should be the AC server name")]
     public bool ChatMessageIncludeServerName { get; init; } = false;
     [YamlMember(Description = "Set this to true if the audit message should include the Steam ID")]

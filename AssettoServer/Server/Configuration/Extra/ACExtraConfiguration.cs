@@ -7,8 +7,6 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
-#pragma warning disable CS0657
-
 namespace AssettoServer.Server.Configuration.Extra;
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
@@ -17,7 +15,7 @@ public class ACExtraConfiguration
     [YamlMember(Description = "Override minimum CSP version required to join this server. Leave this empty to not require CSP.")]
     public uint? MinimumCSPVersion { get; init; } = CSPVersion.V0_2_0;
     [YamlMember(Description = "Enable Steam ticket validation. Requires CSP 0.1.75+ and a recent version of Content Manager")]
-    public bool UseSteamAuth { get; init; } = false;
+    public bool UseSteamAuth { get; init; } = true;
     [YamlMember(Description = "Enable generation of Guid from name instead of SteamID. Required for ACPro", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public bool EnableACProSupport { get; init; } = false;
     [YamlMember(Description = "List of DLC App IDs that are required to join. Steam auth must be enabled. Possible values: https://steamdb.info/app/244210/dlc/")]

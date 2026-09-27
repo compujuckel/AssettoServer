@@ -5,7 +5,6 @@ using YamlDotNet.Serialization;
 
 namespace AssettoServer.Server.Configuration.Extra;
 
-#pragma warning disable CS0657
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
 public partial class AiParams : ObservableObject
 {

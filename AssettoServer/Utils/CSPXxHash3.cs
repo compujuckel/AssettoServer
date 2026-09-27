@@ -32,15 +32,19 @@
    - xxHash source repository : https://github.com/Cyan4973/xxHash
 */
 
+using System;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 
-namespace AssettoServer.Shared.Utils;
+namespace AssettoServer.Utils;
 
 /// <summary>
 /// CSP's XXH3 variant for Online Event keys. This is not the standard XXH3 implementation.
+///
+/// This code was translated from C++ to C# using AI. The original code can be found here:
+/// https://github.com/compujuckel/AssettoServer/tree/5f98d2aeae40ed47e2daa2706b5a48175bf533e4/csp_xxhash3
 /// </summary>
-public static class CspXXHash3
+internal static class CSPXxHash3
 {
     private const ulong Prime64_1 = 11400714785074694791; /* 0b1001111000110111011110011011000110000101111010111100101010000111 */
     private const ulong Prime64_2 = 14029467366897019727; /* 0b1100001010110010101011100011110100100111110101001110101101001111 */
@@ -67,7 +71,7 @@ public static class CspXXHash3
     /// <summary>
     /// Only use this for CSP Online Event key generation. Use System.IO.Hashing for other hashes.
     /// </summary>
-    public static long Hash64(ReadOnlySpan<byte> data)
+    internal static long Hash64(ReadOnlySpan<byte> data)
     {
         unchecked
         {

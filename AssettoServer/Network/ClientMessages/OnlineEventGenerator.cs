@@ -8,6 +8,7 @@ using System.Text;
 using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Shared.Network.Packets.Shared;
 using AssettoServer.Shared.Utils;
+using AssettoServer.Utils;
 using Serilog;
 using Sigil;
 
@@ -47,7 +48,7 @@ internal static class OnlineEventGenerator
             }
         }
 
-        var hash = CspXXHash3.Hash64(stream.GetSpan());
+        var hash = CSPXxHash3.Hash64(stream.GetSpan());
         return (uint)hash ^ (uint)(hash >> 32);
     }
 

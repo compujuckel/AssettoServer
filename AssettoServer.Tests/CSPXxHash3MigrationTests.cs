@@ -1,13 +1,12 @@
 using System.Text;
 using AssettoServer.Network.ClientMessages;
-using AssettoServer.Shared.Utils;
+using AssettoServer.Utils;
 using AutoModerationPlugin.Packets;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using FastTravelPlugin.Packets;
-using ReplayPlugin.Packets;
 using TagModePlugin.Packets;
 using VotingPresetPlugin.Preset;
 
@@ -38,7 +37,7 @@ public class CSPXxHash3MigrationTests
             foreach (int offset in new[] { 0, 1, 3, 7 })
             {
                 ReadOnlySpan<byte> input = buffer.AsSpan(offset, length);
-                Assert.That(CspXXHash3.Hash64(input), Is.EqualTo(LegacyCppCSPXxHash3.Hash64(input)),
+                Assert.That(CSPXxHash3.Hash64(input), Is.EqualTo(LegacyCppCSPXxHash3.Hash64(input)),
                     $"Length {length}, offset {offset}");
             }
         }
@@ -51,7 +50,7 @@ public class CSPXxHash3MigrationTests
         [
             typeof(ApiKeyPacket), typeof(CollisionUpdatePacket), typeof(LuaReadyPacket),
             typeof(RequestResetPacket), typeof(TeleportCarPacket), typeof(AutoModerationFlags),
-            typeof(FastTravelPacket), typeof(UploadDataPacket), typeof(TagModeColorPacket),
+            typeof(FastTravelPacket), typeof(TagModeColorPacket),
             typeof(ReconnectClientPacket), typeof(TestOnlineEvent)
         ];
 
@@ -76,7 +75,7 @@ public class CSPXxHash3MigrationTests
             var info = OnlineEventGenerator.ParseClientMessage(type);
             byte[] definition = MakeKeyInput(info.Structure);
             long native = LegacyCppCSPXxHash3.Hash64(definition);
-            long managed = CspXXHash3.Hash64(definition);
+            long managed = CSPXxHash3.Hash64(definition);
             uint packetType = unchecked((uint)native ^ (uint)(native >> 32));
 
             Assert.That(managed, Is.EqualTo(native), $"{type.FullName}: {info.Structure}");
@@ -102,11 +101,11 @@ public class CSPXxHash3MigrationTests
         {
             byte[] input = CreateInput(length);
             for (int i = 0; i < 2000; i++)
-                _ = CspXXHash3.Hash64(input);
+                _ = CSPXxHash3.Hash64(input);
 
             long before = GC.GetAllocatedBytesForCurrentThread();
             for (int i = 0; i < 2000; i++)
-                _ = CspXXHash3.Hash64(input);
+                _ = CSPXxHash3.Hash64(input);
 
             Assert.That(GC.GetAllocatedBytesForCurrentThread() - before, Is.Zero,
                 $"Managed hashing allocated for length {length}");
@@ -176,5 +175,5 @@ public class CSPXxHash3Benchmarks
     public long Native() => LegacyCppCSPXxHash3.Hash64(_input);
 
     [Benchmark]
-    public long Managed() => CspXXHash3.Hash64(_input);
+    public long Managed() => CSPXxHash3.Hash64(_input);
 }

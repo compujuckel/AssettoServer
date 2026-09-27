@@ -90,12 +90,13 @@ public class OpenWeatherMapWeatherProvider
         _apiKey = apiKey;
         _httpClient = new HttpClient();
     }
+
     public async Task<LiveWeatherProviderResponse> GetWeatherAsync(double lat, double lon)
     {
         HttpResponseMessage response = await _httpClient.GetAsync($"https://api.openweathermap.org/data/2.5/weather?appid={_apiKey}&units=metric&lat={lat}&lon={lon}");
 
         JObject json = JObject.Parse(await response.Content.ReadAsStringAsync());
-        
+
         if (!response.IsSuccessStatusCode)
         {
             var code = (int)json.SelectToken("cod")!;

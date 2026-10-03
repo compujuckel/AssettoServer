@@ -1,12 +1,12 @@
 ﻿using System;
 using System.IO;
+using System.IO.Pipelines;
 using System.Net;
 using System.Threading.Tasks;
 using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Utils;
-using DotNext.IO;
+using DotNext.Buffers;
 using Microsoft.AspNetCore.Connections;
-using Serilog;
 
 namespace AssettoServer.Network.Tcp;
 
@@ -17,23 +17,13 @@ public class TcpConnectionMiddleware
 
     public TcpConnectionMiddleware(ConnectionDelegate next, Func<Stream, IPEndPoint, ACTcpClient> acTcpClientFactory)
     {
-        Log.Debug("Created TcpConnectionMiddleware");
         _next = next;
         _acTcpClientFactory = acTcpClientFactory;
     }
 
     public async Task OnConnectionAsync(ConnectionContext context)
     {
-        var pipe = context.Transport.Input;
-        var result = await pipe.ReadAtLeastAsync(3 /* packet size + type */);
-
-        var reader = new SequenceReader(result.Buffer);
-        reader.Skip(2);
-        var firstByte = reader.ReadByte();
-        
-        pipe.AdvanceTo(result.Buffer.Start);
-        
-        if (firstByte == (byte)ACServerProtocol.RequestNewConnection)
+        if (await IsAssettoProtocolAsync(context.Transport.Input))
         {
             ACTcpClient acClient = _acTcpClientFactory(DuplexPipeStreamFactory.Create(context.Transport.Input, context.Transport.Output), (IPEndPoint)context.RemoteEndPoint!);
             await acClient.RunAsync();
@@ -42,5 +32,18 @@ public class TcpConnectionMiddleware
         {
             await _next(context);
         }
+    }
+
+    private static async Task<bool> IsAssettoProtocolAsync(PipeReader pipe)
+    {
+        var result = await pipe.ReadAtLeastAsync(3 /* packet size + type */);
+
+        var reader = new SequenceReader(result.Buffer);
+        reader.Skip(2);
+        var firstByte = reader.ReadByte();
+        
+        pipe.AdvanceTo(result.Buffer.Start);
+        
+        return firstByte == (byte)ACServerProtocol.RequestNewConnection;
     }
 }

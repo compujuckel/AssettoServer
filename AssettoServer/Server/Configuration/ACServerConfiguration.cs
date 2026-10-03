@@ -309,6 +309,26 @@ public partial class ACServerConfiguration
                 Extra.ServerDescription = WrapperParams.Description;
             }
         }
+
+        if (Server.TcpPort == 0)
+        {
+            Server.TcpPort = Server.HttpPort;
+        }
+        if (Server.UdpPort == 0)
+        {
+            Server.UdpPort = Server.HttpPort;
+        }
+
+        if (Server.TcpPort != Server.HttpPort)
+        {
+            Log.Warning("Setting TCP_PORT in server_cfg.ini is ignored, HTTP and TCP will share the same port. Remove TCP_PORT or set it to {HttpPort} to get rid of this warning", Server.HttpPort);
+            Server.TcpPort = Server.HttpPort;
+        }
+
+        if (Server.UdpPort != Server.HttpPort)
+        {
+            Log.Information("Setting UDP_PORT in server_cfg.ini is obsolete, HTTP and UDP can share the same port. Remove UDP_PORT or set it to {HttpPort} to get rid of this message", Server.HttpPort);
+        }
     }
 
     internal void LoadPluginConfiguration(ACPluginLoader loader, ContainerBuilder? builder)

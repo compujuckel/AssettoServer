@@ -102,7 +102,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Log.Information("Starting HTTP server on port {HttpPort}", _configuration.Server.HttpPort);
+        Log.Information("Starting HTTP+TCP server on port {HttpPort}", _configuration.Server.HttpPort);
         
         var mainThread = new Thread(() => MainLoop(stoppingToken))
         {

@@ -4,8 +4,8 @@ using System.IO.Pipelines;
 using System.Net;
 using System.Threading.Tasks;
 using AssettoServer.Shared.Network.Packets;
-using AssettoServer.Utils;
 using DotNext.Buffers;
+using DotNext.IO.Pipelines;
 using Microsoft.AspNetCore.Connections;
 
 namespace AssettoServer.Network.Tcp;
@@ -25,7 +25,7 @@ public class TcpConnectionMiddleware
     {
         if (await IsAssettoProtocolAsync(context.Transport.Input))
         {
-            ACTcpClient acClient = _acTcpClientFactory(DuplexPipeStreamFactory.Create(context.Transport.Input, context.Transport.Output), (IPEndPoint)context.RemoteEndPoint!);
+            ACTcpClient acClient = _acTcpClientFactory(context.Transport.AsStream(), (IPEndPoint)context.RemoteEndPoint!);
             await acClient.RunAsync();
         }
         else

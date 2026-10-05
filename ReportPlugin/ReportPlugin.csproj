@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <Import Project="..\Plugin.props" />
-
-    <ItemGroup>
-        <PackageReference Include="CSharpDiscordWebhookAsync" Version="1.0.2" />
-    </ItemGroup>
-
-</Project>

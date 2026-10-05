@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    
+    <ItemGroup>
+      <None Remove="lua\automoderation.lua" />
+      <EmbeddedResource Include="lua\automoderation.lua" />
+    </ItemGroup>
+
+</Project>

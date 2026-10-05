@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <Import Project="..\Plugin.props" />
-
-    <ItemGroup>
-      <PackageReference Include="MaxMind.GeoIP2" Version="6.1.0" />
-    </ItemGroup>
-
-</Project>

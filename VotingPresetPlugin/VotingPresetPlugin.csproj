@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <Import Project="..\Plugin.props" />
-
-    <ItemGroup>
-        <None Remove="lua\reconnectclient.lua" />
-        <EmbeddedResource Include="lua\reconnectclient.lua" />
-    </ItemGroup>
-</Project>

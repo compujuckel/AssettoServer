@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <None Remove="lua\reconnectclient.lua" />
+        <EmbeddedResource Include="lua\reconnectclient.lua" />
+    </ItemGroup>
+</Project>

@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <PackageReference Include="MaxMind.GeoIP2" Version="6.1.0" />
+    </ItemGroup>
+
+</Project>

@@ -35,7 +35,7 @@
         <PackageReference Include="CXuesong.Luaon.Json" Version="0.2.1"/>
         <PackageReference Include="DotNext.IO" Version="6.8.0"/>
         <PackageReference Include="DotNext.Unsafe" Version="6.8.0"/>
-        <PackageReference Include="ErrorProne.NET.CoreAnalyzers" Version="0.6.1-beta.1">
+        <PackageReference Include="ErrorProne.NET.CoreAnalyzers" Version="0.9.0-beta.4">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

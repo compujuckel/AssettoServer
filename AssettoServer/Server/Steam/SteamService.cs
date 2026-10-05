@@ -1,10 +1,8 @@
-﻿#if !DISABLE_STEAM
-
-using System;
-using System.Net;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
+using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -12,15 +10,25 @@ using Steamworks;
 
 namespace AssettoServer.Server.Steam;
 
-public class NativeSteam : BackgroundService, ISteam
+public class SteamService : BackgroundService
 {
+    private const int AppId = 244210;
+    
     private readonly ACServerConfiguration _configuration;
+    private readonly IBlacklistService _blacklist;
 
     private bool _firstRun = true;
     
-    public NativeSteam(ACServerConfiguration configuration)
+    public SteamService(ACServerConfiguration configuration, CSPFeatureManager cspFeatureManager, IBlacklistService blacklist)
     {
         _configuration = configuration;
+        _blacklist = blacklist;
+        
+        cspFeatureManager.Add(new CSPFeature
+        {
+            Name = "STEAM_TICKET",
+            Mandatory = true
+        });
     }
 
     private void Initialize()
@@ -33,7 +41,7 @@ public class NativeSteam : BackgroundService, ISteam
 
         try
         {
-            SteamServer.Init(ISteam.AppId, serverInit);
+            SteamServer.Init(AppId, serverInit);
         }
         catch (Exception ex)
         {
@@ -56,20 +64,37 @@ public class NativeSteam : BackgroundService, ISteam
 
         _firstRun = false;
     }
-
-    internal void HandleIncomingPacket(byte[] data, IPEndPoint endpoint)
+    
+    public async Task<bool> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, ACTcpClient client)
     {
-        SteamServer.HandleIncomingPacket(data, data.Length, endpoint.Address.IpToInt32(), (ushort)endpoint.Port);
+        var result = await ValidateSessionTicketInternalAsync(sessionTicket, guid, client);
 
-        while (SteamServer.GetOutgoingPacket(out var packet))
+        if (result.Success)
         {
-            var dstEndpoint = new IPEndPoint((uint)IPAddress.HostToNetworkOrder((int)packet.Address), packet.Port);
-            Log.Debug("Outgoing steam packet to {Endpoint}", dstEndpoint);
-            //_server.UdpServer.Send(dstEndpoint, packet.Data, 0, packet.Size); TODO
+            client.Guid = result.SteamId;
+            client.OwnerGuid = result.OwnerSteamId;
+            if (client.Guid != client.OwnerGuid)
+            {
+                if (await _blacklist.IsBlacklistedAsync(client.OwnerGuid.Value))
+                {
+                    client.Logger.Information("{ClientName} ({SteamId}) is using Steam family sharing and game owner {OwnerSteamId} is blacklisted", client.Name, client.Guid, client.OwnerGuid);
+                    return false;
+                }
+
+                client.Logger.Information("{ClientName} ({SteamId}) is using Steam family sharing, owner {OwnerSteamId}", client.Name, client.Guid, client.OwnerGuid);
+            }
+
+            client.Logger.Information("Steam authentication succeeded for {ClientName} ({SteamId})", client.Name, client.Guid);
         }
+        else
+        {
+            client.Logger.Warning("Steam authentication failed for {ClientName} ({SessionId}): {ErrorReason}", client.Name, client.SessionId, result.ErrorReason);
+        }
+
+        return result.Success;
     }
     
-    public async Task<SteamResult> ValidateSessionTicketAsync(byte[]? sessionTicket, ulong guid, ACTcpClient client)
+    private async Task<SteamResult> ValidateSessionTicketInternalAsync(byte[]? sessionTicket, ulong guid, ACTcpClient client)
     {
         if (sessionTicket == null) return new SteamResult { ErrorReason = "Missing session ticket" };
 
@@ -190,6 +215,12 @@ public class NativeSteam : BackgroundService, ISteam
         SteamServer.OnSteamServersDisconnected -= SteamServer_OnSteamServersDisconnected;
         SteamServer.OnSteamServerConnectFailure -= SteamServer_OnSteamServerConnectFailure;
     }
+    
+    private class SteamResult
+    {
+        public bool Success { get; init; }
+        public ulong SteamId { get; init; }
+        public ulong OwnerSteamId { get; init; }
+        public string? ErrorReason { get; init; }
+    }
 }
-
-#endif

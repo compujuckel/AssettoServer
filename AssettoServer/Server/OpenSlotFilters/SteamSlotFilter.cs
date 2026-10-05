@@ -8,9 +8,9 @@ namespace AssettoServer.Server.OpenSlotFilters;
 
 public class SteamSlotFilter : OpenSlotFilterBase
 {
-    private readonly SteamManager _steam;
+    private readonly SteamService _steam;
 
-    public SteamSlotFilter(SteamManager steam)
+    public SteamSlotFilter(SteamService steam)
     {
         _steam = steam;
     }

@@ -134,8 +134,7 @@ public class Startup
         {
             if (_configuration.Extra.UseSteamAuth)
             {
-                builder.RegisterType<NativeSteam>().As<IHostedService>().As<ISteam>().SingleInstance();
-                builder.RegisterType<SteamManager>().AsSelf().SingleInstance().AutoActivate();
+                builder.RegisterType<SteamService>().AsSelf().As<IHostedService>().SingleInstance();
                 builder.RegisterType<SteamSlotFilter>().As<IOpenSlotFilter>();
             }
         }

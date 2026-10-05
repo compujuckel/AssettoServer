@@ -1,5 +1,5 @@
+using System.Text.Json;
 using AssettoServer.Shared.Network.Http.Responses;
-using Newtonsoft.Json;
 
 namespace AssettoServer.Shared.Network.Http;
 
@@ -17,7 +17,7 @@ public class ServerQueryClient
         var response = await Client.GetAsync($"http://{host}/INFO").ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
-        return JsonConvert.DeserializeObject<InfoResponse>(content);
+        return JsonSerializer.Deserialize<InfoResponse>(content);
     }
     
     public async Task<EntryListResponse?> GetEntryListAsync(string host, ulong? guid = null)
@@ -25,7 +25,7 @@ public class ServerQueryClient
         var response = await Client.GetAsync($"http://{host}/JSON|{guid}").ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
-        return JsonConvert.DeserializeObject<EntryListResponse>(content);
+        return JsonSerializer.Deserialize<EntryListResponse>(content);
     }
     
     public async Task<DetailResponse?> GetDetailsAsync(string host, ulong? guid = null)
@@ -33,6 +33,6 @@ public class ServerQueryClient
         var response = await Client.GetAsync($"http://{host}/api/details?guid={guid}").ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
-        return JsonConvert.DeserializeObject<DetailResponse>(content);
+        return JsonSerializer.Deserialize<DetailResponse>(content);
     }
 }

@@ -24,14 +24,12 @@ public class ConfigurationController : ControllerBase
     }
 
     [HttpGet("")]
-    [Produces("text/x-lua")]
     public ConfigurationObject? GetConfiguration()
     {
         return _serializer.ParseSection(_configuration);
     }
 
     [HttpPost("")]
-    [Produces("text/x-lua")]
     public SetConfigurationResponse SetConfigurationValue(string key, string value)
     {
         try

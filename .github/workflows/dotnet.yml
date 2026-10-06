@@ -8,6 +8,12 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    
+    # Required for provenance attestation
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -29,6 +35,13 @@ jobs:
       run: cd out-linux-arm64 && tar -czf assetto-server-linux-arm64.tar.gz * && cd ..
     - name: Package (Windows x64)
       run: cd out-win-x64 && zip -r assetto-server-win-x64.zip * && cd ..
+    - name: Create provenance attestation
+      uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+      with:
+        subject-path: |
+          out-linux-x64/assetto-server-linux-x64.tar.gz
+          out-linux-arm64/assetto-server-linux-arm64.tar.gz
+          out-win-x64/assetto-server-win-x64.zip
     - name: Release (draft)
       uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
       with:

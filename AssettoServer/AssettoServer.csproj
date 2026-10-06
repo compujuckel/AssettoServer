@@ -107,6 +107,11 @@
         <EmbeddedResource Include="Assets\server_cfg.ini"/>
         <None Remove="Assets\entry_list.ini"/>
         <EmbeddedResource Include="Assets\entry_list.ini"/>
+        <Content Update="Assets\checksums_ks.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+            <TargetPath>content\checksums_ks.json</TargetPath>
+        </Content>
 
         <None Update="wwwroot\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

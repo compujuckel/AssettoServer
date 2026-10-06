@@ -15,6 +15,7 @@
 
     <ItemGroup>
         <None Update="Redist\$(RuntimeIdentifier)\*" CopyToOutputDirectory="PreserveNewest" TargetPath="%(Filename)%(Extension)" />
+        <None Include="..\AssettoServer\Assets\checksums_remote.json" CopyToOutputDirectory="PreserveNewest" TargetPath="content\checksums_remote.json" />
     </ItemGroup>
 
     <ItemGroup>
@@ -34,7 +35,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj" />
-      <ProjectReference Include="..\AssettoServer\AssettoServer.csproj" />
+      <ProjectReference Include="..\AssettoServer\AssettoServer.csproj" />      <ProjectReference Include="..\ChecksumUtils\ChecksumUtils.csproj" />
       <ProjectReference Include="..\Plugins\AutoModerationPlugin\AutoModerationPlugin.csproj" />
       <ProjectReference Include="..\Plugins\FastTravelPlugin\FastTravelPlugin.csproj" />
       <ProjectReference Include="..\Plugins\TagModePlugin\TagModePlugin.csproj" />

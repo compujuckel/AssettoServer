@@ -1,5 +1,4 @@
 ﻿using AssettoServer.Shared.Weather;
-using Newtonsoft.Json.Linq;
 
 namespace LiveWeatherPlugin;
 
@@ -93,25 +92,25 @@ public class OpenWeatherMapWeatherProvider
 
     public async Task<LiveWeatherProviderResponse> GetWeatherAsync(double lat, double lon)
     {
-        HttpResponseMessage response = await _httpClient.GetAsync($"https://api.openweathermap.org/data/2.5/weather?appid={_apiKey}&units=metric&lat={lat}&lon={lon}");
-
-        JObject json = JObject.Parse(await response.Content.ReadAsStringAsync());
+        var response = await _httpClient.GetAsync($"https://api.openweathermap.org/data/2.5/weather?appid={_apiKey}&units=metric&lat={lat}&lon={lon}");
 
         if (!response.IsSuccessStatusCode)
         {
-            var code = (int)json.SelectToken("cod")!;
-            var message = (string)json.SelectToken("message")!;
-            throw new OpenWeatherMapException($"OpenWeatherMap returned error {code}: {message}");
+            var error = await response.Content.ReadFromJsonAsync<OpenWeatherMapError>() ?? throw new OpenWeatherMapException("Could not parse error message");
+            throw new OpenWeatherMapException($"OpenWeatherMap returned error {error.Code}: {error.Message}");
         }
+
+        var json = await response.Content.ReadFromJsonAsync<OpenWeatherMapResponse>()
+                   ?? throw new OpenWeatherMapException("Could not parse weather response");
 
         return new LiveWeatherProviderResponse
         {
-            WeatherType = TranslateIdToWeatherType((OpenWeatherType)(int)json.SelectToken("weather[0].id")!),
-            TemperatureAmbient = Math.Max(0, (float)json.SelectToken("main.temp")!),
-            Pressure = (int)json.SelectToken("main.pressure")!,
-            Humidity = (int)json.SelectToken("main.humidity")!,
-            WindSpeed = (float)json.SelectToken("wind.speed")!,
-            WindDirection = (int)json.SelectToken("wind.deg")!
+            WeatherType = TranslateIdToWeatherType((OpenWeatherType)json.Weather.First().Id),
+            TemperatureAmbient = Math.Max(0, json.Main.Temperature),
+            Pressure = json.Main.Pressure,
+            Humidity = json.Main.Humidity,
+            WindSpeed = json.Wind.Speed,
+            WindDirection = json.Wind.Direction
         };
     }
 

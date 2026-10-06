@@ -4,7 +4,7 @@ using YamlDotNet.Serialization;
 namespace DiscordAuditPlugin;
 
 [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
-public class DiscordConfiguration
+public class DiscordAuditConfiguration
 {
     [YamlMember(Description = "Avatar picture URL")]
     public string? PictureUrl { get; init; }

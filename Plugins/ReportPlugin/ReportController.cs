@@ -1,8 +1,8 @@
 ﻿using System.Net;
+using System.Text.Json;
 using AssettoServer.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 namespace ReportPlugin;
 
@@ -11,6 +11,10 @@ public class ReportController : ControllerBase
 {
     private readonly ReportPlugin _plugin;
     private readonly EntryCarManager _entryCarManager;
+    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        WriteIndented = true,
+    };
 
     public ReportController(ReportPlugin plugin, EntryCarManager entryCarManager)
     {
@@ -45,7 +49,7 @@ public class ReportController : ControllerBase
         }
 
         var auditLog = _plugin.GetAuditLog(ts);
-        string serialized = JsonConvert.SerializeObject(auditLog, Formatting.Indented);
+        var serialized = JsonSerializer.Serialize(auditLog, _jsonSerializerOptions);
         await System.IO.File.WriteAllTextAsync(Path.Join("reports", $"{guid}.json"), serialized);
 
         var report = new Replay(guid, auditLog);

@@ -3,7 +3,7 @@ using Autofac;
 
 namespace DiscordAuditPlugin;
 
-public class DiscordAuditModule : AssettoServerModule<DiscordConfiguration>
+public class DiscordAuditModule : AssettoServerModule<DiscordAuditConfiguration>
 {
     protected override void Load(ContainerBuilder builder)
     {

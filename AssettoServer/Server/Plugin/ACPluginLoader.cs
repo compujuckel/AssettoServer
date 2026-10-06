@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using AssettoServer.Server.Configuration;
 using McMaster.NETCore.Plugins;
-using Newtonsoft.Json.Serialization;
 using Serilog;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace AssettoServer.Server.Plugin;
 
@@ -132,8 +131,7 @@ public class ACPluginLoader
 
     private static string ConfigurationTypeToFilename(string type, string ending = "yml")
     {
-        var strat = new SnakeCaseNamingStrategy();
         type = type.Replace("Configuration", "Cfg");
-        return $"plugin_{strat.GetPropertyName(type, false)}.{ending}";
+        return $"plugin_{JsonNamingPolicy.SnakeCaseLower.ConvertName(type)}.{ending}";
     }
 }

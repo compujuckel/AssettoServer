@@ -14,12 +14,12 @@ public class Discord
 {
     private readonly string _serverNameSanitized;
 
-    private readonly DiscordConfiguration _configuration;
+    private readonly DiscordAuditConfiguration _configuration;
 
     private DiscordWebhook? AuditHook { get; }
     private DiscordWebhook? ChatHook { get; }
 
-    public Discord(DiscordConfiguration configuration, EntryCarManager entryCarManager, ACServerConfiguration serverConfiguration, ChatService chatService)
+    public Discord(DiscordAuditConfiguration configuration, EntryCarManager entryCarManager, ACServerConfiguration serverConfiguration, ChatService chatService)
     {
         _serverNameSanitized = DiscordUtils.SanitizeUsername(serverConfiguration.Server.Name);
         _configuration = configuration;

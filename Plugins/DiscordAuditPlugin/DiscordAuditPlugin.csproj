@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-      <PackageReference Include="CSharpDiscordWebhookAsync" Version="1.0.2" />
+      <PackageReference Include="CSharpDiscordWebhookAsync"/>
     </ItemGroup>
 
 </Project>

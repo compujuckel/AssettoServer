@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,23 +37,29 @@ public sealed class ChecksumDataProvider : IDisposable
         }
 
         string serverContentDirectory = Path.Combine(Environment.CurrentDirectory, "content");
-        string serverKunosPath = Path.Combine(serverContentDirectory, "checksums_ks.json");
-        string bundledChecksumsPath = Path.Combine(AppContext.BaseDirectory, "content", "checksums_ks.json");
-        string kunosPath = File.Exists(serverKunosPath) ? serverKunosPath : bundledChecksumsPath;
+        string kunosPath = Path.Combine(serverContentDirectory, "checksums_ks.json");
+        if (!File.Exists(kunosPath))
+        {
+            try
+            {
+                Directory.CreateDirectory(serverContentDirectory);
+                using var checksums = Assembly.GetExecutingAssembly()
+                    .GetManifestResourceStream("AssettoServer.Assets.checksums_ks.json")!;
+                using var outFile = File.Create(kunosPath);
+                checksums.CopyTo(outFile);
+            }
+            catch (Exception ex)
+            {
+                throw new ConfigurationParsingException(kunosPath, ex);
+            }
+        }
 
         ChecksumsFile? remoteChecksums = await LoadRemoteChecksumsAsync(serverContentDirectory, cancellationToken);
         if (remoteChecksums != null)
             merged.MergeMissingFrom(remoteChecksums);
 
-        if (File.Exists(kunosPath))
-        {
-            merged.MergeMissingFrom(await LoadJsonFileAsync(kunosPath, cancellationToken));
-            Log.Information("Loaded bundled Kunos checksums from {Path}", kunosPath);
-        }
-        else
-        {
-            Log.Error("Bundled Kunos checksums were not found at {Path}", kunosPath);
-        }
+        merged.MergeMissingFrom(await LoadJsonFileAsync(kunosPath, cancellationToken));
+        Log.Information("Loaded bundled Kunos checksums from {Path}", kunosPath);
 
         return merged;
     }

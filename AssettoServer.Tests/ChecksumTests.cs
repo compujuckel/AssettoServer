@@ -17,6 +17,32 @@ namespace AssettoServer.Tests;
 public class ChecksumTests
 {
     [Test]
+    public async Task ProviderCreatesBundledChecksumsInWorkingDirectory()
+    {
+        using var directory = new TemporaryDirectory();
+        using var currentDirectory = new CurrentDirectoryScope(directory.Path);
+        string contentDirectory = Path.Combine(directory.Path, "content");
+        Directory.CreateDirectory(contentDirectory);
+        await File.WriteAllTextAsync(Path.Combine(contentDirectory, "checksums_remote.json"), "{}");
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration());
+        using var resource = typeof(ChecksumDataProvider).Assembly
+            .GetManifestResourceStream("AssettoServer.Assets.checksums_ks.json")!;
+        using var reader = new StreamReader(resource);
+        string bundledJson = await reader.ReadToEndAsync();
+
+        ChecksumsFile loaded = await provider.LoadAsync();
+        string savedJson = await File.ReadAllTextAsync(Path.Combine(contentDirectory, "checksums_ks.json"));
+        var bundled = ChecksumsFile.FromJson(bundledJson);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(savedJson, Is.EqualTo(bundledJson));
+            Assert.That(loaded.Tracks.Count, Is.EqualTo(bundled.Tracks.Count));
+            Assert.That(loaded.Cars.Count, Is.EqualTo(bundled.Cars.Count));
+        });
+    }
+
+    [Test]
     public async Task ProviderMergesByPriorityAndReusesCachedRemoteChecksums()
     {
         using var directory = new TemporaryDirectory();
@@ -78,13 +104,19 @@ public class ChecksumTests
         {
             Files = { ["models.ini"] = new ChecksumValue { MD5 = Md5("kunos") } }
         };
-        await File.WriteAllTextAsync(kunosPath, JsonSerializer.Serialize(kunos));
+        string kunosJson = JsonSerializer.Serialize(kunos);
+        await File.WriteAllTextAsync(kunosPath, kunosJson);
         await File.WriteAllTextAsync(Path.Combine(contentDirectory, "checksums_remote.json"), "{}");
         using var provider = new ChecksumDataProvider(CreateServerConfiguration());
 
         ChecksumsFile loaded = await provider.LoadAsync();
+        string savedJson = await File.ReadAllTextAsync(kunosPath);
 
-        Assert.That(loaded.Tracks["ks_track"].Files["models.ini"].MD5, Is.EqualTo(Md5("kunos")));
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Tracks["ks_track"].Files["models.ini"].MD5, Is.EqualTo(Md5("kunos")));
+            Assert.That(savedJson, Is.EqualTo(kunosJson));
+        });
     }
 
     [TestCase(true)]
@@ -131,6 +163,7 @@ public class ChecksumTests
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Tracks, Is.Empty);
+            Assert.That(File.Exists(Path.Combine(directory.Path, "content", "checksums_ks.json")), Is.False);
             Assert.That(File.Exists(Path.Combine(directory.Path, "content", "checksums_remote.json")), Is.False);
         });
     }

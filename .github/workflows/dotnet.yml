@@ -9,10 +9,13 @@ jobs:
 
     runs-on: ubuntu-latest
     
-    # Required for provenance attestation
     permissions:
+      # provenance attestation
       id-token: write
-      contents: read
+      # provenance attestation: read
+      # github release: write
+      contents: write
+      # provenance attestation
       attestations: write
 
     steps:

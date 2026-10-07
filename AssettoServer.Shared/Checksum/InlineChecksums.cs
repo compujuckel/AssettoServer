@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -17,9 +18,7 @@ public struct Md5Checksum : IEquatable<Md5Checksum>
         if (bytes.Length != Length)
             throw new ArgumentException($"MD5 checksums must contain exactly {Length} bytes", nameof(bytes));
 
-        var checksum = new Md5Checksum();
-        bytes.CopyTo(checksum);
-        return checksum;
+        return MemoryMarshal.Read<Md5Checksum>(bytes);
     }
 
     public readonly byte[] ToArray() => ((ReadOnlySpan<byte>)this).ToArray();
@@ -53,9 +52,7 @@ public struct Sha256Checksum : IEquatable<Sha256Checksum>
         if (bytes.Length != Length)
             throw new ArgumentException($"SHA-256 checksums must contain exactly {Length} bytes", nameof(bytes));
 
-        var checksum = new Sha256Checksum();
-        bytes.CopyTo(checksum);
-        return checksum;
+        return MemoryMarshal.Read<Sha256Checksum>(bytes);
     }
 
     public readonly byte[] ToArray() => ((ReadOnlySpan<byte>)this).ToArray();

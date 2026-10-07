@@ -166,7 +166,7 @@ public class ChecksumManager
         }
     }
 
-    internal static void AddPreloadedChecksum(Dictionary<string, byte[]> checksums, string path, Md5Checksum checksum)
+    internal static void AddPreloadedChecksum(Dictionary<string, byte[]> checksums, string path, in Md5Checksum checksum)
     {
         string normalizedPath = path.Replace('\\', '/');
         if (checksums.Keys.Any(existing => string.Equals(

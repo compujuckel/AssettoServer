@@ -259,6 +259,23 @@ public class ChecksumTests
             Assert.That(sha256.ToArray(), Is.EqualTo(bytes));
             Assert.That(sha256.ToHexString(), Is.EqualTo(Convert.ToHexStringLower(bytes)));
         });
+
+        var md5Bytes = md5.ToArray();
+        var sha256Bytes = sha256.ToArray();
+        md5Bytes[0]++;
+        sha256Bytes[0]++;
+        bytes[0]++;
+
+        Assert.That(md5[0], Is.Zero);
+        Assert.That(sha256[0], Is.Zero);
+    }
+
+    [TestCase(15, 31)]
+    [TestCase(17, 33)]
+    public void InlineChecksumsRejectIncorrectByteLengths(int md5Length, int sha256Length)
+    {
+        Assert.Throws<ArgumentException>(() => Md5Checksum.FromBytes(new byte[md5Length]));
+        Assert.Throws<ArgumentException>(() => Sha256Checksum.FromBytes(new byte[sha256Length]));
     }
 
     [TestCase(false)]

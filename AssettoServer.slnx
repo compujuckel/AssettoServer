@@ -2,6 +2,7 @@
   <Project Path="AssettoServer.Shared\AssettoServer.Shared.csproj" />
   <Project Path="AssettoServer.Tests\AssettoServer.Tests.csproj" />
   <Project Path="AssettoServer\AssettoServer.csproj" />
+  <Project Path="ChecksumUtils\ChecksumUtils.csproj" />
   <Project Path="Plugins\AutoModerationPlugin\AutoModerationPlugin.csproj" />
   <Project Path="Plugins\CustomCommandPlugin\CustomCommandPlugin.csproj" />
   <Project Path="Plugins\DiscordAuditPlugin\DiscordAuditPlugin.csproj" />

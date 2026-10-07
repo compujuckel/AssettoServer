@@ -305,7 +305,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
     public async Task StartingAsync(CancellationToken cancellationToken)
     {
         _entryCarManager.Initialize();
-        _checksumManager.Initialize();
+        await _checksumManager.InitializeAsync(cancellationToken);
         await _geoParamsManager.InitializeAsync();
     }
 

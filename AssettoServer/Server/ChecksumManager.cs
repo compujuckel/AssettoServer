@@ -41,7 +41,7 @@ public class ChecksumManager
         _preloadedChecksums = await _checksumDataProvider.LoadAsync(cancellationToken);
 
         CalculateTrackChecksums(_configuration.Server.Track, _configuration.Server.TrackConfig);
-        AddPreloadedTrackChecksums(_configuration.Server.TrackConfig);
+        AddPreloadedTrackChecksums(_configuration.Server.Track, _configuration.Server.TrackConfig);
         Log.Information("Initialized {Count} track checksums", TrackChecksums.Count);
 
         var carModels = _entryCarManager.EntryCars.Select(car => car.Model).Distinct().ToList();
@@ -68,41 +68,66 @@ public class ChecksumManager
         }
     }
 
-    private void AddPreloadedTrackChecksums(string trackConfig)
+    private void AddPreloadedTrackChecksums(string track, string trackConfig)
     {
         var systemSurfaces = ChecksumsFile.Find(_preloadedChecksums.Other, "system/data/surfaces.ini");
         if (systemSurfaces?.MD5 is { } systemSurfacesMd5)
             AddPreloadedChecksum(_trackChecksumData, "system/data/surfaces.ini", systemSurfacesMd5);
 
-        if (!_preloadedChecksums.TryGetTrack(_configuration.CSPTrackOptions.Track, trackConfig,
-                out var track, out var trackLayout) || track == null)
+        if (!_preloadedChecksums.TryGetTrack(_configuration.CSPTrackOptions.Track, trackConfig, out var trackChecksums))
             return;
 
-        var virtualTrackPath = $"content/tracks/{_configuration.Server.Track}";
+        var virtualTrackPath = $"content/tracks/{track}";
         bool surfaceFix = _configuration.CSPTrackOptions.MinimumCSPVersion.HasValue;
-        AddPreloadedFiles(_trackChecksumData, virtualTrackPath, track, surfaceFix);
-        if (trackLayout != null)
-            AddPreloadedFiles(_trackChecksumData, virtualTrackPath, trackLayout, surfaceFix);
+        AddPreloadedFiles(_trackChecksumData, virtualTrackPath, trackChecksums, trackConfig, surfaceFix);
+        
+        if (trackChecksums.Info?.Pitboxes != null
+            && int.TryParse(trackChecksums.Info.Pitboxes, out int trackPitboxes)
+            && trackPitboxes > _configuration.Server.MaxClients)
+        {
+            string trackDescription = string.IsNullOrEmpty(trackConfig)
+                ? _configuration.CSPTrackOptions.Track
+                : $"{_configuration.CSPTrackOptions.Track} with layout {trackConfig}";
+            throw new ConfigurationException(
+                $"The track {trackDescription} supports {trackPitboxes} pitboxes. Lower your configured clients {_configuration.Server.MaxClients}.");
+        }
     }
 
     private static void AddPreloadedFiles(
         Dictionary<string, byte[]> checksums,
         string virtualPath,
         TrackChecksumEntry entry,
+        string trackConfig,
         bool surfaceFix)
     {
+        string modelsFile = string.IsNullOrEmpty(trackConfig) ? "models.ini" : $"models_{trackConfig}.ini";
+        string surfacesFile = string.IsNullOrEmpty(trackConfig)
+            ? "data/surfaces.ini"
+            : $"{trackConfig}/data/surfaces.ini";
+
         foreach (var (path, checksum) in entry.Files)
         {
             if (checksum.MD5 is not { } md5)
                 continue;
 
             string normalizedPath = path.Replace('\\', '/').TrimStart('/');
+            if (!normalizedPath.Equals(modelsFile, StringComparison.OrdinalIgnoreCase)
+                && !normalizedPath.Equals(surfacesFile, StringComparison.OrdinalIgnoreCase)
+                && !(normalizedPath.IndexOf('/') < 0
+                    && (normalizedPath.Equals("surfaces.ini", StringComparison.OrdinalIgnoreCase)
+                        || normalizedPath.EndsWith(".kn5", StringComparison.OrdinalIgnoreCase))))
+                continue;
+
             AddPreloadedChecksum(checksums, $"{virtualPath}/{normalizedPath}", md5);
         }
 
         foreach (var (path, variants) in entry.Surfaces)
         {
             string normalizedPath = path.Replace('\\', '/').TrimStart('/');
+            if (!normalizedPath.Equals(surfacesFile, StringComparison.OrdinalIgnoreCase)
+                && !normalizedPath.Equals("surfaces.ini", StringComparison.OrdinalIgnoreCase))
+                continue;
+
             var checksum = surfaceFix && !normalizedPath.Equals("surfaces.ini", StringComparison.OrdinalIgnoreCase)
                 ? variants.Csp
                 : variants.Vanilla;

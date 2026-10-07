@@ -169,8 +169,9 @@ public class ChecksumTests
         });
     }
 
-    [Test]
-    public void TrackLookupRequiresMatchingLayoutWhenTrackHasLayouts()
+    [TestCase(null)]
+    [TestCase("")]
+    public void TrackLookupReturnsOnlyRequestedEntry(string? emptyTrackConfig)
     {
         var checksums = new ChecksumsFile();
         checksums.Tracks["layout_track"] = new TrackChecksum
@@ -189,12 +190,19 @@ public class ChecksumTests
             Files = { ["models.ini"] = new ChecksumValue { MD5 = Md5("plain") } }
         };
 
-        Assert.That(checksums.TryGetTrack("layout_track", null, out _, out _), Is.False);
-        Assert.That(checksums.TryGetTrack("layout_track", "missing", out _, out _), Is.False);
-        Assert.That(checksums.TryGetTrack("layout_track", "sprint", out _, out var layout), Is.True);
+        Assert.That(checksums.TryGetTrack("layout_track", emptyTrackConfig, out var track), Is.True);
+        Assert.That(track, Is.SameAs(checksums.Tracks["layout_track"]));
+        Assert.That(checksums.TryGetTrack("layout_track", "missing", out var missingLayout), Is.False);
+        Assert.That(missingLayout, Is.Null);
+        Assert.That(checksums.TryGetTrack("layout_track", "sprint", out var layout), Is.True);
+        Assert.That(layout, Is.SameAs(checksums.Tracks["layout_track"].Layouts["sprint"]));
         Assert.That(layout!.Files["models_sprint.ini"].MD5, Is.EqualTo(Md5("layout")));
-        Assert.That(checksums.TryGetTrack("plain_track", null, out _, out _), Is.True);
-        Assert.That(checksums.TryGetTrack("plain_track", "sprint", out _, out _), Is.False);
+        Assert.That(layout.Files.ContainsKey("common.kn5"), Is.False);
+        Assert.That(checksums.TryGetTrack("plain_track", emptyTrackConfig, out var plainTrack), Is.True);
+        Assert.That(plainTrack, Is.SameAs(checksums.Tracks["plain_track"]));
+        Assert.That(checksums.TryGetTrack("plain_track", "sprint", out _), Is.False);
+        Assert.That(checksums.TryGetTrack("missing_track", emptyTrackConfig, out var missingTrack), Is.False);
+        Assert.That(missingTrack, Is.Null);
     }
 
     [Test]
@@ -575,8 +583,9 @@ public class ChecksumTests
             Assert.That(customChecksums.Tracks["plain_track"].Info!.Name, Is.EqualTo("Plain Track"));
             Assert.That(customChecksums.Tracks["plain_track"].Files.ContainsKey("models.ini"), Is.True);
             Assert.That(customChecksums.Tracks.ContainsKey("not_installed"), Is.True);
-            Assert.That(customChecksums.TryGetTrack("layout_track", null, out _, out _), Is.False);
-            Assert.That(customChecksums.TryGetTrack("layout_track", "sprint", out _, out var layout), Is.True);
+            Assert.That(customChecksums.TryGetTrack("layout_track", null, out var track), Is.True);
+            Assert.That(track, Is.SameAs(customChecksums.Tracks["layout_track"]));
+            Assert.That(customChecksums.TryGetTrack("layout_track", "sprint", out var layout), Is.True);
             Assert.That(layout!.Surfaces["sprint/data/surfaces.ini"].Csp!.MD5,
                 Is.Not.EqualTo(layout.Surfaces["sprint/data/surfaces.ini"].Vanilla!.MD5));
             Assert.That(summary.SkippedChecksums.Select(checksum => checksum.ContentPath),
@@ -760,6 +769,101 @@ public class ChecksumTests
 
         Assert.That(manager.TrackChecksums["system/data/surfaces.ini"],
             Is.EqualTo(Md5(hasLocalFile ? "local system surfaces" : "system surfaces").ToArray()));
+    }
+
+    [TestCase("", false)]
+    [TestCase("", true)]
+    [TestCase("sprint", false)]
+    [TestCase("sprint", true)]
+    public async Task PreloadedTrackChecksumsMatchActiveTrackConfiguration(string trackConfig, bool hasLocalModels)
+    {
+        using var directory = new TemporaryDirectory();
+        using var currentDirectory = new CurrentDirectoryScope(directory.Path);
+        var configuration = CreateServerConfiguration();
+        string serverCfgPath = ConfigurationLocations.FromOptions(null, null, null).ServerCfgPath;
+        var iniParser = new IniParser.FileIniDataParser();
+        var serverCfg = iniParser.ReadFile(serverCfgPath);
+        serverCfg["SERVER"]["CONFIG_TRACK"] = trackConfig;
+        iniParser.WriteFile(serverCfgPath, serverCfg);
+        configuration = CreateServerConfiguration();
+        string modelsFile = string.IsNullOrEmpty(trackConfig) ? "models.ini" : $"models_{trackConfig}.ini";
+        string surfacesFile = string.IsNullOrEmpty(trackConfig)
+            ? "data/surfaces.ini"
+            : $"{trackConfig}/data/surfaces.ini";
+        var track = new TrackChecksum
+        {
+            Files =
+            {
+                ["models.ini"] = ChecksumForContent("models"),
+                ["common.kn5"] = ChecksumForContent("common mesh"),
+                ["models_other.ini"] = ChecksumForContent("other models"),
+                ["nested/unused.kn5"] = ChecksumForContent("unused mesh")
+            },
+            Surfaces =
+            {
+                ["surfaces.ini"] = new SurfaceChecksumVariants { Vanilla = ChecksumForContent("root surfaces") },
+                ["data/surfaces.ini"] = new SurfaceChecksumVariants
+                {
+                    Vanilla = ChecksumForContent("vanilla surfaces"),
+                    Csp = ChecksumForContent("CSP surfaces")
+                },
+                ["other/data/surfaces.ini"] = new SurfaceChecksumVariants
+                {
+                    Vanilla = ChecksumForContent("other surfaces")
+                }
+            }
+        };
+        if (!string.IsNullOrEmpty(trackConfig))
+        {
+            track.Info = new ChecksumInfo { Pitboxes = (configuration.Server.MaxClients + 1).ToString() };
+            track.Layouts[trackConfig] = new TrackLayoutChecksum
+            {
+                Info = new ChecksumInfo { Pitboxes = configuration.Server.MaxClients.ToString() },
+                Files = { [modelsFile] = ChecksumForContent("models") },
+                Surfaces =
+                {
+                    [surfacesFile] = new SurfaceChecksumVariants
+                    {
+                        Vanilla = ChecksumForContent("vanilla surfaces"),
+                        Csp = ChecksumForContent("CSP surfaces")
+                    }
+                }
+            };
+        }
+
+        var kunos = new ChecksumsFile();
+        kunos.Tracks[configuration.CSPTrackOptions.Track] = track;
+        kunos.Other["system/data/surfaces.ini"] = ChecksumForContent("system surfaces");
+        await ChecksumDirectory.SaveAsync("content", kunos, new ChecksumsFile());
+        if (hasLocalModels)
+            WriteFile(Path.Combine("content", "tracks", configuration.CSPTrackOptions.Track, modelsFile), "local models");
+        using var provider = new ChecksumDataProvider(configuration);
+        var entryCarManager = new EntryCarManager(configuration, null!, null!, null!, null!);
+        var manager = new ChecksumManager(configuration, entryCarManager, provider);
+
+        await manager.InitializeAsync();
+
+        string virtualPath = $"content/tracks/{configuration.Server.Track}";
+        string surfaces = configuration.CSPTrackOptions.MinimumCSPVersion.HasValue ? "CSP surfaces" : "vanilla surfaces";
+        var expectedPaths = new List<string>
+        {
+            "system/data/surfaces.ini",
+            $"{virtualPath}/{modelsFile}",
+            $"{virtualPath}/{surfacesFile}"
+        };
+        if (string.IsNullOrEmpty(trackConfig))
+        {
+            expectedPaths.Add($"{virtualPath}/common.kn5");
+            expectedPaths.Add($"{virtualPath}/surfaces.ini");
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(manager.TrackChecksums.Keys, Is.EquivalentTo(expectedPaths));
+            Assert.That(manager.TrackChecksums[$"{virtualPath}/{modelsFile}"],
+                Is.EqualTo(Md5(hasLocalModels ? "local models" : "models").ToArray()));
+            Assert.That(manager.TrackChecksums[$"{virtualPath}/{surfacesFile}"], Is.EqualTo(Md5(surfaces).ToArray()));
+        });
     }
 
     [Test]

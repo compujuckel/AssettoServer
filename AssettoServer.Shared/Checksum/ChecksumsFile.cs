@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -37,38 +38,15 @@ public sealed class ChecksumsFile
         MergeChecksums(Other, lowerPriority.Other);
     }
 
-    public bool TryGetTrack(string trackName, string? layout, out TrackChecksum? track, out TrackLayoutChecksum? trackLayout)
+    public bool TryGetTrack(string trackName, string? trackConfig, [NotNullWhen(true)] out TrackChecksumEntry? trackChecksums)
     {
-        track = Find(Tracks, trackName);
-        trackLayout = null;
+        var track = Find(Tracks, trackName);
+        trackChecksums = null;
         if (track == null)
             return false;
 
-        if (track.Layouts.Count > 0)
-        {
-            if (string.IsNullOrWhiteSpace(layout))
-            {
-                track = null;
-                return false;
-            }
-
-            trackLayout = Find(track.Layouts, layout);
-            if (trackLayout == null)
-            {
-                track = null;
-                return false;
-            }
-
-            return true;
-        }
-
-        if (!string.IsNullOrWhiteSpace(layout))
-        {
-            track = null;
-            return false;
-        }
-
-        return true;
+        trackChecksums = string.IsNullOrEmpty(trackConfig) ? track : Find(track.Layouts, trackConfig);
+        return trackChecksums != null;
     }
 
     public static T? Find<T>(Dictionary<string, T> items, string key)

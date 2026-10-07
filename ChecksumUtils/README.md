@@ -52,7 +52,7 @@ The final summary lists skipped files with differing MD5 or SHA256 values, showi
 
 ## JSON format
 
-The utility writes single-line numeric byte arrays: 16 bytes for MD5 and 32 for SHA256. JSON is deserialized directly without a separate schema-validation pass; whitespace formatting is not significant.
+The utility writes lowercase hexadecimal strings: 32 characters for MD5 and 64 for SHA256. Hex strings are decoded directly into fixed-size inline arrays of 16 and 32 bytes, without allocating strings or digest arrays. Uppercase input is also accepted; numeric JSON arrays are not. JSON is deserialized directly without a separate schema-validation pass; whitespace formatting is not significant.
 
 Shared track files belong to the track entry and layout-specific files to `Layouts`. A track with layouts requires an explicit layout; it is not used as a no-layout track.
 
@@ -74,17 +74,17 @@ Example checksum data:
           },
           "Files": {
             "models_main_layout.ini": {
-              "MD5": [1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239],
-              "SHA256": [1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239]
+              "MD5": "0123456789abcdef0123456789abcdef",
+              "SHA256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
             }
           },
           "Surfaces": {
             "main_layout/data/surfaces.ini": {
               "Vanilla": {
-                "MD5": [1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239]
+                "MD5": "0123456789abcdef0123456789abcdef"
               },
               "Csp": {
-                "MD5": [254, 220, 186, 152, 118, 84, 50, 16, 254, 220, 186, 152, 118, 84, 50, 16]
+                "MD5": "fedcba9876543210fedcba9876543210"
               }
             }
           }
@@ -101,7 +101,7 @@ Example checksum data:
       },
       "Files": {
         "data.acd": {
-          "MD5": [1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239]
+          "MD5": "0123456789abcdef0123456789abcdef"
         }
       }
     }

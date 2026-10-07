@@ -585,28 +585,28 @@ public static class ChecksumGenerator
             sha256.AppendData(buffer[..bytesRead]);
         }
 
-        Span<byte> md5Bytes = stackalloc byte[Md5Checksum.Length];
-        Span<byte> sha256Bytes = stackalloc byte[Sha256Checksum.Length];
-        md5.GetHashAndReset(md5Bytes);
-        sha256.GetHashAndReset(sha256Bytes);
+        Md5Checksum md5Checksum = default;
+        Sha256Checksum sha256Checksum = default;
+        md5.GetHashAndReset(md5Checksum);
+        sha256.GetHashAndReset(sha256Checksum);
         return new ChecksumValue
         {
-            MD5 = Md5Checksum.FromBytes(md5Bytes),
-            SHA256 = Sha256Checksum.FromBytes(sha256Bytes)
+            MD5 = md5Checksum,
+            SHA256 = sha256Checksum
         };
     }
 
-    private static ChecksumValue CalculateChecksum(byte[] bytes)
+    private static ChecksumValue CalculateChecksum(ReadOnlySpan<byte> bytes)
     {
-        Span<byte> md5 = stackalloc byte[Md5Checksum.Length];
-        Span<byte> sha256 = stackalloc byte[Sha256Checksum.Length];
+        Md5Checksum md5 = default;
+        Sha256Checksum sha256 = default;
         MD5.HashData(bytes, md5);
         SHA256.HashData(bytes, sha256);
 
         return new ChecksumValue
         {
-            MD5 = Md5Checksum.FromBytes(md5),
-            SHA256 = Sha256Checksum.FromBytes(sha256)
+            MD5 = md5,
+            SHA256 = sha256
         };
     }
 

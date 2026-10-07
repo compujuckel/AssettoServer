@@ -1,6 +1,5 @@
-using System.Globalization;
+using System.Buffers;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -19,47 +18,24 @@ public struct Md5Checksum : IEquatable<Md5Checksum>
             throw new ArgumentException($"MD5 checksums must contain exactly {Length} bytes", nameof(bytes));
 
         var checksum = new Md5Checksum();
-        for (int i = 0; i < Length; i++)
-            checksum[i] = bytes[i];
+        bytes.CopyTo(checksum);
         return checksum;
     }
 
-    public byte[] ToArray()
-    {
-        var bytes = new byte[Length];
-        for (int i = 0; i < Length; i++)
-            bytes[i] = this[i];
-        return bytes;
-    }
+    public readonly byte[] ToArray() => ((ReadOnlySpan<byte>)this).ToArray();
 
-    public string ToHexString()
-    {
-        Span<byte> bytes = stackalloc byte[Length];
-        for (int i = 0; i < Length; i++)
-            bytes[i] = this[i];
-        return Convert.ToHexStringLower(bytes);
-    }
+    public readonly string ToHexString() => Convert.ToHexStringLower(this);
 
-    public bool Equals(Md5Checksum other)
-    {
-        for (int i = 0; i < Length; i++)
-        {
-            if (this[i] != other[i])
-                return false;
-        }
+    public readonly bool Equals(Md5Checksum other) => ((ReadOnlySpan<byte>)this).SequenceEqual(other);
 
-        return true;
-    }
-
-    public override bool Equals(object? obj) => obj is Md5Checksum other && Equals(other);
-    public override int GetHashCode()
+    public override readonly bool Equals(object? obj) => obj is Md5Checksum other && Equals(other);
+    public override readonly int GetHashCode()
     {
         var hash = new HashCode();
-        for (int i = 0; i < Length; i++)
-            hash.Add(this[i]);
+        hash.AddBytes(this);
         return hash.ToHashCode();
     }
-    public override string ToString() => ToHexString();
+    public override readonly string ToString() => ToHexString();
 
     public static bool operator ==(Md5Checksum left, Md5Checksum right) => left.Equals(right);
     public static bool operator !=(Md5Checksum left, Md5Checksum right) => !left.Equals(right);
@@ -78,108 +54,100 @@ public struct Sha256Checksum : IEquatable<Sha256Checksum>
             throw new ArgumentException($"SHA-256 checksums must contain exactly {Length} bytes", nameof(bytes));
 
         var checksum = new Sha256Checksum();
-        for (int i = 0; i < Length; i++)
-            checksum[i] = bytes[i];
+        bytes.CopyTo(checksum);
         return checksum;
     }
 
-    public byte[] ToArray()
-    {
-        var bytes = new byte[Length];
-        for (int i = 0; i < Length; i++)
-            bytes[i] = this[i];
-        return bytes;
-    }
+    public readonly byte[] ToArray() => ((ReadOnlySpan<byte>)this).ToArray();
 
-    public string ToHexString()
-    {
-        Span<byte> bytes = stackalloc byte[Length];
-        for (int i = 0; i < Length; i++)
-            bytes[i] = this[i];
-        return Convert.ToHexStringLower(bytes);
-    }
+    public readonly string ToHexString() => Convert.ToHexStringLower(this);
 
-    public bool Equals(Sha256Checksum other)
-    {
-        for (int i = 0; i < Length; i++)
-        {
-            if (this[i] != other[i])
-                return false;
-        }
+    public readonly bool Equals(Sha256Checksum other) => ((ReadOnlySpan<byte>)this).SequenceEqual(other);
 
-        return true;
-    }
-
-    public override bool Equals(object? obj) => obj is Sha256Checksum other && Equals(other);
-    public override int GetHashCode()
+    public override readonly bool Equals(object? obj) => obj is Sha256Checksum other && Equals(other);
+    public override readonly int GetHashCode()
     {
         var hash = new HashCode();
-        for (int i = 0; i < Length; i++)
-            hash.Add(this[i]);
+        hash.AddBytes(this);
         return hash.ToHashCode();
     }
-    public override string ToString() => ToHexString();
+    public override readonly string ToString() => ToHexString();
 
     public static bool operator ==(Sha256Checksum left, Sha256Checksum right) => left.Equals(right);
     public static bool operator !=(Sha256Checksum left, Sha256Checksum right) => !left.Equals(right);
 }
 
-public sealed class Md5ChecksumJsonConverter : InlineChecksumJsonConverter<Md5Checksum>
+public sealed class Md5ChecksumJsonConverter : JsonConverter<Md5Checksum>
 {
-    protected override int Length => Md5Checksum.Length;
-    protected override string Name => "MD5";
-    protected override Md5Checksum FromBytes(ReadOnlySpan<byte> bytes) => Md5Checksum.FromBytes(bytes);
-    protected override byte GetByte(Md5Checksum checksum, int index) => checksum[index];
-}
-
-public sealed class Sha256ChecksumJsonConverter : InlineChecksumJsonConverter<Sha256Checksum>
-{
-    protected override int Length => Sha256Checksum.Length;
-    protected override string Name => "SHA256";
-    protected override Sha256Checksum FromBytes(ReadOnlySpan<byte> bytes) => Sha256Checksum.FromBytes(bytes);
-    protected override byte GetByte(Sha256Checksum checksum, int index) => checksum[index];
-}
-
-public abstract class InlineChecksumJsonConverter<TChecksum> : JsonConverter<TChecksum>
-    where TChecksum : struct
-{
-    protected abstract int Length { get; }
-    protected abstract string Name { get; }
-    protected abstract TChecksum FromBytes(ReadOnlySpan<byte> bytes);
-    protected abstract byte GetByte(TChecksum checksum, int index);
-
-    public override TChecksum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override Md5Checksum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType != JsonTokenType.StartArray)
-            throw new JsonException($"{Name} checksum must be a {Length}-byte array");
-
-        Span<byte> bytesArray = stackalloc byte[Length];
-        for (int i = 0; i < Length; i++)
-        {
-            if (!reader.Read() || reader.TokenType != JsonTokenType.Number)
-                throw new JsonException($"{Name} checksum array must contain exactly {Length} byte values");
-
-            if (!reader.TryGetByte(out bytesArray[i]))
-                throw new JsonException($"{Name} checksum values must be between 0 and 255");
-        }
-
-        if (!reader.Read() || reader.TokenType != JsonTokenType.EndArray)
-            throw new JsonException($"{Name} checksum array must contain exactly {Length} byte values");
-
-        return FromBytes(bytesArray);
+        Md5Checksum checksum = default;
+        ChecksumHexJson.Read(ref reader, checksum);
+        return checksum;
     }
 
-    public override void Write(Utf8JsonWriter writer, TChecksum checksum, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, Md5Checksum checksum, JsonSerializerOptions options)
+        => ChecksumHexJson.Write(writer, checksum);
+}
+
+public sealed class Sha256ChecksumJsonConverter : JsonConverter<Sha256Checksum>
+{
+    public override Sha256Checksum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var serializedBytes = new StringBuilder(Length * 4 + 2);
-        serializedBytes.Append('[');
-        for (int i = 0; i < Length; i++)
+        Sha256Checksum checksum = default;
+        ChecksumHexJson.Read(ref reader, checksum);
+        return checksum;
+    }
+
+    public override void Write(Utf8JsonWriter writer, Sha256Checksum checksum, JsonSerializerOptions options)
+        => ChecksumHexJson.Write(writer, checksum);
+}
+
+internal static class ChecksumHexJson
+{
+    private const int MaxJsonEscapeLength = 6;
+
+    public static void Read(ref Utf8JsonReader reader, scoped Span<byte> checksum)
+    {
+        if (reader.TokenType != JsonTokenType.String)
+            throw new JsonException("Checksum must be a hexadecimal string");
+
+        if (!reader.HasValueSequence && !reader.ValueIsEscaped)
         {
-            if (i > 0)
-                serializedBytes.Append(", ");
-            serializedBytes.Append(GetByte(checksum, i).ToString(CultureInfo.InvariantCulture));
+            Decode(reader.ValueSpan, checksum);
+            return;
         }
-        serializedBytes.Append(']');
-        writer.WriteRawValue(serializedBytes.ToString());
+
+        int hexLength = checksum.Length * 2;
+        long encodedLength = reader.HasValueSequence ? reader.ValueSequence.Length : reader.ValueSpan.Length;
+        if (encodedLength > hexLength * MaxJsonEscapeLength)
+            throw new JsonException($"Checksum must contain exactly {hexLength} hexadecimal characters");
+
+        Span<byte> hex = stackalloc byte[(int)encodedLength];
+        try
+        {
+            int written = reader.CopyString(hex);
+            Decode(hex[..written], checksum);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new JsonException($"Checksum must contain exactly {hexLength} hexadecimal characters", ex);
+        }
+    }
+
+    private static void Decode(ReadOnlySpan<byte> hex, Span<byte> checksum)
+    {
+        if (hex.Length != checksum.Length * 2
+            || Convert.FromHexString(hex, checksum, out _, out _) != OperationStatus.Done)
+            throw new JsonException($"Checksum must contain exactly {checksum.Length * 2} hexadecimal characters");
+    }
+
+    public static void Write(Utf8JsonWriter writer, ReadOnlySpan<byte> checksum)
+    {
+        Span<byte> hex = stackalloc byte[checksum.Length * 2];
+        if (!Convert.TryToHexStringLower(checksum, hex, out _))
+            throw new InvalidOperationException("Could not format checksum as hexadecimal");
+
+        writer.WriteStringValue(hex);
     }
 }

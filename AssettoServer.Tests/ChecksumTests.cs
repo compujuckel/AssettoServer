@@ -1,10 +1,10 @@
+using System.Buffers;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using AssettoServer.Server;
 using AssettoServer.Server.Checksum;
 using AssettoServer.Server.Configuration;
@@ -198,7 +198,7 @@ public class ChecksumTests
     }
 
     [Test]
-    public void ChecksumJsonRoundTripsFixedSizeInlineByteArrays()
+    public void ChecksumJsonRoundTripsHexStringsIntoInlineArrays()
     {
         Assert.That(Unsafe.SizeOf<Md5Checksum>(), Is.EqualTo(16));
         Assert.That(Unsafe.SizeOf<Sha256Checksum>(), Is.EqualTo(32));
@@ -210,19 +210,153 @@ public class ChecksumTests
         };
         string json = checksums.ToJson();
         var jsonObject = JsonNode.Parse(json)!;
-        var md5 = jsonObject["Cars"]!["test_car"]!["Files"]!["data.acd"]!["MD5"]!.AsArray();
-        var sha256 = jsonObject["Cars"]!["test_car"]!["Files"]!["data.acd"]!["SHA256"]!.AsArray();
+        string md5 = jsonObject["Cars"]!["test_car"]!["Files"]!["data.acd"]!["MD5"]!.GetValue<string>();
+        string sha256 = jsonObject["Cars"]!["test_car"]!["Files"]!["data.acd"]!["SHA256"]!.GetValue<string>();
 
-        Assert.That(md5.Count, Is.EqualTo(16));
-        Assert.That(sha256.Count, Is.EqualTo(32));
-        Assert.That(md5.All(value => value!.GetValueKind() == JsonValueKind.Number), Is.True);
-        Assert.That(sha256.All(value => value!.GetValueKind() == JsonValueKind.Number), Is.True);
-        Assert.That(json, Does.Match("\"MD5\": \\[[^\\r\\n]+\\]"));
-        Assert.That(json, Does.Match("\"SHA256\": \\[[^\\r\\n]+\\]"));
+        Assert.That(md5, Is.EqualTo(Md5("inline checksums").ToHexString()));
+        Assert.That(sha256, Is.EqualTo(Sha256("inline checksums").ToHexString()));
+        Assert.That(md5.Length, Is.EqualTo(Md5Checksum.Length * 2));
+        Assert.That(sha256.Length, Is.EqualTo(Sha256Checksum.Length * 2));
 
         var loaded = ChecksumsFile.FromJson(json).Cars["test_car"].Files["data.acd"];
         Assert.That(loaded.MD5, Is.EqualTo(Md5("inline checksums")));
         Assert.That(loaded.SHA256, Is.EqualTo(Sha256("inline checksums")));
+    }
+
+    [Test]
+    public void InlineChecksumOperationsUseEveryByte()
+    {
+        byte[] bytes = Convert.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+        var md5 = Md5Checksum.FromBytes(bytes.AsSpan(0, Md5Checksum.Length));
+        var sameMd5 = Md5Checksum.FromBytes(bytes.AsSpan(0, Md5Checksum.Length));
+        var differentMd5 = md5;
+        differentMd5[Md5Checksum.Length - 1]++;
+        var sha256 = Sha256Checksum.FromBytes(bytes);
+        var sameSha256 = Sha256Checksum.FromBytes(bytes);
+        var differentSha256 = sha256;
+        differentSha256[Sha256Checksum.Length - 1]++;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(md5 == sameMd5, Is.True);
+            Assert.That(md5 != differentMd5, Is.True);
+            Assert.That(md5.Equals((object)sameMd5), Is.True);
+            Assert.That(md5.GetHashCode(), Is.EqualTo(sameMd5.GetHashCode()));
+            Assert.That(md5.ToArray(), Is.EqualTo(bytes[..Md5Checksum.Length]));
+            Assert.That(md5.ToHexString(), Is.EqualTo(Convert.ToHexStringLower(bytes.AsSpan(0, Md5Checksum.Length))));
+            Assert.That(sha256 == sameSha256, Is.True);
+            Assert.That(sha256 != differentSha256, Is.True);
+            Assert.That(sha256.Equals((object)sameSha256), Is.True);
+            Assert.That(sha256.GetHashCode(), Is.EqualTo(sameSha256.GetHashCode()));
+            Assert.That(sha256.ToArray(), Is.EqualTo(bytes));
+            Assert.That(sha256.ToHexString(), Is.EqualTo(Convert.ToHexStringLower(bytes)));
+        });
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ChecksumHexJsonReadsUppercaseAndEscapedStrings(bool escaped)
+    {
+        string firstDigit = escaped ? @"\u0030" : "0";
+        string json = $$"""
+            {"MD5":"{{firstDigit}}123456789ABCDEF0123456789ABCDEF","SHA256":"{{firstDigit}}123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"}
+            """;
+
+        var checksum = JsonSerializer.Deserialize<ChecksumValue>(json)!;
+
+        Assert.That(checksum.MD5!.Value.ToHexString(), Is.EqualTo("0123456789abcdef0123456789abcdef"));
+        Assert.That(checksum.SHA256!.Value.ToHexString(),
+            Is.EqualTo("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"));
+    }
+
+    [TestCase("MD5", "0123456789ABCDEF0123456789ABCDEF")]
+    [TestCase("SHA256", "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF")]
+    public void ChecksumHexJsonReadsSegmentedStrings(string algorithm, string hex)
+    {
+        byte[] json = Encoding.UTF8.GetBytes($"\"{hex}\"");
+        var first = new JsonSequenceSegment(json.AsMemory(0, 10));
+        var last = first.Append(json.AsMemory(10));
+        var sequence = new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
+        var reader = new Utf8JsonReader(sequence);
+        Assert.That(reader.Read(), Is.True);
+        Assert.That(reader.HasValueSequence, Is.True);
+
+        string actual = algorithm == "MD5"
+            ? JsonSerializer.Deserialize<Md5Checksum>(ref reader).ToHexString()
+            : JsonSerializer.Deserialize<Sha256Checksum>(ref reader).ToHexString();
+
+        Assert.That(actual, Is.EqualTo(Convert.ToHexStringLower(Convert.FromHexString(hex))));
+    }
+
+    [Test]
+    public void ChecksumHexJsonReadingDoesNotAllocatePerDigest()
+    {
+        ReadOnlySpan<byte> md5Json = "\"0123456789abcdef0123456789abcdef\""u8;
+        ReadOnlySpan<byte> sha256Json = "\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\""u8;
+        var md5Converter = new Md5ChecksumJsonConverter();
+        var sha256Converter = new Sha256ChecksumJsonConverter();
+        var options = new JsonSerializerOptions();
+        var reader = new Utf8JsonReader(md5Json);
+        reader.Read();
+        md5Converter.Read(ref reader, typeof(Md5Checksum), options);
+        reader = new Utf8JsonReader(sha256Json);
+        reader.Read();
+        sha256Converter.Read(ref reader, typeof(Sha256Checksum), options);
+        Md5Checksum md5 = default;
+        Sha256Checksum sha256 = default;
+        long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+
+        for (int iteration = 0; iteration < 1000; iteration++)
+        {
+            reader = new Utf8JsonReader(md5Json);
+            reader.Read();
+            md5 = md5Converter.Read(ref reader, typeof(Md5Checksum), options);
+            reader = new Utf8JsonReader(sha256Json);
+            reader.Read();
+            sha256 = sha256Converter.Read(ref reader, typeof(Sha256Checksum), options);
+        }
+
+        long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+        Assert.That(allocatedBytes, Is.Zero);
+        Assert.That(md5.ToHexString(), Is.EqualTo("0123456789abcdef0123456789abcdef"));
+        Assert.That(sha256.ToHexString(),
+            Is.EqualTo("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"));
+    }
+
+    [Test]
+    public void ChecksumHexJsonWritingDoesNotAllocatePerDigest()
+    {
+        var md5 = Md5("allocation test");
+        var sha256 = Sha256("allocation test");
+        var md5Converter = new Md5ChecksumJsonConverter();
+        var sha256Converter = new Sha256ChecksumJsonConverter();
+        var options = new JsonSerializerOptions();
+        var buffer = new ArrayBufferWriter<byte>(128 * 1000);
+        using var writer = new Utf8JsonWriter(buffer);
+        writer.WriteStartArray();
+        md5Converter.Write(writer, md5, options);
+        sha256Converter.Write(writer, sha256, options);
+        writer.WriteEndArray();
+        writer.Flush();
+        buffer.Clear();
+        writer.Reset(buffer);
+        writer.WriteStartArray();
+        long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+
+        for (int iteration = 0; iteration < 1000; iteration++)
+        {
+            md5Converter.Write(writer, md5, options);
+            sha256Converter.Write(writer, sha256, options);
+        }
+
+        writer.WriteEndArray();
+        writer.Flush();
+        long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+        Assert.That(allocatedBytes, Is.Zero);
+        using var json = JsonDocument.Parse(buffer.WrittenMemory);
+        Assert.That(json.RootElement.GetArrayLength(), Is.EqualTo(2000));
+        Assert.That(json.RootElement[0].GetString(), Is.EqualTo(md5.ToHexString()));
+        Assert.That(json.RootElement[1].GetString(), Is.EqualTo(sha256.ToHexString()));
     }
 
     [Test]
@@ -278,12 +412,15 @@ public class ChecksumTests
         });
     }
 
+    [TestCase("MD5", "\"\"")]
+    [TestCase("MD5", "\"0123456789abcdef0123456789abcde\"")]
+    [TestCase("MD5", "\"0123456789abcdef0123456789abcdef0\"")]
+    [TestCase("MD5", "\"g123456789abcdef0123456789abcdef\"")]
+    [TestCase("MD5", "\"\\u0030123456789abcdef0123456789abcdef0\"")]
+    [TestCase("MD5", "42")]
     [TestCase("MD5", "[1]")]
-    [TestCase("MD5", "[256,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")]
-    [TestCase("MD5", "[-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")]
-    [TestCase("MD5", "[1.5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")]
-    [TestCase("MD5", "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")]
-    [TestCase("SHA256", "[1]")]
+    [TestCase("SHA256", "\"0123456789abcdef0123456789abcdef\"")]
+    [TestCase("SHA256", "\"g123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\"")]
     public void ChecksumJsonRejectsInvalidDigestValues(string algorithm, string value)
     {
         string json = $$"""
@@ -683,7 +820,7 @@ public class ChecksumTests
     [TestCase("null")]
     [TestCase("""{"Tracks":42}""")]
     [TestCase("""{"Tracks":null,"Cars":null,"Other":null}""")]
-    [TestCase("""{"Cars":{"remote_car":{"Files":{"data.acd":{"MD5":[1]}}}}}""")]
+    [TestCase("""{"Cars":{"remote_car":{"Files":{"data.acd":{"MD5":"not-hex"}}}}}""")]
     public async Task ProviderSkipsInvalidCacheAndPreservesOtherChecksumSources(string invalidJson)
     {
         using var directory = new TemporaryDirectory();
@@ -769,9 +906,9 @@ public class ChecksumTests
             }
         };
         var json = JsonNode.Parse(partial.ToJson())!;
-        json["Cars"]!["mixed_car"]!["Files"]!["broken.acd"] = JsonNode.Parse("""{"MD5":[1]}""");
+        json["Cars"]!["mixed_car"]!["Files"]!["broken.acd"] = JsonNode.Parse("""{"MD5":"not-hex"}""");
         json["Cars"]!["mixed_car"]!["Files"]!["invalid.acd"] = JsonValue.Create(42);
-        json["Cars"]!["mixed_car"]!["Files"]!["data.acd"]!["SHA256"] = JsonNode.Parse("[1]");
+        json["Cars"]!["mixed_car"]!["Files"]!["data.acd"]!["SHA256"] = "not-hex";
         json["Tracks"]!["mixed_track"]!["Surfaces"]!["surfaces.ini"]!["Csp"] = JsonValue.Create(42);
         string partialJson = json.ToJsonString();
         WriteFile(Path.Combine("content", ChecksumDirectory.KunosFileName), brokenRemote ? kunos.ToJson() : partialJson);
@@ -964,7 +1101,7 @@ public class ChecksumTests
 
     [TestCase("checksums_ks.json")]
     [TestCase("checksums_remote.json")]
-    public void ShippedChecksumFilesContainSingleLineFixedSizeByteArrays(string fileName)
+    public void ShippedChecksumFilesContainFixedSizeLowercaseHexStrings(string fileName)
     {
         using var directory = new TemporaryDirectory();
         PrepareShippedChecksumFiles(directory);
@@ -979,13 +1116,11 @@ public class ChecksumTests
             Assert.That(checksums.Tracks, Is.Not.Empty);
             Assert.That(checksums.Cars, Is.Not.Empty);
             Assert.That(properties, Is.Not.Empty);
-            Assert.That(properties.All(property => property.Value is JsonArray values
-                && values.Count == (property.Key == "MD5" ? Md5Checksum.Length : Sha256Checksum.Length)
-                && values.All(value => value?.GetValueKind() == JsonValueKind.Number
-                    && value.GetValue<int>() is >= 0 and <= 255)),
+            Assert.That(properties.All(property => property.Value is JsonValue value
+                && value.TryGetValue<string>(out var hex)
+                && hex.Length == (property.Key == "MD5" ? Md5Checksum.Length : Sha256Checksum.Length) * 2
+                && hex.AsSpan().IndexOfAnyExcept("0123456789abcdef") < 0),
                 Is.True);
-            Assert.That(Regex.Matches(json, "\"(?:MD5|SHA256)\": \\[[^\\r\\n]+\\]").Count,
-                Is.EqualTo(properties.Length));
             Assert.That(jsonObject["Cars"]!.AsObject()
                 .All(car => car.Value!["Surfaces"] == null), Is.True);
             Assert.That(allProperties
@@ -1212,6 +1347,21 @@ public class ChecksumTests
         }
 
         return new ACServerConfiguration(null, locations, false, false, null);
+    }
+
+    private sealed class JsonSequenceSegment : ReadOnlySequenceSegment<byte>
+    {
+        public JsonSequenceSegment(ReadOnlyMemory<byte> memory)
+        {
+            Memory = memory;
+        }
+
+        public JsonSequenceSegment Append(ReadOnlyMemory<byte> memory)
+        {
+            var segment = new JsonSequenceSegment(memory) { RunningIndex = RunningIndex + Memory.Length };
+            Next = segment;
+            return segment;
+        }
     }
 
     private sealed class CurrentDirectoryScope : IDisposable

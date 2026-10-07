@@ -121,4 +121,4 @@ The [remote dataset](https://raw.githubusercontent.com/compujuckel/AssettoServer
 
 The server logs and skips unusable collections, entries, and individual digests while retaining valid checksums from both files. Invalid JSON syntax prevents reading that file, but does not prevent loading the other source. Utility deserialization remains strict.
 
-Set `DisablePreloadedChecksums: true` in `extra_cfg.yml` to use only local file checksums.
+Preloading is enabled by default. Set `EnablePreloadedChecksums: false` in `extra_cfg.yml` to use only local file checksums.

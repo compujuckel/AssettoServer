@@ -157,7 +157,7 @@ public class ChecksumTests
     {
         using var directory = new TemporaryDirectory();
         using var currentDirectory = new CurrentDirectoryScope(directory.Path);
-        using var provider = new ChecksumDataProvider(CreateServerConfiguration(disablePreloadedChecksums: true));
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration(enablePreloadedChecksums: false));
 
         ChecksumsFile loaded = await provider.LoadAsync();
 
@@ -1158,7 +1158,7 @@ public class ChecksumTests
     {
         using var directory = new TemporaryDirectory();
         using var currentDirectory = new CurrentDirectoryScope(directory.Path);
-        var configuration = CreateServerConfiguration(disablePreloadedChecksums: true);
+        var configuration = CreateServerConfiguration(enablePreloadedChecksums: false);
         string trackDirectory = Path.Combine("content", "tracks", configuration.CSPTrackOptions.Track);
         string modelsFile = string.IsNullOrEmpty(configuration.Server.TrackConfig)
             ? "models.ini"
@@ -1337,13 +1337,13 @@ public class ChecksumTests
         return Sha256Checksum.FromBytes(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     }
 
-    private static ACServerConfiguration CreateServerConfiguration(bool disablePreloadedChecksums = false)
+    private static ACServerConfiguration CreateServerConfiguration(bool enablePreloadedChecksums = true)
     {
         var locations = ConfigurationLocations.FromOptions(null, null, null);
-        if (disablePreloadedChecksums)
+        if (!enablePreloadedChecksums)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(locations.ExtraCfgPath)!);
-            new ACExtraConfiguration { DisablePreloadedChecksums = true }.ToFile(locations.ExtraCfgPath);
+            new ACExtraConfiguration { EnablePreloadedChecksums = false }.ToFile(locations.ExtraCfgPath);
         }
 
         return new ACServerConfiguration(null, locations, false, false, null);

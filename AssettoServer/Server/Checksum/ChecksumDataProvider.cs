@@ -39,7 +39,7 @@ public sealed class ChecksumDataProvider : IDisposable
     public async Task<ChecksumsFile> LoadAsync(CancellationToken cancellationToken = default)
     {
         var merged = new ChecksumsFile();
-        if (_serverConfiguration.Extra.DisablePreloadedChecksums)
+        if (!_serverConfiguration.Extra.EnablePreloadedChecksums)
         {
             Log.Information("Preloaded checksums are disabled");
             return merged;

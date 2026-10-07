@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace AssettoServer.Shared.Checksum;
 
-[InlineArray(16)]
+[InlineArray(Length)]
 [JsonConverter(typeof(Md5ChecksumJsonConverter))]
 public struct Md5Checksum : IEquatable<Md5Checksum>
 {
@@ -41,7 +41,7 @@ public struct Md5Checksum : IEquatable<Md5Checksum>
     public static bool operator !=(Md5Checksum left, Md5Checksum right) => !left.Equals(right);
 }
 
-[InlineArray(32)]
+[InlineArray(Length)]
 [JsonConverter(typeof(Sha256ChecksumJsonConverter))]
 public struct Sha256Checksum : IEquatable<Sha256Checksum>
 {

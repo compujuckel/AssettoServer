@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -285,17 +286,17 @@ public class ChecksumTests
     [TestCase("SHA256", "[1]")]
     public void ChecksumJsonRejectsInvalidDigestValues(string algorithm, string value)
     {
-                string json = $$"""
-                        {
-                            "Cars": {
-                                "test_car": {
-                                    "Files": {
-                                        "data.acd": { "{{algorithm}}": {{value}} }
-                                    }
-                                }
-                            }
+        string json = $$"""
+            {
+                "Cars": {
+                    "test_car": {
+                        "Files": {
+                            "data.acd": { "{{algorithm}}": {{value}} }
                         }
-                        """;
+                    }
+                }
+            }
+            """;
 
         Assert.Throws<JsonException>(() => ChecksumsFile.FromJson(json));
     }
@@ -519,6 +520,35 @@ public class ChecksumTests
         });
     }
 
+    [TestCase("tracks")]
+    [TestCase("track")]
+    public void UtilityRecognizesKunosTrackExceptionsCaseInsensitively(string tracksDirectory)
+    {
+        using var directory = new TemporaryDirectory();
+        WriteFile(Path.Combine(directory.Path, "content", tracksDirectory, "TEST_KUNOS_TRACK", "models.ini"), "models");
+        var exceptions = (HashSet<string>)typeof(ChecksumGenerator)
+            .GetField("KunosTracksWithoutKsPrefix", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+        bool added = exceptions.Add("test_kunos_track");
+        try
+        {
+            var kunos = new ChecksumsFile();
+            var custom = new ChecksumsFile();
+
+            ChecksumGenerator.UpdateFromLocalContent(kunos, custom, directory.Path);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(kunos.Tracks["test_kunos_track"].Files["models.ini"].MD5, Is.EqualTo(Md5("models")));
+                Assert.That(custom.Tracks.ContainsKey("test_kunos_track"), Is.False);
+            });
+        }
+        finally
+        {
+            if (added)
+                exceptions.Remove("test_kunos_track");
+        }
+    }
+
     [Test]
     public void LocalChecksumIsNotReplacedByPreloadedChecksum()
     {
@@ -652,6 +682,7 @@ public class ChecksumTests
     [TestCase("{")]
     [TestCase("null")]
     [TestCase("""{"Tracks":42}""")]
+    [TestCase("""{"Tracks":null,"Cars":null,"Other":null}""")]
     [TestCase("""{"Cars":{"remote_car":{"Files":{"data.acd":{"MD5":[1]}}}}}""")]
     public async Task ProviderSkipsInvalidCacheAndPreservesOtherChecksumSources(string invalidJson)
     {
@@ -678,11 +709,121 @@ public class ChecksumTests
         Assert.Multiple(() =>
         {
             Assert.That(loaded.Tracks["bundled_track"].Files["models.ini"].MD5, Is.EqualTo(Md5("bundled models")));
-            Assert.That(loaded.Cars, Is.Empty);
+            Assert.That(loaded.Cars.Values.All(car => car.Files.Count == 0), Is.True);
             Assert.That(manager.TrackChecksums["system/data/surfaces.ini"],
                 Is.EqualTo(Md5("local system surfaces").ToArray()));
             Assert.That(File.ReadAllText(cachePath), Is.EqualTo(invalidJson));
         });
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task ProviderSkipsInvalidEntriesWithoutDiscardingValidChecksums(bool brokenRemote)
+    {
+        using var directory = new TemporaryDirectory();
+        using var currentDirectory = new CurrentDirectoryScope(directory.Path);
+        var kunos = new ChecksumsFile();
+        kunos.Cars["shared_car"] = new CarChecksum
+        {
+            Files = { ["data.acd"] = ChecksumForContent("kunos car") }
+        };
+        var remote = new ChecksumsFile();
+        remote.Cars["shared_car"] = new CarChecksum
+        {
+            Files = { ["data.acd"] = ChecksumForContent("remote car") }
+        };
+        var partial = brokenRemote ? remote : kunos;
+        partial.Other = null!;
+        partial.Cars["null_car"] = null!;
+        partial.Cars["null_files"] = new CarChecksum { Files = null! };
+        partial.Cars["mixed_car"] = new CarChecksum
+        {
+            Files =
+            {
+                ["data.acd"] = ChecksumForContent("valid car"),
+                ["collider.kn5"] = null!
+            }
+        };
+        partial.Tracks["null_track"] = null!;
+        partial.Tracks["null_collections"] = new TrackChecksum { Files = null!, Surfaces = null!, Layouts = null! };
+        partial.Tracks["mixed_track"] = new TrackChecksum
+        {
+            Files = { ["models.ini"] = ChecksumForContent("valid models"), ["broken.kn5"] = null! },
+            Surfaces =
+            {
+                ["surfaces.ini"] = new SurfaceChecksumVariants
+                {
+                    Vanilla = ChecksumForContent("valid surface"),
+                    Csp = ChecksumForContent("CSP surface")
+                },
+                ["broken.ini"] = null!
+            },
+            Layouts =
+            {
+                ["null_layout"] = null!,
+                ["sprint"] = new TrackLayoutChecksum
+                {
+                    Files = { ["models_sprint.ini"] = ChecksumForContent("valid layout") },
+                    Surfaces = null!
+                }
+            }
+        };
+        var json = JsonNode.Parse(partial.ToJson())!;
+        json["Cars"]!["mixed_car"]!["Files"]!["broken.acd"] = JsonNode.Parse("""{"MD5":[1]}""");
+        json["Cars"]!["mixed_car"]!["Files"]!["invalid.acd"] = JsonValue.Create(42);
+        json["Cars"]!["mixed_car"]!["Files"]!["data.acd"]!["SHA256"] = JsonNode.Parse("[1]");
+        json["Tracks"]!["mixed_track"]!["Surfaces"]!["surfaces.ini"]!["Csp"] = JsonValue.Create(42);
+        string partialJson = json.ToJsonString();
+        WriteFile(Path.Combine("content", ChecksumDirectory.KunosFileName), brokenRemote ? kunos.ToJson() : partialJson);
+        WriteFile(Path.Combine("content", ChecksumDirectory.CustomFileName), brokenRemote ? partialJson : remote.ToJson());
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration());
+
+        ChecksumsFile loaded = await provider.LoadAsync();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Cars["shared_car"].Files["data.acd"].MD5, Is.EqualTo(Md5("remote car")));
+            Assert.That(loaded.Cars["mixed_car"].Files.Keys, Is.EquivalentTo(new[] { "data.acd" }));
+            Assert.That(loaded.Cars["mixed_car"].Files["data.acd"].MD5, Is.EqualTo(Md5("valid car")));
+            Assert.That(loaded.Cars["mixed_car"].Files["data.acd"].SHA256, Is.Null);
+            Assert.That(loaded.Cars.ContainsKey("null_car"), Is.False);
+            Assert.That(loaded.Cars["null_files"].Files, Is.Empty);
+            Assert.That(loaded.Tracks.ContainsKey("null_track"), Is.False);
+            Assert.That(loaded.Tracks["null_collections"].Files, Is.Empty);
+            Assert.That(loaded.Tracks["null_collections"].Surfaces, Is.Empty);
+            Assert.That(loaded.Tracks["null_collections"].Layouts, Is.Empty);
+            Assert.That(loaded.Tracks["mixed_track"].Files.Keys, Is.EquivalentTo(new[] { "models.ini" }));
+            Assert.That(loaded.Tracks["mixed_track"].Layouts.Keys, Is.EquivalentTo(new[] { "sprint" }));
+            Assert.That(loaded.Tracks["mixed_track"].Layouts["sprint"].Files["models_sprint.ini"].MD5,
+                Is.EqualTo(Md5("valid layout")));
+            Assert.That(loaded.Tracks["mixed_track"].Surfaces.Keys, Is.EquivalentTo(new[] { "surfaces.ini" }));
+            Assert.That(loaded.Tracks["mixed_track"].Surfaces["surfaces.ini"].Vanilla!.MD5,
+                Is.EqualTo(Md5("valid surface")));
+            Assert.That(loaded.Tracks["mixed_track"].Surfaces["surfaces.ini"].Csp, Is.Null);
+            Assert.That(File.ReadAllText(Path.Combine("content", brokenRemote
+                ? ChecksumDirectory.CustomFileName : ChecksumDirectory.KunosFileName)), Is.EqualTo(partialJson));
+        });
+    }
+
+    [TestCase("{")]
+    [TestCase("null")]
+    public async Task ProviderPreservesRemoteChecksumsWhenKunosFileIsInvalid(string invalidJson)
+    {
+        using var directory = new TemporaryDirectory();
+        using var currentDirectory = new CurrentDirectoryScope(directory.Path);
+        var remote = new ChecksumsFile();
+        remote.Cars["remote_car"] = new CarChecksum
+        {
+            Files = { ["data.acd"] = ChecksumForContent("remote data") }
+        };
+        WriteFile(Path.Combine("content", ChecksumDirectory.CustomFileName), remote.ToJson());
+        WriteFile(Path.Combine("content", ChecksumDirectory.KunosFileName), invalidJson);
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration());
+
+        ChecksumsFile loaded = await provider.LoadAsync();
+
+        Assert.That(loaded.Cars["remote_car"].Files["data.acd"].MD5, Is.EqualTo(Md5("remote data")));
+        Assert.That(File.ReadAllText(Path.Combine("content", ChecksumDirectory.KunosFileName)), Is.EqualTo(invalidJson));
     }
 
     [TestCase(true)]
@@ -825,7 +966,9 @@ public class ChecksumTests
     [TestCase("checksums_remote.json")]
     public void ShippedChecksumFilesContainSingleLineFixedSizeByteArrays(string fileName)
     {
-        string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "content", fileName));
+        using var directory = new TemporaryDirectory();
+        PrepareShippedChecksumFiles(directory);
+        string json = File.ReadAllText(Path.Combine(directory.Path, "content", fileName));
         var checksums = ChecksumsFile.FromJson(json);
         var jsonObject = JsonNode.Parse(json)!;
         var allProperties = EnumerateJsonProperties(jsonObject).ToArray();
@@ -850,6 +993,28 @@ public class ChecksumTests
                 .All(property => property.Value!.AsObject()
                     .All(file => !Path.GetFileName(file.Key.Replace('\\', '/'))
                         .Equals("surfaces.ini", StringComparison.OrdinalIgnoreCase))), Is.True);
+        });
+    }
+
+    [Test]
+    public void PreparingShippedChecksumFilesRemovesStaleContent()
+    {
+        using var directory = new TemporaryDirectory();
+        string contentDirectory = Path.Combine(directory.Path, "content");
+        WriteFile(Path.Combine(contentDirectory, ChecksumDirectory.KunosFileName), "stale");
+        WriteFile(Path.Combine(contentDirectory, ChecksumDirectory.CustomFileName), "stale");
+        string stalePath = Path.Combine(contentDirectory, "stale.json");
+        WriteFile(stalePath, "stale");
+
+        PrepareShippedChecksumFiles(directory);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ChecksumsFile.FromJson(File.ReadAllText(
+                Path.Combine(contentDirectory, ChecksumDirectory.KunosFileName))).Tracks, Is.Not.Empty);
+            Assert.That(ChecksumsFile.FromJson(File.ReadAllText(
+                Path.Combine(contentDirectory, ChecksumDirectory.CustomFileName))).Tracks, Is.Not.Empty);
+            Assert.That(File.Exists(stalePath), Is.False);
         });
     }
 
@@ -973,6 +1138,21 @@ public class ChecksumTests
             Assert.That(dataEntry.Files.ContainsKey(dataSurfacePath), Is.False);
             Assert.That(JsonNode.Parse(custom.ToJson())!["Cars"]!["test_car"]!["Surfaces"], Is.Null);
         });
+    }
+
+    private static void PrepareShippedChecksumFiles(TemporaryDirectory directory)
+    {
+        string contentDirectory = Path.Combine(directory.Path, "content");
+        if (Directory.Exists(contentDirectory))
+            Directory.Delete(contentDirectory, recursive: true);
+        Directory.CreateDirectory(contentDirectory);
+
+        using var resource = typeof(ChecksumDataProvider).Assembly
+            .GetManifestResourceStream("AssettoServer.Assets.checksums_ks.json")!;
+        using var bundledFile = File.Create(Path.Combine(contentDirectory, ChecksumDirectory.KunosFileName));
+        resource.CopyTo(bundledFile);
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "content", ChecksumDirectory.CustomFileName),
+            Path.Combine(contentDirectory, ChecksumDirectory.CustomFileName));
     }
 
     private static IEnumerable<KeyValuePair<string, JsonNode?>> EnumerateJsonProperties(JsonNode? node)

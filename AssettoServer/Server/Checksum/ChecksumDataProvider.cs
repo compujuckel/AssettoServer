@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
@@ -17,6 +19,13 @@ public sealed class ChecksumDataProvider : IDisposable
         "https://raw.githubusercontent.com/compujuckel/AssettoServer/master/AssettoServer/Assets/checksums_remote.json";
 
     private static readonly TimeSpan DownloadTimeout = TimeSpan.FromSeconds(15);
+
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PreferredObjectCreationHandling = JsonObjectCreationHandling.Populate,
+        Converters = { new ChecksumDictionaryJsonConverterFactory(), new ChecksumValueJsonConverter() }
+    };
 
     private readonly HttpClient _httpClient;
     private readonly ACServerConfiguration _serverConfiguration;
@@ -58,8 +67,15 @@ public sealed class ChecksumDataProvider : IDisposable
         if (remoteChecksums != null)
             merged.MergeMissingFrom(remoteChecksums);
 
-        merged.MergeMissingFrom(await LoadJsonFileAsync(kunosPath, cancellationToken));
-        Log.Information("Loaded bundled Kunos checksums from {Path}", kunosPath);
+        try
+        {
+            merged.MergeMissingFrom(await LoadJsonFileAsync(kunosPath, cancellationToken));
+            Log.Information("Loaded bundled Kunos checksums from {Path}", kunosPath);
+        }
+        catch (ConfigurationParsingException ex)
+        {
+            Log.Error(ex, "Could not load Kunos checksums from {Path}; continuing with other checksum sources", kunosPath);
+        }
 
         return merged;
     }
@@ -91,7 +107,7 @@ public sealed class ChecksumDataProvider : IDisposable
             using var response = await _httpClient.GetAsync(RemoteChecksumsUrl, timeout.Token);
             response.EnsureSuccessStatusCode();
             string json = await response.Content.ReadAsStringAsync(timeout.Token);
-            ChecksumsFile checksums = ChecksumsFile.FromJson(json);
+            ChecksumsFile checksums = DeserializeChecksums(json);
 
             string temporaryPath = $"{cachePath}.{Guid.NewGuid():N}.tmp";
             try
@@ -144,11 +160,121 @@ public sealed class ChecksumDataProvider : IDisposable
         try
         {
             string json = await File.ReadAllTextAsync(path, cancellationToken);
-            return ChecksumsFile.FromJson(json);
+            return DeserializeChecksums(json);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException)
         {
             throw new ConfigurationParsingException(path, ex);
+        }
+    }
+
+    private static ChecksumsFile DeserializeChecksums(string json)
+    {
+        return JsonSerializer.Deserialize<ChecksumsFile>(json, SerializerOptions)
+               ?? throw new JsonException("Cannot deserialize checksum data");
+    }
+
+    private sealed class ChecksumDictionaryJsonConverterFactory : JsonConverterFactory
+    {
+        public override bool CanConvert(Type typeToConvert)
+        {
+            if (!typeToConvert.IsGenericType || typeToConvert.GetGenericTypeDefinition() != typeof(Dictionary<,>))
+                return false;
+
+            var arguments = typeToConvert.GetGenericArguments();
+            return arguments[0] == typeof(string)
+                   && (typeof(ChecksumEntry).IsAssignableFrom(arguments[1])
+                       || arguments[1] == typeof(ChecksumValue)
+                       || arguments[1] == typeof(SurfaceChecksumVariants));
+        }
+
+        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+        {
+            var entryType = typeToConvert.GetGenericArguments()[1];
+            return (JsonConverter)Activator.CreateInstance(
+                typeof(ChecksumDictionaryJsonConverter<>).MakeGenericType(entryType), nonPublic: true)!;
+        }
+    }
+
+    private sealed class ChecksumDictionaryJsonConverter<TEntry> : JsonConverter<Dictionary<string, TEntry>>
+        where TEntry : class
+    {
+        public override bool HandleNull => true;
+
+        public override Dictionary<string, TEntry> Read(
+            ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var entries = new Dictionary<string, TEntry>(StringComparer.OrdinalIgnoreCase);
+            using var document = JsonDocument.ParseValue(ref reader);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                Log.Warning("Skipping invalid {EntryType} checksum collection", typeof(TEntry).Name);
+                return entries;
+            }
+
+            foreach (var property in document.RootElement.EnumerateObject())
+            {
+                try
+                {
+                    var entry = property.Value.Deserialize<TEntry>(options);
+                    if (entry == null)
+                    {
+                        Log.Warning("Skipping empty checksum entry {Entry}", property.Name);
+                        continue;
+                    }
+
+                    entries[property.Name] = entry;
+                }
+                catch (JsonException ex)
+                {
+                    Log.Warning(ex, "Skipping invalid checksum entry {Entry}", property.Name);
+                }
+            }
+
+            return entries;
+        }
+
+        public override void Write(
+            Utf8JsonWriter writer, Dictionary<string, TEntry> value, JsonSerializerOptions options)
+        {
+            JsonSerializer.Serialize(writer, value);
+        }
+    }
+
+    private sealed class ChecksumValueJsonConverter : JsonConverter<ChecksumValue>
+    {
+        public override ChecksumValue? Read(
+            ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            using var document = JsonDocument.ParseValue(ref reader);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                Log.Warning("Skipping invalid checksum value");
+                return null;
+            }
+
+            var checksum = new ChecksumValue();
+            foreach (var property in document.RootElement.EnumerateObject())
+            {
+                try
+                {
+                    if (property.Name.Equals("MD5", StringComparison.OrdinalIgnoreCase))
+                        checksum.MD5 = property.Value.Deserialize<Md5Checksum?>();
+                    else if (property.Name.Equals("SHA256", StringComparison.OrdinalIgnoreCase))
+                        checksum.SHA256 = property.Value.Deserialize<Sha256Checksum?>();
+                }
+                catch (JsonException ex)
+                {
+                    Log.Warning(ex, "Skipping invalid {Algorithm} checksum", property.Name);
+                }
+            }
+
+            return checksum.MD5.HasValue || checksum.SHA256.HasValue ? checksum : null;
+        }
+
+        public override void Write(Utf8JsonWriter writer, ChecksumValue value, JsonSerializerOptions options)
+        {
+            JsonSerializer.Serialize(writer, value);
         }
     }
 }

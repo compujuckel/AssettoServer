@@ -87,6 +87,17 @@ public static class ChecksumGenerator
         "tatuusfa1"
     };
 
+    private static readonly HashSet<string> KunosTracksWithoutKsPrefix = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "drift",
+        "imola",
+        "magione",
+        "monza",
+        "mugello",
+        "spa",
+        "trento-bondone"
+    };
+
     public static ChecksumUpdateSummary UpdateFromLocalContent(
         ChecksumsFile kunos,
         ChecksumsFile custom,
@@ -132,6 +143,7 @@ public static class ChecksumGenerator
     private static bool IsKunosTrack(string name, Dictionary<string, TrackChecksum> kunosTracks)
     {
         return name.StartsWith("ks_", StringComparison.OrdinalIgnoreCase)
+               || KunosTracksWithoutKsPrefix.Contains(name)
                || FindKey(kunosTracks, name) != null;
     }
 

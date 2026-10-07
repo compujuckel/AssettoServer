@@ -42,7 +42,7 @@ The published executables use the source-checkout paths shown above. `--runtime 
 
 Cars are discovered under `content/cars/<car>/`. Tracks are discovered from `content/tracks/<track>/models_<layout>.ini` for layouts or `models.ini` for no-layout tracks; the latter also supports `content/track/<track>/`.
 
-Content beginning with `ks_` or already present in the input Kunos dataset goes to `checksums_ks.json`; other content goes to `checksums_remote.json`. Missing entries are added. Content, layouts, and file checksums absent locally are preserved.
+Content beginning with `ks_`, listed in `KunosCarsWithoutKsPrefix` or `KunosTracksWithoutKsPrefix`, or already present in the input Kunos dataset goes to `checksums_ks.json`; other content goes to `checksums_remote.json`. Missing entries are added. Content, layouts, and file checksums absent locally are preserved.
 
 Without `--replace`, entries are updated when the local version is at least the stored version, or either version is missing or unparseable. A missing local version clears the stored version; other unavailable UI fields are retained. `--replace` ignores version checks and also updates shared track files when some stored layouts are not installed locally.
 
@@ -118,5 +118,7 @@ The server supplements checksums generated from files in the server directory wi
 3. Bundled Kunos checksums at `content/checksums_ks.json`.
 
 The [remote dataset](https://raw.githubusercontent.com/compujuckel/AssettoServer/master/AssettoServer/Assets/checksums_remote.json) is fetched only when the cache is missing and cached without reformatting. Fetch, read, and deserialization failures are logged without stopping startup; other sources remain available. Failed downloads are not cached and are retried on the next startup. Existing caches are never rewritten or automatically re-fetched; correct or remove an unreadable cache to use remote data again.
+
+The server logs and skips unusable collections, entries, and individual digests while retaining valid checksums from both files. Invalid JSON syntax prevents reading that file, but does not prevent loading the other source. Utility deserialization remains strict.
 
 Set `DisablePreloadedChecksums: true` in `extra_cfg.yml` to use only local file checksums.

@@ -55,9 +55,14 @@ public class Startup
         builder.RegisterInstance(_configuration);
         builder.RegisterInstance(_loader);
         
-        // Registration order == order in which hosted services are started
-        builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
+        // These use IHostedLifecycleService to start before other hosted services
+        builder.RegisterType<GeoParamsManager>().AsSelf().As<IHostedService>().SingleInstance();
+        builder.RegisterType<ChecksumManager>().AsSelf().As<IHostedService>().SingleInstance();
+        builder.RegisterType<EntryCarManager>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<SessionManager>().AsSelf().As<IHostedService>().SingleInstance();
+        builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
+        
+        // Registration order == order in which hosted services are started
         builder.RegisterType<ACTcpServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<ACUdpServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterModule(new WeatherModule(_configuration));
@@ -100,10 +105,7 @@ public class Startup
         builder.RegisterType<CSPClientMessageTypeManager>().AsSelf().SingleInstance();
         builder.RegisterType<CSPClientMessageHandler>().AsSelf().SingleInstance();
         builder.RegisterType<VoteManager>().AsSelf().SingleInstance();
-        builder.RegisterType<EntryCarManager>().AsSelf().SingleInstance();
         builder.RegisterType<IpApiGeoParamsProvider>().As<IGeoParamsProvider>();
-        builder.RegisterType<GeoParamsManager>().AsSelf().SingleInstance();
-        builder.RegisterType<ChecksumManager>().AsSelf().SingleInstance();
         builder.RegisterType<CSPServerExtraOptions>().AsSelf().SingleInstance();
         builder.RegisterType<OpenSlotFilterChain>().AsSelf().SingleInstance();
         builder.RegisterType<WhitelistSlotFilter>().As<IOpenSlotFilter>();

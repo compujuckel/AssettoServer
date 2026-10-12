@@ -69,7 +69,7 @@ public static class Program
     
     private static bool _loadPluginsFromWorkdir;
     private static bool _generatePluginConfigs;
-    private static TaskCompletionSource<StartOptions> _restartTask = new();
+    private static TaskCompletionSource<StartOptions> _restartTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
     
     internal static async Task Main(string[] args)
     {

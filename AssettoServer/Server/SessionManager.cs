@@ -11,12 +11,13 @@ using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AssettoServer.Server;
 
-public class SessionManager : BackgroundService, IHostedLifecycleService
+public class SessionManager : BackgroundLifecycleService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly Func<SessionConfiguration, SessionState> _sessionStateFactory;
@@ -521,18 +522,12 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
         CurrentSession.HasSentRaceOverPacket = true;
         CurrentSession.OverTimeMilliseconds = ServerTimeMilliseconds;
     }
-
-    public Task StartedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-    public Task StartingAsync(CancellationToken cancellationToken)
+    
+    public override Task StartingAsync(CancellationToken cancellationToken)
     {
         _timeSource.Start();
         NextSession();
         
         return Task.CompletedTask;
     }
-
-    public Task StoppedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-    public Task StoppingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

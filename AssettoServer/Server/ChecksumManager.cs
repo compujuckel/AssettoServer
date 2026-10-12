@@ -4,12 +4,15 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Utils;
 using Serilog;
 
 namespace AssettoServer.Server;
 
-public class ChecksumManager
+public class ChecksumManager : HostedLifecycleService
 {
     public IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; } = null!;
     public IReadOnlyDictionary<string, Dictionary<string, byte[]>> CarChecksums { get; private set; } = null!;
@@ -24,7 +27,7 @@ public class ChecksumManager
         _entryCarManager = entryCarManager;
     }
     
-    public void Initialize()
+    public override Task StartingAsync(CancellationToken cancellationToken)
     {
         CalculateTrackChecksums(_configuration.Server.Track, _configuration.Server.TrackConfig);
         Log.Information("Initialized {Count} track checksums", TrackChecksums.Count);
@@ -50,6 +53,8 @@ public class ChecksumManager
                 };
             }
         }
+
+        return Task.CompletedTask;
     }
 
     public List<KeyValuePair<string, byte[]>> GetChecksumsForHandshake(string car)

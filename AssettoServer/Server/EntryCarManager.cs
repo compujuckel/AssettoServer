@@ -12,11 +12,12 @@ using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
+using AssettoServer.Utils;
 using Serilog;
 
 namespace AssettoServer.Server;
 
-public class EntryCarManager
+public class EntryCarManager : HostedLifecycleService
 {
     public EntryCar[] EntryCars { get; private set; } = [];
     public ConcurrentDictionary<int, EntryCar> ConnectedCars { get; } = new();
@@ -237,7 +238,7 @@ public class EntryCarManager
         return false;
     }
 
-    internal void Initialize()
+    public override Task StartingAsync(CancellationToken token)
     {
         EntryCars = new EntryCar[Math.Min(_configuration.Server.MaxClients, _configuration.EntryList.Cars.Count)];
         Log.Information("Loaded {Count} cars", EntryCars.Length);
@@ -266,5 +267,7 @@ public class EntryCarManager
 
             EntryCars[i] = car;
         }
+
+        return Task.CompletedTask;
     }
 }

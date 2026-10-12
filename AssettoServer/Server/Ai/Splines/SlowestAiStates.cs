@@ -14,68 +14,34 @@ public class SlowestAiStates
 
     public AiState? this[int index] => _aiStates[index];
 
-    public void Enter(int pointId, AiState state)
+    public void Move(AiState state, int currentPointId, int nextPointId)
     {
-        _lock.EnterUpgradeableReadLock();
+        _lock.EnterWriteLock();
         try
         {
-            ref var currentAiState = ref _aiStates[pointId];
-            
-            if (currentAiState != null && currentAiState.CurrentSplinePointId != pointId)
+            if (currentPointId > 0 && _aiStates[currentPointId] == state)
             {
-                _lock.EnterWriteLock();
-                try
+                _aiStates[currentPointId] = null;
+            }
+
+            if (nextPointId > 0)
+            {
+                ref var currentAiState = ref _aiStates[nextPointId];
+                
+                if (currentAiState != null && currentAiState.CurrentSplinePointId != nextPointId)
                 {
                     currentAiState = null;
                 }
-                finally
-                {
-                    _lock.ExitWriteLock();
-                }
-            }
             
-            if (currentAiState == null || state.CurrentSpeed < currentAiState.CurrentSpeed)
-            {
-                _lock.EnterWriteLock();
-                try
+                if (currentAiState == null || state.CurrentSpeed < currentAiState.CurrentSpeed)
                 {
                     currentAiState = state;
                 }
-                finally
-                {
-                    _lock.ExitWriteLock();
-                }
             }
         }
         finally
         {
-            _lock.ExitUpgradeableReadLock();
-        }
-    }
-    
-    public void Leave(int pointId, AiState state)
-    {
-        if (pointId < 0) return;
-        
-        _lock.EnterUpgradeableReadLock();
-        try
-        {
-            if (_aiStates[pointId] == state)
-            {
-                _lock.EnterWriteLock();
-                try
-                {
-                    _aiStates[pointId] = null;
-                }
-                finally
-                {
-                    _lock.ExitWriteLock();
-                }
-            }
-        }
-        finally
-        {
-            _lock.ExitUpgradeableReadLock();
+            _lock.ExitWriteLock();
         }
     }
 }

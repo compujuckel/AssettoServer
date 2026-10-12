@@ -2,6 +2,7 @@
 using System.IO;
 using System.IO.Hashing;
 using System.Linq;
+using System.Text;
 using AssettoServer.Server.Configuration;
 using Serilog;
 using SerilogTimings;
@@ -56,9 +57,9 @@ public class AiSplineLocator
             mapAiBasePath = mapAiLayoutPath;
         }
         
-        var cacheKey = GenerateCacheKey(mapAiBasePath);
+        var cacheKey = GenerateCacheKey(mapAiBasePath, _configuration.Extra.AiParams.LaneWidthMeters,  _configuration.Extra.AiParams.TwoWayTraffic);
         Directory.CreateDirectory("cache");
-        var cachePath = Path.Join("cache", $"{cacheKey}.aic{AiSpline.SupportedVersion}");
+        var cachePath = Path.Join("cache", $"{cacheKey}.aic");
         if (!File.Exists(cachePath))
         {
             Log.Information("Cached AI spline not found. Generating cache...");
@@ -70,9 +71,12 @@ public class AiSplineLocator
         return new AiSpline(cachePath);
     }
 
-    private static string GenerateCacheKey(string folder)
+    private static string GenerateCacheKey(string folder, float laneWidth, bool twoWayTraffic)
     {
-        var hash = new XxHash64();
+        var hash = new XxHash3();
+        
+        var splineParams = $"version:{AiSpline.SupportedVersion}\nlaneWidth:{laneWidth}\ntwoWayTraffic:{twoWayTraffic}\n";
+        hash.Append(Encoding.UTF8.GetBytes(splineParams));
         
         string aipPath = Path.Join(folder, "fast_lane.aip");
         if (File.Exists(aipPath))

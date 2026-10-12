@@ -1041,6 +1041,6 @@ public class ACTcpClient : IClient
     {
         // https://developer.valvesoftware.com/wiki/SteamID
         // Changing most significant bit so there are no collisions with real Steam IDs
-        return XxHash64.HashToUInt64(Encoding.UTF8.GetBytes(input)) | (ulong)1 << 63;
+        return XxHash3.HashToUInt64(Encoding.UTF8.GetBytes(input)) | (ulong)1 << 63;
     }
 }

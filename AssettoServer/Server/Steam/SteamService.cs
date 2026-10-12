@@ -98,7 +98,7 @@ public class SteamService : BackgroundService
     {
         if (sessionTicket == null) return new SteamResult { ErrorReason = "Missing session ticket" };
 
-        var taskCompletionSource = new TaskCompletionSource<SteamResult>();
+        var taskCompletionSource = new TaskCompletionSource<SteamResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         SteamServer.OnValidateAuthTicketResponse += TicketValidateResponse;
         try
         {

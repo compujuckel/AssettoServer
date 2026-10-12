@@ -136,7 +136,7 @@ public class ChecksumManager
             if (surfaceFix)
             {
                 var bytes = File.ReadAllBytes(filePath);
-                var firstSurface = MemoryExtensions.IndexOf(bytes, "SURFACE_0"u8);
+                var firstSurface = bytes.IndexOf("SURFACE_0"u8);
                 if (firstSurface > 0)
                 {
                     "CSP"u8.CopyTo(bytes.AsSpan(firstSurface, 3));

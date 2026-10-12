@@ -119,7 +119,7 @@ public static class Program
         
         while (true)
         {
-            _restartTask = new TaskCompletionSource<StartOptions>();
+            _restartTask = new TaskCompletionSource<StartOptions>(TaskCreationOptions.RunContinuationsAsynchronously);
             using var cts = new CancellationTokenSource();
             var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, startOptions.PortOverrides ,options.UseVerboseLogging, cts.Token);
             var finishedTask = await Task.WhenAny(serverTask, _restartTask.Task);
@@ -129,7 +129,7 @@ public static class Program
                 await cts.CancelAsync();
                 await serverTask;
 
-                startOptions = _restartTask.Task.Result;
+                startOptions = await _restartTask.Task;
             }
             else break;
         }

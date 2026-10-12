@@ -238,7 +238,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
                     }
                 }
 
-                if (_entryCarManager.ConnectedCars.Count > 0)
+                if (!_entryCarManager.ConnectedCars.IsEmpty)
                 {
                     long tickDelta;
                     do

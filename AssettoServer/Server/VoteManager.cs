@@ -88,6 +88,8 @@ public class VoteManager
                 case VoteType.RestartSession:
                     _sessionManager.RestartSession();
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(voteType));
             }
         }
         else

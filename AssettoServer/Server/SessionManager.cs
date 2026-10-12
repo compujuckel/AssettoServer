@@ -279,17 +279,13 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
                 Log.Information("Skipping race session: didn't reach minimum player count before cutoff ({PlayerCount}/2). Use 'IS_OPEN=1' to allow joining during the race", connectedCount);
                 return true;
             case IsOpenMode.Closed:
+            case IsOpenMode.CloseAtStart when connectedCount >= 2 || ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds:
+            case IsOpenMode.Open when connectedCount > 0 || ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds:
                 return false;
-            case IsOpenMode.CloseAtStart when connectedCount >= 2 ||
-                                              ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds:
-                return false;
-            case IsOpenMode.Open when connectedCount > 0 ||
-                                      ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds:
-                return false;
+            default:
+                Log.Information("Skipping race session: no player connected");
+                return true;
         }
-        
-        Log.Information("Skipping race session: no player connected");
-        return true;
     }
 
     private void CalcOverTime()

@@ -55,14 +55,12 @@ public class Startup
         builder.RegisterInstance(_configuration);
         builder.RegisterInstance(_loader);
         
-        // These use IHostedLifecycleService to start before other hosted services
-        builder.RegisterType<GeoParamsManager>().AsSelf().As<IHostedService>().SingleInstance();
+        // Services are started sequentially, some services depend on others so order is important
+        builder.RegisterType<EntryCarManager>().AsSelf().As<IHostedService>().SingleInstance();     
         builder.RegisterType<ChecksumManager>().AsSelf().As<IHostedService>().SingleInstance();
-        builder.RegisterType<EntryCarManager>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<SessionManager>().AsSelf().As<IHostedService>().SingleInstance();
+        builder.RegisterType<GeoParamsManager>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
-        
-        // Registration order == order in which hosted services are started
         builder.RegisterType<ACTcpServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<ACUdpServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterModule(new WeatherModule(_configuration));

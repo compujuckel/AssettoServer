@@ -3,8 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
+using AssettoServer.Server.Checksum;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Shared.Checksum;
 using Serilog;
 
 namespace AssettoServer.Server;
@@ -14,23 +19,36 @@ public class ChecksumManager
     public IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; } = null!;
     public IReadOnlyDictionary<string, Dictionary<string, byte[]>> CarChecksums { get; private set; } = null!;
     public IReadOnlyDictionary<string, byte[]> AdditionalCarChecksums { get; private set; } = null!;
+    public ChecksumsFile PreloadedChecksums { get; private set; } = null!;
 
     private readonly ACServerConfiguration _configuration;
     private readonly EntryCarManager _entryCarManager;
+    private readonly ChecksumDataProvider _checksumDataProvider;
+    private Dictionary<string, byte[]> _trackChecksumData = null!;
+    private Dictionary<string, byte[]> _additionalCarChecksumData = null!;
     
-    public ChecksumManager(ACServerConfiguration configuration, EntryCarManager entryCarManager)
+    public ChecksumManager(
+        ACServerConfiguration configuration,
+        EntryCarManager entryCarManager,
+        ChecksumDataProvider checksumDataProvider)
     {
         _configuration = configuration;
         _entryCarManager = entryCarManager;
+        _checksumDataProvider = checksumDataProvider;
     }
     
-    public void Initialize()
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
+        var carModels = _entryCarManager.EntryCars.Select(car => car.Model).Distinct().ToList();
+        PreloadedChecksums = (await _checksumDataProvider.LoadAsync(cancellationToken))
+            .SelectActive(_configuration.CSPTrackOptions.Track, _configuration.Server.TrackConfig, carModels);
+
         CalculateTrackChecksums(_configuration.Server.Track, _configuration.Server.TrackConfig);
+        AddPreloadedTrackChecksums(_configuration.Server.Track, _configuration.Server.TrackConfig);
         Log.Information("Initialized {Count} track checksums", TrackChecksums.Count);
 
-        var carModels = _entryCarManager.EntryCars.Select(car => car.Model).Distinct().ToList();
         CalculateCarChecksums(carModels, _configuration.Extra.EnableAlternativeCarChecksums);
+        AddPreloadedCarChecksums(carModels, _configuration.Extra.EnableAlternativeCarChecksums);
         Log.Information("Initialized {Count} car checksums", CarChecksums.Select(car => car.Value.Count).Sum());
 
         var modelsWithoutChecksums = CarChecksums.Where(c => c.Value.Count == 0).Select(c => c.Key).ToList();
@@ -52,6 +70,117 @@ public class ChecksumManager
         }
     }
 
+    private void AddPreloadedTrackChecksums(string track, string trackConfig)
+    {
+        var systemSurfaces = ChecksumsFile.Find(PreloadedChecksums.Other, "system/data/surfaces.ini");
+        if (systemSurfaces?.MD5 is { } systemSurfacesMd5)
+            AddPreloadedChecksum(_trackChecksumData, "system/data/surfaces.ini", systemSurfacesMd5);
+
+        if (!PreloadedChecksums.TryGetTrack(_configuration.CSPTrackOptions.Track, trackConfig, out var trackChecksums))
+            return;
+
+        var virtualTrackPath = $"content/tracks/{track}";
+        bool surfaceFix = _configuration.CSPTrackOptions.MinimumCSPVersion.HasValue;
+        AddPreloadedFiles(_trackChecksumData, virtualTrackPath, trackChecksums, trackConfig, surfaceFix);
+        if (!string.IsNullOrEmpty(trackConfig))
+        {
+            var sharedTrack = PreloadedChecksums.Tracks[_configuration.CSPTrackOptions.Track];
+            AddPreloadedFiles(_trackChecksumData, virtualTrackPath, sharedTrack, trackConfig, surfaceFix);
+        }
+        
+        if (trackChecksums.Info?.Pitboxes != null
+            && int.TryParse(trackChecksums.Info.Pitboxes, out int trackPitboxes)
+            && _configuration.Server.MaxClients > trackPitboxes)
+        {
+            string trackDescription = string.IsNullOrEmpty(trackConfig)
+                ? _configuration.CSPTrackOptions.Track
+                : $"{_configuration.CSPTrackOptions.Track} with layout {trackConfig}";
+            throw new ConfigurationException(
+                $"The track {trackDescription} supports {trackPitboxes} pitboxes. Lower your configured clients {_configuration.Server.MaxClients}.");
+        }
+    }
+
+    private static void AddPreloadedFiles(
+        Dictionary<string, byte[]> checksums,
+        string virtualPath,
+        TrackChecksumEntry entry,
+        string trackConfig,
+        bool surfaceFix)
+    {
+        string modelsFile = string.IsNullOrEmpty(trackConfig) ? "models.ini" : $"models_{trackConfig}.ini";
+        string surfacesFile = string.IsNullOrEmpty(trackConfig)
+            ? "data/surfaces.ini"
+            : $"{trackConfig}/data/surfaces.ini";
+
+        foreach (var (path, checksum) in entry.Files)
+        {
+            if (checksum.MD5 is not { } md5)
+                continue;
+
+            string normalizedPath = path.Replace('\\', '/').TrimStart('/');
+            if (!normalizedPath.Equals(modelsFile, StringComparison.OrdinalIgnoreCase)
+                && !normalizedPath.Equals(surfacesFile, StringComparison.OrdinalIgnoreCase)
+                && !(normalizedPath.IndexOf('/') < 0
+                    && (normalizedPath.Equals("surfaces.ini", StringComparison.OrdinalIgnoreCase)
+                        || normalizedPath.EndsWith(".kn5", StringComparison.OrdinalIgnoreCase))))
+                continue;
+
+            AddPreloadedChecksum(checksums, $"{virtualPath}/{normalizedPath}", md5);
+        }
+
+        foreach (var (path, variants) in entry.Surfaces)
+        {
+            string normalizedPath = path.Replace('\\', '/').TrimStart('/');
+            if (!normalizedPath.Equals(surfacesFile, StringComparison.OrdinalIgnoreCase)
+                && !normalizedPath.Equals("surfaces.ini", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var checksum = surfaceFix && !normalizedPath.Equals("surfaces.ini", StringComparison.OrdinalIgnoreCase)
+                ? variants.Csp
+                : variants.Vanilla;
+            if (checksum?.MD5 is not { } md5)
+                continue;
+
+            AddPreloadedChecksum(checksums, $"{virtualPath}/{normalizedPath}", md5);
+        }
+    }
+
+    private void AddPreloadedCarChecksums(IEnumerable<string> cars, bool allowAlternatives)
+    {
+        foreach (string car in cars)
+        {
+            var carChecksums = ChecksumsFile.Find(PreloadedChecksums.Cars, car);
+            if (carChecksums == null)
+                continue;
+
+            foreach (var (path, checksum) in carChecksums.Files)
+            {
+                string normalizedPath = path.Replace('\\', '/').TrimStart('/');
+                string fileName = Path.GetFileName(normalizedPath);
+                string virtualPath = $"content/cars/{car}/{normalizedPath}";
+
+                var md5 = checksum.MD5;
+                if (fileName.Equals("collider.kn5", StringComparison.OrdinalIgnoreCase) && md5.HasValue)
+                    AddPreloadedChecksum(_additionalCarChecksumData, virtualPath, md5.Value);
+
+                if (!md5.HasValue || !fileName.StartsWith("data", StringComparison.OrdinalIgnoreCase)
+                    || !fileName.EndsWith(".acd", StringComparison.OrdinalIgnoreCase)
+                    || (!allowAlternatives && !fileName.Equals("data.acd", StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                AddPreloadedChecksum(CarChecksums[car], virtualPath, md5.Value);
+            }
+        }
+    }
+
+    internal static void AddPreloadedChecksum(Dictionary<string, byte[]> checksums, string path, in Md5Checksum checksum)
+    {
+        string normalizedPath = path.Replace('\\', '/');
+        ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(checksums, normalizedPath, out bool exists);
+        if (!exists)
+            value = checksum.ToArray();
+    }
+
     public List<KeyValuePair<string, byte[]>> GetChecksumsForHandshake(string car)
     {
         return TrackChecksums
@@ -61,7 +190,7 @@ public class ChecksumManager
 
     private void CalculateTrackChecksums(string track, string trackConfig)
     {
-        var dict = new Dictionary<string, byte[]>();
+        var dict = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         var surfaceFix = _configuration.CSPTrackOptions.MinimumCSPVersion.HasValue;
         
         AddChecksum(dict, "system/data/surfaces.ini");
@@ -87,12 +216,13 @@ public class ChecksumManager
         ChecksumDirectory(dict, realTrackPath, virtualTrackPath);
 
         TrackChecksums = dict;
+        _trackChecksumData = dict;
     }
 
     private void CalculateCarChecksums(IEnumerable<string> cars, bool allowAlternatives)
     {
-        var carDataChecksums = new Dictionary<string, Dictionary<string, byte[]>>();
-        var additionalChecksums = new Dictionary<string, byte[]>();
+        var carDataChecksums = new Dictionary<string, Dictionary<string, byte[]>>(StringComparer.OrdinalIgnoreCase);
+        var additionalChecksums = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
 
         foreach (string car in cars)
         {
@@ -100,14 +230,14 @@ public class ChecksumManager
 
             AddChecksum(additionalChecksums, $"{carFolder}/collider.kn5");
             
-            var checksums = new Dictionary<string, byte[]>();
+            var checksums = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
             if (allowAlternatives && Directory.Exists(carFolder))
             {
                 foreach (string file in Directory.EnumerateFiles(carFolder, "data*.acd"))
                 {
                     if (TryCreateChecksum(file, out byte[]? checksum))
                     {
-                        checksums.Add(file, checksum);
+                        checksums.Add(file.Replace('\\', '/'), checksum);
                         Log.Debug("Added checksum for {Path}", file);
                     }
                 }
@@ -127,6 +257,7 @@ public class ChecksumManager
 
         CarChecksums = carDataChecksums;
         AdditionalCarChecksums = additionalChecksums;
+        _additionalCarChecksumData = additionalChecksums;
     }
 
     private static bool TryCreateChecksum(string filePath, [MaybeNullWhen(false)] out byte[] checksum, bool surfaceFix = false)
@@ -164,7 +295,7 @@ public class ChecksumManager
     {
         if (TryCreateChecksum(filePath, out byte[]? checksum, surfaceFix))
         {
-            dict.Add(name ?? filePath, checksum);
+            dict.Add((name ?? filePath).Replace('\\', '/'), checksum);
             Log.Debug("Added checksum for {Path}", name ?? filePath);
         }
     }

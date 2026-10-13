@@ -121,7 +121,7 @@ public static class Program
         {
             _restartTask = new TaskCompletionSource<StartOptions>();
             using var cts = new CancellationTokenSource();
-            var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, startOptions.PortOverrides ,options.UseVerboseLogging, cts.Token);
+            var serverTask = RunServerAsync(startOptions.Preset, startOptions.ServerCfgPath, startOptions.EntryListPath, startOptions.PortOverrides, options.UseVerboseLogging, cts.Token);
             var finishedTask = await Task.WhenAny(serverTask, _restartTask.Task);
 
             if (finishedTask == _restartTask.Task)
@@ -142,6 +142,7 @@ public static class Program
         PortOverrides? portOverrides = null)
     {
         Log.Information("Initiated in-process server restart");
+
         _restartTask.SetResult(new StartOptions
         {
             Preset = preset,

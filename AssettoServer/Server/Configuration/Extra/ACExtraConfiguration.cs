@@ -84,6 +84,8 @@ public class ACExtraConfiguration
     public bool ForceServerTrackParams { get; init; } = false;
     [YamlMember(Description = "Allow cars to have multiple data checksums. Instead of a single checksummed data.acd, you can have multiple data*.acd files in the car folder and players can join with any of these files")]
     public bool EnableAlternativeCarChecksums { get; init; } = false;
+    [YamlMember(Description = "Enable preloaded remote and bundled Kunos checksums in addition to checksums generated from local files")]
+    public bool EnablePreloadedChecksums { get; init; } = true;
     [YamlMember(Description = "Enable the AC UDP plugin interface compatible with Kunos acServer plugins")]
     public bool EnableLegacyPluginInterface { get; init; } = false;
     [YamlMember(Description = "Automatically configure port forwards using UPnP or NAT-PMP. Empty = Enable on Windows when lobby registration is enabled. true = Always enable, detailed error log. false = Always disable", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]

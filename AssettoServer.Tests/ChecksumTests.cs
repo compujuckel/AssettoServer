@@ -1,4 +1,6 @@
 using System.Buffers;
+using System.Net;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -17,6 +19,195 @@ namespace AssettoServer.Tests;
 [NonParallelizable]
 public class ChecksumTests
 {
+    [TestCase("utf-8")]
+    [TestCase("utf-16")]
+    [TestCase("utf-16BE")]
+    [TestCase("utf-32")]
+    [TestCase("utf-32BE")]
+    public async Task ProviderReadsEncodedCacheWithBomAndUnicodeMetadata(string encodingName)
+    {
+        using var directory = new TemporaryDirectory();
+        using var currentDirectory = new CurrentDirectoryScope(directory.Path);
+        string name = "\u65e5\u672c\u8a9e \u0420\u043e\u0441\u0441\u0438\u044f";
+        string json = $$"""
+                        {
+                            "Cars": {
+                                "test_car": {
+                                    "Info": {"Name": "{{name}}"},
+                                    "Files": {
+                                        "data.acd": {
+                                            "md5": "{{Md5("data").ToHexString()}}",
+                                            "sHa256": "{{Sha256("data").ToHexString()}}"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+            """;
+        var encoding = Encoding.GetEncoding(encodingName);
+        byte[] bytes = [.. encoding.GetPreamble(), .. encoding.GetBytes(json)];
+        Directory.CreateDirectory("content");
+        string cachePath = Path.Combine("content", "checksums_remote.json");
+        await File.WriteAllBytesAsync(cachePath, bytes);
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration());
+
+        var loaded = await provider.LoadAsync();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Cars["test_car"].Info!.Name, Is.EqualTo(name));
+            Assert.That(loaded.Cars["test_car"].Files["data.acd"].MD5, Is.EqualTo(Md5("data")));
+            Assert.That(loaded.Cars["test_car"].Files["data.acd"].SHA256, Is.EqualTo(Sha256("data")));
+            Assert.That(File.ReadAllBytes(cachePath), Is.EqualTo(bytes));
+        });
+    }
+
+    [TestCase("utf-8", true)]
+    [TestCase("utf-16", true)]
+    [TestCase("utf-16BE", true)]
+    [TestCase("iso-8859-1", true)]
+    [TestCase("utf-8", false)]
+    public async Task ProviderStreamsRemoteChecksumsAndPreservesResponseBytes(string encodingName, bool canCache)
+    {
+        using var directory = new TemporaryDirectory();
+        using var currentDirectory = new CurrentDirectoryScope(directory.Path);
+        if (!canCache)
+            WriteFile(Path.Combine(directory.Path, "content"), "blocked content directory");
+        string name = encodingName == "iso-8859-1"
+            ? "\u00c5ngstr\u00f6m"
+            : "\u65e5\u672c\u8a9e \u0420\u043e\u0441\u0441\u0438\u044f";
+        string json = $$"""
+                        {
+                            "Cars": {
+                                "test_car": {
+                                    "Info": {"Name": "{{name}}"},
+                                    "Files": {
+                                        "data.acd": {
+                                            "MD5": "{{Md5("data").ToHexString()}}",
+                                            "SHA256": "{{Sha256("data").ToHexString()}}"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+            """;
+        byte[] bytes = Encoding.GetEncoding(encodingName).GetBytes(json);
+        using var handler = new ChecksumHttpMessageHandler(bytes, encodingName);
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration(), new HttpClient(handler));
+
+        var loaded = await provider.LoadAsync();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Cars["test_car"].Info!.Name, Is.EqualTo(name));
+            Assert.That(loaded.Cars["test_car"].Files["data.acd"].SHA256, Is.EqualTo(Sha256("data")));
+            Assert.That(loaded.Tracks, Is.Not.Empty);
+            Assert.That(handler.RequestCount, Is.EqualTo(1));
+            Assert.That(File.Exists(Path.Combine("content", "checksums_remote.json")), Is.EqualTo(canCache));
+        });
+        if (canCache)
+        {
+            Assert.That(await File.ReadAllBytesAsync(Path.Combine("content", "checksums_remote.json")),
+                Is.EqualTo(Encoding.UTF8.GetBytes(json)));
+            var cached = await provider.LoadAsync();
+            Assert.Multiple(() =>
+            {
+                Assert.That(cached.Cars["test_car"].Info!.Name, Is.EqualTo(name));
+                Assert.That(cached.Cars["test_car"].Files["data.acd"].SHA256, Is.EqualTo(Sha256("data")));
+                Assert.That(handler.RequestCount, Is.EqualTo(1));
+                Assert.That(Directory.GetFiles("content", "*.tmp"), Is.Empty);
+            });
+        }
+    }
+
+    [Test]
+    public async Task ProviderDoesNotCacheMalformedRemoteJson()
+    {
+        using var directory = new TemporaryDirectory();
+        using var currentDirectory = new CurrentDirectoryScope(directory.Path);
+        using var handler = new ChecksumHttpMessageHandler("{"u8.ToArray(), "utf-8");
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration(), new HttpClient(handler));
+
+        var loaded = await provider.LoadAsync();
+        await provider.LoadAsync();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Tracks, Is.Not.Empty);
+            Assert.That(handler.RequestCount, Is.EqualTo(2));
+            Assert.That(File.Exists(Path.Combine("content", "checksums_remote.json")), Is.False);
+            Assert.That(Directory.GetFiles("content", "*.tmp"), Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task ProviderStreamsLargeNonSeekableResponses()
+    {
+        using var directory = new TemporaryDirectory();
+        using var currentDirectory = new CurrentDirectoryScope(directory.Path);
+        byte[] bytes = await File.ReadAllBytesAsync(Path.Combine(
+            AppContext.BaseDirectory, "content", ChecksumDirectory.CustomFileName));
+        var expected = ChecksumsFile.FromJson(Encoding.UTF8.GetString(bytes));
+        using var handler = new ChecksumHttpMessageHandler(bytes, "utf-8");
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration(), new HttpClient(handler));
+
+        var loaded = await provider.LoadAsync();
+
+        Assert.Multiple(() =>
+        {
+            foreach (string car in expected.Cars.Keys)
+                Assert.That(loaded.Cars.ContainsKey(car), Is.True);
+            foreach (string track in expected.Tracks.Keys)
+                Assert.That(loaded.Tracks.ContainsKey(track), Is.True);
+            Assert.That(File.ReadAllBytes(Path.Combine("content", ChecksumDirectory.CustomFileName)), Is.EqualTo(bytes));
+            Assert.That(handler.RequestCount, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public async Task ProviderPropagatesCancellationWithoutTreatingItAsInvalidData()
+    {
+        using var directory = new TemporaryDirectory();
+        using var currentDirectory = new CurrentDirectoryScope(directory.Path);
+        await ChecksumDirectory.SaveAsync("content", new ChecksumsFile(), new ChecksumsFile());
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration());
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        Assert.CatchAsync<OperationCanceledException>(() => provider.LoadAsync(cancellation.Token));
+
+        Assert.That(Directory.GetFiles("content", "*.tmp"), Is.Empty);
+    }
+
+    [Test]
+    public async Task ProviderUsesEmbeddedChecksumsWhenBundledFileCannotBeCreated()
+    {
+        using var directory = new TemporaryDirectory();
+        using var currentDirectory = new CurrentDirectoryScope(directory.Path);
+        string contentDirectory = Path.Combine(directory.Path, "content");
+        Directory.CreateDirectory(Path.Combine(contentDirectory, "checksums_ks.json"));
+        var remote = new ChecksumsFile();
+        remote.Cars["remote_only_car"] = new CarChecksum
+        {
+            Files = { ["data.acd"] = ChecksumForContent("remote data") }
+        };
+        await File.WriteAllTextAsync(Path.Combine(contentDirectory, "checksums_remote.json"), remote.ToJson());
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration());
+        using var resource = typeof(ChecksumDataProvider).Assembly
+            .GetManifestResourceStream("AssettoServer.Assets.checksums_ks.json")!;
+        var bundled = JsonSerializer.Deserialize<ChecksumsFile>(resource)!;
+
+        var loaded = await provider.LoadAsync();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded.Tracks.Count, Is.EqualTo(bundled.Tracks.Count));
+            Assert.That(loaded.Cars["remote_only_car"].Files["data.acd"].SHA256, Is.EqualTo(Sha256("remote data")));
+            Assert.That(loaded.Cars.Count, Is.EqualTo(bundled.Cars.Count + 1));
+            Assert.That(Directory.Exists(Path.Combine(contentDirectory, "checksums_ks.json")), Is.True);
+        });
+    }
+
     [Test]
     public async Task ProviderCreatesBundledChecksumsInWorkingDirectory()
     {
@@ -717,9 +908,9 @@ public class ChecksumTests
     {
         var local = Md5("local car data");
         var collider = Md5("collider");
-        var checksums = new Dictionary<string, byte[]>
+        var checksums = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase)
         {
-            ["content/cars/test_car/data.acd"] = local.ToArray()
+            ["CONTENT/CARS/TEST_CAR/DATA.ACD"] = local.ToArray()
         };
 
         ChecksumManager.AddPreloadedChecksum(
@@ -732,6 +923,54 @@ public class ChecksumTests
         Assert.That(checksums.Count, Is.EqualTo(2));
         Assert.That(checksums["content/cars/test_car/data.acd"], Is.EqualTo(local.ToArray()));
         Assert.That(checksums["content/cars/test_car/collider.kn5"], Is.EqualTo(collider.ToArray()));
+    }
+
+    [Test]
+    public void MissingCaseInsensitiveChecksumLookupsDoNotAllocate()
+    {
+        var values = new Dictionary<string, ChecksumValue>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["data.acd"] = ChecksumForContent("data")
+        };
+        ChecksumsFile.Find(values, "missing.acd");
+        long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+
+        for (int iteration = 0; iteration < 1000; iteration++)
+            ChecksumsFile.Find(values, "missing.acd");
+
+        long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+        Assert.That(allocatedBytes, Is.Zero);
+    }
+
+    [Test]
+    public void ChecksumLookupAndMergeSupportCallerSuppliedCaseSensitiveDictionaries()
+    {
+        var higherPriority = new ChecksumsFile
+        {
+            Cars = new Dictionary<string, CarChecksum>
+            {
+                ["TEST_CAR"] = new CarChecksum
+                {
+                    Files = { ["data.acd"] = new ChecksumValue { MD5 = Md5("higher") } }
+                }
+            }
+        };
+        var lowerPriority = new ChecksumsFile();
+        lowerPriority.Cars["test_car"] = new CarChecksum
+        {
+            Files = { ["data.acd"] = ChecksumForContent("lower") }
+        };
+
+        higherPriority.MergeMissingFrom(lowerPriority);
+
+        var entry = ChecksumsFile.Find(higherPriority.Cars, "test_car")!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(higherPriority.Cars.Count, Is.EqualTo(1));
+            Assert.That(entry.Files["data.acd"].MD5, Is.EqualTo(Md5("higher")));
+            Assert.That(entry.Files["data.acd"].SHA256, Is.EqualTo(Sha256("lower")));
+            Assert.That(ChecksumsFile.Find(higherPriority.Cars, "missing_car"), Is.Null);
+        });
     }
 
     [Test]
@@ -850,7 +1089,11 @@ public class ChecksumTests
 
         var kunos = new ChecksumsFile();
         kunos.Tracks[configuration.CSPTrackOptions.Track] = track;
+        kunos.Tracks["inactive_track"] = new TrackChecksum();
+        track.Layouts["inactive_layout"] = new TrackLayoutChecksum();
+        kunos.Cars["inactive_car"] = new CarChecksum();
         kunos.Other["system/data/surfaces.ini"] = ChecksumForContent("system surfaces");
+        kunos.Other["inactive/file"] = ChecksumForContent("inactive");
         await ChecksumDirectory.SaveAsync("content", kunos, new ChecksumsFile());
         if (hasLocalModels)
             WriteFile(Path.Combine("content", "tracks", configuration.CSPTrackOptions.Track, modelsFile), "local models");
@@ -866,13 +1109,10 @@ public class ChecksumTests
         {
             "system/data/surfaces.ini",
             $"{virtualPath}/{modelsFile}",
-            $"{virtualPath}/{surfacesFile}"
+            $"{virtualPath}/{surfacesFile}",
+            $"{virtualPath}/common.kn5",
+            $"{virtualPath}/surfaces.ini"
         };
-        if (string.IsNullOrEmpty(trackConfig))
-        {
-            expectedPaths.Add($"{virtualPath}/common.kn5");
-            expectedPaths.Add($"{virtualPath}/surfaces.ini");
-        }
 
         Assert.Multiple(() =>
         {
@@ -880,6 +1120,66 @@ public class ChecksumTests
             Assert.That(manager.TrackChecksums[$"{virtualPath}/{modelsFile}"],
                 Is.EqualTo(Md5(hasLocalModels ? "local models" : "models").ToArray()));
             Assert.That(manager.TrackChecksums[$"{virtualPath}/{surfacesFile}"], Is.EqualTo(Md5(surfaces).ToArray()));
+            Assert.That(manager.PreloadedChecksums.Tracks.Keys,
+                Is.EquivalentTo(new[] { configuration.CSPTrackOptions.Track }));
+            Assert.That(manager.PreloadedChecksums.Tracks[configuration.CSPTrackOptions.Track].Layouts.Keys,
+                Is.EquivalentTo(string.IsNullOrEmpty(trackConfig) ? Array.Empty<string>() : new[] { trackConfig }));
+            Assert.That(manager.PreloadedChecksums.Tracks[configuration.CSPTrackOptions.Track].Info?.Pitboxes,
+                Is.EqualTo(track.Info?.Pitboxes));
+            Assert.That(manager.PreloadedChecksums.TryGetTrack(configuration.CSPTrackOptions.Track, trackConfig,
+                out var retainedEntry), Is.True);
+            Assert.That(retainedEntry!.Info?.Pitboxes,
+                Is.EqualTo(string.IsNullOrEmpty(trackConfig) ? track.Info?.Pitboxes : track.Layouts[trackConfig].Info?.Pitboxes));
+            Assert.That(retainedEntry.Files[modelsFile].MD5, Is.EqualTo(Md5("models")));
+            Assert.That(retainedEntry.Files[modelsFile].SHA256, Is.EqualTo(Sha256("models")));
+            Assert.That(manager.PreloadedChecksums.Cars, Is.Empty);
+            Assert.That(manager.PreloadedChecksums.Other.Keys, Is.EquivalentTo(new[] { "system/data/surfaces.ini" }));
+        });
+    }
+
+    [Test]
+    public void SelectingActiveChecksumsRetainsOnlyConfiguredCarsAndTrackLayout()
+    {
+        var checksums = new ChecksumsFile();
+        checksums.Cars["active_car"] = new CarChecksum
+        {
+            Info = new ChecksumInfo { Name = "Active Car" },
+            Files = { ["data.acd"] = ChecksumForContent("preloaded car") }
+        };
+        checksums.Cars["inactive_car"] = new CarChecksum();
+        checksums.Tracks["active_track"] = new TrackChecksum
+        {
+            Info = new ChecksumInfo { Name = "Active Track", Country = "Japan" },
+            Files = { ["common.kn5"] = ChecksumForContent("common mesh") },
+            Layouts =
+            {
+                ["sprint"] = new TrackLayoutChecksum
+                {
+                    Info = new ChecksumInfo { Name = "Sprint" },
+                    Files = { ["models_sprint.ini"] = ChecksumForContent("sprint models") }
+                },
+                ["inactive_layout"] = new TrackLayoutChecksum()
+            }
+        };
+        checksums.Tracks["inactive_track"] = new TrackChecksum();
+
+        var active = checksums.SelectActive("ACTIVE_TRACK", "SPRINT", ["ACTIVE_CAR", "active_car", "missing_car"]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(active.Cars.Keys, Is.EquivalentTo(new[] { "active_car" }).IgnoreCase);
+            Assert.That(active.Cars["active_car"].Info!.Name, Is.EqualTo("Active Car"));
+            Assert.That(active.Cars["active_car"].Files["data.acd"].MD5, Is.EqualTo(Md5("preloaded car")));
+            Assert.That(active.Cars["active_car"].Files["data.acd"].SHA256, Is.EqualTo(Sha256("preloaded car")));
+            Assert.That(active.Tracks.Keys, Is.EquivalentTo(new[] { "active_track" }).IgnoreCase);
+            Assert.That(active.Tracks["active_track"], Is.Not.SameAs(checksums.Tracks["active_track"]));
+            Assert.That(active.Tracks["active_track"].Layouts, Is.Not.SameAs(checksums.Tracks["active_track"].Layouts));
+            Assert.That(active.Tracks["active_track"].Info!.Country, Is.EqualTo("Japan"));
+            Assert.That(active.Tracks["active_track"].Layouts.Keys, Is.EquivalentTo(new[] { "sprint" }).IgnoreCase);
+            Assert.That(active.Tracks["active_track"].Layouts["sprint"].Info!.Name, Is.EqualTo("Sprint"));
+            Assert.That(active.Tracks["active_track"].Files["common.kn5"].SHA256, Is.EqualTo(Sha256("common mesh")));
+            Assert.That(checksums.Tracks.Count, Is.EqualTo(2));
+            Assert.That(checksums.Tracks["active_track"].Layouts.Count, Is.EqualTo(2));
         });
     }
 
@@ -1483,6 +1783,41 @@ public class ChecksumTests
             Next = segment;
             return segment;
         }
+    }
+
+    private sealed class ChecksumHttpMessageHandler(byte[] bytes, string charset) : HttpMessageHandler
+    {
+        public int RequestCount { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            RequestCount++;
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StreamContent(new ChunkedChecksumStream(bytes))
+            };
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json") { CharSet = charset };
+            return Task.FromResult(response);
+        }
+    }
+
+    private sealed class ChunkedChecksumStream(byte[] bytes) : MemoryStream(bytes, writable: false)
+    {
+        public override bool CanSeek => false;
+
+        public override int Read(byte[] buffer, int offset, int count)
+            => base.Read(buffer, offset, Math.Min(count, 127));
+
+        public override int Read(Span<byte> buffer) => base.Read(buffer[..Math.Min(buffer.Length, 127)]);
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return new ValueTask<int>(Read(buffer.Span));
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
     }
 
     private sealed class CurrentDirectoryScope : IDisposable

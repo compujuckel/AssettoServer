@@ -119,6 +119,12 @@ The server supplements checksums generated from files in the server directory wi
 
 The [remote dataset](https://raw.githubusercontent.com/compujuckel/AssettoServer/master/AssettoServer/Assets/checksums_remote.json) is fetched only when the cache is missing and cached without reformatting. Fetch, read, and deserialization failures are logged without stopping startup; other sources remain available. Failed downloads are not cached and are retried on the next startup. Existing caches are never rewritten or automatically re-fetched; correct or remove an unreadable cache to use remote data again.
 
+The server parses streams without whole-file strings or intermediate JSON documents. UTF-8, UTF-16, and UTF-32 files with a byte-order mark are supported, and HTTP responses also honor their declared charset. Non-UTF-8 downloads are transcoded to UTF-8 when caching, preserving JSON formatting and Unicode metadata. Cache-write failures do not discard successfully downloaded data. If the bundled Kunos file cannot be created, the server reads the embedded resource directly.
+
 The server logs and skips unusable collections, entries, and individual digests while retaining valid checksums from both files. Invalid JSON syntax prevents reading that file, but does not prevent loading the other source. Utility deserialization remains strict.
+
+For tracks with layouts, the handshake includes both shared track-root checksums and the selected layout's checksums. Local file checksums still take priority.
+
+After initialization, `ChecksumManager.PreloadedChecksums` exposes only the configured car models, the active track's shared files and metadata, the selected layout with its metadata, and the global `system/data/surfaces.ini` entry. Both MD5 and SHA-256 digests and surface variants remain available to plugins. Unrelated cars, tracks, and layouts are not retained. This catalog contains preloaded data only; local file checksums never replace or merge into it.
 
 Preloading is enabled by default. Set `EnablePreloadedChecksums: false` in `extra_cfg.yml` to use only local file checksums.

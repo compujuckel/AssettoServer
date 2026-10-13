@@ -1,4 +1,4 @@
-﻿<Solution>
+<Solution>
   <Project Path="AssettoServer.Shared\AssettoServer.Shared.csproj" />
   <Project Path="AssettoServer.Tests\AssettoServer.Tests.csproj" />
   <Project Path="AssettoServer\AssettoServer.csproj" />

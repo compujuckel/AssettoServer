@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -31,6 +30,35 @@ public sealed class ChecksumsFile
         return JsonSerializer.Serialize(this, SerializerOptions);
     }
 
+    public ChecksumsFile SelectActive(string trackName, string? trackConfig, IEnumerable<string> cars)
+    {
+        var active = new ChecksumsFile();
+        var track = Find(Tracks, trackName);
+        if (track != null)
+        {
+            var selectedTrack = new TrackChecksum
+            {
+                Info = track.Info,
+                Files = track.Files,
+                Surfaces = track.Surfaces
+            };
+            if (!string.IsNullOrEmpty(trackConfig) && Find(track.Layouts, trackConfig) is { } layout)
+                selectedTrack.Layouts.Add(trackConfig, layout);
+            active.Tracks.Add(trackName, selectedTrack);
+        }
+
+        foreach (string car in cars)
+        {
+            if (Find(Cars, car) is { } entry)
+                active.Cars.TryAdd(car, entry);
+        }
+
+        if (Find(Other, "system/data/surfaces.ini") is { } systemSurfaces)
+            active.Other.Add("system/data/surfaces.ini", systemSurfaces);
+
+        return active;
+    }
+
     public void MergeMissingFrom(ChecksumsFile lowerPriority)
     {
         MergeEntries(Tracks, lowerPriority.Tracks, MergeTrack);
@@ -54,7 +82,16 @@ public sealed class ChecksumsFile
         if (items.TryGetValue(key, out var exactMatch))
             return exactMatch;
 
-        return items.FirstOrDefault(item => string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase)).Value;
+        if (items.Comparer.Equals(StringComparer.OrdinalIgnoreCase))
+            return default;
+
+        foreach (var (existingKey, value) in items)
+        {
+            if (string.Equals(existingKey, key, StringComparison.OrdinalIgnoreCase))
+                return value;
+        }
+
+        return default;
     }
 
     private static void MergeTrack(TrackChecksum target, TrackChecksum lowerPriority)
@@ -87,14 +124,14 @@ public sealed class ChecksumsFile
     {
         foreach (var (key, lowerValue) in lowerPriority)
         {
-            string? existingKey = FindKey(target, key);
-            if (existingKey == null)
+            var existing = Find(target, key);
+            if (existing == null)
             {
                 target.Add(key, lowerValue);
             }
             else
             {
-                merge(target[existingKey], lowerValue);
+                merge(existing, lowerValue);
             }
         }
     }
@@ -124,12 +161,6 @@ public sealed class ChecksumsFile
         });
     }
 
-    private static string? FindKey<T>(Dictionary<string, T> items, string key)
-    {
-        return items.ContainsKey(key)
-            ? key
-            : items.Keys.FirstOrDefault(existing => string.Equals(existing, key, StringComparison.OrdinalIgnoreCase));
-    }
 }
 
 public class ChecksumEntry

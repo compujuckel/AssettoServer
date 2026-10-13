@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using AssettoServer.Shared.Checksum;
@@ -626,6 +625,15 @@ public static class ChecksumGenerator
         if (values.ContainsKey(key))
             return key;
 
-        return values.Keys.FirstOrDefault(existing => string.Equals(existing, key, StringComparison.OrdinalIgnoreCase));
+        if (values.Comparer.Equals(StringComparer.OrdinalIgnoreCase))
+            return null;
+
+        foreach (string existing in values.Keys)
+        {
+            if (string.Equals(existing, key, StringComparison.OrdinalIgnoreCase))
+                return existing;
+        }
+
+        return null;
     }
 }

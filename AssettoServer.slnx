@@ -2,23 +2,25 @@
   <Project Path="AssettoServer.Shared\AssettoServer.Shared.csproj" />
   <Project Path="AssettoServer.Tests\AssettoServer.Tests.csproj" />
   <Project Path="AssettoServer\AssettoServer.csproj" />
-  <Project Path="Plugins\AutoModerationPlugin\AutoModerationPlugin.csproj" />
-  <Project Path="Plugins\CustomCommandPlugin\CustomCommandPlugin.csproj" />
-  <Project Path="Plugins\DiscordAuditPlugin\DiscordAuditPlugin.csproj" />
   <Project Path="FastLaneUtils\FastLaneUtils.csproj" />
-  <Project Path="Plugins\FastTravelPlugin\FastTravelPlugin.csproj" />
-  <Project Path="Plugins\GeoIPPlugin\GeoIPPlugin.csproj" />
-  <Project Path="Plugins\LiveWeatherPlugin\LiveWeatherPlugin.csproj" />
-  <Project Path="Plugins\RaceChallengePlugin\RaceChallengePlugin.csproj" />
-  <Project Path="Plugins\RandomWeatherPlugin\RandomWeatherPlugin.csproj" />
-  <Project Path="Plugins\ReplayPlugin\ReplayPlugin.csproj">
-    <Build Project="false" />
-  </Project>
-  <Project Path="Plugins\ReportPlugin\ReportPlugin.csproj" />
-  <Project Path="Plugins\SamplePlugin\SamplePlugin.csproj" />
-  <Project Path="Plugins\TagModePlugin\TagModePlugin.csproj" />
-  <Project Path="Plugins\TimeDilationPlugin\TimeDilationPlugin.csproj" />
-  <Project Path="Plugins\VotingPresetPlugin\VotingPresetPlugin.csproj" />
-  <Project Path="Plugins\VotingWeatherPlugin\VotingWeatherPlugin.csproj" />
-  <Project Path="Plugins\WordFilterPlugin\WordFilterPlugin.csproj" />
+  <Folder Name="/Plugins/">
+    <Project Path="Plugins\AutoModerationPlugin\AutoModerationPlugin.csproj" />
+    <Project Path="Plugins\CustomCommandPlugin\CustomCommandPlugin.csproj" />
+    <Project Path="Plugins\DiscordAuditPlugin\DiscordAuditPlugin.csproj" />
+    <Project Path="Plugins\FastTravelPlugin\FastTravelPlugin.csproj" />
+    <Project Path="Plugins\GeoIPPlugin\GeoIPPlugin.csproj" />
+    <Project Path="Plugins\LiveWeatherPlugin\LiveWeatherPlugin.csproj" />
+    <Project Path="Plugins\RaceChallengePlugin\RaceChallengePlugin.csproj" />
+    <Project Path="Plugins\RandomWeatherPlugin\RandomWeatherPlugin.csproj" />
+    <Project Path="Plugins\ReplayPlugin\ReplayPlugin.csproj">
+      <Build Project="false" />
+    </Project>
+    <Project Path="Plugins\ReportPlugin\ReportPlugin.csproj" />
+    <Project Path="Plugins\SamplePlugin\SamplePlugin.csproj" />
+    <Project Path="Plugins\TagModePlugin\TagModePlugin.csproj" />
+    <Project Path="Plugins\TimeDilationPlugin\TimeDilationPlugin.csproj" />
+    <Project Path="Plugins\VotingPresetPlugin\VotingPresetPlugin.csproj" />
+    <Project Path="Plugins\VotingWeatherPlugin\VotingWeatherPlugin.csproj" />
+    <Project Path="Plugins\WordFilterPlugin\WordFilterPlugin.csproj" />
+  </Folder>
 </Solution>

@@ -89,7 +89,7 @@ public class WeatherManager : BackgroundLifecycleService
     {
         if (TrackParams != null)
         {
-            CurrentSunPosition = SunCalc.GetSunPosition(CurrentDateTime.ToDateTimeUtc(), TrackParams.Latitude, TrackParams.Longitude);
+            CurrentSunPosition = SunCalc.GetSunPosition(CurrentDateTime.ToDateTimeOffset(), TrackParams.Latitude, TrackParams.Longitude);
         }
     }
     

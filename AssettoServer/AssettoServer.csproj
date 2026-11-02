@@ -5,7 +5,6 @@
         <TargetFramework>net11.0</TargetFramework>
         <PublishSingleFile Condition="'$(NO_SINGLE_FILE)' != '1'">true</PublishSingleFile>
         <SelfContained Condition="'$(Configuration)' == 'Release'">true</SelfContained>
-        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <DebugType>embedded</DebugType>
         <Nullable>enable</Nullable>
         <PublishDir>..\out-$(RuntimeIdentifier)\</PublishDir>
@@ -19,6 +18,8 @@
         <ApplicationIcon>Assets/assettoserver.ico</ApplicationIcon>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Features>runtime-async=on</Features>
+        <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+        <PublishIISAssets>false</PublishIISAssets>
     </PropertyGroup>
 
     <ItemGroup>

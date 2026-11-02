@@ -43,7 +43,7 @@ public class BandwidthLimitedStream : Stream
         }
 
         int toRead = Math.Min(count, (int)(_bytesPerSecond - _bytesSent));
-        int read = await _baseStream.ReadAsync(buffer, offset, toRead, cancellationToken);
+        int read = await _baseStream.ReadAsync(buffer.AsMemory(offset, toRead), cancellationToken);
 
         _bytesSent += read;
         return read;

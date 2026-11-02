@@ -11,12 +11,13 @@ using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
+using AssettoServer.Utils;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace AssettoServer.Server;
 
-public class SessionManager : BackgroundService, IHostedLifecycleService
+public class SessionManager : BackgroundLifecycleService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly Func<SessionConfiguration, SessionState> _sessionStateFactory;
@@ -279,17 +280,13 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
                 Log.Information("Skipping race session: didn't reach minimum player count before cutoff ({PlayerCount}/2). Use 'IS_OPEN=1' to allow joining during the race", connectedCount);
                 return true;
             case IsOpenMode.Closed:
+            case IsOpenMode.CloseAtStart when connectedCount >= 2 || ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds:
+            case IsOpenMode.Open when connectedCount > 0 || ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds:
                 return false;
-            case IsOpenMode.CloseAtStart when connectedCount >= 2 ||
-                                              ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds:
-                return false;
-            case IsOpenMode.Open when connectedCount > 0 ||
-                                      ServerTimeMilliseconds <= CurrentSession.StartTimeMilliseconds:
-                return false;
+            default:
+                Log.Information("Skipping race session: no player connected");
+                return true;
         }
-        
-        Log.Information("Skipping race session: no player connected");
-        return true;
     }
 
     private void CalcOverTime()
@@ -525,18 +522,12 @@ public class SessionManager : BackgroundService, IHostedLifecycleService
         CurrentSession.HasSentRaceOverPacket = true;
         CurrentSession.OverTimeMilliseconds = ServerTimeMilliseconds;
     }
-
-    public Task StartedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-    public Task StartingAsync(CancellationToken cancellationToken)
+    
+    public override Task StartingAsync(CancellationToken cancellationToken)
     {
         _timeSource.Start();
         NextSession();
         
         return Task.CompletedTask;
     }
-
-    public Task StoppedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-    public Task StoppingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

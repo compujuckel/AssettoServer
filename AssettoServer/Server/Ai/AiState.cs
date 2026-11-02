@@ -26,8 +26,7 @@ public class AiState : IDisposable
         get;
         private set
         {
-            _spline.SlowestAiStates.Enter(value, this);
-            _spline.SlowestAiStates.Leave(field, this);
+            _spline.SlowestAiStates.Move(this, field, value);
             field = value;
         }
     }
@@ -121,7 +120,7 @@ public class AiState : IDisposable
     public void Despawn()
     {
         Initialized = false;
-        _spline.SlowestAiStates.Leave(CurrentSplinePointId, this);
+        _spline.SlowestAiStates.Move(this, CurrentSplinePointId, -1);
     }
 
     private void SetRandomSpeed()

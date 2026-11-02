@@ -10,7 +10,7 @@ using Serilog;
 
 namespace AssettoServer.Server.UserGroup;
 
-public class FileBasedUserGroup : IListableUserGroup, IDisposable
+public sealed class FileBasedUserGroup : IListableUserGroup, IDisposable
 {
     public IReadOnlyCollection<ulong> List { get; private set; }
 

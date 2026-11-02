@@ -358,7 +358,7 @@ public partial class EntryCar
         TargetAiStateCount = count;
     }
 
-    private void AiReset()
+    internal void AiReset()
     {
         foreach (var state in AiStatesSpan)
         {

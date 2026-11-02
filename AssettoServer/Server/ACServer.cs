@@ -18,7 +18,7 @@ using Serilog;
 
 namespace AssettoServer.Server;
 
-public class ACServer : BackgroundService, IHostedLifecycleService
+public class ACServer : BackgroundLifecycleService
 {
     private readonly ACServerConfiguration _configuration;
     private readonly SessionManager _sessionManager;
@@ -238,7 +238,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
                     }
                 }
 
-                if (_entryCarManager.ConnectedCars.Count > 0)
+                if (!_entryCarManager.ConnectedCars.IsEmpty)
                 {
                     long tickDelta;
                     do
@@ -290,7 +290,7 @@ public class ACServer : BackgroundService, IHostedLifecycleService
         }
     }
 
-    public Task StartedAsync(CancellationToken cancellationToken)
+    public override Task StartedAsync(CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(_geoParamsManager.GeoParams.Ip))
         {
@@ -302,20 +302,11 @@ public class ACServer : BackgroundService, IHostedLifecycleService
         return Task.CompletedTask;
     }
 
-    public async Task StartingAsync(CancellationToken cancellationToken)
-    {
-        _entryCarManager.Initialize();
-        await _checksumManager.InitializeAsync(cancellationToken);
-        await _geoParamsManager.InitializeAsync();
-    }
-
-    public Task StoppingAsync(CancellationToken cancellationToken)
+    public override Task StoppingAsync(CancellationToken cancellationToken)
     {
         Log.Information("Server shutting down");
         _entryCarManager.BroadcastChat("*** Server shutting down ***");
         
         return Task.CompletedTask;
     }
-    
-    public Task StoppedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

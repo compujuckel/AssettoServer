@@ -72,7 +72,7 @@ public class PresetConfigurationManager
 
     private ulong HashEntryList(string path)
     {
-        var hash = new XxHash64();
+        var hash = new XxHash3();
         
         string entryListPath = Path.Join(path, "entry_list.ini");
         using var stream = File.OpenRead(entryListPath);

@@ -13,12 +13,11 @@ public class ResponseValuePacket : IOutgoingNetworkPacket
     {
         writer.Write(RequestId);
         writer.Write(RconProtocolOut.ResponseValue);
-        if (string.IsNullOrEmpty(Body))
-            writer.Write<byte>(0);
-        else
+        if (!string.IsNullOrEmpty(Body))
         {
-           writer.WriteStringFixed(Body, Encoding.ASCII, 1000, false);
-           writer.Write<byte>(0);
+            writer.WriteStringFixed(Body, Encoding.ASCII, 1000, false);
         }
+
+        writer.Write<byte>(0);
     }
 }

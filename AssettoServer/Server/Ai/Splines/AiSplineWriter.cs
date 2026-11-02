@@ -14,13 +14,14 @@ public class AiSplineWriter
         var treePoints = map.KdTree.InternalPointArray;
         var treeNodes = map.KdTree.InternalNodeArray;
 
-        file.Write(new AiSplineHeader
-        {
-            Version = 1,
-            NumPoints = map.Points.Length,
-            NumJunctions = map.Junctions.Count,
-            NumKdTreePoints = treePoints.Length
-        });
+        file.Write(new AiSplineHeader(
+            AiSpline.SupportedVersion,
+            map.LaneWidthMeters,
+            map.TwoWayTraffic,
+            map.Points.Length,
+            map.Junctions.Count,
+            treePoints.Length
+            ));
         
         file.Write(map.Points);
         file.Write(map.Junctions);

@@ -46,67 +46,52 @@ public partial class AiParams : ObservableObject
     public float RightLaneOffsetKph { get; set; } = 10;
     [YamlMember(Description = "Maximum speed variation")]
     public float MaxSpeedVariationPercent { get; set; } = 0.15f;
-    
     [ObservableProperty]
-    [property: YamlMember(Description = "Default AI car deceleration for obstacle/collision detection (m/s^2)")]
-    private float _defaultDeceleration = 8.5f;
-    
+    [YamlMember(Description = "Default AI car deceleration for obstacle/collision detection (m/s^2)")]
+    public partial float DefaultDeceleration { get; set; } = 8.5f;
     [ObservableProperty]
-    [property: YamlMember(Description = "Default AI car acceleration for obstacle/collision detection (m/s^2)")]
-    private float _defaultAcceleration = 2.5f;
-    
+    [YamlMember(Description = "Default AI car acceleration for obstacle/collision detection (m/s^2)")]
+    public partial float DefaultAcceleration { get; set; } = 2.5f;
     [ObservableProperty]
-    [property: YamlMember(Description = "Maximum AI car target count for AI slot overbooking. This is not an absolute maximum and might be slightly higher (0 = auto/best)", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
-    private int _maxAiTargetCount;
-    
+    [YamlMember(Description = "Maximum AI car target count for AI slot overbooking. This is not an absolute maximum and might be slightly higher (0 = auto/best)", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    public partial int MaxAiTargetCount { get; set; }
     [ObservableProperty]
-    [property: YamlMember(Description = "Number of AI cars per player the server will try to keep (0 = auto/best)", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
-    private int _aiPerPlayerTargetCount;
-    
+    [YamlMember(Description = "Number of AI cars per player the server will try to keep (0 = auto/best)", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    public partial int AiPerPlayerTargetCount { get; set; }
     [YamlMember(Description = "Soft player limit, the server will stop accepting new players when this many players are reached. Use this to ensure a minimum amount of AI cars. 0 to disable.")]
     public int MaxPlayerCount { get; set; } = 0;
     [YamlMember(Description = "Hide AI car nametags and make them invisible on the minimap. Broken on CSP versions < 0.1.78")]
     public bool HideAiCars { get; set; } = true;
-    
     [ObservableProperty]
-    [property: YamlMember(Description = "AI spline height offset. Use this if the AI spline is too close to the ground")]
-    private float _splineHeightOffsetMeters = 0;
-    
+    [YamlMember(Description = "AI spline height offset. Use this if the AI spline is too close to the ground")]
+    public partial float SplineHeightOffsetMeters { get; set; } = 0;
     [YamlMember(Description = "Lane width for adjacent lane detection")]
     public float LaneWidthMeters { get; init; } = 3.0f;
     [YamlMember(Description = "Enable two way traffic. This will allow AI cars to spawn in lanes with the opposite direction of travel to the player.")]
     public bool TwoWayTraffic { get; set; } = false;
     [YamlMember(Description = "Enable traffic spawning if the player is driving the wrong way. Only takes effect when TwoWayTraffic is set to false.")]
     public bool WrongWayTraffic { get; set; } = true;
-    
     [ObservableProperty]
-    [property: YamlMember(Description = "AI cornering speed factor. Lower = AI cars will drive slower around corners.")]
-    private float _corneringSpeedFactor = 0.65f;
-    
+    [YamlMember(Description = "AI cornering speed factor. Lower = AI cars will drive slower around corners.")]
+    public partial float CorneringSpeedFactor { get; set; } = 0.65f;
     [ObservableProperty]
-    [property: YamlMember(Description = "AI cornering brake distance factor. Lower = AI cars will brake later for corners.")]
-    private float _corneringBrakeDistanceFactor = 3;
-    
+    [YamlMember(Description = "AI cornering brake distance factor. Lower = AI cars will brake later for corners.")]
+    public partial float CorneringBrakeDistanceFactor { get; set; } = 3;
     [ObservableProperty]
-    [property: YamlMember(Description = "AI cornering brake force factor. This is multiplied with DefaultDeceleration. Lower = AI cars will brake less hard for corners.")]
-    private float _corneringBrakeForceFactor = 0.5f;
-    
+    [YamlMember(Description = "AI cornering brake force factor. This is multiplied with DefaultDeceleration. Lower = AI cars will brake less hard for corners.")]
+    public partial float CorneringBrakeForceFactor { get; set; } = 0.5f;
     [YamlMember(Description = "Name prefix for AI cars. Names will be in the form of '<NamePrefix> <SessionId>'")]
     public string NamePrefix { get; init; } = "Traffic";
     [YamlMember(Description = "Ignore obstacles for some time if the AI car is stopped for longer than x seconds")]
     public int IgnoreObstaclesAfterSeconds { get; set; } = 10;
-    
     [ObservableProperty]
-    [property: YamlMember(Description = "Apply scale to some traffic density related settings. Increasing this DOES NOT magically increase your traffic density, it is dependent on your other settings. Values higher than 1 not recommended.", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
-    private float _trafficDensity = 1.0f;
-    
+    [YamlMember(Description = "Apply scale to some traffic density related settings. Increasing this DOES NOT magically increase your traffic density, it is dependent on your other settings. Values higher than 1 not recommended.", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
+    public partial float TrafficDensity { get; set; } = 1.0f;
     [YamlMember(Description = "Dynamic (hourly) traffic density. List must have exactly 24 entries in the format [0.2, 0.5, 1, 0.7, ...]")]
     public List<float>? HourlyTrafficDensity { get; set; }
-    
     [ObservableProperty]
-    [property: YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless some cars are creating lots of smoke.")]
-    private float _tyreDiameterMeters = 0.65f;
-    
+    [YamlMember(Description = "Tyre diameter of AI cars in meters, shouldn't have to be changed unless some cars are creating lots of smoke.")]
+    public partial float TyreDiameterMeters { get; set; } = 0.65f;
     [YamlMember(Description = "Apply some smoothing to AI spline camber")]
     public bool SmoothCamber { get; init; } = true;
     [YamlMember(Description = "Show debug overlay for AI cars", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
@@ -119,7 +104,6 @@ public partial class AiParams : ObservableObject
     public List<Sphere>? IgnorePlayerObstacleSpheres { get; set; }
     [YamlMember(Description = "Override some settings for newly spawned cars based on the number of lanes")]
     public Dictionary<int, LaneCountSpecificOverrides> LaneCountSpecificOverrides { get; set; } = new();
-
     [YamlMember(Description = "Override some settings for specific car models")]
     public List<CarSpecificOverrides> CarSpecificOverrides { get; init; } = [];
 

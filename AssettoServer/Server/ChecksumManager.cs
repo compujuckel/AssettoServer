@@ -10,11 +10,12 @@ using System.Threading.Tasks;
 using AssettoServer.Server.Checksum;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Shared.Checksum;
+using AssettoServer.Utils;
 using Serilog;
 
 namespace AssettoServer.Server;
 
-public class ChecksumManager
+public class ChecksumManager : HostedLifecycleService
 {
     public IReadOnlyDictionary<string, byte[]> TrackChecksums { get; private set; } = null!;
     public IReadOnlyDictionary<string, Dictionary<string, byte[]>> CarChecksums { get; private set; } = null!;
@@ -37,7 +38,7 @@ public class ChecksumManager
         _checksumDataProvider = checksumDataProvider;
     }
     
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    public override Task StartingAsync(CancellationToken cancellationToken)
     {
         var carModels = _entryCarManager.EntryCars.Select(car => car.Model).Distinct().ToList();
         PreloadedChecksums = (await _checksumDataProvider.LoadAsync(cancellationToken))
@@ -68,6 +69,8 @@ public class ChecksumManager
                 };
             }
         }
+
+        return Task.CompletedTask;
     }
 
     private void AddPreloadedTrackChecksums(string track, string trackConfig)
@@ -267,7 +270,7 @@ public class ChecksumManager
             if (surfaceFix)
             {
                 var bytes = File.ReadAllBytes(filePath);
-                var firstSurface = MemoryExtensions.IndexOf(bytes, "SURFACE_0"u8);
+                var firstSurface = bytes.IndexOf("SURFACE_0"u8);
                 if (firstSurface > 0)
                 {
                     "CSP"u8.CopyTo(bytes.AsSpan(firstSurface, 3));

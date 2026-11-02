@@ -93,7 +93,7 @@ public class ChecksumTests
             """;
         byte[] bytes = Encoding.GetEncoding(encodingName).GetBytes(json);
         using var handler = new ChecksumHttpMessageHandler(bytes, encodingName);
-        using var provider = new ChecksumDataProvider(CreateServerConfiguration(), new HttpClient(handler));
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration());
 
         var loaded = await provider.LoadAsync();
 
@@ -126,7 +126,7 @@ public class ChecksumTests
         using var directory = new TemporaryDirectory();
         using var currentDirectory = new CurrentDirectoryScope(directory.Path);
         using var handler = new ChecksumHttpMessageHandler("{"u8.ToArray(), "utf-8");
-        using var provider = new ChecksumDataProvider(CreateServerConfiguration(), new HttpClient(handler));
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration());
 
         var loaded = await provider.LoadAsync();
         await provider.LoadAsync();
@@ -149,7 +149,7 @@ public class ChecksumTests
             AppContext.BaseDirectory, "content", ChecksumDirectory.CustomFileName));
         var expected = ChecksumsFile.FromJson(Encoding.UTF8.GetString(bytes));
         using var handler = new ChecksumHttpMessageHandler(bytes, "utf-8");
-        using var provider = new ChecksumDataProvider(CreateServerConfiguration(), new HttpClient(handler));
+        using var provider = new ChecksumDataProvider(CreateServerConfiguration());
 
         var loaded = await provider.LoadAsync();
 
@@ -174,7 +174,7 @@ public class ChecksumTests
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 
-        Assert.CatchAsync<OperationCanceledException>(() => provider.LoadAsync(cancellation.Token));
+        await Assert.CatchAsync<OperationCanceledException>(() => provider.LoadAsync(cancellation.Token));
 
         Assert.That(Directory.GetFiles("content", "*.tmp"), Is.Empty);
     }
@@ -1021,7 +1021,7 @@ public class ChecksumTests
         var entryCarManager = new EntryCarManager(configuration, null!, null!, null!, null!);
         var manager = new ChecksumManager(configuration, entryCarManager, provider);
 
-        await manager.InitializeAsync();
+        await manager.StartingAsync(CancellationToken.None);
 
         Assert.That(manager.TrackChecksums["system/data/surfaces.ini"],
             Is.EqualTo(Md5(hasLocalFile ? "local system surfaces" : "system surfaces").ToArray()));
@@ -1101,7 +1101,7 @@ public class ChecksumTests
         var entryCarManager = new EntryCarManager(configuration, null!, null!, null!, null!);
         var manager = new ChecksumManager(configuration, entryCarManager, provider);
 
-        await manager.InitializeAsync();
+        await manager.StartingAsync(CancellationToken.None);
 
         string virtualPath = $"content/tracks/{configuration.Server.Track}";
         string surfaces = configuration.CSPTrackOptions.MinimumCSPVersion.HasValue ? "CSP surfaces" : "vanilla surfaces";
@@ -1212,12 +1212,12 @@ public class ChecksumTests
         using var provider = new ChecksumDataProvider(configuration);
         var entryCarManager = new EntryCarManager(configuration, null!, null!, null!, null!);
         var manager = new ChecksumManager(configuration, entryCarManager, provider);
-        await manager.InitializeAsync();
+        await manager.StartingAsync(CancellationToken.None);
         string virtualPath = $"content/tracks/{configuration.Server.Track}/surfaces.ini";
         byte[] localChecksum = manager.TrackChecksums[virtualPath];
         Directory.Delete(trackDirectory, recursive: true);
 
-        await manager.InitializeAsync();
+        await manager.StartingAsync(CancellationToken.None);
 
         Assert.That(manager.TrackChecksums[virtualPath], Is.EqualTo(localChecksum));
     }
@@ -1262,7 +1262,7 @@ public class ChecksumTests
         ChecksumsFile loaded = await provider.LoadAsync();
         var entryCarManager = new EntryCarManager(configuration, null!, null!, null!, null!);
         var manager = new ChecksumManager(configuration, entryCarManager, provider);
-        await manager.InitializeAsync();
+        await manager.StartingAsync(CancellationToken.None);
 
         Assert.Multiple(() =>
         {
@@ -1592,7 +1592,7 @@ public class ChecksumTests
         var entryCarManager = new EntryCarManager(configuration, null!, null!, null!, null!);
         var manager = new ChecksumManager(configuration, entryCarManager, provider);
 
-        await manager.InitializeAsync();
+        await manager.StartingAsync(CancellationToken.None);
 
         Assert.Multiple(() =>
         {

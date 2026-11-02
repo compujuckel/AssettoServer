@@ -38,7 +38,7 @@ public class ChecksumManager : HostedLifecycleService
         _checksumDataProvider = checksumDataProvider;
     }
     
-    public override Task StartingAsync(CancellationToken cancellationToken)
+    public override async Task StartingAsync(CancellationToken cancellationToken)
     {
         var carModels = _entryCarManager.EntryCars.Select(car => car.Model).Distinct().ToList();
         PreloadedChecksums = (await _checksumDataProvider.LoadAsync(cancellationToken))
@@ -69,8 +69,6 @@ public class ChecksumManager : HostedLifecycleService
                 };
             }
         }
-
-        return Task.CompletedTask;
     }
 
     private void AddPreloadedTrackChecksums(string track, string trackConfig)

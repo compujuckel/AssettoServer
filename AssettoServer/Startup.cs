@@ -16,6 +16,7 @@ using AssettoServer.Server.Admin;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.CMContentProviders;
+using AssettoServer.Server.Checksum;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Configuration.Serialization;
 using AssettoServer.Server.GeoParams;
@@ -104,6 +105,7 @@ public class Startup
         builder.RegisterType<CSPClientMessageHandler>().AsSelf().SingleInstance();
         builder.RegisterType<VoteManager>().AsSelf().SingleInstance();
         builder.RegisterType<IpApiGeoParamsProvider>().As<IGeoParamsProvider>();
+        builder.RegisterType<ChecksumDataProvider>().AsSelf().SingleInstance();
         builder.RegisterType<CSPServerExtraOptions>().AsSelf().SingleInstance();
         builder.RegisterType<OpenSlotFilterChain>().AsSelf().SingleInstance();
         builder.RegisterType<WhitelistSlotFilter>().As<IOpenSlotFilter>();

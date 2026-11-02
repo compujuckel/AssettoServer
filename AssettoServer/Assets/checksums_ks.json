@@ -1,0 +1,4249 @@
+{
+  "Tracks": {
+    "drift": {
+      "Layouts": {},
+      "Surfaces": {
+        "data/surfaces.ini": {
+          "Vanilla": {
+            "MD5": "9fc1cc8fd9b4678858bfce731c2cda01",
+            "SHA256": "81b1612341f76f67368f715cda8e2e557fab7281acdb274a4c7d57795a7f5c76"
+          },
+          "Csp": {
+            "MD5": "00f00a6b04c087c364cc18653511b308",
+            "SHA256": "1993a6b5dfa40633a16df3fe5cfbfe87d98b381277355f35a3f54e11886817f6"
+          }
+        }
+      },
+      "Info": {
+        "Name": "Drift",
+        "Country": "Japan",
+        "Pitboxes": "18"
+      },
+      "Files": {
+        "models.ini": {
+          "MD5": "e4946ecddbfd0c09b66c569cd712b09e",
+          "SHA256": "0ff957e3d44e8bf8e055798d86fd7aa02c559d8c3e7d91c430cc648fd7f3cef0"
+        },
+        "drift.kn5": {
+          "MD5": "74de8a76e1e10517e3e33ae1690f0d6d",
+          "SHA256": "ac0c8e9849da6d2727111a170ad83fef30e8802b6909a716227b612e1c6be597"
+        }
+      }
+    },
+    "imola": {
+      "Layouts": {},
+      "Surfaces": {
+        "data/surfaces.ini": {
+          "Vanilla": {
+            "MD5": "e1b7060d2b15a5a47d8487dcd41307e7",
+            "SHA256": "dc9e3bee9200cf405fb637cbdabdf43ace4fcf344cd4fc70e318711637bfa3b3"
+          },
+          "Csp": {
+            "MD5": "005074e40a627589a2a465a0a2e798c4",
+            "SHA256": "025bb92de7ed72904582523309cf18d506f5c6ec63516ecb7ba1af75d2e37103"
+          }
+        }
+      },
+      "Info": {
+        "Name": "Imola",
+        "Country": "Italy",
+        "Pitboxes": "24"
+      },
+      "Files": {
+        "models.ini": {
+          "MD5": "b3919ed35facb1aa35cf1e97d4215fb8",
+          "SHA256": "cf38314153349cc5344e3dee0a1c359ad15d236c7fcd9e03c09fb4b7a1db4c61"
+        },
+        "1.kn5": {
+          "MD5": "ec929edab725a26b6e1f2976972fdfc9",
+          "SHA256": "0c732c1343fc287260134784bb87f98fba31589907908f881a374f11e9a89448"
+        },
+        "100.kn5": {
+          "MD5": "7e825ca21ba5784dffc34226e3bc91d7",
+          "SHA256": "acf2320f5155810cfd13a01a813efb0d9121ac965cc4e3cc138e2c5348c5d201"
+        },
+        "2.kn5": {
+          "MD5": "54db502ed841947c12afe1914af0a27a",
+          "SHA256": "1293ca4cd20fc095551015ef715a67a3edb0b22a97b0f38c175f4cb00860a89a"
+        },
+        "imola.kn5": {
+          "MD5": "0199ee2ea2005cc47e93d757b37f5268",
+          "SHA256": "2e16a658d6d0bcab9f2f0fb7e63f3ebb0755b1566cc8d68c1288acbd56f00708"
+        }
+      }
+    },
+    "ks_barcelona": {
+      "Layouts": {
+        "layout_gp": {
+          "Surfaces": {
+            "layout_gp/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "644f275852b8ae2da149fa6f57e722ce",
+                "SHA256": "e7c9caedf28d02442ad66b77fc18534b8081944e9b7f7c7203c241dae0f2115a"
+              },
+              "Csp": {
+                "MD5": "aadfe4760453a6a09542c60706eb3c40",
+                "SHA256": "73435c17708ae3d32ae004ba80dd66cf682055d08b8527ce5c93cc64a5742af1"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Barcelona - GP",
+            "Country": "Spain",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_gp.ini": {
+              "MD5": "093004bb1b16eb2b83e69864e2882283",
+              "SHA256": "e38c35d9c2a31f5fc2d3f0f290c6ebbd53c05bdf0fe8c11acf89c2c92e91e1b0"
+            }
+          }
+        },
+        "layout_moto": {
+          "Surfaces": {
+            "layout_moto/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "644f275852b8ae2da149fa6f57e722ce",
+                "SHA256": "e7c9caedf28d02442ad66b77fc18534b8081944e9b7f7c7203c241dae0f2115a"
+              },
+              "Csp": {
+                "MD5": "aadfe4760453a6a09542c60706eb3c40",
+                "SHA256": "73435c17708ae3d32ae004ba80dd66cf682055d08b8527ce5c93cc64a5742af1"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Barcelona - Moto",
+            "Country": "Spain",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_moto.ini": {
+              "MD5": "c4489dc13708c98da30b9ac1cd4e6d99",
+              "SHA256": "1b77ae2dc6866d555cafbd17ae4a06e021296de1763b78002ad0fe602d4e6cce"
+            }
+          }
+        }
+      },
+      "Surfaces": {},
+      "Files": {
+        "1.kn5": {
+          "MD5": "88ea1dc065604317ba8d67004affe54f",
+          "SHA256": "bb9e439ebda12d32c70a4e4a72bb43324cff7baa86af7939a37c8f3f60b6daab"
+        },
+        "100.kn5": {
+          "MD5": "462fe73ee99284995b2e92ad099b1549",
+          "SHA256": "5a4d255e868564728932dd5e364f7bae28fa6be7b98b9a34e1bec369a2b53afe"
+        },
+        "11.kn5": {
+          "MD5": "7f1090c2885705377c56b165baad169c",
+          "SHA256": "c1c7cda5a8afb45786101fcf3dff7afebb7167c7154b0c83d7eee1814963832e"
+        },
+        "12.kn5": {
+          "MD5": "2cb709476272f2cc1d803d6b821f9b9a",
+          "SHA256": "85a4e3dd42adc137fe3b7380e79c77cee8afdaaf5655237c3d5e732f6471f11e"
+        },
+        "2.kn5": {
+          "MD5": "45bb1ab7b076b8eadc2902d74ae30bed",
+          "SHA256": "e736d0e4cc96570b7dc8fd5b3f189f9d02a87e62d5be6c0ecd3849e69ab6ecfd"
+        },
+        "3.kn5": {
+          "MD5": "d94cb90407d3ed271e970bfb053b8bdc",
+          "SHA256": "039cc79726342617684bcfd90f2013550f448d2ba9852a408b03e2e3bec5ac2c"
+        },
+        "4.kn5": {
+          "MD5": "9503310593fe5f9867503128a37cc386",
+          "SHA256": "7e92d9e9579f1211a6426d862c8394f569add2229aecbbee975ad067e87497ae"
+        },
+        "5.kn5": {
+          "MD5": "7857a5efe8733ffd99937a2d037c0817",
+          "SHA256": "c17ce5af01de2b27b9b145b2061ad8ac2e06064d909c05f3a1ca90744f7fb40c"
+        },
+        "6.kn5": {
+          "MD5": "49da03f4b869d3eef73b988c040716cf",
+          "SHA256": "e6fd9caf88cf8f10f2728738fdeb90317a4941b92c420ea7d91776527396d816"
+        },
+        "7.kn5": {
+          "MD5": "dd2a6aaa3498008cee01193f8ce069bf",
+          "SHA256": "14571abd45a479a68ecf9c1a0b5c6017b3decfe51385a063f777189a968694ed"
+        },
+        "8.kn5": {
+          "MD5": "7a1c1040674a0dee690304c282003d5f",
+          "SHA256": "c180c778be0b124385b8609c82205d43fd4b7f156500ee052bec50565bf1dcf6"
+        },
+        "9.kn5": {
+          "MD5": "3fc58e74b3c8998d702e2557fdaa0a9e",
+          "SHA256": "1b2f12837a080e752a3a9ad7c8edc3b3c5b30f06b1a60e2bdd93b93936f9c8c2"
+        },
+        "ks_barcelona.kn5": {
+          "MD5": "251bc5999d5ac544cefa7b5c0bad787d",
+          "SHA256": "015334a855d608eabcaebac30260d984c820450694fcc8236cf95a540d7d5edc"
+        }
+      }
+    },
+    "ks_black_cat_county": {
+      "Layouts": {
+        "layout_int": {
+          "Surfaces": {
+            "layout_int/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "afc29059522a64c1528168ace14a8165",
+                "SHA256": "c4cce9169e0bdcba8836fabadcd9d311655774855209049227ea8d41b88acbb5"
+              },
+              "Csp": {
+                "MD5": "010e37ce9665a2cafa3ff4e3e923b259",
+                "SHA256": "4a14f8496c71050def9b87e1e8e331a9dad9d7291aa36f31f16379d837f3d328"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Black Cat County",
+            "Country": "U.S.A.",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_int.ini": {
+              "MD5": "16e394ee5abaa21341b3efb8b48288fe",
+              "SHA256": "5504324f6e8ad2332d159634f814bd4f570f5fb9fbbad5de2e6a4642dabb7b77"
+            }
+          }
+        },
+        "layout_long": {
+          "Surfaces": {
+            "layout_long/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "afc29059522a64c1528168ace14a8165",
+                "SHA256": "c4cce9169e0bdcba8836fabadcd9d311655774855209049227ea8d41b88acbb5"
+              },
+              "Csp": {
+                "MD5": "010e37ce9665a2cafa3ff4e3e923b259",
+                "SHA256": "4a14f8496c71050def9b87e1e8e331a9dad9d7291aa36f31f16379d837f3d328"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Black Cat County - Long",
+            "Country": "U.S.A.",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_long.ini": {
+              "MD5": "5665eae93220babd1a6db08175843f7d",
+              "SHA256": "9853453d57674220af3445d37d8eb71cc8184259bc86d6bba84d93376df79797"
+            }
+          }
+        },
+        "layout_short": {
+          "Surfaces": {
+            "layout_short/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "a6ee6a66900392a70d4ddec04dd4ba8d",
+                "SHA256": "63a95edccc95bc5411606571149fbeada0642ab099a87ecf96d69a9eabd816f6"
+              },
+              "Csp": {
+                "MD5": "b73f21a9258c7adb75e19870ad5b296b",
+                "SHA256": "3ee706c22dbfe3acad4ca56d84f164dfff4c0f96f79bea9a8ac960f43e7ec6c5"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Black Cat County - Short",
+            "Country": "U.S.A.",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_short.ini": {
+              "MD5": "fa0ab7d232405286701f6f9d9bff4380",
+              "SHA256": "6a22f906384af861f8c608f692f362246c833dff391ff55daeccb96a7b35aee9"
+            }
+          }
+        }
+      },
+      "Surfaces": {},
+      "Files": {
+        "1.kn5": {
+          "MD5": "c4d5553dd1b951104735f8cd1d1ac8cb",
+          "SHA256": "7d634492ff40b63b6e31d1ecd3940f553f5ba444cf26de48ef02ca063ad4b198"
+        },
+        "100.kn5": {
+          "MD5": "462fe73ee99284995b2e92ad099b1549",
+          "SHA256": "5a4d255e868564728932dd5e364f7bae28fa6be7b98b9a34e1bec369a2b53afe"
+        },
+        "11.kn5": {
+          "MD5": "7f1090c2885705377c56b165baad169c",
+          "SHA256": "c1c7cda5a8afb45786101fcf3dff7afebb7167c7154b0c83d7eee1814963832e"
+        },
+        "12.kn5": {
+          "MD5": "2cb709476272f2cc1d803d6b821f9b9a",
+          "SHA256": "85a4e3dd42adc137fe3b7380e79c77cee8afdaaf5655237c3d5e732f6471f11e"
+        },
+        "2.kn5": {
+          "MD5": "4ae846aabe78354fdd7569127dae510b",
+          "SHA256": "3956c9b477eee1c8cd0bf070268ef50246ae3cb393ad92c26c9ba012889aa1c0"
+        },
+        "3.kn5": {
+          "MD5": "b4302c2cf6324c3f3129ff83d846080f",
+          "SHA256": "5fa0914b7df8a3bc15dd38afbaf902faff0f327e3985aa5076fecfc219fac7bc"
+        },
+        "4.kn5": {
+          "MD5": "ffe49872c7dfef9c9f0dac2311090428",
+          "SHA256": "0f1d9ca62199405e820c30bde0f036a293e67cd40948c544cd2b5aba98834611"
+        },
+        "5.kn5": {
+          "MD5": "034312ec2ef14ee769bfa71fd05c1697",
+          "SHA256": "0a44384e96f147ccba2e294d6639ea9b52ced8e7a573e793d1a25e389a31f518"
+        },
+        "ks_black_cat_county.kn5": {
+          "MD5": "5520e9d3f994f7c64730a9e5885aed5a",
+          "SHA256": "c17f50352c543be221d5f1cad1956b6c2a1eb14ce5cb9d1933c354e2774b30d9"
+        }
+      }
+    },
+    "ks_brands_hatch": {
+      "Layouts": {
+        "gp": {
+          "Surfaces": {
+            "gp/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "0b2cc96b99293ffb3d05a4eba56b77dd",
+                "SHA256": "96aff5df7308a047a6f6c201c9e39a6da24213d67f4908e371c619340ec85b1d"
+              },
+              "Csp": {
+                "MD5": "768da695b623b9ae9219492286127071",
+                "SHA256": "bd8bc1623d4121744b3d24ac55ed4f927ebfbeea3d5405399e07eb69c62e93a9"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Brands Hatch - GP",
+            "Country": "Great Britain",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_gp.ini": {
+              "MD5": "05be0a8ab1110e45bd98700665670780",
+              "SHA256": "ed65cc4974645ad685687b2d2efb30a2763941172042899c96105851f29c6eba"
+            }
+          }
+        },
+        "indy": {
+          "Surfaces": {
+            "indy/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "0b2cc96b99293ffb3d05a4eba56b77dd",
+                "SHA256": "96aff5df7308a047a6f6c201c9e39a6da24213d67f4908e371c619340ec85b1d"
+              },
+              "Csp": {
+                "MD5": "768da695b623b9ae9219492286127071",
+                "SHA256": "bd8bc1623d4121744b3d24ac55ed4f927ebfbeea3d5405399e07eb69c62e93a9"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Brands Hatch - Indy",
+            "Country": "Great Britain",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_indy.ini": {
+              "MD5": "72602da482e82115fc162f43954e41e0",
+              "SHA256": "976aea9623ec1c6c5757f20dc21832df5fc8cb0f14a011f2fa76d76cece81d5f"
+            }
+          }
+        }
+      },
+      "Surfaces": {},
+      "Files": {
+        "1.kn5": {
+          "MD5": "ad460dbdd2d9d4c0551fe60f4deb7ddb",
+          "SHA256": "b6e19bf4efe80c3a42380a11912dd63fd7e0c3589044fde48977af2a38492043"
+        },
+        "100.kn5": {
+          "MD5": "1b659badd55dd3149ab30e1521e59297",
+          "SHA256": "2bc845f6dcc504123187784e372cfd939e1f9d0e6622c36824c1e9008657f5d1"
+        },
+        "2.kn5": {
+          "MD5": "c273583e8ed9b5dd35612b0f49e31e35",
+          "SHA256": "ddfd6a33577b220f5b6f4caf32716386ba9a7697c5f934e0f1124bf85a6c7a10"
+        },
+        "3.kn5": {
+          "MD5": "cf9245c6f70243a61025b020108f9ffe",
+          "SHA256": "de76ee5389fb10b184113d90f971b66d0703160f6df233cd64a99b652d538238"
+        },
+        "4.kn5": {
+          "MD5": "b78b4c443e45e651c9d40c7ae010fd63",
+          "SHA256": "c82ccc76e15ecc18e98a6c530a2ec4ee46774ca44bccd0858d237455f8f01bf8"
+        },
+        "5.kn5": {
+          "MD5": "f3eb11428c31a242645dda88acc7a163",
+          "SHA256": "ca7e2d0b2335dc81fc5bff650b499c645611373b9c8334388af74e0b03fae047"
+        },
+        "6.kn5": {
+          "MD5": "90ab5f2b1f77773664235b0bd17eb6c2",
+          "SHA256": "f5aa7e59bc1c2b052e88f49b425c4c10a60f93f2c33528bb4fe4bf7e24057bf5"
+        },
+        "7.kn5": {
+          "MD5": "68f7c5dea550e3ce02d22b48832cf6e8",
+          "SHA256": "1ddf0def383dc2c36bd92225bc5f0dd69337a4dfbaf7e5a7f3f4037fad02799b"
+        },
+        "ks_brands_hatch.kn5": {
+          "MD5": "792733edf3c51cce99fc7d0561bfa0b0",
+          "SHA256": "73d5fc8c195996a9e43f2b684b8f3025cfa1885b441ce3721a37ec49ac59d452"
+        }
+      }
+    },
+    "ks_drag": {
+      "Layouts": {
+        "drag1000": {
+          "Surfaces": {
+            "drag1000/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "5eaa37691c5f79b20e2efc2b8019844a",
+                "SHA256": "70435e6d4815c3ccb752852cb01cfc043c7ecfdc7d23cb52e3f5b9ce6a3f5b9f"
+              },
+              "Csp": {
+                "MD5": "89028a7fb1321e1052e7cb3fd2ef9ec7",
+                "SHA256": "723ac3fe24cd8d68e4090f2882aaf49cb2a26e2dd3b191839b5d4eafb7b96dfc"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Drag 1000m",
+            "Country": "Italy",
+            "Pitboxes": "2"
+          },
+          "Files": {
+            "models_drag1000.ini": {
+              "MD5": "26381a32989766324c94a375b7e59c7b",
+              "SHA256": "1d680646f5d3a99edcca280bdadae13afe9645d7681be024abd27ac1286921a9"
+            }
+          }
+        },
+        "drag200": {
+          "Surfaces": {
+            "drag200/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "5eaa37691c5f79b20e2efc2b8019844a",
+                "SHA256": "70435e6d4815c3ccb752852cb01cfc043c7ecfdc7d23cb52e3f5b9ce6a3f5b9f"
+              },
+              "Csp": {
+                "MD5": "89028a7fb1321e1052e7cb3fd2ef9ec7",
+                "SHA256": "723ac3fe24cd8d68e4090f2882aaf49cb2a26e2dd3b191839b5d4eafb7b96dfc"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Drag 200m",
+            "Country": "Italy",
+            "Pitboxes": "2"
+          },
+          "Files": {
+            "models_drag200.ini": {
+              "MD5": "ca57c787415abed81eed810b9304ccfa",
+              "SHA256": "fea29fb68ce0320a0adc2625f693495c563e3ef1b6336ad878263c651cf24d81"
+            }
+          }
+        },
+        "drag2000": {
+          "Surfaces": {
+            "drag2000/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "5eaa37691c5f79b20e2efc2b8019844a",
+                "SHA256": "70435e6d4815c3ccb752852cb01cfc043c7ecfdc7d23cb52e3f5b9ce6a3f5b9f"
+              },
+              "Csp": {
+                "MD5": "89028a7fb1321e1052e7cb3fd2ef9ec7",
+                "SHA256": "723ac3fe24cd8d68e4090f2882aaf49cb2a26e2dd3b191839b5d4eafb7b96dfc"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Drag 2000m",
+            "Country": "Italy",
+            "Pitboxes": "2"
+          },
+          "Files": {
+            "models_drag2000.ini": {
+              "MD5": "4df05523161ced6c4474fa643f0a47f9",
+              "SHA256": "689845d5a0e5ec5e3f921efb9d7730357b0c97be029e583cab118cb54b9c68eb"
+            }
+          }
+        },
+        "drag400": {
+          "Surfaces": {
+            "drag400/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "5eaa37691c5f79b20e2efc2b8019844a",
+                "SHA256": "70435e6d4815c3ccb752852cb01cfc043c7ecfdc7d23cb52e3f5b9ce6a3f5b9f"
+              },
+              "Csp": {
+                "MD5": "89028a7fb1321e1052e7cb3fd2ef9ec7",
+                "SHA256": "723ac3fe24cd8d68e4090f2882aaf49cb2a26e2dd3b191839b5d4eafb7b96dfc"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Drag 400m",
+            "Country": "Italy",
+            "Pitboxes": "2"
+          },
+          "Files": {
+            "models_drag400.ini": {
+              "MD5": "aab47f05594691704d6cf4513ddbcd2b",
+              "SHA256": "85764a9010a6816652ee0de2d7769cd71a12c365f79875e6b9c95111ff7ef8b4"
+            }
+          }
+        },
+        "drag500": {
+          "Surfaces": {
+            "drag500/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "5eaa37691c5f79b20e2efc2b8019844a",
+                "SHA256": "70435e6d4815c3ccb752852cb01cfc043c7ecfdc7d23cb52e3f5b9ce6a3f5b9f"
+              },
+              "Csp": {
+                "MD5": "89028a7fb1321e1052e7cb3fd2ef9ec7",
+                "SHA256": "723ac3fe24cd8d68e4090f2882aaf49cb2a26e2dd3b191839b5d4eafb7b96dfc"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Drag 500m",
+            "Country": "Italy",
+            "Pitboxes": "2"
+          },
+          "Files": {
+            "models_drag500.ini": {
+              "MD5": "4f461e32574cae4b8f0cb2ed9dac380f",
+              "SHA256": "8a74aa0339cd633147e0eeea24d80eeb2415b63232acf5fc7721916602110caf"
+            }
+          }
+        }
+      },
+      "Surfaces": {},
+      "Files": {
+        "1.kn5": {
+          "MD5": "9ae032fd03fe9b1518721785c7beb7ee",
+          "SHA256": "c125787001ee3e3c2f2fbf439ad750f6501aade59679673755e3adb064636da0"
+        },
+        "1000.kn5": {
+          "MD5": "e987c36f5e90351815bfef3d72b92ca6",
+          "SHA256": "db3d2f5a04a636dd66868b68f6cf2c551b270511613bef44c981da37d80f66c9"
+        },
+        "200.kn5": {
+          "MD5": "6775f6e8a4ec2a96589aa9f6eb8af454",
+          "SHA256": "657b89a6c0951f1a1a64eb3fe7cc8bb07c89dbf26b30ff2a825135aa476e062d"
+        },
+        "2000.kn5": {
+          "MD5": "49d9531edcfaf061f9ee3df05199f4a4",
+          "SHA256": "5625c8a1a69c2d9c04f84bc0c873d04362287e6c2b9f4f09f99324e80715d623"
+        },
+        "400.kn5": {
+          "MD5": "2c06274651a63bcff2b487024cd3ac5f",
+          "SHA256": "c5083cc30d5536effd8ce53af0bfd7eba8470b07c7a6026b1d33b2316d1c185a"
+        },
+        "500.kn5": {
+          "MD5": "6b1d2be04892d6ce3b5a0579c6d9cb5a",
+          "SHA256": "828d652964bb74e95f5b84b6cafa047a8fc6bfa11fd3a4e9e12a72c5a2d517c1"
+        },
+        "ks_drag.kn5": {
+          "MD5": "1340008d2cce4903470abf4d77aaf5b3",
+          "SHA256": "5ff65f061acb373cc0d74f1255c269a22a6bb23dfd6a9e6391d913f912fe2181"
+        }
+      }
+    },
+    "ks_highlands": {
+      "Layouts": {
+        "layout_drift": {
+          "Surfaces": {
+            "layout_drift/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "cb5822513006b1e28bf928118b11d2ed",
+                "SHA256": "d0772579c1d2c0e043ffe5f1300d6c7ea8f486bf3b740dbbe730419696302324"
+              },
+              "Csp": {
+                "MD5": "67a5181a6b38a91eb2b2fa15d233cc4c",
+                "SHA256": "d59f4fee7df0138472cf9bebb7ccdfc3fd5f1a9aba7456a9edc242d4f86fd61a"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Highlands Drift",
+            "Country": "Scotland",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_drift.ini": {
+              "MD5": "5088d61d3c6f54218e1be5efd44a666d",
+              "SHA256": "d831f7ffb57ce77be8be8598de071bb5c330cb2ceb0875f338106a0f911795c2"
+            }
+          }
+        },
+        "layout_int": {
+          "Surfaces": {
+            "layout_int/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "cb5822513006b1e28bf928118b11d2ed",
+                "SHA256": "d0772579c1d2c0e043ffe5f1300d6c7ea8f486bf3b740dbbe730419696302324"
+              },
+              "Csp": {
+                "MD5": "67a5181a6b38a91eb2b2fa15d233cc4c",
+                "SHA256": "d59f4fee7df0138472cf9bebb7ccdfc3fd5f1a9aba7456a9edc242d4f86fd61a"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Highlands",
+            "Country": "Scotland",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_int.ini": {
+              "MD5": "c039d2a8b38b333f9dff09e99b556ec0",
+              "SHA256": "bba4953b26834b8c3c25ef1912958be50c95742c6c28af736cb3b1c85f77aa7f"
+            }
+          }
+        },
+        "layout_long": {
+          "Surfaces": {
+            "layout_long/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "cb5822513006b1e28bf928118b11d2ed",
+                "SHA256": "d0772579c1d2c0e043ffe5f1300d6c7ea8f486bf3b740dbbe730419696302324"
+              },
+              "Csp": {
+                "MD5": "67a5181a6b38a91eb2b2fa15d233cc4c",
+                "SHA256": "d59f4fee7df0138472cf9bebb7ccdfc3fd5f1a9aba7456a9edc242d4f86fd61a"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Highlands Long",
+            "Country": "Scotland",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_long.ini": {
+              "MD5": "a6a254ddc763eae3db39f377a8fb1da6",
+              "SHA256": "f9f96497a700e4b1c2d86d8211c7fda941960fe7f125710ca0b14092701791cf"
+            }
+          }
+        },
+        "layout_short": {
+          "Surfaces": {
+            "layout_short/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "cb5822513006b1e28bf928118b11d2ed",
+                "SHA256": "d0772579c1d2c0e043ffe5f1300d6c7ea8f486bf3b740dbbe730419696302324"
+              },
+              "Csp": {
+                "MD5": "67a5181a6b38a91eb2b2fa15d233cc4c",
+                "SHA256": "d59f4fee7df0138472cf9bebb7ccdfc3fd5f1a9aba7456a9edc242d4f86fd61a"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Highlands Short",
+            "Country": "Scotland",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_short.ini": {
+              "MD5": "255482ca7b3d578514e0df7dd98efb7e",
+              "SHA256": "d62cc4f0c0a57774d38ba462b89b6a32d63555a655a6d71834b6524f3b837dc5"
+            }
+          }
+        }
+      },
+      "Surfaces": {},
+      "Files": {
+        "1.kn5": {
+          "MD5": "0d911be30e87e41e7ca7c429c9052fb8",
+          "SHA256": "489f3ea68d031c46d0849d5f467e059b84a48f1a82ba8afa6c635a6336aff240"
+        },
+        "10.kn5": {
+          "MD5": "da675a2bc1fcd23d6a0ce1b08ccfaf9d",
+          "SHA256": "e2074d14d30550d3279ce5fb8a5390206e21d41d4f848bbd60d030b84c686a06"
+        },
+        "100.kn5": {
+          "MD5": "462fe73ee99284995b2e92ad099b1549",
+          "SHA256": "5a4d255e868564728932dd5e364f7bae28fa6be7b98b9a34e1bec369a2b53afe"
+        },
+        "101.kn5": {
+          "MD5": "12e9454c99db330f694c216e866d8b2a",
+          "SHA256": "3d5dcec9ce88822c64d8f25f191e5d9337963133f411a51ef6d616b049faa3ad"
+        },
+        "2.kn5": {
+          "MD5": "3a79fec8d3d7750491574eb19c1ab0d3",
+          "SHA256": "5b6c8c4b33217fc04453d2eb845eb906231d2560bd9c24d04b171b85239a1f87"
+        },
+        "3.kn5": {
+          "MD5": "d984eb9be77c0ab24c97138a5b4e89bf",
+          "SHA256": "bacca95bc155e42413b5f0977bdbe373c9203dfa18a8cab67d4e63da40bab758"
+        },
+        "4.kn5": {
+          "MD5": "79ac64c991a9ba515ee6ac9085d2a66c",
+          "SHA256": "93d5e5ca5fae23bd0cff87c65aa53145818ce17e8284a1b8dfe9c99f2f3928ca"
+        },
+        "5.kn5": {
+          "MD5": "ad0372ba4b6d6dea5549b461dbb06efd",
+          "SHA256": "563a95169ac1446b415b39cc6173b96726b3f5ab2a343f06ce51746df17bce5a"
+        },
+        "6.kn5": {
+          "MD5": "d98ff8b4d25051cba2b91030d3b3b176",
+          "SHA256": "137bf7ca934d81324c480ba35c1d7e6e67af817a4d568155a56599be080c98b1"
+        },
+        "7.kn5": {
+          "MD5": "1232f0efcb27e73042144c5a9e55d43a",
+          "SHA256": "f2ab335e61b49f9460acfd274921b8927ab56c8d7207f4e40962207fa773ff39"
+        },
+        "8.kn5": {
+          "MD5": "167bf59291f0f541aaa6a9244ee3a0af",
+          "SHA256": "7e3f87cec530b1b3f53ada6c196285af8d8ef3d6164142f959f861a907a2d362"
+        },
+        "9.kn5": {
+          "MD5": "2f03fdc9f4dc2c6fc464737c912222b1",
+          "SHA256": "650e472bdf9972ac39cdb128123ac85b9dba2024367f918ed7b4ca41ea40d510"
+        },
+        "ks_highlands.kn5": {
+          "MD5": "4a2ac36ad07111b0a7480b2afc8bd79d",
+          "SHA256": "2b85c95d14119ab2da8daa1a95487993e4952a0e8433e584e0abbf8d6dec70ad"
+        }
+      }
+    },
+    "ks_laguna_seca": {
+      "Layouts": {},
+      "Surfaces": {
+        "data/surfaces.ini": {
+          "Vanilla": {
+            "MD5": "5407604f5cac59fd1de799305b676ff2",
+            "SHA256": "34d68bedeccc491433ee1e27510d3e838802b6821ab472104c1f19fb49e7235a"
+          },
+          "Csp": {
+            "MD5": "30c2cd2471fb1985017ddf150c306a37",
+            "SHA256": "b2ae96ede107b5f4735d6567c779e0cafcc5034c7251bc013da892d3cd4c69cd"
+          }
+        }
+      },
+      "Info": {
+        "Name": "Laguna Seca",
+        "Country": "USA",
+        "Pitboxes": "24"
+      },
+      "Files": {
+        "models.ini": {
+          "MD5": "329b3e37e4335793675eeb39ecd725f6",
+          "SHA256": "3fa075348de113ca94a2d3db77c2f51fb6441a4d4fc9b59f3bbd334adf89aff9"
+        },
+        "10.kn5": {
+          "MD5": "6484e74ebcc70c41f111f86946e701f5",
+          "SHA256": "6b82e1aae63183edebc5c0000cba436b11b8b525efb32952d4c8263627688f79"
+        },
+        "2.kn5": {
+          "MD5": "bb5b5531582deb872aae4fda0de2cd8a",
+          "SHA256": "0606a59a50a392805637d3606c23bcc373159556d1e1ad670648100c73e3b0ea"
+        },
+        "3.kn5": {
+          "MD5": "29ea715af46b9011bd21acbeb20d307f",
+          "SHA256": "2ebfa36e5f4a9302bba4d092c02278d1e70a93edc307df94a081cf4fb84c82f0"
+        },
+        "4.kn5": {
+          "MD5": "826925e431a889bd44a651b1a9bf20c0",
+          "SHA256": "5e7c18d3fbeb0a7f83ba5388a18751555e5fce411886ac5d0f454d6e5f7d7a05"
+        },
+        "5.kn5": {
+          "MD5": "6d63fa97bf1710768a31057129abbc8d",
+          "SHA256": "99ea3a6151e068a3167e1abe175f5979b1f6efa467fb969179ad8533291aed1c"
+        },
+        "6.kn5": {
+          "MD5": "fd8d625989ae2ee14d20b091a88bc7f6",
+          "SHA256": "79b5d3a337b63e3d56db7ccb90d3dc91a08decb6eb890e646414154493288577"
+        },
+        "7.kn5": {
+          "MD5": "6df1e552d8a36e49aafb73eaf61cf0d1",
+          "SHA256": "e9edaa6ea419b64254dcb66674f9aa9cc6eed4854bea95e37367046242da0e97"
+        },
+        "8.kn5": {
+          "MD5": "8b2b0b4529c0980bcc6303d984d5d202",
+          "SHA256": "50fc71a6ff4a0859bda1af61f045b72dc1793f9a6b3c88639353d40029f32ad6"
+        },
+        "9.kn5": {
+          "MD5": "960a67bcc795fb8f76f462be9d0b72fe",
+          "SHA256": "3581b41bfb0ae150217da388b77a49725d136a277774943126b6f66ce8b0338a"
+        },
+        "ks_laguna_seca.kn5": {
+          "MD5": "68294887da5ee9a00c73f4a8aabdf551",
+          "SHA256": "c78a64281ca64298c87c0ef3f93617172c04a851ad4e2656e81f4c7abe96b895"
+        }
+      }
+    },
+    "ks_monza66": {
+      "Layouts": {
+        "full": {
+          "Surfaces": {
+            "full/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "f4be4c9cce67f3e09e634d532b713bd6",
+                "SHA256": "ac74305ce3d2aa0649d7b6b561fd7c5887a1e14cf4798756dcf94b93514b9a78"
+              },
+              "Csp": {
+                "MD5": "bf596f288af674cf734075d569e473a1",
+                "SHA256": "67c3b4cb6f2f67b6cc65218b74e454c17ab9c0d456cdd1ef6d2b69c6ffc51574"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Monza 1966 - Full Course",
+            "Country": "Italy",
+            "Pitboxes": "25"
+          },
+          "Files": {
+            "models_full.ini": {
+              "MD5": "c1f2c19cfa6fd0bcc71a6d26a086e9b8",
+              "SHA256": "f8fa0bed443ff57d994671a0a84af30641de10f8ea83dff04818a1f2b012b4e7"
+            }
+          }
+        },
+        "junior": {
+          "Surfaces": {
+            "junior/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "f4be4c9cce67f3e09e634d532b713bd6",
+                "SHA256": "ac74305ce3d2aa0649d7b6b561fd7c5887a1e14cf4798756dcf94b93514b9a78"
+              },
+              "Csp": {
+                "MD5": "bf596f288af674cf734075d569e473a1",
+                "SHA256": "67c3b4cb6f2f67b6cc65218b74e454c17ab9c0d456cdd1ef6d2b69c6ffc51574"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Monza 1966 - Junior Course",
+            "Country": "Italy",
+            "Pitboxes": "25"
+          },
+          "Files": {
+            "models_junior.ini": {
+              "MD5": "f6b751945a0470c953d82e3ef7b3ebac",
+              "SHA256": "5e68332e11754aae3c055d699bd1514f93a1dd7863e5b17a8b3c8a717415fb33"
+            }
+          }
+        },
+        "road": {
+          "Surfaces": {
+            "road/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "f4be4c9cce67f3e09e634d532b713bd6",
+                "SHA256": "ac74305ce3d2aa0649d7b6b561fd7c5887a1e14cf4798756dcf94b93514b9a78"
+              },
+              "Csp": {
+                "MD5": "bf596f288af674cf734075d569e473a1",
+                "SHA256": "67c3b4cb6f2f67b6cc65218b74e454c17ab9c0d456cdd1ef6d2b69c6ffc51574"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Monza 1966 - Road Course",
+            "Country": "Italy",
+            "Pitboxes": "25"
+          },
+          "Files": {
+            "models_road.ini": {
+              "MD5": "7dc14e4767b17ef284373375d057b31b",
+              "SHA256": "4cd4e97a5e3be7386290dada892133b65af4cfca8c67687c2a093ea0f8fc4aca"
+            }
+          }
+        }
+      },
+      "Surfaces": {},
+      "Files": {
+        "1.kn5": {
+          "MD5": "87477fc3a0e37e1ea6ead4c85ddafb52",
+          "SHA256": "d65bfcdda13a8528b0222086199b6bd46df6027a11ca341d0b9f487af4c98927"
+        },
+        "2.kn5": {
+          "MD5": "375ce662664f439985fcfd41f2f29069",
+          "SHA256": "2c339ad4dcfe181f4d1b7cafd5d748c3db0a265a345e919d20965333e3b57ca8"
+        },
+        "3.kn5": {
+          "MD5": "7fc3df45d5d01444208877c1f339a323",
+          "SHA256": "37cdbf6fad2911f9e106d99112925398fd6ff6023184291610ef0434d3baa017"
+        },
+        "4.kn5": {
+          "MD5": "09001159535ca7a709c37401d90038b6",
+          "SHA256": "17e48427d0354fc68c1a0550cf8b8d88bc3044faaf5d82be53123a83c8878051"
+        },
+        "5.kn5": {
+          "MD5": "536c2a6f9c4fecbe39b5ec11e2ffff16",
+          "SHA256": "d6fa27e70f74a60844dda4ab7a7d153858435244495627eaf095665ca0ecde7f"
+        },
+        "6.kn5": {
+          "MD5": "cce933e102d50b590a4f0bb4c8e0f385",
+          "SHA256": "50d42c09a8f81f056032a8df7744d8f49220f75312d10b689c5c192ab36b00ac"
+        },
+        "7.kn5": {
+          "MD5": "01d650a2dc511f4c2de27f6a7eb7cfb6",
+          "SHA256": "9f0b86db0a787863a0955249ef89760abf025c91745c535da154cdb4503439b0"
+        },
+        "8.kn5": {
+          "MD5": "7b9d342b624b2792a8bd021813e8417e",
+          "SHA256": "70d00ddc8e0e6a049d3591b2a8d72d00e00d186757c398c5c88b11418a7e6150"
+        },
+        "9.kn5": {
+          "MD5": "26454499f163400440ee84757a51b15f",
+          "SHA256": "f21d0ca3ad4750a6947475a6046722196a40241cea8a55983d71ecfdb586b3e2"
+        },
+        "ks_monza66.kn5": {
+          "MD5": "e5053350a50745eb32d747e028ea4ee0",
+          "SHA256": "4a07b01e7d6b9412b6bf30356f56809d689e660d33d80535c3b34dab4d64bcb7"
+        }
+      }
+    },
+    "ks_nordschleife": {
+      "Layouts": {
+        "endurance": {
+          "Surfaces": {
+            "endurance/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "888a8e6d4f80287dddfe2a6538ced425",
+                "SHA256": "2c9aa30961fd060c894e94498ff6cfcce56747a2ad8c9bb3bc032e2b783b3431"
+              },
+              "Csp": {
+                "MD5": "329272c6c2f77ef87e0e4cb5ffa12ed1",
+                "SHA256": "67fc12d175a36af71d5be5a90dc23c414eb23abdd08848710e9a0bfa4355d62f"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Nordschleife - Endurance",
+            "Country": "Germany",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_endurance.ini": {
+              "MD5": "ccb43dcc0b77285290748db6a5e13e5a",
+              "SHA256": "46031a54adf87f8e5429b7b7d19311c1dfa06e5b76ee689868d649adfa80a566"
+            }
+          }
+        },
+        "endurance_cup": {
+          "Surfaces": {
+            "endurance_cup/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "888a8e6d4f80287dddfe2a6538ced425",
+                "SHA256": "2c9aa30961fd060c894e94498ff6cfcce56747a2ad8c9bb3bc032e2b783b3431"
+              },
+              "Csp": {
+                "MD5": "329272c6c2f77ef87e0e4cb5ffa12ed1",
+                "SHA256": "67fc12d175a36af71d5be5a90dc23c414eb23abdd08848710e9a0bfa4355d62f"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Nordschleife - Endurance Cup",
+            "Country": "Germany",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_endurance_cup.ini": {
+              "MD5": "8f6c0d9171a45a433e844d72e17cfa59",
+              "SHA256": "444654e50df7c1b3d15817cee9a24b91354acb1609448834b8d9b1b2a6cb0d2e"
+            }
+          }
+        },
+        "nordschleife": {
+          "Surfaces": {
+            "nordschleife/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "8cd7e8dae6935e0761281f17f6539ea5",
+                "SHA256": "85b0ebb6b9dbf2fdaaeea6d83a79ac371f12992659b6264dfe93081806f313ba"
+              },
+              "Csp": {
+                "MD5": "051719ad9b8341010d7974d751a7dfd8",
+                "SHA256": "e1f137df6195a9ae57b2a7daba830b2923a97e20f22979760c19fd54f4d9ada3"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Nordschleife",
+            "Country": "Germany",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_nordschleife.ini": {
+              "MD5": "23c7855f51c0bb5504e178e276c0e73e",
+              "SHA256": "e1eb6d1f59a3ca404ece8ca2e46394823f97b657fa272fafe44ff0c49bfad838"
+            }
+          }
+        },
+        "touristenfahrten": {
+          "Surfaces": {
+            "touristenfahrten/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "b8dfd8dda535c025a13793a28d408e90",
+                "SHA256": "4253307a98aa8d993fc32c82382e656e485fc9dd170dd78bf69bbb72c65b6262"
+              },
+              "Csp": {
+                "MD5": "35669fdbbbde314576e8cbcf6fddbc01",
+                "SHA256": "4b67a8a694c7bb3ccf4432dc49cb04595cb64bb92baf6f1718c840dab02dbfaf"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Nordschleife - Tourist",
+            "Country": "Germany",
+            "Pitboxes": "32"
+          },
+          "Files": {
+            "models_touristenfahrten.ini": {
+              "MD5": "907f9d6fc6cf54153c5d78649f556181",
+              "SHA256": "58ef54e97b26b222d4d09de17d17b278b272c344517bddb8f5955c9ce4fa206a"
+            }
+          }
+        }
+      },
+      "Surfaces": {},
+      "Files": {
+        "10.kn5": {
+          "MD5": "219a7ab549184b6dce5a88b132a6042e",
+          "SHA256": "e42224c5f59f6d76be2d867e41b2118db32dffd1cb5c77793f9d16cec037d3de"
+        },
+        "100.kn5": {
+          "MD5": "462fe73ee99284995b2e92ad099b1549",
+          "SHA256": "5a4d255e868564728932dd5e364f7bae28fa6be7b98b9a34e1bec369a2b53afe"
+        },
+        "118.kn5": {
+          "MD5": "7f1090c2885705377c56b165baad169c",
+          "SHA256": "c1c7cda5a8afb45786101fcf3dff7afebb7167c7154b0c83d7eee1814963832e"
+        },
+        "119.kn5": {
+          "MD5": "2cb709476272f2cc1d803d6b821f9b9a",
+          "SHA256": "85a4e3dd42adc137fe3b7380e79c77cee8afdaaf5655237c3d5e732f6471f11e"
+        },
+        "120.kn5": {
+          "MD5": "46f9a43c5c02eaa2419c63b86f5fbd3f",
+          "SHA256": "062d51616bb7f95018a1c9e8adfcf1b92e8e0e282096c561591ec7fbc621582e"
+        },
+        "14.kn5": {
+          "MD5": "134aedb2cadc736e0d506a299ab6572e",
+          "SHA256": "32c3b5a37d81d87ea41f83975a0a152ffbc8ef25a86314152ebeda51b8d9e503"
+        },
+        "15.kn5": {
+          "MD5": "7593b4dc2461f5326d534d836cbeb3dc",
+          "SHA256": "cf9b97c038d36bbfdc4301081c6ef9caf76b84c6d42a45a5de5be7642049e132"
+        },
+        "17.kn5": {
+          "MD5": "5cdc4d3621905e18c82bc5c2b0f90cfb",
+          "SHA256": "7f192dce1847219c2129e1dfed9e7e5b3b856bd1c92cf78d5eca79e304c996f9"
+        },
+        "18.kn5": {
+          "MD5": "d9bf91c7653882d9274dbe5b0efdb28d",
+          "SHA256": "2ef60517bc777d3d78ae1e2b58196674ccca11aba7471c6b0c94da84fd04a80e"
+        },
+        "19.kn5": {
+          "MD5": "7290cd73b3ded6b859f216e78e5baa61",
+          "SHA256": "db763a906b3957459e875439159afdb57fc0714d76ee77ea9112051ff9864034"
+        },
+        "2.kn5": {
+          "MD5": "8b8e0027053ff50ad0cfca983932a944",
+          "SHA256": "5c0d24fea9e2d3179c6aa01ecb7b53ff99233a0cbb79cc4b3baca47e4b46128e"
+        },
+        "20.kn5": {
+          "MD5": "7eb87c156fb5a65932b2300b79029592",
+          "SHA256": "a81b79f1734e7bc247b3d464482bd8ce65e6833f8a8e0a1eb7e2cf7bd4f81221"
+        },
+        "21.kn5": {
+          "MD5": "458cc828d299a2fbde40af3fdbc1da60",
+          "SHA256": "583311d47ca6fb7ee95058f7010456801d70449f8264ff7d51b62b0bf02e86f6"
+        },
+        "22.kn5": {
+          "MD5": "01223d0d30969c184202be0d3617aecd",
+          "SHA256": "8a131606a86320be76dbcaa8986e0bd811ca6936bcd4a03a98bd94c6138d6d85"
+        },
+        "23.kn5": {
+          "MD5": "599ef84915915724c7f90a59000c6cc5",
+          "SHA256": "61b2f064296cc6e97edbaddc0ef49d2849ef6059a67f1e38be821a481277189a"
+        },
+        "24.kn5": {
+          "MD5": "808c168bbb3da4a498cffbb281e98b68",
+          "SHA256": "0004a399d793ee152bce71802fd93abafb3ce7f90113a97ffa985d2c3ee5b217"
+        },
+        "25.kn5": {
+          "MD5": "18f36ec6dcfddafbc7363ef2eefb2727",
+          "SHA256": "3688bccad5e6397170a66b56537709aaf953cf2892e18b2b7b2c858b2adaa328"
+        },
+        "26.kn5": {
+          "MD5": "3772c1abf4c0250543f3947608d46d92",
+          "SHA256": "060b59147cc9e3a0af49b80ebd3feeb9c9c421f7403bca165798a4bfb97b2d4e"
+        },
+        "27.kn5": {
+          "MD5": "0ff6b2f7949c9ea93798565fd959bd77",
+          "SHA256": "d3ae5648498d88b71319ee2da36924462ec8e449a4b4f80888fcacebfbf44b4d"
+        },
+        "3.kn5": {
+          "MD5": "ba7cf89b2a48a498f886d4784fa4a962",
+          "SHA256": "e556affd4cca01f18aa45e0c49ae592370be23ddf9a0928f2d359a43c70eb727"
+        },
+        "4b.kn5": {
+          "MD5": "1e6683a3e4c1be3b864923737e3d958e",
+          "SHA256": "dc8e2430fa7bff4f0fdfb3b0aae3d71df12e1c2aacdfbcd195096d857a40df40"
+        },
+        "5.kn5": {
+          "MD5": "280063fd4dac58c14a3725f7ec254a05",
+          "SHA256": "c9de512c4112c3a322f0736e4ce436b06ce7ef9ffbba160d48aa922af5792d0f"
+        },
+        "6.kn5": {
+          "MD5": "eb4874d216d1a000573af47189e0e785",
+          "SHA256": "7cc616eada6154bcba74d6765742ba1a6b65ea709a5c8266a7cddf51ee675d43"
+        },
+        "ks_nordschleife.kn5": {
+          "MD5": "26e5bf8ead3375e4e542c9c660491f93",
+          "SHA256": "e43cd13337b2ad92fd165eadd9fb85e9daccb81eef8fbc39d3d8ee13a41e8dd9"
+        }
+      }
+    },
+    "ks_nurburgring": {
+      "Layouts": {
+        "layout_gp_a": {
+          "Surfaces": {
+            "layout_gp_a/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "cd21500d7f079700b7953897932d1250",
+                "SHA256": "cafdb56e1f657e3e398fdc0d34189c9033467b1d0a34761cd937339b8856f58a"
+              },
+              "Csp": {
+                "MD5": "20ae6ca2698ce4f2cad72c324f53338a",
+                "SHA256": "d810a4cfa2413af64e75f42e294a897035c2c7bc31dd8411b2b728bee4bf2a05"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Nurburgring - GP",
+            "Country": "Germany",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_gp_a.ini": {
+              "MD5": "e869e8b7e5d41145af36ff118790a2e2",
+              "SHA256": "62b580093358ff29d34b2275728576dae95451f72d6f5807b7848b4eaab72633"
+            }
+          }
+        },
+        "layout_gp_b": {
+          "Surfaces": {
+            "layout_gp_b/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "f0e60f2087a9b013c6b482b697946a83",
+                "SHA256": "618cbe5ab6704a57a7b5cbec713de59374979b88fddee3cad253237759e2fafa"
+              },
+              "Csp": {
+                "MD5": "359c96b2db9d1bdac0a2e83d713ef189",
+                "SHA256": "c08290813bf2694993e5680178f9f2386e72f3863b1a8e11ffc91cc86560c30a"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Nurburgring - GP (GT)",
+            "Country": "Germany",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_gp_b.ini": {
+              "MD5": "757217c06fbf477d55793036ba9d7dc2",
+              "SHA256": "4ee96ebd162b7ea98e271a93317d1b9e9a1ad1df2cc42acd3a4ab9571f1bc55c"
+            }
+          }
+        },
+        "layout_sprint_a": {
+          "Surfaces": {
+            "layout_sprint_a/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "846e27eaa90f591112f08dbcbcd6ff05",
+                "SHA256": "6b4036f8c49cef525e9c16fab8f1b40b8efeeb1b04b62fcfec0c6897fd9b0dc3"
+              },
+              "Csp": {
+                "MD5": "2d59bce362f00452817c7501b5980ede",
+                "SHA256": "a595f0a3f7d6e46ebae4049460a5fa653850f14870c8ef185c30102e76eb4d02"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Nurburgring - Sprint",
+            "Country": "Germany",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_sprint_a.ini": {
+              "MD5": "068ec82256ab943fb835bde8fa8111fa",
+              "SHA256": "bcc88720a9796b0cbf45e0afd088b38243d7e4faa19eb4a84a94f63b2e0c2525"
+            }
+          }
+        },
+        "layout_sprint_b": {
+          "Surfaces": {
+            "layout_sprint_b/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "846e27eaa90f591112f08dbcbcd6ff05",
+                "SHA256": "6b4036f8c49cef525e9c16fab8f1b40b8efeeb1b04b62fcfec0c6897fd9b0dc3"
+              },
+              "Csp": {
+                "MD5": "2d59bce362f00452817c7501b5980ede",
+                "SHA256": "a595f0a3f7d6e46ebae4049460a5fa653850f14870c8ef185c30102e76eb4d02"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Nurburgring - Sprint (GT)",
+            "Country": "Germany",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_sprint_b.ini": {
+              "MD5": "97a021a204029f842b533bcf19939aa2",
+              "SHA256": "58262b393368cb607a8b82bbae44fd4e3e2fa31ebb727361145af1d16d590404"
+            }
+          }
+        }
+      },
+      "Surfaces": {},
+      "Files": {
+        "1.kn5": {
+          "MD5": "1e845f510b8a3c3f87415c2800f1e544",
+          "SHA256": "8907a792dee26a8e3b1dc5546298e7c4ad10f6683a6427463b0f4345bcc8753f"
+        },
+        "100.kn5": {
+          "MD5": "462fe73ee99284995b2e92ad099b1549",
+          "SHA256": "5a4d255e868564728932dd5e364f7bae28fa6be7b98b9a34e1bec369a2b53afe"
+        },
+        "2.kn5": {
+          "MD5": "ddf7daeb5f59ef210f9f18a26b0908f2",
+          "SHA256": "0ef475f5004bd39335f4179ab2982f88a7ac20b71e925dfc9113f66c01edb0d9"
+        },
+        "3.kn5": {
+          "MD5": "3e2a0df6f44f59d7087dcf3beacf5be8",
+          "SHA256": "44394029445e97d822b656398f98b257ffeb1b87e28ec876ce72964536ee2432"
+        },
+        "4.kn5": {
+          "MD5": "bd932f403bbdb9b40572404702eaca62",
+          "SHA256": "264342d3bf41360e23ddc968494570be762a948b62a7ddc96fa89cdd2fa22f6d"
+        },
+        "5.kn5": {
+          "MD5": "17459dff25c670496407407f1c8a124d",
+          "SHA256": "c1d11431c07461b23764341d86f350092674bd49f530faaa48a38da84174da0e"
+        },
+        "7.kn5": {
+          "MD5": "e14aa50d48f36bf72757df8a97436986",
+          "SHA256": "daa78aaff7a855e1509e4b6b9970458011ff10c5ad4d66a81e3b79f03e812edc"
+        },
+        "8.kn5": {
+          "MD5": "521eaffbd8c6faea574d7e39323668f2",
+          "SHA256": "d1aaec3d78924353ce158636313e330e073ccafd9eb1ccf2ca42add5f40fd76b"
+        },
+        "9.kn5": {
+          "MD5": "cc93c42228975e6569fcb24049a35ae9",
+          "SHA256": "fefcf51013cc6f3d3fb75e31e3b5d914be25275c6d72a6133d573b24af3e737f"
+        },
+        "ks_nurburgring.kn5": {
+          "MD5": "7d9bfb1fb349e607471d3e450878257d",
+          "SHA256": "be4724514859f555e1a609f342e0aeae667efcfc8cd8eaa9bea6d6f7b40acfbf"
+        }
+      }
+    },
+    "ks_red_bull_ring": {
+      "Layouts": {
+        "layout_gp": {
+          "Surfaces": {
+            "layout_gp/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "bfba8909ea8bccd1114b97e067946590",
+                "SHA256": "d8442522d719de3775075cba1e8cc390b8c468601bb52c8850a5bfd7bb8e71c4"
+              },
+              "Csp": {
+                "MD5": "8baa80e05781c89c81669655ef36083e",
+                "SHA256": "eafadaa72752e7f4fbecadbcfc20c232462be6fbdd584c5461b728b89dfcce55"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Red Bull Ring GP",
+            "Country": "Austria",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_gp.ini": {
+              "MD5": "3660403b40aeacc5dc0f494523f8f951",
+              "SHA256": "cf02ce26301cf017c0d95ef884fbbc6666563b1805517229b89f239207229f5d"
+            }
+          }
+        },
+        "layout_national": {
+          "Surfaces": {
+            "layout_national/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "bfba8909ea8bccd1114b97e067946590",
+                "SHA256": "d8442522d719de3775075cba1e8cc390b8c468601bb52c8850a5bfd7bb8e71c4"
+              },
+              "Csp": {
+                "MD5": "8baa80e05781c89c81669655ef36083e",
+                "SHA256": "eafadaa72752e7f4fbecadbcfc20c232462be6fbdd584c5461b728b89dfcce55"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Red Bull Ring National",
+            "Country": "Austria",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_layout_national.ini": {
+              "MD5": "830682acd028cb87b61ff9ddf39bf635",
+              "SHA256": "a156f768fb4c83a82f0625e203909f048e13e39a5ed659d164b2b651dec97588"
+            }
+          }
+        }
+      },
+      "Surfaces": {},
+      "Files": {
+        "1.kn5": {
+          "MD5": "8f5f94fa3e415bb8cc3e544fcc38dffa",
+          "SHA256": "02d2f74dc5469cf14b16afb72ba56810fbbf0a602b709bc032b1114bde98ad3a"
+        },
+        "100.kn5": {
+          "MD5": "7d7b74a3aab18bd85d230641381d9ce7",
+          "SHA256": "abb0eaa4b999b8d441e552527ea71c5263f928a5c5c99d46f4d4bfa443fb30f6"
+        },
+        "2.kn5": {
+          "MD5": "75c971fae0b65780b72886de01e6d837",
+          "SHA256": "d2c74e7a59b1305951c2d23b283f28ad91ba49baac976da06c5db61173cb3970"
+        },
+        "3.kn5": {
+          "MD5": "627c940c1089ebe091f3b9913f48a483",
+          "SHA256": "9fa27fa3d9357edc8603e75a0706235658d767f0f33404556ced94d0d13788f6"
+        },
+        "4.kn5": {
+          "MD5": "312acbce03f5f762a87df53f08eca34c",
+          "SHA256": "ce958900b859fda506fa851e12644a576c985aff8370e066e4b1630863fcac65"
+        },
+        "5.kn5": {
+          "MD5": "575bbe6bf65c2bff67248d38db442f49",
+          "SHA256": "bde6a3aae51f4589c1d1d6c67c20b338a1c97801aa88a8514e5bfefb93444d43"
+        },
+        "6.kn5": {
+          "MD5": "fefe88896a22a8e7a57d78e49a30096b",
+          "SHA256": "d1dcd43c8c58ed91d01e44a07b49bdf28fa7251f2d685b7c983eebe77415335b"
+        },
+        "7.kn5": {
+          "MD5": "ab1281b33ddc8f13f605f325e8ca5c40",
+          "SHA256": "06804406fd699d3195d7631d1834bf39b8ed973a13a34d57db56c88d007db180"
+        },
+        "8.kn5": {
+          "MD5": "ebc00f53d214d884e303fc7eb7143ec2",
+          "SHA256": "7af7e87987f2c2baecf10f887818c7ecc46dd41e81a8a037f1b14b8219e0aa73"
+        },
+        "9.kn5": {
+          "MD5": "642ac0f7a70f2938e45e9b5086f51c59",
+          "SHA256": "402363a0f14c68c3899a14d23e3f73cbe3f706133acb491beafbfc10d639f702"
+        },
+        "ks_red_bull_ring.kn5": {
+          "MD5": "f65632f4ba8cdf435a878afda0c44bf7",
+          "SHA256": "f59138e06fcb27cc987a64cb1a8ffdfbfffb1088f9190261478f20a9c77dca96"
+        }
+      }
+    },
+    "ks_silverstone": {
+      "Layouts": {
+        "gp": {
+          "Surfaces": {
+            "gp/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "39f8cf2b7370587c6c71cc0240189bbe",
+                "SHA256": "658d62e405213478af859d288c2d0a89a9dc4fbd6663baa9e75317c76f683958"
+              },
+              "Csp": {
+                "MD5": "e43446193d635665adce5cbcd9bdb3d9",
+                "SHA256": "a21b90260cb30918ef8aa1aae0454d522f05e98b19809733a4babfb5601f8b04"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Silverstone GP",
+            "Country": "Great Britain",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_gp.ini": {
+              "MD5": "567f639ac23bf274cd89e72868b6ed33",
+              "SHA256": "f3b7178a5c47f7e1b84c89641066c493e1158f2f18bf13d2a699681a5ffbd7b5"
+            }
+          }
+        },
+        "international": {
+          "Surfaces": {
+            "international/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "dc3a20c73480f06122b60b877beb424c",
+                "SHA256": "638a774af9d1fbeee8d213b69054af89010ff63afde3a3357c23e12c509028fb"
+              },
+              "Csp": {
+                "MD5": "fbfa2c546eeeb16a570b201053facacf",
+                "SHA256": "f4c9f890ac75a8a3469e8b52540914a57aacfb672b5c14a715ab61d87586121c"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Silverstone - International",
+            "Country": "Great Britain",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_international.ini": {
+              "MD5": "6af37a8cf793f3cc60f22573a9f6761e",
+              "SHA256": "8595b54c70fe9345fe58135ac6a5c43a328da8ecea56d1a601f776eb513dc593"
+            }
+          }
+        },
+        "national": {
+          "Surfaces": {
+            "national/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "1bb50a24dd6fd75875ebd06a52196ee1",
+                "SHA256": "5dae8e5ef3891a4cef0137abe2c285c5bc063f0109a1221415ec62a2cdd8d550"
+              },
+              "Csp": {
+                "MD5": "5a970ba8fd963b7cafdad52f984f16ed",
+                "SHA256": "edb8ac4251120c68c9d4cf6576eae1af8cba64c4721199aa7507398dd7e44acf"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Silverstone - National",
+            "Country": "Great Britain",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_national.ini": {
+              "MD5": "6a741ccbcafbccb5187799a160119ca7",
+              "SHA256": "ff50d20fed14c3b669ae5222e3b3d269aa2308f9283a0b963950c0d60f273758"
+            }
+          }
+        }
+      },
+      "Surfaces": {},
+      "Files": {
+        "1.kn5": {
+          "MD5": "2192c1abbc9fe2b3aa79f4aeb6bc7e7a",
+          "SHA256": "1421ca00dd871a3d3a1dba869ea6eb2a50c6fd0939c8bc3334a000294f842612"
+        },
+        "10.kn5": {
+          "MD5": "37fcc5ceafa19bf996161d9b5d01866c",
+          "SHA256": "4d43f5da565e2f74aeeaa8f0f8b39c0599cf0a3ca2a96644b6628f6802887d96"
+        },
+        "100.kn5": {
+          "MD5": "238a3593d42dedf7d98f94d7304addf0",
+          "SHA256": "75908589ad99d8bc0cd4772390afb4bd0de88e65e5e74c4953cb992f457347de"
+        },
+        "101.kn5": {
+          "MD5": "dc576b29a701279e44303b7a2fe16af4",
+          "SHA256": "8b3dfa8b8ee78991a4a877fc31788c8011291829c6c466561c4ae2169bf68d27"
+        },
+        "2.kn5": {
+          "MD5": "a60075693374f8abff8b83ceb151677b",
+          "SHA256": "863d3dd6202f828cfde6c7469704fabaafd71436a9c619f47798630abab66a87"
+        },
+        "3.kn5": {
+          "MD5": "b394154ed41d97dd8c53e8c643f04810",
+          "SHA256": "6d24b8975314bcb0e34397ecc8fb3c5038f1c93408e991dfa6da85e526ce982a"
+        },
+        "4.kn5": {
+          "MD5": "921a0485d78e6682a5c14e760e9884ca",
+          "SHA256": "cb07df935eacf8353962410743ab738bac34ef3e289f3e9193e078a698cff3ea"
+        },
+        "5.kn5": {
+          "MD5": "0f43bf8fdb04a16ff530d0d6c714bfde",
+          "SHA256": "3456bbf5bdd22079123fcef273757c986c43533b8c79f8edc0bdfa062475ba3f"
+        },
+        "6.kn5": {
+          "MD5": "740c3b2a4a0ca73ad674088114111d26",
+          "SHA256": "6eaabbd84580f7ee294eea4a066ab0eae7eba7fca7c398433fa8cb4e9455add2"
+        },
+        "7.kn5": {
+          "MD5": "e3d94cabe803ec1e03a6944ff0663a4e",
+          "SHA256": "0758d93db8652a9ecf8199d1cb091674fed7e90052bf07ccc8b38df005aaae22"
+        },
+        "8.kn5": {
+          "MD5": "bdfcfa59cb8378715c7a10f26815e610",
+          "SHA256": "8ac6c7a0df8efbcf62cb25299fae8b6c6e9379bd3c9f3a24791eda32957fbfc3"
+        },
+        "9.kn5": {
+          "MD5": "c462a4c8e8fe58fb3be10681e05aa89e",
+          "SHA256": "b8080b19d4f73bccdeba6bcbb06861981dc934ca8d2794b01824d0d26894be34"
+        },
+        "ks_silverstone.kn5": {
+          "MD5": "a166d5d7e529bf548c195de6ed70ef62",
+          "SHA256": "2fe411803cb37f7a8c9a2a7b257bdb281268b2fe1377902bf69ff98d0331b5f4"
+        }
+      }
+    },
+    "ks_silverstone1967": {
+      "Layouts": {},
+      "Surfaces": {
+        "data/surfaces.ini": {
+          "Vanilla": {
+            "MD5": "1a463051381e438c0f54fd8ad235583b",
+            "SHA256": "3a97990679d40e8745fa3b43f2c01111720665cc1f788d918c720f798458131f"
+          },
+          "Csp": {
+            "MD5": "5e0bbf2b004c9f698efad553fa6347ae",
+            "SHA256": "edc962618bfd55bc691f0849df3067f35531c9895fd3cf5c409b941ba58b1c5b"
+          }
+        }
+      },
+      "Info": {
+        "Name": "Silverstone 1967",
+        "Country": "Great Britain",
+        "Pitboxes": "20"
+      },
+      "Files": {
+        "models.ini": {
+          "MD5": "b407ca3b7aad142ce8460e4db4aacc7d",
+          "SHA256": "96196270731c7f9d4591331d0a294fad2987c8ddd5f2a93624ace7dbe414ff85"
+        },
+        "1.kn5": {
+          "MD5": "eeaf6b9f60ad1ffd252a1a2a53f26d61",
+          "SHA256": "cea899cb43ba8b184879d19c8492f85e588e50002a3367c6bedb0593b0c27265"
+        },
+        "2.kn5": {
+          "MD5": "7072678fd21e690617f215306f36ebda",
+          "SHA256": "bcaeba96e53b74b2609c31f3bf57d2c5f855fc33829caccee591583cdd6c0d18"
+        },
+        "3.kn5": {
+          "MD5": "c426697fba3f050a137495eb55b2a072",
+          "SHA256": "571dad61faaafdad9987ded97098c66ce070a57d65722713834dd02108bff220"
+        },
+        "4.kn5": {
+          "MD5": "d6bb82aeab793f9e605285a2fa4034d9",
+          "SHA256": "7b132ee4580a3e9d62a7a3e5a47e9acb3acd83e87df6a8e46975582b6f5b86b3"
+        },
+        "5.kn5": {
+          "MD5": "500ba96c770e2e38ce59f5f106e40db9",
+          "SHA256": "5aa4ca1519ccd34a8cac8c22cc2a91f9a13a60a660422659efa1c05043ebf15c"
+        },
+        "ks_silverstone1967.kn5": {
+          "MD5": "d567c799450e7c7f3fbf0b17e34f3551",
+          "SHA256": "59fc29a54db712e6863a9800a676b5971f997a16da4785064add682f500a571f"
+        }
+      }
+    },
+    "ks_vallelunga": {
+      "Layouts": {
+        "classic_circuit": {
+          "Surfaces": {
+            "classic_circuit/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "6392b92e3e4e48785dee003942b8e54c",
+                "SHA256": "82335ab7b33532838f6d7b1d894fd550ff28613e3a2bec467e3e4ba0ba631d0b"
+              },
+              "Csp": {
+                "MD5": "066783eab5146e1c08b6d4ebc9c1e274",
+                "SHA256": "3902fd775dbbd334e15357df714b2c16e0ff7166c3ea8719388d1832481c1d60"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Vallelunga - Classic",
+            "Country": "Italy",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_classic_circuit.ini": {
+              "MD5": "8a5c5e295be758a1dd487fc1efc347e2",
+              "SHA256": "4965f7f99b862b50a3dfc89f1d5e848e7e2d8bbb1de6be1448e06bd8f20022cc"
+            }
+          }
+        },
+        "club_circuit": {
+          "Surfaces": {
+            "club_circuit/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "6392b92e3e4e48785dee003942b8e54c",
+                "SHA256": "82335ab7b33532838f6d7b1d894fd550ff28613e3a2bec467e3e4ba0ba631d0b"
+              },
+              "Csp": {
+                "MD5": "066783eab5146e1c08b6d4ebc9c1e274",
+                "SHA256": "3902fd775dbbd334e15357df714b2c16e0ff7166c3ea8719388d1832481c1d60"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Vallelunga - Club",
+            "Country": "Italy",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_club_circuit.ini": {
+              "MD5": "4af54a9da9a59e40feeddb2072f4052c",
+              "SHA256": "e06f298dc30e10f74ef56c8ee97b5d9df36d2586cbc2d55b4ef1d52ef8d5bf9a"
+            }
+          }
+        },
+        "extended_circuit": {
+          "Surfaces": {
+            "extended_circuit/data/surfaces.ini": {
+              "Vanilla": {
+                "MD5": "6392b92e3e4e48785dee003942b8e54c",
+                "SHA256": "82335ab7b33532838f6d7b1d894fd550ff28613e3a2bec467e3e4ba0ba631d0b"
+              },
+              "Csp": {
+                "MD5": "066783eab5146e1c08b6d4ebc9c1e274",
+                "SHA256": "3902fd775dbbd334e15357df714b2c16e0ff7166c3ea8719388d1832481c1d60"
+              }
+            }
+          },
+          "Info": {
+            "Name": "Vallelunga",
+            "Country": "Italy",
+            "Pitboxes": "24"
+          },
+          "Files": {
+            "models_extended_circuit.ini": {
+              "MD5": "7a36bb2e8673aca02a0daaac3ea568b9",
+              "SHA256": "879d31d609622661de336870e1867315c412ba2dcf2e622d351ccba24541dae2"
+            }
+          }
+        }
+      },
+      "Surfaces": {},
+      "Files": {
+        "1.kn5": {
+          "MD5": "adc5ba814f4f33469456a6c581e2e392",
+          "SHA256": "a498a58377c6779a64473f7179cb2b8cdc8e9be5d1f5060ae9260e2eea393035"
+        },
+        "100.kn5": {
+          "MD5": "349a277c3157c2b7710772fd80db91c8",
+          "SHA256": "d76db2d5d6a38a149d09a91e6d4265a50e72d8eb1f2637f65014fe942353f330"
+        },
+        "2.kn5": {
+          "MD5": "5d7aaf7aaebdd1743b109c00acc3c9eb",
+          "SHA256": "70be0cd4c67aeebb40b1f297a6869a99e2ae2346335a9e3f4d1c5974cf082141"
+        },
+        "3.kn5": {
+          "MD5": "0aee90f9d93943c70886c46767688a04",
+          "SHA256": "47b78cdcda88d39f3cba7e9f5dc2c61c3ef0cab24614db4de783c8ca6a129958"
+        },
+        "4.kn5": {
+          "MD5": "2f8600a787f9d84f1b21b69059615753",
+          "SHA256": "09215d54da9b53d69adef2ad5926a5c26cc66b30b37e3ffdafbe5571c4e25c3c"
+        },
+        "ks_vallelunga.kn5": {
+          "MD5": "b1e0b3a6e7b58eb113a17db9716613b4",
+          "SHA256": "11273a14373aec4b38af470b7932647431e80c5c46d5b64f1020bd44c8233d9f"
+        }
+      }
+    },
+    "ks_zandvoort": {
+      "Layouts": {},
+      "Surfaces": {
+        "data/surfaces.ini": {
+          "Vanilla": {
+            "MD5": "d3a978e06b0be920aaf2fbacba7cb1c5",
+            "SHA256": "433e80eaf5dc9c81a1349989edafc42af2331c19507404b1a563ff5a9b9bd3ac"
+          },
+          "Csp": {
+            "MD5": "e4701100c797233d4a90290fd867866e",
+            "SHA256": "8581efc3d98ff9fbcb16df63e9eb54a397c68aa44c8eee291db742d6c5ddca88"
+          }
+        }
+      },
+      "Info": {
+        "Name": "Zandvoort",
+        "Country": "Netherlands",
+        "Pitboxes": "18"
+      },
+      "Files": {
+        "models.ini": {
+          "MD5": "92410ed8b3e71c01f4bf973d2f30a6da",
+          "SHA256": "f1ff475a9def3d84a12b7a652b697499b48ed2bac505c55a671bfc27a01c7c6f"
+        },
+        "1.kn5": {
+          "MD5": "8bbde509d3db0d48875976c67ea30093",
+          "SHA256": "4b9608deda7fbcd44f68c979353c2c063718037cf0781c31e8f508b805256561"
+        },
+        "100.kn5": {
+          "MD5": "a2b6301969aa0c2d7628706156b24fd1",
+          "SHA256": "80b2d425b529aad2ae244b879140ea2ab9ff01f6927c4b888bd76d0d147d049e"
+        },
+        "2.kn5": {
+          "MD5": "37f74e1279af7dc3dcf1cb9f986cd9b0",
+          "SHA256": "8e3d86c28513a2027161d59c1535e7a397a263015dfe22eb114b2638012b7988"
+        },
+        "ks_zandvoort.kn5": {
+          "MD5": "cfefefcefda1001ffdc1ae64e5695266",
+          "SHA256": "5cc35ac1cb039b3e7d5e0d106b285ae3c254bf1bdaacb56d99a0a5ceaeaf0c2f"
+        }
+      }
+    },
+    "magione": {
+      "Layouts": {},
+      "Surfaces": {
+        "data/surfaces.ini": {
+          "Vanilla": {
+            "MD5": "6e128cc6cb7dab5caa3822f1143d5012",
+            "SHA256": "bbf387484e414a79b97b450d5809656f617d42688ba41d126df1dc8f4b51a72f"
+          },
+          "Csp": {
+            "MD5": "eb5fbc25691a52d996182a781b37498a",
+            "SHA256": "5dd3524c377e84d4155d34f03b9f425a2e7fdef0d7220e355f29c06bfc4fae05"
+          }
+        }
+      },
+      "Info": {
+        "Name": "Magione",
+        "Country": "Italy",
+        "Pitboxes": "18"
+      },
+      "Files": {
+        "models.ini": {
+          "MD5": "d6788b3dd733adb57f4b5b0273f846d5",
+          "SHA256": "905af3fb60077a97d0a3d0acada3cf2237b7cd2ae89eb47fa636900d9ceb1787"
+        },
+        "100.kn5": {
+          "MD5": "39b6105f8ad2a9b267def5282aa86e8a",
+          "SHA256": "11341d286861a8b7172d797cc5657af347048d669d5cb286c20334a060803d4b"
+        },
+        "magione.kn5": {
+          "MD5": "30ddb989d1e493cdbeae61c67a85c70e",
+          "SHA256": "7ca1c6a5d2c39a13803b22298b778d62918f16fad40a5d9727af2e5ad3ac8789"
+        }
+      }
+    },
+    "monza": {
+      "Layouts": {},
+      "Surfaces": {
+        "data/surfaces.ini": {
+          "Vanilla": {
+            "MD5": "a72ca954e41d6d94fb546ded313ec59f",
+            "SHA256": "ea6520037f9ca5fbea3f55017339fda7ff101e5f3fcc25e96574104eaac638d0"
+          },
+          "Csp": {
+            "MD5": "cf7a4669a3a4371e37b61038d6c62999",
+            "SHA256": "4a4120fce4edd9c0a27b88f8de6d67d4b1ebbf7ee077244a7676294fce712f1d"
+          }
+        }
+      },
+      "Info": {
+        "Name": "Monza",
+        "Country": "Italy",
+        "Pitboxes": "26"
+      },
+      "Files": {
+        "models.ini": {
+          "MD5": "6fbe251423bf14198f70db09db0d7bc2",
+          "SHA256": "5fb30cb23e46518ec53154e32f3bf97a102dcc4ae30c06e708816844781357b9"
+        },
+        "1.kn5": {
+          "MD5": "f1acd949dd58f2ed7e2c05f4b9d21b03",
+          "SHA256": "b917d06e46e039d7a97b2c7d9fd6b2b58a0c8926037abcb0bfd9c6fea95c8d84"
+        },
+        "100.kn5": {
+          "MD5": "afdb9cde161ec791cb92c512cc04353e",
+          "SHA256": "a94882d3ccc16b22c220172d23c270da737efcf7891993d60a15b419d4e126f7"
+        },
+        "2.kn5": {
+          "MD5": "f9a86e15e7d3937f9d2464fce218c134",
+          "SHA256": "14cd1e0dabcde07a1d4d3210944600c680c9a6eb3b4e038086ecfe043be837ca"
+        },
+        "3.kn5": {
+          "MD5": "d29603304f1bfe33666484b24b588ab4",
+          "SHA256": "ed0f4e6564d3ed6a347ad8351913be0553ee5826135fa4080d22eecdf1bc2619"
+        },
+        "4.kn5": {
+          "MD5": "836c3c9b8f004c7ef3c345931316f6f0",
+          "SHA256": "1518033480760433f3fb40e7753e819060c737d7d161a89887b82dbce59c03b6"
+        },
+        "5.kn5": {
+          "MD5": "1caf383daa3708156b4bd5eb5c040ac1",
+          "SHA256": "488c538bfee17ee77b389a9302e5c140905a1f6ca7782877fa4236bbee551910"
+        },
+        "monza.kn5": {
+          "MD5": "c39fc759dbb7e065d21e68e235a11867",
+          "SHA256": "35caaf649474687bd70aa7db728b16a54516b79dc806918ef0799018550d6dd3"
+        }
+      }
+    },
+    "mugello": {
+      "Layouts": {},
+      "Surfaces": {
+        "data/surfaces.ini": {
+          "Vanilla": {
+            "MD5": "4538a80ed3d8f6033458a9a5f0e16ea4",
+            "SHA256": "ed20345acc449edaa450fb17dd9e58381d42c9b8e189b6975437cac095152692"
+          },
+          "Csp": {
+            "MD5": "1cda6fc68856f523d97965dc27001fc5",
+            "SHA256": "7c53cedd536f6d7fe9d81f67dae4f15b7de055a49b94d2c9af588139ff00b35d"
+          }
+        }
+      },
+      "Info": {
+        "Name": "Mugello",
+        "Country": "Italy",
+        "Pitboxes": "24"
+      },
+      "Files": {
+        "models.ini": {
+          "MD5": "a83ef42688cae28d51c3cce66add3c10",
+          "SHA256": "ac2069480297e11222c13438d613b8c0b5e9f565bcdc820cdefb4dcd59d584d6"
+        },
+        "1.kn5": {
+          "MD5": "d9a122b05062edc49fc8a4dc1d839915",
+          "SHA256": "f77a251ec7ae10292691a0530cfe4c2f39d5fa5b31c0aa555017ac67488122a5"
+        },
+        "100.kn5": {
+          "MD5": "f166e6fdc7bdca11587cd0c6605acacd",
+          "SHA256": "1e58953618635ae4dddbdd5ca28da45af1635b06e790d2d776c4a2fff11e3f6d"
+        },
+        "2.kn5": {
+          "MD5": "6e96391ca7184370606e245c0394a828",
+          "SHA256": "f82b3dab3963a6bf4ab494fa3b68272f757244227f9c6f326f6db9760715d073"
+        },
+        "mugello.kn5": {
+          "MD5": "02905dac3553a14893dee29f482ff326",
+          "SHA256": "b90c1af553eefdff1cc740e30a74629923727240bc557f6db5a395c8e993f1a3"
+        }
+      }
+    },
+    "spa": {
+      "Layouts": {},
+      "Surfaces": {
+        "data/surfaces.ini": {
+          "Vanilla": {
+            "MD5": "0b8998a173f8b4f293bd5957160050dd",
+            "SHA256": "c5b4af8a1d822e23da3d81a6f33a28b76027cae4754771e54b14837740c430cd"
+          },
+          "Csp": {
+            "MD5": "40a214b9596f22ab75fe0959f621f822",
+            "SHA256": "46c78c25c8e5e8d199b72ad689a5dfd0778bd0eb97b76bfb3c2c279d94532467"
+          }
+        }
+      },
+      "Info": {
+        "Name": "Spa",
+        "Country": "Belgium",
+        "Pitboxes": "24"
+      },
+      "Files": {
+        "models.ini": {
+          "MD5": "680bd86555ac11fccaa3ef7bce928ae3",
+          "SHA256": "b4e322261ebd72fef6842b424cbcda3cea2503af09941dc26e589394336a0762"
+        },
+        "1.kn5": {
+          "MD5": "50eb62eab5ab3f2b4870a0b7e2c0d321",
+          "SHA256": "f595f7efa766e6e9b8e9f907361203bedd84f439b812b8d7d96a7dc8bfbf44b5"
+        },
+        "100.kn5": {
+          "MD5": "1632bb0d956d243cad90a9b22b9e0f2e",
+          "SHA256": "65870e64b90e5e2e90b4c3014127423ca368215de9620982ee27c3c832627aff"
+        },
+        "2.kn5": {
+          "MD5": "458951a62dcfeff5e310f8d9c40751cd",
+          "SHA256": "0014c9718872a6d744d5f7136289e432816de15ba9ab8ec4d5d1b0c5bb42689e"
+        },
+        "3.kn5": {
+          "MD5": "1c8923afc9e45077c2bdc8ae929e8278",
+          "SHA256": "d8c45ee788de8733a779307ec90a014fcc5b045d36eeef653370702465fabcc9"
+        },
+        "4.kn5": {
+          "MD5": "6d40419a2bba372782696632fde20497",
+          "SHA256": "4238b35c44847bc187a6a5d1d5487fc6904530e099e290429e351a32f16b1383"
+        },
+        "spa.kn5": {
+          "MD5": "cdc1c10c54fea62a83324e147186b754",
+          "SHA256": "1d80664a76e89bee98ce3002551c07b3f556dbd0ccf744368c6f9623b43da2e1"
+        }
+      }
+    }
+  },
+  "Cars": {
+    "abarth500": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "649d029efd5104401039510768cf9e53",
+          "SHA256": "4a57827d319c9daf1b363c27f38b61f13320e3e9a90beb0b08a94b29e91b7419"
+        },
+        "data.acd": {
+          "MD5": "f6327e6ca542c9ec00b332da054dd529",
+          "SHA256": "9d1639791a9f20d23c3833b47be63d8d191d9bb17170f5cbc5a3ccfb1815e8e0"
+        }
+      }
+    },
+    "abarth500_s1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "649d029efd5104401039510768cf9e53",
+          "SHA256": "4a57827d319c9daf1b363c27f38b61f13320e3e9a90beb0b08a94b29e91b7419"
+        },
+        "data.acd": {
+          "MD5": "7378b791cac9e8faef3723aa9385ee9b",
+          "SHA256": "e2a37ec1924fc48637a00859a26e8f235c9bef8493cf8146e5ed933c2a91f8e2"
+        }
+      }
+    },
+    "alfa_romeo_giulietta_qv": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "efd8ab130094d83aed66536ba99fb7a7",
+          "SHA256": "64db02a51727e883313a507f00e47181a1c722336b3b68276e458929f7c49e63"
+        },
+        "data.acd": {
+          "MD5": "bbb54e6464f8df1d6665409c2963d821",
+          "SHA256": "7f01b3f0437fc2d2063d11d74c12492652a56636056db35d6523660b22e5a193"
+        }
+      }
+    },
+    "alfa_romeo_giulietta_qv_le": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "efd8ab130094d83aed66536ba99fb7a7",
+          "SHA256": "64db02a51727e883313a507f00e47181a1c722336b3b68276e458929f7c49e63"
+        },
+        "data.acd": {
+          "MD5": "7024cb554fc08df633a5f5d0c2b7fa4a",
+          "SHA256": "e9eddf8142c6cd9557704dbe4cc0e470d8ef6f4230991072df0fa635aee156ef"
+        }
+      }
+    },
+    "bmw_1m": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "48d4042538e90af7461740d635f4414d",
+          "SHA256": "8ee1d2547939bbbae30cdcee4897270ea88a70623fe1d67c972126e6d16f143b"
+        },
+        "data.acd": {
+          "MD5": "a0b313489263ca637d3b5ffa2da63dd0",
+          "SHA256": "9b9e870010e459116dd76a5e10eeb0cb0e78d78f4173d7caaea9c85c3bd638d9"
+        }
+      }
+    },
+    "bmw_1m_s3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "48d4042538e90af7461740d635f4414d",
+          "SHA256": "8ee1d2547939bbbae30cdcee4897270ea88a70623fe1d67c972126e6d16f143b"
+        },
+        "data.acd": {
+          "MD5": "abdd7e420fd395847e8f8a7db4e299fc",
+          "SHA256": "72e3abe8c16aa8bf010d7c3430d3d2aca72ee33f44e4056e913a76e37fe83c2d"
+        }
+      }
+    },
+    "bmw_m3_e30": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "eb4717268498c726768bce1dc3bc4d1e",
+          "SHA256": "77e9d366f9fc86ec2b367063c568f647462826a7ac660642f59b6dd57f60ac3b"
+        },
+        "data.acd": {
+          "MD5": "7770c53907d4161c63db9e7f9c97a96b",
+          "SHA256": "f25ec4010ad7b1c4936c14d11c92730fd2b7e8912b39686fda913696ce345c85"
+        }
+      }
+    },
+    "bmw_m3_e30_drift": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "eb4717268498c726768bce1dc3bc4d1e",
+          "SHA256": "77e9d366f9fc86ec2b367063c568f647462826a7ac660642f59b6dd57f60ac3b"
+        },
+        "data.acd": {
+          "MD5": "c888a936d5e9e17f1453c04e7ee2b91d",
+          "SHA256": "a0599d21dc48e5f45a75ed47f96e8911a905f9e107b3b95325e201976e762aa9"
+        }
+      }
+    },
+    "bmw_m3_e30_dtm": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "eb4717268498c726768bce1dc3bc4d1e",
+          "SHA256": "77e9d366f9fc86ec2b367063c568f647462826a7ac660642f59b6dd57f60ac3b"
+        },
+        "data.acd": {
+          "MD5": "0ff6382b9a8f31faaac2dbb143003cd3",
+          "SHA256": "afbb651b3fa4bba83d3d2119e7248e55cfd9f784a357a9434f2cb47b31372e76"
+        }
+      }
+    },
+    "bmw_m3_e30_gra": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "eb4717268498c726768bce1dc3bc4d1e",
+          "SHA256": "77e9d366f9fc86ec2b367063c568f647462826a7ac660642f59b6dd57f60ac3b"
+        },
+        "data.acd": {
+          "MD5": "553b3b1b2b3c956e38e02f343e2d9cfa",
+          "SHA256": "fcb13ac14b0ed4f05f632046eddb99b3f2cae49ba59489b22a831691c187f8db"
+        }
+      }
+    },
+    "bmw_m3_e30_s1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "eb4717268498c726768bce1dc3bc4d1e",
+          "SHA256": "77e9d366f9fc86ec2b367063c568f647462826a7ac660642f59b6dd57f60ac3b"
+        },
+        "data.acd": {
+          "MD5": "16ed5bf8d6ffdbe25a356a3d02f3a16a",
+          "SHA256": "d9d56f17cf80b3b72d57f373fcfbda05085addde43123c36091f53b5ff3bcf43"
+        }
+      }
+    },
+    "bmw_m3_e92": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "aea224b10395dd729a7bfec720fb5bfe",
+          "SHA256": "f9dfd2e55848f7e8e3835d0522003497d3c7cbb9b74779c7cb14e8c396a5ee21"
+        },
+        "data.acd": {
+          "MD5": "cba845724870d3e8b503abe4aab8d194",
+          "SHA256": "3908184fcf7201fc99ec9f03ba4b8df15927894a9edba7c635e8c56b7c36247c"
+        }
+      }
+    },
+    "bmw_m3_e92_drift": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "aea224b10395dd729a7bfec720fb5bfe",
+          "SHA256": "f9dfd2e55848f7e8e3835d0522003497d3c7cbb9b74779c7cb14e8c396a5ee21"
+        },
+        "data.acd": {
+          "MD5": "536f6a305dc23efa51a2f0e336d6e805",
+          "SHA256": "0e75ce79a74ddbefca4d78d9c7a903945b3358b37a2973d222981bf9996cf52b"
+        }
+      }
+    },
+    "bmw_m3_e92_s1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "aea224b10395dd729a7bfec720fb5bfe",
+          "SHA256": "f9dfd2e55848f7e8e3835d0522003497d3c7cbb9b74779c7cb14e8c396a5ee21"
+        },
+        "data.acd": {
+          "MD5": "337a20849a8855107b7479e8a8b46ee7",
+          "SHA256": "0ed41d7048fd0f4a13689711cb05ad1af5838f8b29023f42992f6ab85c14a8b1"
+        }
+      }
+    },
+    "bmw_m3_gt2": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "4cbb9b946978e9c197f8890ec6bc0677",
+          "SHA256": "37976dac06365c53684844e6c321ab0b2ad30e88ba5e10b762907f0d9d5e6748"
+        },
+        "data.acd": {
+          "MD5": "c0503eb26c67c512a3a8285e4f514532",
+          "SHA256": "61b007cbf8e94f971ae569dc429c4c50b5e0caaf026e1c373b9049abb5c6b5fb"
+        }
+      }
+    },
+    "bmw_z4": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "0fb430216b43f35d00d5733c47f8bd03",
+          "SHA256": "30550d47ae6e5b991ec392dd94e03bac2984f1f1bc1e20f769bb1e5bc5482e2d"
+        },
+        "data.acd": {
+          "MD5": "081fff2cb4f8a827588c5a2606f9467d",
+          "SHA256": "0fdfdccf5c201e3a4f2a159ec2a4f0e6b79ad416ae80cea5a385890bf4abb42e"
+        }
+      }
+    },
+    "bmw_z4_drift": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "0fb430216b43f35d00d5733c47f8bd03",
+          "SHA256": "30550d47ae6e5b991ec392dd94e03bac2984f1f1bc1e20f769bb1e5bc5482e2d"
+        },
+        "data.acd": {
+          "MD5": "a920296c9b3961838b01b6a2de7ba9e8",
+          "SHA256": "d4af0277e7941bc492f1eb5bcfa8d837f3aae29633ca685cf283728e9355c280"
+        }
+      }
+    },
+    "bmw_z4_gt3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "ea78c0e96c215c6eee01fc452fb242a6",
+          "SHA256": "0ac45c1d21e6e1bdb558324055ead9ee2f04cedc42cc67bcb6ea8bb6160d9da2"
+        },
+        "data.acd": {
+          "MD5": "4efa21cf1fa3bcfcc95a3e1ecf78c340",
+          "SHA256": "19874e808a7f7a71eaa6decc43348564ff5fe886d6cba99a76ea1436845348be"
+        }
+      }
+    },
+    "bmw_z4_s1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "0fb430216b43f35d00d5733c47f8bd03",
+          "SHA256": "30550d47ae6e5b991ec392dd94e03bac2984f1f1bc1e20f769bb1e5bc5482e2d"
+        },
+        "data.acd": {
+          "MD5": "0b01bf01456aecd66db3e81018343447",
+          "SHA256": "dcf84c6f543508148057920309a5dd9ac026b10441a6de37092cb4d1c8d34053"
+        }
+      }
+    },
+    "ferrari_312t": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "c3ac0cc7145d37f3bf1a302d75c95c48",
+          "SHA256": "ae902da1f10d87f119ad56cfe011251cb7c4bb974eeaa39d74a90adbb7d53f4e"
+        },
+        "data.acd": {
+          "MD5": "7ff63bd5760580eba8b7bcde91488a0b",
+          "SHA256": "8fd6a574905df04516b272ad72135cbab22d418839dfe894e9ad8d8cc8e62f1d"
+        }
+      }
+    },
+    "ferrari_458": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "4a78e6ce07564a4aff819c0863f6c114",
+          "SHA256": "c1c7deafee653e23ad240de1b85415b4fca6a0d8cc0ccad5b65d6b57af6c8442"
+        },
+        "data.acd": {
+          "MD5": "2952fc95738cd449edde6623e44ddb03",
+          "SHA256": "d64b57d3b5f060c5fc89c768ac5ef8721c72ef95bf9297cd2bb3b52fc1305787"
+        }
+      }
+    },
+    "ferrari_458_gt2": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "28f65c97c5826923a3fd4ada93fcf51d",
+          "SHA256": "af0412ce520eac21c0d48ba2cc554d556ad2932beca036bcb439421df2a8cfa5"
+        },
+        "data.acd": {
+          "MD5": "5965f9bf7aad580c1f0192b0fc9870cd",
+          "SHA256": "1e8d4d593c21ac82e8b0fbeb3743c2f119a94370fa58abedfa561d238bfcfbcb"
+        }
+      }
+    },
+    "ferrari_458_s3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "4a78e6ce07564a4aff819c0863f6c114",
+          "SHA256": "c1c7deafee653e23ad240de1b85415b4fca6a0d8cc0ccad5b65d6b57af6c8442"
+        },
+        "data.acd": {
+          "MD5": "9d004977b46d676efcf09b9432ad5b03",
+          "SHA256": "83dc0601fc19298ac818da90804e0b51862d274b388b8a58283dab80e4e37704"
+        }
+      }
+    },
+    "ferrari_599xxevo": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "553a150aa1198cbb300f515eccb993e9",
+          "SHA256": "3416f237bd7a1359fa8fadcd0f791c5405ef34cb9a73748c05b73887538458f1"
+        },
+        "data.acd": {
+          "MD5": "5d51b7cf8f269fcc29a3d65db3e86cc9",
+          "SHA256": "d42d2848ce933dcdb009a50f7829a30da6ee454acbb4dbf2c9aa6714ff0fd8bc"
+        }
+      }
+    },
+    "ferrari_f40": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "f500666931033d536524542a62ea94e4",
+          "SHA256": "81c6ba949494d12d2b19cbec367d4f07583b9f025d732a239c5ccdfe3dae8355"
+        },
+        "data.acd": {
+          "MD5": "f879eacce581a29fc8bad343886459f5",
+          "SHA256": "080927fc64f8d08103af8b6eb1d87bf2a875cb4f63b43e1b80fde04480d674a3"
+        }
+      }
+    },
+    "ferrari_f40_s3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "f500666931033d536524542a62ea94e4",
+          "SHA256": "81c6ba949494d12d2b19cbec367d4f07583b9f025d732a239c5ccdfe3dae8355"
+        },
+        "data.acd": {
+          "MD5": "8be256eaf91ce85947b043810c38947d",
+          "SHA256": "cdf6c173efd1f3114ce0673b0fed3162e56d4fc4e99ca2292dc11b8dbc70bceb"
+        }
+      }
+    },
+    "ferrari_laferrari": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "e29927076346e9d59b9215af52bb0932",
+          "SHA256": "3247a8fd55f7f314f2aae11f29c8c004489394e121e79bfb99ebdcc428702738"
+        },
+        "data.acd": {
+          "MD5": "265f0eee26e8d0590c0ef510bc0913e6",
+          "SHA256": "6756483f4252f17c2d30c1693e13a643d8d638a65a8537e27ad4e70701a81271"
+        }
+      }
+    },
+    "ks_abarth500_assetto_corse": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "5e87740454f07d50e85e0ccacecdd9ed",
+          "SHA256": "3b4d0f2a7871a43f9719b0a97adea14b37e0326bf056f09252e236a8f6e2acef"
+        },
+        "data.acd": {
+          "MD5": "c49c2576b0624f262120c4e9fcefb542",
+          "SHA256": "ab4f5dd5cde14af5db00767d1c9f35d4559e3a44e48faaf997677a8eee9475dd"
+        }
+      }
+    },
+    "ks_abarth_595ss": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "584002262616ebcc88ad41199c7f12d4",
+          "SHA256": "156ca34f7b8f5aa5b89b1171e60724f8b0f0e13f9d5f37a311896c87809dac43"
+        },
+        "data.acd": {
+          "MD5": "be100af7340fe4b82fc297a0ab618062",
+          "SHA256": "714bee3630f2108b9052964021e83e9863457db0194e61d8d59a4a439c019c6d"
+        }
+      }
+    },
+    "ks_abarth_595ss_s1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "584002262616ebcc88ad41199c7f12d4",
+          "SHA256": "156ca34f7b8f5aa5b89b1171e60724f8b0f0e13f9d5f37a311896c87809dac43"
+        },
+        "data.acd": {
+          "MD5": "dd6a0fe2a45b63aa88d375e09f96d5b9",
+          "SHA256": "b1cb070d383dc7124cd8262cc74935a9152ccac5d8283789d8189b664660236f"
+        }
+      }
+    },
+    "ks_abarth_595ss_s2": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "584002262616ebcc88ad41199c7f12d4",
+          "SHA256": "156ca34f7b8f5aa5b89b1171e60724f8b0f0e13f9d5f37a311896c87809dac43"
+        },
+        "data.acd": {
+          "MD5": "4abdd476aecc1afcacb17c9100fc8111",
+          "SHA256": "fbf889325823823f296e5ab9d9e88ab7faa05b260465b8d3b7efaa73c4e625b7"
+        }
+      }
+    },
+    "ks_alfa_33_stradale": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "dfe4312eab905e4e29ea8f170c188487",
+          "SHA256": "762d88d9591442703a48fc0723fe97b32ed5582011708afa556d679312fefe9a"
+        },
+        "data.acd": {
+          "MD5": "00fabf07243dadeff1c7c509ef6c73e7",
+          "SHA256": "b5821b10906aa11360a486b1a1f045c18782a08c9938bb3b9f98aaf5122a5499"
+        }
+      }
+    },
+    "ks_alfa_giulia_qv": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "34dcdab8b7ddc6c21d50d039629cb0d5",
+          "SHA256": "cb986a160a35ac1dcfaaf38e2a6c45ef629e26185cb3d941ad10a65ce0a74b47"
+        },
+        "data.acd": {
+          "MD5": "ed970d431ca12dfaaa864023b58c70d9",
+          "SHA256": "9bdd556cafc35ea23d599b5833689892fd663a5a7dfb5740f5aa12ac03f2971e"
+        }
+      }
+    },
+    "ks_alfa_mito_qv": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "dfb2ee7e4a3b0f2102003fd437cee63c",
+          "SHA256": "42f97206d6a101c4e831b05138f05997c2d9c3a27a5d7a406ccb36eb6441cab4"
+        },
+        "data.acd": {
+          "MD5": "ca81882069e5ea021abdf2115ebbd6e8",
+          "SHA256": "8545fb5951a229734154660daa9b48cb01081d9e0023233521e4033032ef25e2"
+        }
+      }
+    },
+    "ks_alfa_romeo_155_v6": {
+      "Info": {
+        "Name": "Alfa Romeo 155 TI V6",
+        "Brand": "Alfa Romeo"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "026ba815cafeadc404fe75da043b204b",
+          "SHA256": "86e926141eeef6347f345b778829d708b145725ee687e033cdb9676761c7ae63"
+        },
+        "data.acd": {
+          "MD5": "916ccaa05f89cc4ced4020a2f711f4fe",
+          "SHA256": "b3ecec1fc0201839f6d06e4dcb6f71b3a134f01027fd358eee800ad5fa7c2698"
+        }
+      }
+    },
+    "ks_alfa_romeo_4c": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "e735654c1c582886b141fe5ebe660271",
+          "SHA256": "61b7469a0eea1c363405e797936e28fbd113f3c4c0b4268dc57c62ac87956235"
+        },
+        "data.acd": {
+          "MD5": "f87c5c71e7cddf6ff6e6255ffa47806a",
+          "SHA256": "e00059d49705ea3545582b2e72f95c37dc486f2b10cd2ad4b574fa0b73f2b482"
+        }
+      }
+    },
+    "ks_alfa_romeo_4c_MF_GHOST": {
+      "Info": {
+        "Name": "Kitahara Nozomi\u0027s Alfa Romeo 4C",
+        "Country": "Italy",
+        "Version": "",
+        "Author": "",
+        "Brand": "MF GHOST"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "e735654c1c582886b141fe5ebe660271",
+          "SHA256": "61b7469a0eea1c363405e797936e28fbd113f3c4c0b4268dc57c62ac87956235"
+        },
+        "data.acd": {
+          "MD5": "da3008b2bb50e1abfc1090972b2c1a7c",
+          "SHA256": "5de35e955e1409036d99ac6ae28f41efa781924cb1264b89ad09fba7d6fc44e5"
+        }
+      }
+    },
+    "ks_alfa_romeo_gta": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "708f75083acac73ec00f5056d7487f6f",
+          "SHA256": "02cb8fb9207b76cc0c127240995003207ec23bf64d959f9bfd9161f75d045e7a"
+        },
+        "data.acd": {
+          "MD5": "fd56a80887278065cf8c22d32e38d57f",
+          "SHA256": "3023f6ade1d1e1c8c4e086330baee73456205313844c7348d6cd5959619aa1ef"
+        }
+      }
+    },
+    "ks_audi_a1s1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "6b7f730074cbd4207abe9172a2060683",
+          "SHA256": "7b552cadce3fcbd046a83483af3d26e5a4e96f84ed43af3e8e7217caa1264fea"
+        },
+        "data.acd": {
+          "MD5": "274721cccc798a10798b289e2b9b07da",
+          "SHA256": "59fdb716cfe876354eb2fcac4c80c3609e508534672b52b6b32a666dc645c563"
+        }
+      }
+    },
+    "ks_audi_r18_etron_quattro": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "ada7837c274bf794c594d7d93bbd645a",
+          "SHA256": "d2208776d43010e05ad7c8e44f247f53bd4e2068b5040a7d1bfb35ab68c497e7"
+        },
+        "data.acd": {
+          "MD5": "b375b1be91562aa67603196bff4fadd7",
+          "SHA256": "dc8f0a2164cbfe3c324e8f54d44d779ee4bbbba7fbe25f56479d71c3073dff7b"
+        }
+      }
+    },
+    "ks_audi_r8_lms": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "237a056c3b9cc29f03489f46a5b05f77",
+          "SHA256": "b34d7e04d201bad4d0333a520e945be00a6142e9d29077e12a57c62f1c84555a"
+        },
+        "data.acd": {
+          "MD5": "a9f98640f04916b8227a00d3f069351c",
+          "SHA256": "f8e0415c88d35eea05b3c7ca418b1477f2edfcea4289bdcd7c74dbb48ddbdafe"
+        }
+      }
+    },
+    "ks_audi_r8_lms_2016": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "c54cd1fd7270727aeba77db1914d62dc",
+          "SHA256": "3c7a90877e118d1d1bfa4e22576672437aa060013683f9cb495f6ac2600f3d61"
+        },
+        "data.acd": {
+          "MD5": "5b971e31e7c34b84f2be57958d98c380",
+          "SHA256": "45a2b13506c78cc8960a9283818d0f3bbd6508de7348ae9ba19b5b2fdd37d7bf"
+        }
+      }
+    },
+    "ks_audi_r8_plus": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "2bf009f7fe82686a38d83dee14ee05a8",
+          "SHA256": "08261cbe0f9b772e20accf057d66585899231099a11956c38bcd9983647fe0e3"
+        },
+        "data.acd": {
+          "MD5": "714fc062baec37dc70f6f39b9300f904",
+          "SHA256": "14349dcac2839b70ead1496e9c581e270088eb437c8680be2cb39eb71175d218"
+        }
+      }
+    },
+    "ks_audi_sport_quattro": {
+      "Info": {
+        "Name": "Audi Sport quattro",
+        "Brand": "Audi"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "64597ab0ee7f8cc28571027376f55b97",
+          "SHA256": "d78b2f4fcedde76f52626f09a9d0f44921da0bcc410e2acc8042813019ce5314"
+        },
+        "data.acd": {
+          "MD5": "5d0ec076faba15753601af81584d728f",
+          "SHA256": "13d9964a4da0a918fce562e33ed9b97ed4a0e13784f46b7a68997e2e0e6200df"
+        }
+      }
+    },
+    "ks_audi_sport_quattro_rally": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "199b0e4bb9423a54997dd92b2e0c7d35",
+          "SHA256": "924e09358eef3dd9b06ef3b4ffc9412a164f0ef59f056da1b1f3087e69fa4c2e"
+        },
+        "data.acd": {
+          "MD5": "72f8ac299e22b5d5966594a24146f524",
+          "SHA256": "42eaba6cd3247a884f84c15b79bd655f6a6ce4ae77e08973892340b51be62ec4"
+        }
+      }
+    },
+    "ks_audi_sport_quattro_s1": {
+      "Info": {
+        "Name": "Audi Sport quattro Step1",
+        "Brand": "Audi"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "64597ab0ee7f8cc28571027376f55b97",
+          "SHA256": "d78b2f4fcedde76f52626f09a9d0f44921da0bcc410e2acc8042813019ce5314"
+        },
+        "data.acd": {
+          "MD5": "40030f4d7aff15d464bed20860363828",
+          "SHA256": "8520954654d32d712355a68990ca08149ed7a2fa96c3d9773518bd0612b45c5b"
+        }
+      }
+    },
+    "ks_audi_tt_cup": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "43641a16f99da4911d58e84d62f0027b",
+          "SHA256": "4a0ccf2715e8ace09cd2dac9dc99a8eee7d06090ecc01f62816c343f96ee71e4"
+        },
+        "data.acd": {
+          "MD5": "604ce4e21a07cbe285517435e8a29356",
+          "SHA256": "52f5d7a8591be056ad49681c0afe53db5441d86089e9d4c948a7ac975a27799d"
+        }
+      }
+    },
+    "ks_audi_tt_vln": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "1dfb9c973182bf4ef8258551bf02277d",
+          "SHA256": "d6a1af79c153c9680571660330584d079c230021bc395bdd98f7cf1ad052cd1a"
+        },
+        "data.acd": {
+          "MD5": "05ec813c1ac150bab9e54d9f86e5d2e3",
+          "SHA256": "42dffbe0501e113270a73d84f0d32c99c4abb6e77eb44154807fcc43ef4b7ce1"
+        }
+      }
+    },
+    "ks_bmw_m235i_racing": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b0a225f2c03c60f85d2cd59dba713d75",
+          "SHA256": "d43776a460f7a26d03f4490dba14caffdc6247ac8f165815d854971b09ff4bb8"
+        },
+        "data.acd": {
+          "MD5": "1d548487b1cd024afe728bf0e8410540",
+          "SHA256": "eb0bed00e2ef0cf0251113cfae021ff3f32ba82e8f7874067701cb2dbdeac808"
+        }
+      }
+    },
+    "ks_bmw_m4": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "cfb39b46bc3fb0486a5cac25d8b80ccc",
+          "SHA256": "cdfc4e0415ea20001383ec7c0d6b3fab410f0b91bdce1c1f883940f0a71f2027"
+        },
+        "data.acd": {
+          "MD5": "e371576ec4b73d8448b9d2f70dab0c21",
+          "SHA256": "98b0cdce2f68c797a620aaee4ca5eaf8284cf815e9df8aba70503fd04f40571a"
+        }
+      }
+    },
+    "ks_bmw_m4_akrapovic": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "cfb39b46bc3fb0486a5cac25d8b80ccc",
+          "SHA256": "cdfc4e0415ea20001383ec7c0d6b3fab410f0b91bdce1c1f883940f0a71f2027"
+        },
+        "data.acd": {
+          "MD5": "6e400620252ca09824c0a31a869ad661",
+          "SHA256": "96a6c53ee6603d00de3666c5dee4e1631dc7d07d62a7433cd95ba15e21b104c8"
+        }
+      }
+    },
+    "ks_corvette_c7r": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "fd0296a62ecb0ec4bb9199b6763522c2",
+          "SHA256": "b5df5c95cdad28663b2f1969b8b8abc1d8c799db9b3b9c037907c72a011d0403"
+        },
+        "data.acd": {
+          "MD5": "b07843256c1450f8e5e672f65a403a93",
+          "SHA256": "df387c18893ee55c9a029bb2de34686708ce58fcfcae1bc81f681010cb12c614"
+        }
+      }
+    },
+    "ks_corvette_c7_stingray": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "4beef7aa8a77ac1fe0156a3da030e08f",
+          "SHA256": "e260aaee93547670995c3e02da31ec9b05a8ce2af07acacb63c69c50eadc2ab2"
+        },
+        "data.acd": {
+          "MD5": "0505924ad4d5790f267deb49e325701c",
+          "SHA256": "71dadc17521e9c8cbc5abf4618ea8f6b76db9ed5ae1a6577c968d1e2c93a3a83"
+        }
+      }
+    },
+    "ks_ferrari_250_gto": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "9924cecab0f7146811ca002486e648b2",
+          "SHA256": "db107efb4727c261d34abe5df98f134bbc95d584c64a8e25fd4331e2455343b7"
+        },
+        "data.acd": {
+          "MD5": "fd6a82aedd19fb146e705d40210344e9",
+          "SHA256": "c38abb83a1544b50624b8233ab51da779ddc4867d9fcd5ed04b6441a5a66c4cf"
+        }
+      }
+    },
+    "ks_ferrari_288_gto": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "d64bf2123b8836cfc61921c9d6b2ac0e",
+          "SHA256": "61361d65227aedb3d8b868e9f7bc301c935fc92e67c5f85dfad002c6eaa3cc0d"
+        },
+        "data.acd": {
+          "MD5": "af0d510c9cd2cef4d89352d88544913b",
+          "SHA256": "9b9d04a897c983226a899cc8c29c2ddff2985ddfeff981c7a71bc914081651ac"
+        }
+      }
+    },
+    "ks_ferrari_312_67": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "f70642b142fe68943f474f29f13e68b3",
+          "SHA256": "a74f5f16ccf5493b3489237d1e1b7164ad933b86cbf2d353961929ae44df9bd2"
+        },
+        "data.acd": {
+          "MD5": "6bf3fdf78e37d6aeb21e964ddac5b314",
+          "SHA256": "06db792ffc6fb283479af371edbd73d09d630329a7c145adb58ddbd9ccdd41ca"
+        }
+      }
+    },
+    "ks_ferrari_330_p4": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "177b7830955ab03b1b74bc120e1796c3",
+          "SHA256": "e63332c5df85de1f3142d95899c443f9345037b8c384d8469d139c91ac549958"
+        },
+        "data.acd": {
+          "MD5": "2be7bf2eb97fcbfaa5271e89df9e4a32",
+          "SHA256": "7dc7fc731555345856f10e765409e484c026b193427458760bc463e44136acad"
+        }
+      }
+    },
+    "ks_ferrari_488_challenge_evo": {
+      "Files": {}
+    },
+    "ks_ferrari_488_gt3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "c677c83c53269aceed0259ae3452515e",
+          "SHA256": "49ce3557ffa7d5b11b67120a666004de0e90b4f0f95f740e581e19d061329d00"
+        },
+        "data.acd": {
+          "MD5": "765e998ea8cb9a6c0b91a56b0e6a2ca4",
+          "SHA256": "0fa2e88bd747ede69686579c204435ff9044fe0e39831a098af8ac9968340ba1"
+        }
+      }
+    },
+    "ks_ferrari_488_gt3_2020": {
+      "Files": {}
+    },
+    "ks_ferrari_488_gtb": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "576b61eb58bd74ab2e2e733613d9e84b",
+          "SHA256": "0a29e24126cadb241b06fcf3ebf8669553c03fcba4ddb0fb6ab68cadded42f2a"
+        },
+        "data.acd": {
+          "MD5": "4650df54578b7c1d20a590d2f7934c46",
+          "SHA256": "6ae4274ad99cf960b5214da8e3640f3d4905472f9b9a41e0870046840228f241"
+        }
+      }
+    },
+    "ks_ferrari_488_gtb_MF_GHOST": {
+      "Info": {
+        "Name": "Akaba Kaito\u0027s Ferrari 488 GTB",
+        "Country": "Italy",
+        "Version": "",
+        "Author": "",
+        "Brand": "MF GHOST"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "576b61eb58bd74ab2e2e733613d9e84b",
+          "SHA256": "0a29e24126cadb241b06fcf3ebf8669553c03fcba4ddb0fb6ab68cadded42f2a"
+        },
+        "data.acd": {
+          "MD5": "9b76a232a268f4adaeb355b71dd056b8",
+          "SHA256": "f06f8ad7b372e77cde32a771c2019d1b4f8d683eaa94f147ab5f9e3b66377b11"
+        }
+      }
+    },
+    "ks_ferrari_812_superfast": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "c0e1e6164cf7af9116272f53d339bd9f",
+          "SHA256": "5061a90c0494935fe62b748536f67eb213d70620d8adcaf565d9c6d7dfdf1d4c"
+        },
+        "data.acd": {
+          "MD5": "fdd86c1fc35192c20b4f15efe5f7b1a2",
+          "SHA256": "24be3ea1882b0db91fccccdfcb7e402ee1bd74ddda864b9e885e718c766f8ac4"
+        }
+      }
+    },
+    "ks_ferrari_f138": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "8d0eef58a0000dae079da8204f135c8a",
+          "SHA256": "954898c755d96f1e8a634a08a5c67e6e2d0131d0e3f7226380f2b1d55e70ecf2"
+        },
+        "data.acd": {
+          "MD5": "f53e727a4fa1abe03cd0436d13a39de8",
+          "SHA256": "65e5dbc9be23b57407c9e448a98a9bd9e3944f66fa1f55b84935801b1bf22698"
+        }
+      }
+    },
+    "ks_ferrari_f2004": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "3f129b9c4965cc27522c29c44d3d0d59",
+          "SHA256": "23af1fd016b727d9c3e6ca76ae9100eecacb6d73e20a5377f500393a2f073370"
+        },
+        "data.acd": {
+          "MD5": "24837014085b5108058024a61cc9a43d",
+          "SHA256": "6738c744aa67f4ac87dd9d3315c53005333a945fbe67c06715c03a21c620de9e"
+        }
+      }
+    },
+    "ks_ferrari_fxx_k": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "73110bc3e482d043cd4822bfd04137f5",
+          "SHA256": "1959905896acb6c4f9e0c536e30a05d31533226733363d4a308be34756817707"
+        },
+        "data.acd": {
+          "MD5": "12d1bb612cf92833557fed623d2204be",
+          "SHA256": "399508d018a6834b3609a9eebb501bf45937f4a425300a8a0ae57a1fcaee114f"
+        }
+      }
+    },
+    "ks_ferrari_sf15t": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "86b87995281ef442864ae9abdf5e63e8",
+          "SHA256": "ac3321b8c628422e503ae0d690efdef99149cde8b24a595a71a7040c6434e7ea"
+        },
+        "data.acd": {
+          "MD5": "b5a89c38a89cc968021569764da9afb6",
+          "SHA256": "92b44ec70753524ba6cc3033bb4dbe730f26e72962b699d8f92e7324ba7ce718"
+        }
+      }
+    },
+    "ks_ferrari_sf70h": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "134971a535923b586d17876602e8eb6f",
+          "SHA256": "e9adac1f099d53831910a272b517e69ec7d16e5f8cbcbb72e6af6f68ba7c2606"
+        },
+        "data.acd": {
+          "MD5": "4ed50286e213f8d3e83d8a43bb4f67d0",
+          "SHA256": "549cdce94b06cd75fbf24c34a0ebbeeb43e884f5a588b2b5b0433ab198d0200b"
+        }
+      }
+    },
+    "ks_ford_escort_mk1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "4b96f318e99999b0137141af9cb2cf70",
+          "SHA256": "10faa202a45bcce304c6c6bfc9bea8437a449d02be8b4db884b6119a1d1cc0b3"
+        },
+        "data.acd": {
+          "MD5": "1e9660d18ae347836f8cb55e138ffe89",
+          "SHA256": "32db56e852ef7367e0b329b5bbb3ba541ac7a91e6c0725bfb6fe6f765662f721"
+        }
+      }
+    },
+    "ks_ford_gt40": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "5115c3be4bf10695fb8452ca85ca3817",
+          "SHA256": "89f812777fe8bc2a4095e52dbbb84cb4ca1618b7a821cad9944815dd90ca4894"
+        },
+        "data.acd": {
+          "MD5": "ec127c05ef05d94d01c1148e2155bedb",
+          "SHA256": "534b4fe05b4c520dea19c4332e2ee076c990e394b3b00ccca28e91a821a026d2"
+        }
+      }
+    },
+    "ks_ford_mustang_2015": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "04c81390baf04f82b9675539b9ebdf55",
+          "SHA256": "e6baed76111c0b57a672163ac3bf2ede358dba230f366e40418b105137b67bb5"
+        },
+        "data.acd": {
+          "MD5": "ccb0e5151d00bc5fde4f576bc0c26409",
+          "SHA256": "0a2bc5d3180bc1d64b8de70f8d76b0577cbe4ed16f5ec5c8bac50fe742a16bd7"
+        }
+      }
+    },
+    "ks_glickenhaus_scg003": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "30c21e601a71cf9cc80b6031c9e719ac",
+          "SHA256": "b2e808cd5bb28424ef84f93980e20a9e43237a4eb333690b6791ad980ce94ed8"
+        },
+        "data.acd": {
+          "MD5": "693c3ff30a201c60066dd40ee98a5b07",
+          "SHA256": "2ff87845b9a690192884cda97dbe4cdb91b15a95c314dc79d274188d537e4503"
+        }
+      }
+    },
+    "ks_lamborghini_aventador_sv": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "79a87ba2df9e506c47b5a170bcb67fab",
+          "SHA256": "f28d0bd7fae730150c278ab77d991c3425aa520c876dfe7121bb0a1c6a5b0b88"
+        },
+        "data.acd": {
+          "MD5": "c6c7181056f04b1384cf4b8e9a7cd818",
+          "SHA256": "5cb2bcc60dafee1882daaf45d6ef9ef75dbef63d5c7ae98d14eb7e0cec0eacc4"
+        }
+      }
+    },
+    "ks_lamborghini_countach": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "3ec1c69434a04e9e69df28da4de47e58",
+          "SHA256": "1555c3efe385f35fc324b05b35ed27936ac11fca19c255d3ca1c0611ec087d9a"
+        },
+        "data.acd": {
+          "MD5": "1b36c4a14ea5f86f3485702622b91c9a",
+          "SHA256": "5013ef7884f1ccac335a1da145247f6174c5a276836d6d095ee25d0e9d9a072f"
+        }
+      }
+    },
+    "ks_lamborghini_countach_s1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "3ec1c69434a04e9e69df28da4de47e58",
+          "SHA256": "1555c3efe385f35fc324b05b35ed27936ac11fca19c255d3ca1c0611ec087d9a"
+        },
+        "data.acd": {
+          "MD5": "379ac944a8b529a3655eafaf88f31057",
+          "SHA256": "b89d64b10f1b807c71e15da982f61e35f0210e38926b7fdca79e511763645222"
+        }
+      }
+    },
+    "ks_lamborghini_gallardo_sl": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "d326d1fec38e3b600ba579592975adcb",
+          "SHA256": "4479cc7e3057f5b1c935ddc579baa55b23d6ef4af3f8119aca80ccea789bbbb8"
+        },
+        "data.acd": {
+          "MD5": "6e2156c77e17432492c51a6151ec619e",
+          "SHA256": "52c2bfdbce8908267d9420e56e735f1a70c140e5ddc7f7e6b8778d1ba65cc31e"
+        }
+      }
+    },
+    "ks_lamborghini_gallardo_sl_s3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "d326d1fec38e3b600ba579592975adcb",
+          "SHA256": "4479cc7e3057f5b1c935ddc579baa55b23d6ef4af3f8119aca80ccea789bbbb8"
+        },
+        "data.acd": {
+          "MD5": "d4dc24110277cf78210046083453a68a",
+          "SHA256": "4f7e439710fb61a0fc74ade34f8fab56249f26f7fe10ccbdf0691fd7fc11de96"
+        }
+      }
+    },
+    "ks_lamborghini_huracan_gt3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "2bf0c482d5410a4ef4a4e99696e8bd79",
+          "SHA256": "e08462ddf912104cc2da8b5a76347354fa00b3676afc9bad3006e69562cd7140"
+        },
+        "data.acd": {
+          "MD5": "ca7b801f33814b9d786dee711a18c32c",
+          "SHA256": "76d2116180287844cf0565ebbe6e2adb339a6f2bd8eb4a754461e6a7f5622b32"
+        }
+      }
+    },
+    "ks_lamborghini_huracan_performante": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "4baee1e190c6704af8ca499b9f2ab00d",
+          "SHA256": "9ce7f3308f1d097e41be673aff375bcd46f159cd3397c2418a56feefabc453f5"
+        },
+        "data.acd": {
+          "MD5": "a233610895dd4b7a47ae79a088b45c1f",
+          "SHA256": "9ba1dd8c515776348d3dec8299bf1d840d0b362c25d84dcdbd0a1d7693edba2e"
+        }
+      }
+    },
+    "ks_lamborghini_huracan_st": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b9384c7dcd803fa1e65f28984613fd0c",
+          "SHA256": "6b4dfa84472ecfc0134452c8741b0583c697417234b3e489cadfc6ba5558470d"
+        },
+        "data.acd": {
+          "MD5": "ea06caca4bd7619d134c3b276609f2b6",
+          "SHA256": "51b55da35002d2d26826b7bf63852b6513db7687343ab59dd512abe64cfd4943"
+        }
+      }
+    },
+    "ks_lamborghini_huracan_std_MFGHOST": {
+      "Info": {
+        "Name": "Ooishi Daigo\u0027s Lamborghini Huracan",
+        "Country": "Italy",
+        "Version": "1.11.1",
+        "Author": "A. Showmebest",
+        "Year": "2014",
+        "Brand": "MF GHOST"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "d326d1fec38e3b600ba579592975adcb",
+          "SHA256": "4479cc7e3057f5b1c935ddc579baa55b23d6ef4af3f8119aca80ccea789bbbb8"
+        },
+        "data.acd": {
+          "MD5": "252c59168f0d235dd68a72c732373ba1",
+          "SHA256": "bbc8b4106f1e22ac9685be82b7b80e83ae58b9853956ac8b1ca2dde85ed2784f"
+        }
+      }
+    },
+    "ks_lamborghini_miura_sv": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "91f406588eeba279dc233a1ad1b09b3a",
+          "SHA256": "239c04c1d1ce5ee4fca1f94ca9da35f6bf77cb123fc6eb42f5e7c3a1c4565d27"
+        },
+        "data.acd": {
+          "MD5": "ecc8451c2fd04deb8a9a22788b447301",
+          "SHA256": "8762f12c6a21296d12c72e949481bc2d3b9fff37fde713673599c6491b5b2713"
+        }
+      }
+    },
+    "ks_lamborghini_sesto_elemento": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "47a074a5a5931063c5f717d510d6ea0b",
+          "SHA256": "a9df50b4eec98cb7b3da54f788faf7ac161c594f71ed567de489da34f4137ed6"
+        },
+        "data.acd": {
+          "MD5": "c1396d77c2d7ae967deb49c44affe1bd",
+          "SHA256": "ad4e22db2320fb51eae3715dfdc883cc369752d57dfd7b63d71cd6badb65cbbb"
+        }
+      }
+    },
+    "ks_lotus_25": {
+      "Info": {
+        "Name": "Lotus Type 25",
+        "Brand": "Lotus Classic Cars"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "05f920d5182b0ffc6a52b8fe58192483",
+          "SHA256": "f76efd3564acc5471647ef8e6110c0e24e2961b3cd1314eadc4ba4b1ae479ddb"
+        },
+        "data.acd": {
+          "MD5": "ee8cb21a9ee7cc546ff2dacbaf7eff3b",
+          "SHA256": "83e4788054638dab577fdc43a9c7c5a65531f4984e2aa0c8b959924e316b3ac3"
+        }
+      }
+    },
+    "ks_lotus_3_eleven": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "6c3603129a6753a0e70e83813e28893f",
+          "SHA256": "2c1dc51a3e69b606d5199d13bf0ac1e148e4d66f0621ef5405e71ca27648926d"
+        },
+        "data.acd": {
+          "MD5": "39a060874c57f1b80a0e1ccdbe245ff3",
+          "SHA256": "0dfdfdc72144c6526bab816ff5d8f5ef7b7713f12f7bf9fffb271aa63b0c27fd"
+        }
+      }
+    },
+    "ks_lotus_72d": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b228b42210b5541400d7070ade36dafa",
+          "SHA256": "c758f7c78bffc87b89cf2998776cfb3095c5e8f3a5ef2e293d06bdb779c591b4"
+        },
+        "data.acd": {
+          "MD5": "5fe46f8f2e9b00c896236508eabb75e9",
+          "SHA256": "9d4ac2bfac34f4a26b6f3129429944597000002209fdc17d209ba9aeadacabdd"
+        }
+      }
+    },
+    "ks_maserati_250f_12cyl": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "6448c320141915feb7ecdb15797fccc1",
+          "SHA256": "5b2affbf82e8e0c7f2ab9c15618f194bd8fdb887df33bc6d3128c0c6719a926a"
+        },
+        "data.acd": {
+          "MD5": "3abeded52c0ee8a79ebe097a63342cbe",
+          "SHA256": "028842595308d54e867e172a8a9b466a8dc6d2a6556f14a3f86a151dbfa9ea8e"
+        }
+      }
+    },
+    "ks_maserati_250f_6cyl": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "6448c320141915feb7ecdb15797fccc1",
+          "SHA256": "5b2affbf82e8e0c7f2ab9c15618f194bd8fdb887df33bc6d3128c0c6719a926a"
+        },
+        "data.acd": {
+          "MD5": "6bb2edb957e864d07ea2a601ea4d3b51",
+          "SHA256": "a78abd8a9f1afe064a7c56921d8cda1a308d2dd9c32b6c441a94e062e62254fa"
+        }
+      }
+    },
+    "ks_maserati_alfieri": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "4ca558fd75a3d15a846469868f574ca0",
+          "SHA256": "4191dc31fc44f2dfc9adc6a46349de4937af964ca5f8e912ba99d594a96b0bb0"
+        },
+        "data.acd": {
+          "MD5": "9d99a2bad9731b537c901276fb060ce9",
+          "SHA256": "be41982b966dc96091db2a20d407eb6945be08b8fa78d584487dd284535b2c26"
+        }
+      }
+    },
+    "ks_maserati_gt_mc_gt4": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "6bac1925428d30d4ac49570d98e44f8c",
+          "SHA256": "831b8b5991fd04492cb735a224796048d0420beeb0b88998d2a3ce0fe6915f3e"
+        },
+        "data.acd": {
+          "MD5": "791e8a447b862a87a1bd903c9b26c568",
+          "SHA256": "a4e929f9c2462e80310dddd50b537d9c9fd108257ea659d7fc5a8c76e901d4f1"
+        }
+      }
+    },
+    "ks_maserati_levante": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "de4a57ca731757e62ad3109f3ab45d1a",
+          "SHA256": "6046d22103132a824e01e7b3078091ee637e66a55416bcaedd1926fe449033bb"
+        },
+        "data.acd": {
+          "MD5": "e4556c0cf85e720be98bea2bca694200",
+          "SHA256": "fd3ff2e875ddf70c1296788c170fc8e90de02d35e7a5d475b521420de492c363"
+        }
+      }
+    },
+    "ks_maserati_mc12_gt1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "565e6ba4d2fe39c7ddd7c5c81df8431c",
+          "SHA256": "346df48aae70792731f347afdfae2ac2f84bc787b591632ded713344ffd281c1"
+        },
+        "data.acd": {
+          "MD5": "9ae0aa31694388a45b9162ff9a32bf8b",
+          "SHA256": "5f67fa933051f456570b9264716e75e4c22d0a92b8f7bf829ae6ff0a18817a63"
+        }
+      }
+    },
+    "ks_maserati_quattroporte": {
+      "Info": {
+        "Name": "Maserati Quattroporte GTS",
+        "Brand": "Maserati"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "bd874ad75309197ddb2745da8b825a15",
+          "SHA256": "fe7b6d9407ed2a5c8618075b367cdc8adcfcac335a0fec36558b9d56aa9a396f"
+        },
+        "data.acd": {
+          "MD5": "6b0869c6c5fbd1b8cfb82bc939bdcd43",
+          "SHA256": "2b9e032fb3391247ba2a1c51a088b23536978092665741f19b896af34ef7ab76"
+        }
+      }
+    },
+    "ks_mazda_787b": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "614df1e4473f39f086c4a8995c5af91f",
+          "SHA256": "b5a8bb15c6b27e14917d979bf39ecc9a29632f4db6cca04033e31548e24141dc"
+        },
+        "data.acd": {
+          "MD5": "142cad9bb29df1f8ea0bbaff0df13cc4",
+          "SHA256": "99c4d4e28c74763c7ec10cc9bdc86e279e0378d4a18f4561b9586333bf018612"
+        }
+      }
+    },
+    "ks_mazda_miata": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "1b4570cab5e87c276cc42c8b8747cc9b",
+          "SHA256": "2fc316bb3bb50f78f5860e0334e3f3e000ec6611d199998c99bcc5430ddd93e5"
+        },
+        "data.acd": {
+          "MD5": "37e3c7729f056dd751548a4b2e60c9e2",
+          "SHA256": "88bd12429f2755291022c0886e863f49805a17dc10e9384ec19417768f46cb51"
+        }
+      }
+    },
+    "ks_mazda_mx5_cup": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "81cdba140a9ab24db460bc1ee1819ffa",
+          "SHA256": "e6df6058dd665f9f0011372a2b0c7f65559bd0afe665c60f05981456fa990a58"
+        },
+        "data.acd": {
+          "MD5": "0386728e68390e0ec99d20ce260e6d7d",
+          "SHA256": "3429741e932612018011dbe8a26e3fa7c1fd58d23b13c2e1b5a590a86f7d7dca"
+        }
+      }
+    },
+    "ks_mazda_mx5_nd": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b16663b17496b6a4a0be7a0eeefb8af1",
+          "SHA256": "74b0479563f7067ccc9f3b63fcda160d4278e340a8088b21ed23dc75dd228fa8"
+        },
+        "data.acd": {
+          "MD5": "95fba53b2a80ccf9f6c72ecdbd8e1521",
+          "SHA256": "cdaa780d50ff8c542a1c251be191395e3838ccc99e2a0956352f98feffb66f52"
+        }
+      }
+    },
+    "ks_mazda_mx5_nd_nd2_rf": {
+      "Info": {
+        "Name": "Mazda MX5 ND ND2 RF",
+        "Country": "Japan",
+        "Version": "",
+        "Author": "",
+        "Year": "2019",
+        "Brand": "Mazda"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b16663b17496b6a4a0be7a0eeefb8af1",
+          "SHA256": "74b0479563f7067ccc9f3b63fcda160d4278e340a8088b21ed23dc75dd228fa8"
+        },
+        "data.acd": {
+          "MD5": "b0f694a312b2e437fbfeced039ace304",
+          "SHA256": "67d723cf2d6ca5e774ac2a5a15a269c1f02c21e52e8d47f59f2129116f8abb16"
+        }
+      }
+    },
+    "ks_mazda_rx7_spirit_r": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "11b9497c304c012cf7edfbbbbd08d384",
+          "SHA256": "26f65efec4e5dcc43ebe578332132a943b51a5f6f3b4fac9890f5c001b83a41d"
+        },
+        "data.acd": {
+          "MD5": "049513bfc5e5cbc077ed7c0b54299014",
+          "SHA256": "b36fe51c7ef8de8ad443c76af2bf6d3e315030b098ef1594a17b353ba70c5ecb"
+        }
+      }
+    },
+    "ks_mazda_rx7_spirit_r_nvrlift": {
+      "Info": {
+        "Name": "Mazda RX-7 Spirit R",
+        "Country": "Japan",
+        "Version": "",
+        "Author": "",
+        "Brand": "Mazda"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "11b9497c304c012cf7edfbbbbd08d384",
+          "SHA256": "26f65efec4e5dcc43ebe578332132a943b51a5f6f3b4fac9890f5c001b83a41d"
+        },
+        "data.acd": {
+          "MD5": "d47acfe39fd331fdee853c3374f94cbe",
+          "SHA256": "1dba1c8b944738d728b727820c34d71373a3d64edb71eaa06cdcdad0bcc31041"
+        }
+      }
+    },
+    "ks_mazda_rx7_tuned": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "4fe2df9bcaafdb5da5f75735e8816d0a",
+          "SHA256": "bf87e7376b8ac3dc858fa8f6df3d8ca6c2b64f1aefeed1f040fed5604ea51b2e"
+        },
+        "data.acd": {
+          "MD5": "a25777c6de82e6070c13580b077a135a",
+          "SHA256": "44c9c9ba5fa2a5f3258fa6419f43e40ca6e3194dd10b54c969a34a4259a05e24"
+        }
+      }
+    },
+    "ks_mclaren_570s": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "20b51b97070a426ffb61591315d9283d",
+          "SHA256": "7be549d292323eb7cda4a6eb7b2782007576712281ff188b5e315479db39e4da"
+        },
+        "data.acd": {
+          "MD5": "64820e56e2818f0d436806e6d6c9ac13",
+          "SHA256": "fed23fbe3ce0e1c245486203bab9b3b334809c1fa9d885eaf48018269358b325"
+        }
+      }
+    },
+    "ks_mclaren_650_gt3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "5b1bf51673151fc030d7d272cb1cbdf2",
+          "SHA256": "8ce9c78e43f35f4b4fa56521460dc49d2ce2d5184e747dd1273d5c1a41a84862"
+        },
+        "data.acd": {
+          "MD5": "bbb619a5b0219d6a4a0087bf9064e009",
+          "SHA256": "e01d836f332e1877b99c8bacf527dd37dec9e525dd06c002b4c690a81137c9e1"
+        }
+      }
+    },
+    "ks_mclaren_f1_gtr": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "c422a8e70b2a91df44d38ffcc2a0f064",
+          "SHA256": "2c055117cd437f40a6d5737ebfa1c01ba3cd09a6fd3355590c8c4c615abb99a2"
+        },
+        "data.acd": {
+          "MD5": "385b2d80dbf78bf872902c350e618fb7",
+          "SHA256": "8fd4015c2fdd269e36d0a131feca871f6360edf59e44c5d1073adaf513896626"
+        }
+      }
+    },
+    "ks_mclaren_p1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "57d2e5bc90ab95af8657df48649a57c5",
+          "SHA256": "6ed8f50db1de316fc62c6b6350f65b5429a2427e4d7c8a314b5f51bb32e121c0"
+        },
+        "data.acd": {
+          "MD5": "7a5244545e23320dbfb1e151798d62bd",
+          "SHA256": "902bceac82c2528e13ed18d7504e3e399911fef2d4650d24653a1ac3d9972189"
+        }
+      }
+    },
+    "ks_mclaren_p1_gtr": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "3a8328b61e75537bb9ef06a75e470111",
+          "SHA256": "0e082d0a09d4ef764b0cf35d8cdd46ed47cae1793c7d897fc300bf22d0e03b49"
+        },
+        "data.acd": {
+          "MD5": "376d1adf0381013b6c7cb015ee508221",
+          "SHA256": "07f0495ab6c56bc3638d1615864f1c9fcb097199a38ccf9024160ea2edc35f9b"
+        }
+      }
+    },
+    "ks_mercedes_190_evo2": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "88c947fc687832d8c42759d4c710b69d",
+          "SHA256": "c1eaa29768f1c29f3a1f8d8c9facb33cfc9fc6b83704a638799541acba008ea2"
+        },
+        "data.acd": {
+          "MD5": "d6d718ecca77342f16e8cb6c0d4dbd2f",
+          "SHA256": "50907b493823ae383a222b923ba881e5436166f2d907b64a8eba9fd90389ec02"
+        }
+      }
+    },
+    "ks_mercedes_amg_gt3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "d17b7c42cd5b788abf709ef37ec47615",
+          "SHA256": "163e066a06cd58e5384ded990cfb688d0e198a2e904d65be78aa01b9c186290e"
+        },
+        "data.acd": {
+          "MD5": "4369061d0f0fc7714638aa03bf02050f",
+          "SHA256": "ede4766e4eec68803885b80820480aeef4226ec11ead606fbdf98565f84dd961"
+        }
+      }
+    },
+    "ks_mercedes_c9": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "987e14302ed2ac9caeb42eace2ec4ab3",
+          "SHA256": "0cb3c15d4b20f93b637c36fb488f37d2343ab3ec4b068997fcdc6a0bc5cf8277"
+        },
+        "data.acd": {
+          "MD5": "836ba4846d1210e88a9126879962e538",
+          "SHA256": "7b9335970337501c18d48e5bcb461e3ed2b91645b139424b8d7dcc747465164c"
+        }
+      }
+    },
+    "ks_nissan_370z": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "d8eb93e65dcde114446cfa002db57ed2",
+          "SHA256": "c9d99f0e8f8822126d7494a1dad32175b3a79acb23c549520e75e4812c580002"
+        },
+        "data.acd": {
+          "MD5": "535c6b5724e40392ceab60b9868f8bea",
+          "SHA256": "107e74fd8ff4029531dc76b3b3e5495e61647322d390efe0080c1c491a030d6b"
+        }
+      }
+    },
+    "ks_nissan_gtr": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "273cb23a41b4b002a19952dfbd59d90f",
+          "SHA256": "76cd2c9b9b810d78685e40da37f9f9263c9a1216309662b52dae8a882049cdfc"
+        },
+        "data.acd": {
+          "MD5": "57953231bb430181f1724e76d2e3e70d",
+          "SHA256": "eea148069c4361e6d161f5ca7acbf940ef501d5d6751f5f54715d5051b4ca3f0"
+        }
+      }
+    },
+    "ks_nissan_gtr_gt3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "56538931e0b732971f36d9a3b6243b1a",
+          "SHA256": "a92da5ef24fb51a0c181cca477cdaed6e3654eaba9c33f9bf96379d7657da90f"
+        },
+        "data.acd": {
+          "MD5": "9fa36f7695885610afb9a429327b464d",
+          "SHA256": "c7e708a67d27f89a41e0cac1b07e78b442888a2199b050eae834fef410ee3fed"
+        }
+      }
+    },
+    "ks_nissan_skyline_r34": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "fc0ad7f37d6fa7f448b10b80be3cc379",
+          "SHA256": "994248df24efc0e37832713c9d43acb5ae710b0c83a58f73603d3b8d97cf6a29"
+        },
+        "data.acd": {
+          "MD5": "efe7e894f95e3f961e1b8eee7c3e4e93",
+          "SHA256": "b52849fb6b9357554ce141df284e1d7eb8150748971ba6e3f55323fdb8d651bb"
+        }
+      }
+    },
+    "ks_nissan_skyline_r34_nvrlift": {
+      "Info": {
+        "Name": "Nissan Skyline GTR R34 V-Spec",
+        "Country": "Japan",
+        "Version": "",
+        "Author": "Kunos",
+        "Year": "1999",
+        "Brand": "Nissan"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "fc0ad7f37d6fa7f448b10b80be3cc379",
+          "SHA256": "994248df24efc0e37832713c9d43acb5ae710b0c83a58f73603d3b8d97cf6a29"
+        },
+        "data.acd": {
+          "MD5": "6694a3a2e778afaeacb0227be8a7d5f8",
+          "SHA256": "4e71d875fb74ab561822767927338510606d6011477f583ccaa1bd45f4314c2a"
+        }
+      }
+    },
+    "ks_pagani_huayra_bc": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "f3341be1a71aba543e1c1975532b4ad8",
+          "SHA256": "6722903ac0d635a777a114620d4c2cbac93542b50f7a6456dd313660d5e8824e"
+        },
+        "data.acd": {
+          "MD5": "e5e7aec75904501b52bf5b6cbdb2f52f",
+          "SHA256": "4aec014e8cd954cde17b9d9d138902f94f328f096ba85e728f38d28fa6de4e5f"
+        }
+      }
+    },
+    "ks_porsche_718_boxster_s": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "e5739116f962cbb4b27df0580740b92a",
+          "SHA256": "3c1c3471007ce574ec0b572dc2e848ac43addca4b54293d80a108ed71a17c052"
+        },
+        "data.acd": {
+          "MD5": "5987dcc9411790d827524ba667dbf1aa",
+          "SHA256": "cef04f8ae1725bbb2073eba6566dd45dc66f8953b97a56672bd3efcbf169a2fc"
+        }
+      }
+    },
+    "ks_porsche_718_boxster_s_pdk": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "e5739116f962cbb4b27df0580740b92a",
+          "SHA256": "3c1c3471007ce574ec0b572dc2e848ac43addca4b54293d80a108ed71a17c052"
+        },
+        "data.acd": {
+          "MD5": "21aa52e57cc25f737e5e44bc0b27847d",
+          "SHA256": "74f66e090d479a39b60e9deede5869f112569ee0e99441c8e46ebc05d30583d4"
+        }
+      }
+    },
+    "ks_porsche_718_cayman_s": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "9498f779a1ab40d1f3ecf70f7776753a",
+          "SHA256": "ae1e0104008771299218412fdb437e5ea71270a2754d6ddcef47dcd8310ee0fd"
+        },
+        "data.acd": {
+          "MD5": "ac1c0e98ed841b4f5a6e59fb8f5d2653",
+          "SHA256": "169e5048ea85d5c4a185eedd342db7fdf08bb2beb5d060cf80cc7f582602bc5b"
+        }
+      }
+    },
+    "ks_porsche_718_cayman_s_MFGHOST": {
+      "Info": {
+        "Name": "Michail Beckenbauer\u0027s Porsche 718 Cayman S",
+        "Country": "Germany",
+        "Version": "",
+        "Author": "",
+        "Brand": "MF GHOST"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "9498f779a1ab40d1f3ecf70f7776753a",
+          "SHA256": "ae1e0104008771299218412fdb437e5ea71270a2754d6ddcef47dcd8310ee0fd"
+        },
+        "data.acd": {
+          "MD5": "301d05acb0d2ee69f60af263b0e4c4ed",
+          "SHA256": "98a4eacb9c41a78c3cfe68d07a4e7dd3e5bdd28a7601032540e03025dd8c822e"
+        }
+      }
+    },
+    "ks_porsche_718_spyder_rs": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "7d8b785c6aebdb01f467423a4ff5bb90",
+          "SHA256": "096d82156f731fad07417954e0499a956da3ff53ec9a6a3ecafe06b8ee65b892"
+        },
+        "data.acd": {
+          "MD5": "4ca8014adc630582d2559f4bcba1ca68",
+          "SHA256": "36967692debc0a0e5b02e7bd2cb3d072cdb7f49a3651e4d89276c9698d8acd3e"
+        }
+      }
+    },
+    "ks_porsche_908_lh": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "4b54643650bc538fd0d43db4666a7c68",
+          "SHA256": "21b60d16ce1ce80e1389eee8103f1fa05e444f7efe0317e912ba4552ea2402ed"
+        },
+        "data.acd": {
+          "MD5": "9db5c84104f0b60db4608f798675cef4",
+          "SHA256": "c74ad09bab9d411dbe56fb661a688dea89816e3ea5f24139c55a616d72f7efa8"
+        }
+      }
+    },
+    "ks_porsche_911_carrera_rsr": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "7d6b7cecdc5ad82a3b3e0726093d3cbe",
+          "SHA256": "f4cc1a70f3ab3ba8b71fbca3b4cfddd01d82ca61dc15cda61989ba4aecc4a0c2"
+        },
+        "data.acd": {
+          "MD5": "14d7e713de31ffc3585b363990a71cd4",
+          "SHA256": "42d0fb3388cf4656bd2f7a15a64eaafd108ce471e7309c720f7660dfe44e8f45"
+        }
+      }
+    },
+    "ks_porsche_911_gt1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "11453e8faec6a35616154b17bd1fee79",
+          "SHA256": "4c204892bc1f368b0215d0dd7298a4c4bd91d36556fa55b8df9c9036662f0e30"
+        },
+        "data.acd": {
+          "MD5": "2061d00a1cb74b3a034b62511098000e",
+          "SHA256": "291e1b5a9c4a77d8bb3ad5e95e21103934fa2d52074c61a3e6ba6c27ca0406d5"
+        }
+      }
+    },
+    "ks_porsche_911_gt3_cup_2017": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "fe1c1f490942e8bde48e86eedbeca51d",
+          "SHA256": "e7e3625a0d0922745222e6d8fd60fd20b84d30f4273944198f95940d0d128c33"
+        },
+        "data.acd": {
+          "MD5": "622a7385c4a137b191493920f169d7ed",
+          "SHA256": "0897bb1d2680f8f951ebb16837684859d0120c33b8d5cd47f31c24d3b60eace4"
+        }
+      }
+    },
+    "ks_porsche_911_gt3_rs": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b2ff7021e516c698ffa3ade6defc2ddb",
+          "SHA256": "ff7510b3e38915cd827c41a6928308deae8b9d445f88d451b733864f0fba0999"
+        },
+        "data.acd": {
+          "MD5": "97d49c45e010cd80fa2555994d858d32",
+          "SHA256": "106eceac4f26129048e8838f48013836c1620a9908d9bcadd571dafa46e2b69d"
+        }
+      }
+    },
+    "ks_porsche_911_gt3_rs_MFGHOST": {
+      "Info": {
+        "Name": "Ishigami Fujin\u0027s Porsche 911 GT3 RS",
+        "Country": "Germany",
+        "Version": "",
+        "Author": "",
+        "Brand": "MF GHOST"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b2ff7021e516c698ffa3ade6defc2ddb",
+          "SHA256": "ff7510b3e38915cd827c41a6928308deae8b9d445f88d451b733864f0fba0999"
+        },
+        "data.acd": {
+          "MD5": "aaf7db4fcedfe158b9ad40b29dee5a67",
+          "SHA256": "b5af78450e77d673ba87fe169f30a2a3281a6327ea6fbb4ee4701109c484c16b"
+        }
+      }
+    },
+    "ks_porsche_911_gt3_r_2016": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "6531012ce753b49261459aa7cdb28dcf",
+          "SHA256": "dbeaa22bee9be4b57905122de1b1f8c0ea17cd4505642ccf51a41f000fd0d65b"
+        },
+        "data.acd": {
+          "MD5": "2f2489768f6f649943d9af14499b29e6",
+          "SHA256": "27ef53e7be44a40249947831b185336c78a5170cd8ae887a72456281e3034053"
+        }
+      }
+    },
+    "ks_porsche_911_r": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "92e9800979862dd9c7bfad0b97e001c9",
+          "SHA256": "be799f3a5adaa886fd83965b2056b6ebc545c9c85b747a2bf820608286f69745"
+        },
+        "data.acd": {
+          "MD5": "482c3b279043b3d0f67b164b896f001b",
+          "SHA256": "7c58e92fd0d32df3f130cedd458cc064423b967fe4c0de78f1fe766694ea1414"
+        }
+      }
+    },
+    "ks_porsche_911_rsr_2017": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "927384277aff2382366c02f3c9a19464",
+          "SHA256": "9d43448b38fde9a3cab8b05b87d4394a338a24fec9627a3c428986efcd4948a1"
+        },
+        "data.acd": {
+          "MD5": "7dbf06d7029b889623d1cabf27a815c9",
+          "SHA256": "edbb69624bc6da1b8150c84e1ade55023d2734e9b5cfcd3f9301e8e7fd05b0c7"
+        }
+      }
+    },
+    "ks_porsche_917_30": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "1cbecab899da1d788693ced3892d2dc1",
+          "SHA256": "19d6e32b6f58c0e93f19f956f6c741e178e54227c9417084257779cdc85f088c"
+        },
+        "data.acd": {
+          "MD5": "a5eb1aa6de8c386f431153ef335b3eae",
+          "SHA256": "83c6cc2dfec2dcc827b9f4edf093c523861b9f61a85a4e96316839c3086031a9"
+        }
+      }
+    },
+    "ks_porsche_917_k": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "002b54deb0b4a346abf8cc089e70bac5",
+          "SHA256": "bfd869e72e3f4c41c14d3fbda499c6979d3f9dc274011ddfdb22ed7f7c2cdd48"
+        },
+        "data.acd": {
+          "MD5": "bda4fdf4278b78da92ea30f448dc7db8",
+          "SHA256": "1e72b7fcdf4408b92dd6acaea0a0a0048c0677548ce45a6ca00a25c9ef792a81"
+        }
+      }
+    },
+    "ks_porsche_918_spyder": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "698d4b70f5d8c168f347987e6161a931",
+          "SHA256": "defb307e05b3090e072145646a3f70f618da9abac2f4fc40b23f2ec76f050ccf"
+        },
+        "data.acd": {
+          "MD5": "a708e9dba001a284db8e341d9a4e4a28",
+          "SHA256": "dd060a6f6158fd2796a08ab50a5b253bc9329218f77609dbc30e91174e336c69"
+        }
+      }
+    },
+    "ks_porsche_919_hybrid_2015": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "d5b39f1fcb6d067cfee6c1720ea71773",
+          "SHA256": "65184cdca1f5a722289a61253cbfd5fdd688fbd41d630a1e7e4c9785e739ff79"
+        },
+        "data.acd": {
+          "MD5": "7570851296d17beb0447534bab7f3553",
+          "SHA256": "57465c96fb3b5e8df409b8beea47570df6b0ba5c38fdac6b51e3d2de50e66e77"
+        }
+      }
+    },
+    "ks_porsche_919_hybrid_2016": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "7617899172f47d8daeecf89b069a0168",
+          "SHA256": "056b5220aedb4ae52cad7a6fffe436cac34e18c3a26b7dbddba276c9f2a7fd3d"
+        },
+        "data.acd": {
+          "MD5": "8452c2c96562d662ef7f6600a552ba78",
+          "SHA256": "cdc400925c145679657a5e1da104e3381d394f15013ff1ae8d5957ebe94892d1"
+        }
+      }
+    },
+    "ks_porsche_919_hybrid_2016_S1": {
+      "Info": {
+        "Name": "Porsche 919 Hybrid 2017",
+        "Country": "Germany",
+        "Version": "",
+        "Author": "Kunos Simulazioni \u0026 GTPlanet Modding Team",
+        "Year": "2017",
+        "Brand": "Porsche"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "7617899172f47d8daeecf89b069a0168",
+          "SHA256": "056b5220aedb4ae52cad7a6fffe436cac34e18c3a26b7dbddba276c9f2a7fd3d"
+        }
+      }
+    },
+    "ks_porsche_935_78_moby_dick": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "787f32f2a47fffd2d5fcc38a3fdbec42",
+          "SHA256": "26bc4693eb0ee7fd21d8510500d34e63082cfd802963743b840ae4dfc0cc3c32"
+        },
+        "data.acd": {
+          "MD5": "a86f7811284b5ca8c535879cffa6750f",
+          "SHA256": "80323fb4b45a37e6d3922598cb7153b6b25e3b019b5ffcdeb0753e03f081dd37"
+        }
+      }
+    },
+    "ks_porsche_962c_longtail": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "54efac68a17fcb1b686a936fbf6557df",
+          "SHA256": "cc8193f3da158907689b1f9b39e0d850165846569f1ba07ecd847fe94b7351c3"
+        },
+        "data.acd": {
+          "MD5": "66e98620961bef1d9824d6a9cdfc39fe",
+          "SHA256": "c2a7f621de0d986260b70cd4e183bda868b345226eb7233cf65e1368c389d514"
+        }
+      }
+    },
+    "ks_porsche_962c_shorttail": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "1937e33674f013bf9018409e859bd79b",
+          "SHA256": "43e41186e9b6d636e6e8041f0c6fb884228f633d349e8cf2da282bbbd825bd59"
+        },
+        "data.acd": {
+          "MD5": "bf0282afbce303cc9e5e6e5e3424539f",
+          "SHA256": "836dad3cdb09a710c9019b471427816f348a17a889fc7f4c036a57260b32907f"
+        }
+      }
+    },
+    "ks_porsche_991_carrera_s": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "89aa3f79fd8444f65291cd92d00ccf10",
+          "SHA256": "3eaec336deef2d653cb3318cb67cde54863a886401d95fe4aac755f631d3a168"
+        },
+        "data.acd": {
+          "MD5": "dbd4838f7a4cd7ee277eeb247bccc9de",
+          "SHA256": "f97ebeae3b1826d703d4284eb7674a9f661b20bc0d7f00743db21adb452394ba"
+        }
+      }
+    },
+    "ks_porsche_991_carrera_s_MF_GHOST": {
+      "Info": {
+        "Name": "Jackson Taylor\u0027s Porsche 911 Carrera S",
+        "Country": "Germany",
+        "Version": "",
+        "Author": "",
+        "Brand": "MF GHOST"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "89aa3f79fd8444f65291cd92d00ccf10",
+          "SHA256": "3eaec336deef2d653cb3318cb67cde54863a886401d95fe4aac755f631d3a168"
+        },
+        "data.acd": {
+          "MD5": "4eb25c99c10a80d819a250b34623c6d1",
+          "SHA256": "4468f95335641822c2171dca3f6e26232e9549d945e76d8cf234ac3db2b3ad51"
+        }
+      }
+    },
+    "ks_porsche_991_turbo_s": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "92e9800979862dd9c7bfad0b97e001c9",
+          "SHA256": "be799f3a5adaa886fd83965b2056b6ebc545c9c85b747a2bf820608286f69745"
+        },
+        "data.acd": {
+          "MD5": "8d69f9561a3ac0e29f41aeff324964c4",
+          "SHA256": "2fb2525cc4c93c77c9f524941ab06d290705fbc4eab8d3e75b4f6f1a5f8a0b8e"
+        }
+      }
+    },
+    "ks_porsche_cayenne": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "f971eba8f3efd737bcabe8771799e8e0",
+          "SHA256": "097c01b2cf879c8f378f834d3c55a77d2d079a0f0edf28ce4560ae0bb682ef49"
+        },
+        "data.acd": {
+          "MD5": "100a16b12d939bff5e40f8b69cb029be",
+          "SHA256": "8cd2464fff9dbce5e784dc969d8745a44d1ae77efe6da31257299ac05640dad4"
+        }
+      }
+    },
+    "ks_porsche_cayman_gt4_clubsport": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "4bd123d5e8ed5a3353f53253264c7f3b",
+          "SHA256": "67b7e2a92861032e05556bf03e55d15393318685489c2f8438e6151e8339cb1b"
+        },
+        "data.acd": {
+          "MD5": "d9a636fd563ff496865527b1bd0a520f",
+          "SHA256": "073fd152b36f15edec247e080f4d185aa147b2fca196ed38a7a32a57308e30b2"
+        }
+      }
+    },
+    "ks_porsche_cayman_gt4_std": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "4f591912210d16414d8d1ff1e41bbdc3",
+          "SHA256": "cf6d160a588ab280d0f2ce2319929d354c3a3cda1a064969339871364ba19736"
+        },
+        "data.acd": {
+          "MD5": "3e85c1e1081ea48f0df8ca38792987e5",
+          "SHA256": "8a7056a8a3ce07b9bbc12deb2ba4e28d75102387696e098ad8ab07db4973ceff"
+        }
+      }
+    },
+    "ks_porsche_macan": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "78d66d4d525149d8ad6f17aa6aa5484c",
+          "SHA256": "59a34c3caf5a7b1fc8a6abb3c61481181389de6e5d07c21c76d717fa838b18c5"
+        },
+        "data.acd": {
+          "MD5": "7259a5ab0a3cd1eb7a93722c22853ff5",
+          "SHA256": "dadb5283db2992c7d3254a4d46cad0f724339c2a3ddfb7dd72cd5505a4e9f700"
+        }
+      }
+    },
+    "ks_porsche_panamera": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "357258b1f00b52e1b0967d566b4a92fa",
+          "SHA256": "d8e3dc4ac00da77ee80c17ea44fe46be41e12fea5f53f0961d902c459deabc8b"
+        },
+        "data.acd": {
+          "MD5": "15fa3814fd6e36feb7c9fd951607c7f6",
+          "SHA256": "8a1cec0297e1cdc2517ac941c93c68e74ae1675bd2589d92af3684b3cef38994"
+        }
+      }
+    },
+    "ks_praga_r1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "37c409a38f18c593551a7e91db47d52c",
+          "SHA256": "6f55492628e6d14d559692eeafaee15c9d580d9bdc98ffd7188c5f284bd6d487"
+        },
+        "data.acd": {
+          "MD5": "715d4e2029334531ac9506163305be71",
+          "SHA256": "fb7bcf98c9bb2cb0ccab7a7ff633187b748bc0f0127b6c1cb68e0011927f6082"
+        }
+      }
+    },
+    "ks_ruf_rt12r": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "3249b6a73e6a7f720fa199e1e4694784",
+          "SHA256": "0d9abbbec7ba67a231a239efe5aa5b58c9ed22c2a871102d12979e2512c1c605"
+        },
+        "data.acd": {
+          "MD5": "b06e2a9df360774456f0ea5d05ece355",
+          "SHA256": "e46b6d8d876cca4f667d72321d3a79bd42544d23b9590373e9129506c9948b0e"
+        }
+      }
+    },
+    "ks_ruf_rt12r_awd": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "3249b6a73e6a7f720fa199e1e4694784",
+          "SHA256": "0d9abbbec7ba67a231a239efe5aa5b58c9ed22c2a871102d12979e2512c1c605"
+        },
+        "data.acd": {
+          "MD5": "7543573ba70e693c651b21fdb9399a55",
+          "SHA256": "332f08a08474e48ffcd2c78a024de759318a30b579448157367d0f45ec9b9c5c"
+        }
+      }
+    },
+    "ks_toyota_ae86": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "eaf09ad34398052386180047c17fd0e3",
+          "SHA256": "eeb6e2d190fc6195a290b93db2e30521348deabcff6781dadb116a39cb0d217d"
+        },
+        "data.acd": {
+          "MD5": "8a2a4e430d8095ed92d3864d1d52c222",
+          "SHA256": "02e6cbd693fd0d479b66742ab17a43dd7610c95a2346c1046359dd9b64c8291b"
+        }
+      }
+    },
+    "ks_toyota_ae86_drift": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "eaf09ad34398052386180047c17fd0e3",
+          "SHA256": "eeb6e2d190fc6195a290b93db2e30521348deabcff6781dadb116a39cb0d217d"
+        },
+        "data.acd": {
+          "MD5": "84ae3623e5a66a0e51a0d415f72dfcb8",
+          "SHA256": "fd7a9398f3f28596422f9e9a7f4cf10784dfc2530f90323673d81ca86ad66e99"
+        }
+      }
+    },
+    "ks_toyota_ae86_tuned": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "eaf09ad34398052386180047c17fd0e3",
+          "SHA256": "eeb6e2d190fc6195a290b93db2e30521348deabcff6781dadb116a39cb0d217d"
+        },
+        "data.acd": {
+          "MD5": "a952b7165754d02bdc41ff0e5b2bb11f",
+          "SHA256": "72926668e0ac77d1b8786fffaf58b6feea0792d6abf5c580fecbefb2a67ae10f"
+        }
+      }
+    },
+    "ks_toyota_celica_st185": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "2581e6257d765e56626045031db6f41e",
+          "SHA256": "811d37ce312578e4c1b5e898a7f3a9f307388cb6b98f4034f0783091b82dd4cb"
+        },
+        "data.acd": {
+          "MD5": "0b8ef7d7e048f5391d291a6fe21f3fb9",
+          "SHA256": "7801759e13c7153de205a6c9e284dd4373f8173079a71ac5ba56d62aca817800"
+        }
+      }
+    },
+    "ks_toyota_gt86": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "43eeb3bfc144462fe2841ea27d53ac7c",
+          "SHA256": "35190995d0c229edcb3e8eee40c583613feb5e54a3bdac92a6e3db034c636e2c"
+        },
+        "data.acd": {
+          "MD5": "6b9db000a987e2244711e777d30e60d7",
+          "SHA256": "e63c96376eca6885327ed1781191a08f32b1e50ee593557d3a04556d1091f0c3"
+        }
+      }
+    },
+    "ks_toyota_gt86_MFGHOST": {
+      "Info": {
+        "Name": "Katagiri Kanata\u0027s Toyota GT86",
+        "Country": "Japan",
+        "Version": "",
+        "Author": "",
+        "Brand": "MF GHOST"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "43eeb3bfc144462fe2841ea27d53ac7c",
+          "SHA256": "35190995d0c229edcb3e8eee40c583613feb5e54a3bdac92a6e3db034c636e2c"
+        },
+        "data.acd": {
+          "MD5": "83e4c54b5bf406ead7576b956bbb44da",
+          "SHA256": "d203a298ae5e73b1786a4006dc611ee326bbc5e829c5b9d65b44bf9769112e1a"
+        }
+      }
+    },
+    "ks_toyota_supra_mkiv": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "f44bad546d73e1a35d69be4bd6e64ab8",
+          "SHA256": "191f830ddee4ced07a4a84f221d939cc1c7f4dd329a2d46d67065074bdb3109b"
+        },
+        "data.acd": {
+          "MD5": "3ff3d11c576f3556891f7ff547d2fb47",
+          "SHA256": "233967496dd85b2c07bb58c4c6c72cb54e8d67df5aa4a92143178a6edfe8842b"
+        }
+      }
+    },
+    "ks_toyota_supra_mkiv_drift": {
+      "Info": {
+        "Name": "Toyota Supra MKIV Drift",
+        "Brand": "Toyota"
+      },
+      "Files": {
+        "collider.kn5": {
+          "MD5": "5f59823f870b3642f0971cc8c9f83da1",
+          "SHA256": "11a3cbac02bccc5aa2e290922c7aaf6530bcd3cdd9a0373fef18a3dc7f0c27fc"
+        },
+        "data.acd": {
+          "MD5": "537201c53a4766dbfe9b782edcf28cd6",
+          "SHA256": "c8a0d3093e844bdbe1d5f2971273c0e6af0cfb7fd0c2300b92b371630b7d5562"
+        }
+      }
+    },
+    "ks_toyota_supra_mkiv_tuned": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b558153beedd6911a02fe3c6a17ce94f",
+          "SHA256": "bbd62f31b5f4399b4c1d09cc25fcac363347e093e0bd8d7545a2124cb0ee78cc"
+        },
+        "data.acd": {
+          "MD5": "06ea76920a30ec12ff243608030e0671",
+          "SHA256": "21f35c0cc54055bc9e0d99ea25013a75a9a8aa9e0a16b7c910efb5756bfd6557"
+        }
+      }
+    },
+    "ks_toyota_ts040": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "aa4561edfc1e90194207a61eee9bf862",
+          "SHA256": "27217627bf907774ba8b6bb8dc1f8fb4b754159498af6a4c7184c86d6b798333"
+        },
+        "data.acd": {
+          "MD5": "47ce7c17814b3b23ce606813564898a8",
+          "SHA256": "12d67a88984330481bb2454d90c761593248d91de75bafef663dc0c74faf9741"
+        }
+      }
+    },
+    "ktm_xbow_r": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "3427ceeb20fb8df0dfc7c847bd0f82a0",
+          "SHA256": "bc50b3849fd19ed22db593cdf60ebe57e84f37b18a9eb6e3b774f475e9d7e054"
+        },
+        "data.acd": {
+          "MD5": "57bcdb1bb95b29f2130535371cac8c28",
+          "SHA256": "69312c8ea6b50aad83e967007a72598fbd6e7caf6983e23858ad6310e59bcc78"
+        }
+      }
+    },
+    "lotus_2_eleven": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "7693cefd9f1a84fc69703071ce2b26f8",
+          "SHA256": "635a1749f6285d03dda924fbc998ea2a7ec8b146825a2ae0fb6054c1afae6aef"
+        },
+        "data.acd": {
+          "MD5": "e6240dcefa7b08bbc2990ac2881cabb0",
+          "SHA256": "6e3a29548b18c591f951393fe548d10639263dc086543a4767806c0ea8fcf5ad"
+        }
+      }
+    },
+    "lotus_2_eleven_gt4": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "7631c7e02624432f6a038a375e92c00d",
+          "SHA256": "7eb39d8e75ac22b7e37b8edd5b26bb77133cf45c9b146d4620d001788cdc83ce"
+        },
+        "data.acd": {
+          "MD5": "cc2ed930de90210cd35b18af38b12d39",
+          "SHA256": "f459ae88788e4fb07a93d326da0f178c2c8a5e4bb854636cabb9d27f2197a33b"
+        }
+      }
+    },
+    "lotus_49": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "715681cc1351b70bc3d64964cf7b6e68",
+          "SHA256": "dd436496551cde4152482334e3689de7dd13114655740166681efe03a5e0266a"
+        },
+        "data.acd": {
+          "MD5": "9a6db91f07934f60024dc17c028138a8",
+          "SHA256": "a631738184c6ea2ebe8d2436d9a99e49446049d748a36cf48df426a432fd5529"
+        }
+      }
+    },
+    "lotus_98t": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "026f2bf474dbca0c5bc23353665b1287",
+          "SHA256": "bc4fbc56169a25041fa91deda3aa1d65af0da932873ba32e88c4555d5568cd46"
+        },
+        "data.acd": {
+          "MD5": "303fc0ebf7815d87dda788ad6a5f6ec7",
+          "SHA256": "1908b0859779a04ba200d972cbf4cba65f60866ef95ea68f2cfc35a80b486cb7"
+        }
+      }
+    },
+    "lotus_elise_sc": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b5bc87448869840e0904641cca7be628",
+          "SHA256": "681a1069954830990b98c54aaeebd532361c47b655f082cf6a90e9471a1c00b2"
+        },
+        "data.acd": {
+          "MD5": "384b019bad447edf86daf1f97cb90f11",
+          "SHA256": "9b3d1860c16c642c094c4299f674c7130c74af0be9f3715e77490372cd3eca91"
+        }
+      }
+    },
+    "lotus_elise_sc_s1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b5bc87448869840e0904641cca7be628",
+          "SHA256": "681a1069954830990b98c54aaeebd532361c47b655f082cf6a90e9471a1c00b2"
+        },
+        "data.acd": {
+          "MD5": "e277e6769c5e0ca2821c59501ada8570",
+          "SHA256": "3ecc59e4a0de5c5df8eca9391eb5e397d4f396db3591fa4abe82b176afca1eff"
+        }
+      }
+    },
+    "lotus_elise_sc_s2": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b5bc87448869840e0904641cca7be628",
+          "SHA256": "681a1069954830990b98c54aaeebd532361c47b655f082cf6a90e9471a1c00b2"
+        },
+        "data.acd": {
+          "MD5": "b7b8df3772ef48d33843b85fa8c531f9",
+          "SHA256": "d975aaa38331a420a5576865295a8730480ddd6dfa4764e5f10e55ba16e946bd"
+        }
+      }
+    },
+    "lotus_evora_gtc": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "483ff8e04dfe320ad738199a505854f3",
+          "SHA256": "afeb2a7e62b0df25205f526a14aa9149868379395eec992187822edb63aa10c0"
+        },
+        "data.acd": {
+          "MD5": "687e1e6a978b6f14e8606f1e11cd25ac",
+          "SHA256": "009873ffcc11cf219dac62b14a15a707a54bb9b1f3301e5a9076a7ec1b677590"
+        }
+      }
+    },
+    "lotus_evora_gte": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "5edf5099a0fecd5b9efcf841b2a64f3a",
+          "SHA256": "87876e5ca9219eb14940bdfe765d1a1dfa55887cfd9d458448d3797b58d84a88"
+        },
+        "data.acd": {
+          "MD5": "8757fd98d0222680254c6cf295bc1110",
+          "SHA256": "462972697315f30552ef7cd7b68e39bb8132872bbca28d59b7b0727a7eddcb43"
+        }
+      }
+    },
+    "lotus_evora_gte_carbon": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "5edf5099a0fecd5b9efcf841b2a64f3a",
+          "SHA256": "87876e5ca9219eb14940bdfe765d1a1dfa55887cfd9d458448d3797b58d84a88"
+        },
+        "data.acd": {
+          "MD5": "fe14c7da60272c0b5ae89d2ea531c3d0",
+          "SHA256": "4d4bacabfcd871c1655733bd6fdce76a28af5bd81492812dc847d9b93b906247"
+        }
+      }
+    },
+    "lotus_evora_gx": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "483ff8e04dfe320ad738199a505854f3",
+          "SHA256": "afeb2a7e62b0df25205f526a14aa9149868379395eec992187822edb63aa10c0"
+        },
+        "data.acd": {
+          "MD5": "be20ce06afdebf3f381a64f74c9daac3",
+          "SHA256": "3ecefdb40f8bc249d6d6c812beb87ce0768fa021fe0aec9a04fe577d746e6b14"
+        }
+      }
+    },
+    "lotus_evora_s": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "707bb4cacecc6633005e0a3e8586860f",
+          "SHA256": "fc37c323bc1b936b563306a711d86f0c2ea229c11d447a30df2716f617338b0d"
+        },
+        "data.acd": {
+          "MD5": "cc7fe626074b96d9b7e559a0a68a7a1c",
+          "SHA256": "0c9162e8f4de5a7da8b8e074879b14129260cf3e184fa11809e70eaedc6fe7a7"
+        }
+      }
+    },
+    "lotus_evora_s_s2": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "707bb4cacecc6633005e0a3e8586860f",
+          "SHA256": "fc37c323bc1b936b563306a711d86f0c2ea229c11d447a30df2716f617338b0d"
+        },
+        "data.acd": {
+          "MD5": "b37fc140aa3982eae656b155320485b6",
+          "SHA256": "aeabeaf856a5070b717104f51f97e5a64b92c04d97c7942474b125826ae28892"
+        }
+      }
+    },
+    "lotus_exige_240": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "1c186e15b568174330be01507212fedd",
+          "SHA256": "12e97a2dbeee55e9ec565d99db35b2e4141b664375b755e2653f51b4727903bc"
+        },
+        "data.acd": {
+          "MD5": "c7697baed3d0662e959f75eb60c9c898",
+          "SHA256": "3358552cd8ac0ac064dca30432bb0e0d72565c75f1ba7e3253a646963f7440fe"
+        }
+      }
+    },
+    "lotus_exige_240_s3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "1c186e15b568174330be01507212fedd",
+          "SHA256": "12e97a2dbeee55e9ec565d99db35b2e4141b664375b755e2653f51b4727903bc"
+        },
+        "data.acd": {
+          "MD5": "21be34aa6536842a0461aa245474c0b7",
+          "SHA256": "67bddba5cfc541dd42d34105a7c8f47c14b4d764dcf46f4842c634cd811fc7d8"
+        }
+      }
+    },
+    "lotus_exige_s": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "6a491a47d090b2cc5761d9347bc4925a",
+          "SHA256": "8dee22070f725c330ad7f2ec57d88f876b80a832d21fb43128970388f5ae139a"
+        },
+        "data.acd": {
+          "MD5": "29decbd4fb912291f89292708d88ebd4",
+          "SHA256": "7eb1f3c4a508d610cfd8a0124219da19af65068e616e38481eddef6ac6a15ec5"
+        }
+      }
+    },
+    "lotus_exige_scura": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "723e92bfb6e855660bd033e9de34eefb",
+          "SHA256": "b15041f761bb324d6fdf8a80e66f84e06cc319cdaf79c8d622e752f4d699306f"
+        },
+        "data.acd": {
+          "MD5": "690c8c059df958699b8fb176854b90f8",
+          "SHA256": "5eae96dd1e2fe4ff6926a8b8c05f27b85ecf7a77cda66c3c59bef2a57ed0adc2"
+        }
+      }
+    },
+    "lotus_exige_s_roadster": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "9daee51e260ffa4c6807f70fb75b8b1d",
+          "SHA256": "2a044feec2dc81b0aa083de4ba55f9a415dac35d1bd72380bd217d5c979113d0"
+        },
+        "data.acd": {
+          "MD5": "1f2f505c99afa5f47ace7d7002e69f37",
+          "SHA256": "c2ace60c0ee56ca414e46c49979a79499342da2025bc5d839e17538db5fab4f3"
+        }
+      }
+    },
+    "lotus_exige_v6_cup": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "6a491a47d090b2cc5761d9347bc4925a",
+          "SHA256": "8dee22070f725c330ad7f2ec57d88f876b80a832d21fb43128970388f5ae139a"
+        },
+        "data.acd": {
+          "MD5": "4f1ba9bfc64b9b88f81e17073d02f006",
+          "SHA256": "3cafdcfd7f1f9d3b43d5c51b7ac8b2c5b87f05a0ce3f66c7040d465e593fb814"
+        }
+      }
+    },
+    "lotus_exos_125": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "a3415a0e18b892fe3ff9e4b8d8ccdc18",
+          "SHA256": "3b61de08e93b5ad14b86b1d60243c6382ed413e2b90fda22e334002f04ab0e81"
+        },
+        "data.acd": {
+          "MD5": "85087ffafd4dee048d9364ba5fd43203",
+          "SHA256": "102f8522705b2358aa7b0f047750768ed748138488bd319b758798e26bf0d032"
+        }
+      }
+    },
+    "lotus_exos_125_s1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "a3415a0e18b892fe3ff9e4b8d8ccdc18",
+          "SHA256": "3b61de08e93b5ad14b86b1d60243c6382ed413e2b90fda22e334002f04ab0e81"
+        },
+        "data.acd": {
+          "MD5": "fb4cb1b718a189cbb57a661c5ec295f6",
+          "SHA256": "4caafc7d938cac486e63241fb27ace5721f00d82353e0dbb5d578e4d920caf06"
+        }
+      }
+    },
+    "mclaren_mp412c": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "71d8c7a1a34207b4fa0b0146bbfa83e8",
+          "SHA256": "bb01cca4dc5fb34c3566a989d611ddf51bfe220dd0706bbfa3ab91962ffdf2b2"
+        },
+        "data.acd": {
+          "MD5": "45b9e6c2da36a9ed54fe0b486175072d",
+          "SHA256": "d7452e6df83ecb7235de6ffe7cca1f5e6d46fc984f26b39aa527f15eb55947b3"
+        }
+      }
+    },
+    "mclaren_mp412c_gt3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "25b05a952b3944c71fbfd12cc65df52c",
+          "SHA256": "6da72095da59cef40b94973685e401cc4c4683c31e53a67a25cd197b39f12ce2"
+        },
+        "data.acd": {
+          "MD5": "0c1587e2fb5048140034453bf13f2989",
+          "SHA256": "b2102f91fd314948d4db1d1e7ad0969cba07be25f801cfb48257b4da7e59f2f6"
+        }
+      }
+    },
+    "mercedes_sls": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "dde72759afff1138e8612548974b0078",
+          "SHA256": "ab8a6993f6989727d351873f5640140049aedc6437d477e485ad8a5f1e4834b5"
+        },
+        "data.acd": {
+          "MD5": "3e1800b4d433201f4bacfeb17ce6edec",
+          "SHA256": "a1ca0e3558f9240cec15a82c745f70e310a92a446d3448fd78c7e1d76fc10a3f"
+        }
+      }
+    },
+    "mercedes_sls_gt3": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "c18cc788370c3cad0f0183e34f97b5fe",
+          "SHA256": "0fa91a367950b72bfbc0bbd1b82dd9463b1d88e3407ebb9fe58676f8dff2485c"
+        },
+        "data.acd": {
+          "MD5": "083078cc4be2a56ca0343a561049d471",
+          "SHA256": "d1de56682650ff7da0fdeae190cdefc9a2178bf2fd65dac2df0242470ec51dfe"
+        }
+      }
+    },
+    "p4-5_2011": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "3e5b8d6b2e04d4f2655ce00918c0ad4e",
+          "SHA256": "df87b5fa82cf090da4b95bd3462ca09009578e439161ce2a63ac7cf2c6a37b59"
+        },
+        "data.acd": {
+          "MD5": "339b56c9d43e493b0d4febec5ea2760b",
+          "SHA256": "691c98b0a7fa637fb08a8397054b8d993306fc25d8fed503568d6a96846274d4"
+        }
+      }
+    },
+    "pagani_huayra": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "dea45e37af871e068f2ada29772c9ece",
+          "SHA256": "4da3e75ab4d07fba8e8df4e84deca9af8c77e59a34bfbbe1b00b54037d10f647"
+        },
+        "data.acd": {
+          "MD5": "43a32f49d60798f2e7c22978e2700898",
+          "SHA256": "7bbf111d8a36e6a8539c3cf9fbc4f160fea1de05a0a08da15c313f0ab51171b0"
+        }
+      }
+    },
+    "pagani_zonda_r": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "0cfc05828b179d2570a2baf3fbbcd2fd",
+          "SHA256": "efda3e62bb74d4f5671b0e4aba830b60d53a680dc571acf18ef017220f0b5734"
+        },
+        "data.acd": {
+          "MD5": "1461c532b19e9e707835b9876acb9c78",
+          "SHA256": "668fd595f868c243efa3bfa6a743e3c5b8383d0e7e61bc836bcbb29452a67a42"
+        }
+      }
+    },
+    "ruf_yellowbird": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "cb4ceb7ab006401711df587265402b76",
+          "SHA256": "bd791fe99833278e399406763323f3843f56e35a551e715d615aa947f1ce918e"
+        },
+        "data.acd": {
+          "MD5": "ccf2013e6480709d7369a0b14ee62c53",
+          "SHA256": "5ef8c26efb7f1307e57d1ae17af8d319fe0bef128a32d74ed92c42fd248896bd"
+        }
+      }
+    },
+    "shelby_cobra_427sc": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "94b25ad9f50a1ca07e5de4b69b4ee5aa",
+          "SHA256": "461d1a05ffb9a6427138ea39fdfb9d9df4ed7be9406ae3a48d9e8df944683192"
+        },
+        "data.acd": {
+          "MD5": "404dba4c40b8cd72e0efbf7740d51474",
+          "SHA256": "6ee98d5e04469ca4d3a6a02a9069bf40100f48646d0fda03183efd9686209297"
+        }
+      }
+    },
+    "tatuusfa1": {
+      "Files": {
+        "collider.kn5": {
+          "MD5": "b5d9c6b9d79bafe3e096672ccd85b4e0",
+          "SHA256": "3f47658ddf8169a3a7952c0c3ace311cac08c438bba93c1167caa258f2df679f"
+        },
+        "data.acd": {
+          "MD5": "c1ffd40f9d5d89b22d5c4fcffdb5ffa1",
+          "SHA256": "402a29a8bc117af567f3a6f69958e404adae38126e05dd107c65d78aa00071ed"
+        }
+      }
+    }
+  },
+  "Other": {
+    "system/data/surfaces.ini": {
+      "MD5": "41949b9f7045cad2af3f5eb951d170a9",
+      "SHA256": "5bf54158eeded67d9183995270d86a2698e47aeba5c2c1779c9de9020348e18d"
+    }
+  }
+}

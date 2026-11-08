@@ -88,7 +88,7 @@ public class ACServer : BackgroundLifecycleService
             cspFeatureManager.Add(new CSPFeature { Name = "CUSTOM_UPDATE" });
         }
         
-        cspServerScriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Lua.assettoserver.lua")!, "assettoserver.lua");
+        cspServerScriptProvider.AddScript(EmbeddedResources.Lua.Assettoserver.Lua.GetStream(), "assettoserver.lua");
 
         if (_configuration.Extra.EnableCarReset)
         {

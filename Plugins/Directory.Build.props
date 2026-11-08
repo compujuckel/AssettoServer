@@ -1,5 +1,4 @@
 <Project>
-
     <PropertyGroup>
         <TargetFramework>net11.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -15,6 +14,7 @@
         <PublishDir>..\..\out-$(RuntimeIdentifier)\plugins\$(MSBuildProjectName)\</PublishDir>
         <PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
         <Features>runtime-async=on</Features>
+        <EmbeddedResourcePrefix>Embedded</EmbeddedResourcePrefix>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -32,12 +32,9 @@
             <Private>false</Private>
             <ExcludeAssets>runtime; native</ExcludeAssets>
         </ProjectReference>
+        <PackageReference Include="compujuckel.EmbeddedResourceAccessGenerator">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
-
-    <ItemGroup>
-        <None Update="wwwroot\**\*">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
-
 </Project>

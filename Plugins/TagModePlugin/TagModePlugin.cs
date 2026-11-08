@@ -48,7 +48,7 @@ public class TagModePlugin : BackgroundService
             throw new ConfigurationException("TagModePlugin requires enabled client messages");
         }
 
-        scriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("TagModePlugin.lua.tagmode.lua")!, "tagmode.lua");
+        scriptProvider.AddScript(EmbeddedResources.Lua.Tagmode.Lua.GetStream(), "tagmode.lua");
         
         TaggedColor = ColorTranslator.FromHtml(_configuration.TaggedColor);
         RunnerColor = ColorTranslator.FromHtml(_configuration.RunnerColor);

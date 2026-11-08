@@ -20,6 +20,7 @@
         <Features>runtime-async=on</Features>
         <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
         <PublishIISAssets>false</PublishIISAssets>
+        <EmbeddedResourcePrefix>Embedded</EmbeddedResourcePrefix>
     </PropertyGroup>
 
     <ItemGroup>
@@ -27,6 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="compujuckel.EmbeddedResourceAccessGenerator"/>
         <PackageReference Include="Autofac"/>
         <PackageReference Include="Autofac.Extensions.DependencyInjection"/>
         <PackageReference Include="CommandLineParser"/>
@@ -94,20 +96,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="Server\Ai\ai_debug.lua"/>
-        <EmbeddedResource Include="Server\Ai\ai_debug.lua"/>
-        <None Remove="Server\Lua\assettoserver.lua"/>
-        <EmbeddedResource Include="Server\Lua\assettoserver.lua"/>
-        <None Remove="Assets\logo_42.png"/>
-        <EmbeddedResource Include="Assets\logo_42.png"/>
-        <None Remove="Assets\srp-logo-new.png"/>
-        <EmbeddedResource Include="Assets\srp-logo-new.png"/>
-        <None Remove="Assets\crash_report.md.tpl"/>
-        <EmbeddedResource Include="Assets\crash_report.md.tpl"/>
-        <None Remove="Assets\server_cfg.ini"/>
-        <EmbeddedResource Include="Assets\server_cfg.ini"/>
-        <None Remove="Assets\entry_list.ini"/>
-        <EmbeddedResource Include="Assets\entry_list.ini"/>
+        <None Remove="Embedded\**\*" />
+        <EmbeddedResource Include="Embedded\**\*" />
 
         <None Update="wwwroot\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

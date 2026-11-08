@@ -37,11 +37,8 @@ public class FastTravelPlugin : IHostedService
             throw new ConfigurationException("FastTravelPlugin requires ClientMessages to be enabled");
         }
 
-        var luaPath = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "lua", "fasttravel.lua");
-
-        using var streamReader = new StreamReader(luaPath);
-        var fasttravelScript = streamReader.ReadToEnd();
-        scriptProvider.AddScript(fasttravelScript, "fasttravel.lua", new Dictionary<string, object>
+        var fastTravelScript = File.ReadAllText(Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "lua", "fasttravel.lua"));
+        scriptProvider.AddScript(fastTravelScript, "fasttravel.lua", new Dictionary<string, object>
         {
             ["mapFixedTargetPosition"] = $"\"{JsonSerializer.Serialize(configuration.MapFixedTargetPosition)}\"",
             ["mapZoomValues"] = $"\"{JsonSerializer.Serialize(configuration.MapZoomValues)}\"",

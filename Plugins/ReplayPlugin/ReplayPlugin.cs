@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using AssettoServer.Network.Tcp;
+﻿using AssettoServer.Network.Tcp;
 using AssettoServer.Server;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Weather;
@@ -46,7 +45,7 @@ public class ReplayPlugin : IHostedService
         server.Update += Update;
         
         cspClientMessageTypeManager.RegisterOnlineEvent<UploadDataPacket>(OnUploadData);
-        scriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("ReplayPlugin.lua.replay.lua")!, "replay.lua");
+        scriptProvider.AddScript(EmbeddedResources.Lua.Replay.Lua.GetStream(), "replay.lua");
     }
 
     private void OnUploadData(ACTcpClient sender, UploadDataPacket packet)

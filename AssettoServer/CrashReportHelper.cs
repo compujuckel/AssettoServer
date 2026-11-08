@@ -45,8 +45,7 @@ public static partial class CrashReportHelper
     public static string GenerateCrashReport(ConfigurationLocations locations, Exception exception)
     {
         Template template;
-        using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Assets.crash_report.md.tpl")!)
-        using (var streamReader = new StreamReader(stream))
+        using (var streamReader = EmbeddedResources.Crash_report.Md.Tpl.GetReader())
         {
             template = Template.Parse(streamReader.ReadToEnd());
         }

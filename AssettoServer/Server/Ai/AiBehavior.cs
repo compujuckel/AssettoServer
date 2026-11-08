@@ -51,7 +51,7 @@ public class AiBehavior : BackgroundService
 
         if (_configuration.Extra.AiParams.Debug)
         {
-            serverScriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("AssettoServer.Server.Ai.ai_debug.lua")!, "ai_debug.lua");
+            serverScriptProvider.AddScript(EmbeddedResources.Lua.Ai_debug.Lua.GetStream(), "ai_debug.lua");
         }
 
         _entryCarManager.ClientConnected += (client, _) =>

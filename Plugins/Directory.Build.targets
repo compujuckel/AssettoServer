@@ -1,0 +1,10 @@
+﻿<Project>
+    <ItemGroup>
+        <None Update="wwwroot\**\*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        
+        <None Remove="Embedded\**\*" />
+        <EmbeddedResource Include="Embedded\**\*" />
+    </ItemGroup>
+</Project>

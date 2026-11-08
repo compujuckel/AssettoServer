@@ -116,8 +116,7 @@ public partial class ACServerConfiguration
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                using var serverCfg = Assembly.GetExecutingAssembly()
-                    .GetManifestResourceStream("AssettoServer.Assets.server_cfg.ini")!;
+                using var serverCfg = EmbeddedResources.Configuration.Server_cfg.Ini.GetStream();
                 using var outFile = File.Create(path);
                 serverCfg.CopyTo(outFile);
             }
@@ -147,8 +146,7 @@ public partial class ACServerConfiguration
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                using var entryList = Assembly.GetExecutingAssembly()
-                    .GetManifestResourceStream("AssettoServer.Assets.entry_list.ini")!;
+                using var entryList = EmbeddedResources.Configuration.Entry_list.Ini.GetStream();
                 using var outFile = File.Create(path);
                 entryList.CopyTo(outFile);
             }

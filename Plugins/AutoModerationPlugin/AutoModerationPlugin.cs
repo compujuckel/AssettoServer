@@ -45,7 +45,7 @@ public class AutoModerationPlugin : BackgroundService
         
         if (serverConfiguration.Extra.EnableClientMessages)
         {
-            scriptProvider.AddScript(Assembly.GetExecutingAssembly().GetManifestResourceStream("AutoModerationPlugin.lua.automoderation.lua")!, "automoderation.lua");
+            scriptProvider.AddScript(EmbeddedResources.Lua.Automoderation.Lua.GetStream(), "automoderation.lua");
         }
 
         if (_configuration.AfkPenalty is { Enabled: true, Behavior: AfkPenaltyBehavior.MinimumSpeed })

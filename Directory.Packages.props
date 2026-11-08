@@ -5,6 +5,7 @@
   <ItemGroup>
     <PackageVersion Include="Autofac" Version="9.3.4" />
     <PackageVersion Include="Autofac.Extensions.DependencyInjection" Version="11.0.2" />
+    <PackageVersion Include="compujuckel.EmbeddedResourceAccessGenerator" Version="2.0.0" />
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />
     <PackageVersion Include="CommunityToolkit.Common" Version="8.4.2" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />

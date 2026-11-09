@@ -1,25 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
+        <OutputType>Library</OutputType>
         <TargetFramework>net11.0</TargetFramework>
-        <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
         <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <PublishSingleFile>true</PublishSingleFile>
-        <SelfContained>false</SelfContained>
         <DebugType>embedded</DebugType>
-        <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-x64'">..\out-linux-x64\utils</PublishDir>
-        <PublishDir Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">..\out-linux-arm64\utils</PublishDir>
-        <PublishDir Condition="'$(RuntimeIdentifier)' == 'win-x64'">..\out-win-x64\utils</PublishDir>
+        <Nullable>enable</Nullable>
         <PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="CommandLineParser"/>
-      <PackageReference Include="JetBrains.Annotations"/>
       <PackageReference Include="Serilog"/>
-      <PackageReference Include="Serilog.Sinks.Console"/>
+      <PackageReference Include="System.CommandLine"/>
     </ItemGroup>
 
 </Project>

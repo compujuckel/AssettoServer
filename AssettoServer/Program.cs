@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.CommandLine;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -9,17 +10,15 @@ using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Utils;
 using Autofac.Extensions.DependencyInjection;
-using CommandLine;
 using DotNext.Collections.Generic;
+using FastLaneUtils;
 using FluentValidation;
-using JetBrains.Annotations;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Prometheus;
 using Serilog;
-using Parser = CommandLine.Parser;
 
 namespace AssettoServer;
 
@@ -31,28 +30,14 @@ public static class Program
     public static readonly bool IsDebugBuild = false;
 #endif
     
-    [UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]
     private class Options
     {
-        [Option('p', "preset", Required = false, SetName = "AssettoServer", HelpText = "Configuration preset")]
         public string Preset { get; set; } = "";
-
-        [Option('c', Required = false, SetName = "Content Manager compatibility", HelpText = "Path to server configuration")]
         public string ServerCfgPath { get; set; } = "";
-
-        [Option('e', Required = false, SetName = "Content Manager compatibility", HelpText = "Path to entry list")]
         public string EntryListPath { get; set; } = "";
-
-        [Option("plugins-from-workdir", Required = false, HelpText = "Additionally load plugins from working directory")]
         public bool LoadPluginsFromWorkdir { get; set; } = false;
-
-        [Option("verbose", Required = false, HelpText = "Change log level to verbose")]
         public bool UseVerboseLogging { get; set; } = false;
-        
-        [Option('r',"use-random-preset", Required = false, HelpText = "Use a random available configuration preset")]
         public bool UseRandomPreset { get; set; } = false;
-        
-        [Option('g',"generate-config", Required = false, HelpText = "Generate configuration file for all installed plugins")]
         public bool GenerateConfigs { get; set; } = false;
     }
 
@@ -71,15 +56,57 @@ public static class Program
     private static bool _generatePluginConfigs;
     private static TaskCompletionSource<StartOptions> _restartTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
     
-    internal static async Task Main(string[] args)
+    internal static async Task<int> Main(string[] args)
     {
         SetupFluentValidation();
         SetupMetrics();
         DetectContentManager();
         
-        var options = Parser.Default.ParseArguments<Options>(args).Value;
-        if (options == null) return;
+        var rootCommand = CreateRootCommand();
+        return await rootCommand.Parse(args).InvokeAsync();
+    }
 
+    private static RootCommand CreateRootCommand()
+    {
+        var presetOption = new Option<string?>("--preset", "-p") { Description = "Configuration preset" };
+        var serverCfgPathOption = new Option<string?>("-c") { Description = "Path to server configuration" };
+        var entryListPathOption = new Option<string?>("-e") { Description = "Path to entry list" };
+        var loadPluginsFromWorkdirOption = new Option<bool>("--plugins-from-workdir") { Description = "Additionally load plugins from working directory" };
+        var useVerboseLoggingOption = new Option<bool>("--verbose") { Description = "Change log level to verbose" };
+        var useRandomPresetOption = new Option<bool>("--use-random-preset", "-r") { Description = "Use a random available configuration preset" };
+        var generateConfigsOption = new Option<bool>("--generate-config", "-g") { Description = "Generate configuration file for all installed plugins" };
+
+        var rootCommand = new RootCommand();
+        rootCommand.Options.Add(presetOption);
+        rootCommand.Options.Add(serverCfgPathOption);
+        rootCommand.Options.Add(entryListPathOption);
+        rootCommand.Options.Add(loadPluginsFromWorkdirOption);
+        rootCommand.Options.Add(useVerboseLoggingOption);
+        rootCommand.Options.Add(useRandomPresetOption);
+        rootCommand.Options.Add(generateConfigsOption);
+
+        rootCommand.Subcommands.Add(FastLaneCommand.CreateCommand());
+
+        rootCommand.SetAction(async (parseResult, _) =>
+        {
+            await RunAsync(new Options
+            {
+                Preset = parseResult.GetValue(presetOption) ?? "",
+                ServerCfgPath = parseResult.GetValue(serverCfgPathOption) ?? "",
+                EntryListPath = parseResult.GetValue(entryListPathOption) ?? "",
+                LoadPluginsFromWorkdir = parseResult.GetValue(loadPluginsFromWorkdirOption),
+                UseVerboseLogging = parseResult.GetValue(useVerboseLoggingOption),
+                UseRandomPreset = parseResult.GetValue(useRandomPresetOption),
+                GenerateConfigs = parseResult.GetValue(generateConfigsOption),
+            });
+            return 0;
+        });
+
+        return rootCommand;
+    }
+
+    private static async Task RunAsync(Options options)
+    {
         _loadPluginsFromWorkdir = options.LoadPluginsFromWorkdir;
         _generatePluginConfigs = options.GenerateConfigs;
         

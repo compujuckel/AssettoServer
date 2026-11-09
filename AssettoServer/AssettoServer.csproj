@@ -31,7 +31,6 @@
         <PackageReference Include="compujuckel.EmbeddedResourceAccessGenerator"/>
         <PackageReference Include="Autofac"/>
         <PackageReference Include="Autofac.Extensions.DependencyInjection"/>
-        <PackageReference Include="CommandLineParser"/>
         <PackageReference Include="CommunityToolkit.Common"/>
         <PackageReference Include="CommunityToolkit.Mvvm"/>
         <PackageReference Include="DotNext.IO"/>
@@ -76,6 +75,7 @@
         <PackageReference Include="compujuckel.Supercluster.KDTree"/>
         <PackageReference Include="Sigil"/>
         <PackageReference Include="SunCalcNet"/>
+        <PackageReference Include="System.CommandLine" />
         <PackageReference Include="System.IO.Hashing"/>
         <PackageReference Include="YamlDotNet"/>
         <PackageReference Include="MinVer">
@@ -91,6 +91,9 @@
 
     <ItemGroup>
         <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj">
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\FastLaneUtils\FastLaneUtils.csproj">
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
     </ItemGroup>

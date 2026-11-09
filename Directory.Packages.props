@@ -6,7 +6,6 @@
     <PackageVersion Include="Autofac" Version="9.3.4" />
     <PackageVersion Include="Autofac.Extensions.DependencyInjection" Version="11.0.2" />
     <PackageVersion Include="compujuckel.EmbeddedResourceAccessGenerator" Version="2.0.0" />
-    <PackageVersion Include="CommandLineParser" Version="2.9.1" />
     <PackageVersion Include="CommunityToolkit.Common" Version="8.4.2" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageVersion Include="DotNext.IO" Version="6.10.0" />
@@ -41,6 +40,7 @@
     <PackageVersion Include="compujuckel.Supercluster.KDTree" Version="1.0.9" />
     <PackageVersion Include="Sigil" Version="5.0.0" />
     <PackageVersion Include="SunCalcNet" Version="3.0.1" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.14" />
     <PackageVersion Include="System.IO.Hashing" Version="11.0.0-rc.2.26504.105" />
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
     <PackageVersion Include="MinVer" Version="8.0.0" />

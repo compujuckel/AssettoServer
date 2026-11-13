@@ -20,6 +20,7 @@ using AssettoServer.Server.Configuration;
 using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Model;
+using AssettoServer.Shared.Utils;
 using AssettoServer.Shared.Network.Packets;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
@@ -62,6 +63,7 @@ public class ACTcpClient : IClient
     public InputMethod InputMethod { get; set; }
 
     internal SocketAddress? UdpEndpoint { get; private set; }
+    private readonly SocketAddress _tcpEndpoint;
     public bool HasUdpEndpoint => UdpEndpoint != null;
     public bool SupportsCSPCustomUpdate { get; private set; }
     public int? CSPVersion { get; private set; }
@@ -231,6 +233,7 @@ public class ACTcpClient : IClient
         tcpClient.LingerState = new LingerOption(true, 2);
         tcpClient.NoDelay = true;
 
+        _tcpEndpoint = tcpClient.Client.RemoteEndPoint!.Serialize();
         TcpStream = tcpClient.GetStream();
 
         TcpSendBuffer = GC.AllocateArray<byte>(ushort.MaxValue + 2, true);
@@ -622,7 +625,7 @@ public class ACTcpClient : IClient
     private void OnSpectateCar(PacketReader reader)
     {
         var spectatePacket = reader.ReadPacket<SpectateCar>();
-        if (spectatePacket.SessionId == SessionId || spectatePacket.SessionId > _entryCarManager.EntryCars.Length)
+        if (spectatePacket.SessionId == SessionId || spectatePacket.SessionId >= _entryCarManager.EntryCars.Length)
         {
             EntryCar.TargetCar = null;
         }
@@ -965,6 +968,12 @@ public class ACTcpClient : IClient
     {
         if (UdpEndpoint != null)
             return false;
+
+        if (!endpoint.IpEquals(_tcpEndpoint))
+        {
+            Logger.Warning("Rejected UDP association from {UdpEndpoint}, TCP connection is from {TcpEndpoint}", endpoint.ToString(), _tcpEndpoint.ToString());
+            return false;
+        }
 
         UdpEndpoint = endpoint;
         return true;

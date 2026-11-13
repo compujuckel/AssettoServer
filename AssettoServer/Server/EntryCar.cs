@@ -1,12 +1,12 @@
 ﻿using AssettoServer.Network.Tcp;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
 using AssettoServer.Network.ClientMessages;
 using AssettoServer.Server.Ai;
 using AssettoServer.Server.Ai.Splines;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Configuration.Kunos;
 using AssettoServer.Shared.Model;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
@@ -37,20 +37,19 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public string LegalTyres { get; set; } = "";
 
     public bool IsSpectator { get; internal set; }
-    public string Model { get; }
-    public string Skin { get; }
+    public string Model { get; set; }
+    public string Skin { get; set; }
     public int SpectatorMode { get; internal set; }
     public float Ballast { get; internal set; }
     public int Restrictor { get; internal set; }
     public string? FixedSetup { get; internal set; }
-    public List<ulong> AllowedGuids { get; internal set; } = new();
         
     public float NetworkDistanceSquared { get; internal set; }
     public int OutsideNetworkBubbleUpdateRateMs { get; internal set; }
 
     internal long[] OtherCarsLastSentUpdateTime { get; }
     public EntryCar? TargetCar { get; set; }
-    private long LastFallCheckTime{ get; set; }
+    private long LastFallCheckTime { get; set; }
 
     /// <summary>
     /// Fires when a position update is received.
@@ -103,6 +102,9 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         LastSeenAiState = new AiState[entryCarManager.EntryCars.Length];
         LastSeenAiSpawn = new byte[entryCarManager.EntryCars.Length];
         
+        NetworkDistanceSquared = MathF.Pow(configuration.Extra.NetworkBubbleDistance, 2);
+        OutsideNetworkBubbleUpdateRateMs = 1000 / configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
+        
         Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .Enrich.With(new EntryCarLogEventEnricher(this))
@@ -112,6 +114,24 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
         _sessionManager.SessionChanged += OnSessionChanged;
         
         AiInit();
+    }
+
+    public void UpdateFromEntry(EntryList.Entry entry)
+    {
+        var driverOptions = CSPDriverOptions.Parse(entry.Skin);
+        var aiMode = _configuration.Extra.EnableAi ? entry.AiMode : AiMode.None;
+        
+        Model = entry.Model;
+        Skin = entry.Skin ?? "";
+        SpectatorMode = entry.SpectatorMode;
+        Ballast = entry.Ballast;
+        Restrictor = entry.Restrictor;
+        FixedSetup = entry.FixedSetup;
+        DriverOptionsFlags = driverOptions;
+        AiMode = aiMode;
+        AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange);
+        AiControlled = aiMode != AiMode.None;
+        LegalTyres = entry.LegalTyres ?? _configuration.Server.LegalTyres;
     }
 
     private void OnSessionChanged(SessionManager sender, SessionChangedEventArgs args)

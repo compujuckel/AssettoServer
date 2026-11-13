@@ -10,4 +10,5 @@ public static class CSPVersion
     public const int V0_2_0  = 2651;
     public const int V0_2_3 = 3044;
     public const int V0_2_8 = 3424;
+    public const int V0_3_0 = 4293;
 }

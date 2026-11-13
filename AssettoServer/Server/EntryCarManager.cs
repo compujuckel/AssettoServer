@@ -9,6 +9,7 @@ using AssettoServer.Server.Admin;
 using AssettoServer.Server.Blacklist;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.OpenSlotFilters;
+using AssettoServer.Shared.Network.Http.Responses;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing;
 using AssettoServer.Shared.Network.Packets.Shared;
@@ -19,7 +20,7 @@ namespace AssettoServer.Server;
 
 public class EntryCarManager : HostedLifecycleService
 {
-    public EntryCar[] EntryCars { get; private set; } = [];
+    public EntryCar[] EntryCars { get; protected set; } = [];
     public ConcurrentDictionary<int, EntryCar> ConnectedCars { get; } = new();
 
     private readonly ACServerConfiguration _configuration;
@@ -159,8 +160,7 @@ public class EntryCarManager : HostedLifecycleService
         }
     }
 
-    public void BroadcastChat(string message, byte senderId = 255) =>
-        BroadcastPacket(new ChatMessage { SessionId = senderId, Message = message });
+    public void BroadcastChat(string message, byte senderId = 255) => BroadcastPacket(new ChatMessage { SessionId = senderId, Message = message });
         
     public void BroadcastPacketUdp<TPacket>(in TPacket packet, ACTcpClient? sender = null, float? range = null, bool skipSender = true) where TPacket : IOutgoingNetworkPacket
     {
@@ -184,46 +184,21 @@ public class EntryCarManager : HostedLifecycleService
             if (ConnectedCars.Count >= _configuration.Server.MaxClients)
                 return false;
 
-            IEnumerable<EntryCar> candidates;
-
-            // Support for SLOT_INDEX CSP feature. CSP sends "car_model:n" where n is the specific slot index the user wants to connect to.
-            var slotIndexSeparator = handshakeRequest.RequestedCar.IndexOf(':');
-            if (slotIndexSeparator >= 0)
-            {
-                var requestedSlotIndex = int.Parse(handshakeRequest.RequestedCar.AsSpan(slotIndexSeparator + 1));
-                var requestedCarName = handshakeRequest.RequestedCar[..slotIndexSeparator];
-                var candidate = EntryCars.Where(c => c.Model == requestedCarName).ElementAtOrDefault(requestedSlotIndex);
-
-                if (candidate == null)
-                {
-                    return false;
-                }
-                
-                candidates = [candidate];
-            }
-            else
-            {
-                candidates = EntryCars.Where(c => c.Model == handshakeRequest.RequestedCar);
-            }
-
             var isAdmin = await _adminService.IsAdminAsync(handshakeRequest.Guid);
-            foreach (var entryCar in candidates.OrderByDescending(x => x.AllowedGuids.Count))
+            var entryCar = await TrySecureSlotInternalAsync(handshakeRequest, isAdmin);
+            if (entryCar != null)
             {
-                if (entryCar.Client == null && (isAdmin || await _openSlotFilterChain.Value.IsSlotOpen(entryCar, handshakeRequest.Guid)))
-                {
-                    entryCar.Reset();
-                    entryCar.Client = client;
-                    client.EntryCar = entryCar;
-                    client.SessionId = entryCar.SessionId;
-                    client.IsConnected = true;
-                    client.IsAdministrator = isAdmin;
-                    client.Guid = handshakeRequest.Guid;
+                entryCar.Reset();
+                entryCar.Client = client;
+                client.EntryCar = entryCar;
+                client.SessionId = entryCar.SessionId;
+                client.IsConnected = true;
+                client.IsAdministrator = isAdmin;
+                client.Guid = handshakeRequest.Guid;
 
-                    ConnectedCars[client.SessionId] = entryCar;
-
-                    ClientConnected?.Invoke(client, EventArgs.Empty);
-                    return true;
-                }
+                ConnectedCars[client.SessionId] = entryCar;
+                ClientConnected?.Invoke(client, EventArgs.Empty);
+                return true;
             }
         }
         catch (Exception ex)
@@ -238,6 +213,62 @@ public class EntryCarManager : HostedLifecycleService
         return false;
     }
 
+    protected virtual async Task<EntryCar?> TrySecureSlotInternalAsync(HandshakeRequest handshakeRequest, bool isAdmin)
+    {
+        IEnumerable<EntryCar> candidates;
+
+        // Support for SLOT_INDEX CSP feature. CSP sends "car_model:n" where n is the specific slot index the user wants to connect to.
+        var slotIndexSeparator = handshakeRequest.RequestedCar.IndexOf(':');
+        if (slotIndexSeparator >= 0)
+        {
+            var requestedSlotIndex = int.Parse(handshakeRequest.RequestedCar.AsSpan(slotIndexSeparator + 1));
+            var requestedCarName = handshakeRequest.RequestedCar[..slotIndexSeparator];
+            var candidate = EntryCars.Where(c => c.Model == requestedCarName).ElementAtOrDefault(requestedSlotIndex);
+
+            if (candidate == null)
+            {
+                return null;
+            }
+            
+            candidates = [candidate];
+        }
+        else
+        {
+            candidates = EntryCars.Where(c => c.Model == handshakeRequest.RequestedCar);
+        }
+        
+        foreach (var entryCar in candidates.OrderByDescending(ec => _configuration.EntryList.Cars[ec.SessionId].AllowedGuids.Count))
+        {
+            if (entryCar.Client == null 
+                && (isAdmin || await _openSlotFilterChain.Value.IsSlotOpenAsync(_configuration.EntryList.Cars[entryCar.SessionId], handshakeRequest.Guid)))
+            {
+                return entryCar;
+            }
+        }
+
+        return null;
+    }
+    
+    public virtual async Task<List<DetailResponseCar>> GetEntryListAsync(ulong guid)
+    {
+        bool isAdmin = guid != 0 && await _adminService.IsAdminAsync(guid);
+        var cars = new List<DetailResponseCar>();
+        foreach (var ec in EntryCars)
+        {
+            cars.Add(new DetailResponseCar
+            {
+                Model = ec.Model,
+                Skin = ec.Skin,
+                IsEntryList = isAdmin || await _openSlotFilterChain.Value.IsSlotOpenAsync(_configuration.EntryList.Cars[ec.SessionId], guid),
+                DriverName = ec.Client?.Name,
+                DriverTeam = ec.Client?.Team,
+                IsConnected = ec.Client != null
+            });
+        }
+
+        return cars;
+    }
+
     public override Task StartingAsync(CancellationToken token)
     {
         EntryCars = new EntryCar[Math.Min(_configuration.Server.MaxClients, _configuration.EntryList.Cars.Count)];
@@ -245,26 +276,8 @@ public class EntryCarManager : HostedLifecycleService
         for (int i = 0; i < EntryCars.Length; i++)
         {
             var entry = _configuration.EntryList.Cars[i];
-            var driverOptions = CSPDriverOptions.Parse(entry.Skin);
-            var aiMode = _configuration.Extra.EnableAi ? entry.AiMode : AiMode.None;
-
             var car = _entryCarFactory(entry.Model, entry.Skin, (byte)i);
-            car.SpectatorMode = entry.SpectatorMode;
-            car.Ballast = entry.Ballast;
-            car.Restrictor = entry.Restrictor;
-            car.FixedSetup = entry.FixedSetup;
-            car.DriverOptionsFlags = driverOptions;
-            car.AiMode = aiMode;
-            car.AiEnableColorChanges = driverOptions.HasFlag(DriverOptionsFlags.AllowColorChange);
-            car.AiControlled = aiMode != AiMode.None;
-            car.NetworkDistanceSquared = MathF.Pow(_configuration.Extra.NetworkBubbleDistance, 2);
-            car.OutsideNetworkBubbleUpdateRateMs = 1000 / _configuration.Extra.OutsideNetworkBubbleRefreshRateHz;
-            car.LegalTyres = entry.LegalTyres ?? _configuration.Server.LegalTyres;
-            if (!string.IsNullOrWhiteSpace(entry.Guid))
-            {
-                car.AllowedGuids = entry.Guid.Split(';').Select(ulong.Parse).ToList();
-            }
-
+            car.UpdateFromEntry(entry);
             EntryCars[i] = car;
         }
 

@@ -56,10 +56,6 @@ public class Startup
         builder.RegisterInstance(_loader);
         
         // Services are started sequentially, some services depend on others so order is important
-        builder.RegisterType<EntryCarManager>().AsSelf().As<IHostedService>().SingleInstance();     
-        builder.RegisterType<ChecksumManager>().AsSelf().As<IHostedService>().SingleInstance();
-        builder.RegisterType<SessionManager>().AsSelf().As<IHostedService>().SingleInstance();
-        builder.RegisterType<GeoParamsManager>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<ACServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<ACTcpServer>().AsSelf().As<IHostedService>().SingleInstance();
         builder.RegisterType<ACUdpServer>().AsSelf().As<IHostedService>().SingleInstance();
@@ -77,6 +73,13 @@ public class Startup
             if (plugin.ConfigurationType != null) builder.RegisterType(plugin.ConfigurationType).AsSelf();
             builder.RegisterModule(plugin.Instance);
         }
+
+        // These are IHostedLifecycleServices using StartingAsync
+        builder.RegisterType<EntryCarManager>().AsSelf().SingleInstance().IfNotRegistered(typeof(EntryCarManager));
+        builder.Register<IHostedService>(ctx => ctx.Resolve<EntryCarManager>()).SingleInstance();
+        builder.RegisterType<ChecksumManager>().AsSelf().As<IHostedService>().SingleInstance();
+        builder.RegisterType<SessionManager>().AsSelf().As<IHostedService>().SingleInstance();
+        builder.RegisterType<GeoParamsManager>().AsSelf().As<IHostedService>().SingleInstance();
         
         // Do this last so we don't register before a plugin fails to start
         builder.RegisterType<UpnpService>().AsSelf().As<IHostedService>().SingleInstance();

@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AssettoServer.Server;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
 using AssettoServer.Shared.Network.Http.Responses;
@@ -13,7 +12,7 @@ namespace AssettoServer.Network.Http;
 public class HttpInfoCache : IHostedService
 {
     private readonly GeoParamsManager _geoParamsManager;
-    private readonly EntryCarManager _entryCarManager;
+    private readonly ACServerConfiguration _configuration;
 
     public IReadOnlyList<string> Cars { get; private set; } = null!;
     public IReadOnlyList<int> Durations { get; }
@@ -25,9 +24,9 @@ public class HttpInfoCache : IHostedService
     public IReadOnlyList<string> Country { get; private set; } = null!;
     public Dictionary<string, object> Extensions { get; } = [];
 
-    public HttpInfoCache(ACServerConfiguration configuration, EntryCarManager entryCarManager, GeoParamsManager geoParamsManager)
+    public HttpInfoCache(ACServerConfiguration configuration, GeoParamsManager geoParamsManager)
     {
-        _entryCarManager = entryCarManager;
+        _configuration = configuration;
         _geoParamsManager = geoParamsManager;
         
         Durations = configuration.Sessions.Select(c => c.IsTimedRace ? c.Time * 60 : c.Laps).ToList();
@@ -52,7 +51,7 @@ public class HttpInfoCache : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        Cars = _entryCarManager.EntryCars.Select(c => c.Model).Distinct().ToList();
+        Cars = _configuration.EntryList.Cars.Select(c => c.Model).Distinct().ToList();
         Country = [_geoParamsManager.GeoParams.Country, _geoParamsManager.GeoParams.CountryCode];
         return Task.CompletedTask;
     }

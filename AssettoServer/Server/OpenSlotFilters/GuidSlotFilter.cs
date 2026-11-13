@@ -1,16 +1,17 @@
 ﻿using System.Threading.Tasks;
+using AssettoServer.Server.Configuration.Kunos;
 
 namespace AssettoServer.Server.OpenSlotFilters;
 
 public class GuidSlotFilter : OpenSlotFilterBase
 {
-    public override async ValueTask<bool> IsSlotOpen(EntryCar entryCar, ulong guid)
+    public override async ValueTask<bool> IsSlotOpenAsync(EntryList.Entry entry, ulong guid)
     {
-        if (entryCar.AllowedGuids.Count > 0 && !entryCar.AllowedGuids.Contains(guid))
+        if (entry.AllowedGuids.Count > 0 && !entry.AllowedGuids.Contains(guid))
         {
             return false;
         }
 
-        return await base.IsSlotOpen(entryCar, guid);
+        return await base.IsSlotOpenAsync(entry, guid);
     }
 }

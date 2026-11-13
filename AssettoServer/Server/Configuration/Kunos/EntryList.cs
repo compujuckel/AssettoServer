@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using AssettoServer.Utils;
 using IniParser;
 using IniParser.Model;
@@ -26,6 +27,13 @@ public class EntryList
         [IniField("GUID")] public string Guid { get; init; } = "";
         [IniField("AI")] public AiMode AiMode { get; internal set; } = AiMode.None;
         [IniField("LEGAL_TYRES")] public string? LegalTyres { get; init; }
+
+        public List<ulong> AllowedGuids { get; init; }
+        
+        public Entry()
+        {
+            AllowedGuids = !string.IsNullOrWhiteSpace(Guid) ? Guid.Split(';').Select(ulong.Parse).ToList() : [];
+        }
     }
     
     public static EntryList FromFile(string path)
@@ -35,9 +43,8 @@ public class EntryList
         var res = data.DeserializeObject<EntryList>();
 
         int skippedIndex = -1;
-        for (int i = res.Cars.Count; i < 255; i++)
+        outer: for (int i = res.Cars.Count; i < 255; i++)
         {
-            bool breakLoop = false;
             switch (data.Sections.ContainsSection($"CAR_{i}"))
             {
                 case false when skippedIndex < 0:
@@ -45,11 +52,8 @@ public class EntryList
                     break;
                 case true when skippedIndex >= 0:
                     Log.Warning("Entry list index {Index} skipped. Any entry after this will be ignored", skippedIndex);
-                    breakLoop = true;
-                    break;
+                    break outer;
             }
-
-            if (breakLoop) break;
         }
         
         if (res.Cars.Count == 0)

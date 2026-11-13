@@ -19,12 +19,10 @@ public class ChecksumManager : HostedLifecycleService
     public IReadOnlyDictionary<string, byte[]> AdditionalCarChecksums { get; private set; } = null!;
 
     private readonly ACServerConfiguration _configuration;
-    private readonly EntryCarManager _entryCarManager;
-    
-    public ChecksumManager(ACServerConfiguration configuration, EntryCarManager entryCarManager)
+
+    public ChecksumManager(ACServerConfiguration configuration)
     {
         _configuration = configuration;
-        _entryCarManager = entryCarManager;
     }
     
     public override Task StartingAsync(CancellationToken cancellationToken)
@@ -32,7 +30,7 @@ public class ChecksumManager : HostedLifecycleService
         CalculateTrackChecksums(_configuration.Server.Track, _configuration.Server.TrackConfig);
         Log.Information("Initialized {Count} track checksums", TrackChecksums.Count);
 
-        var carModels = _entryCarManager.EntryCars.Select(car => car.Model).Distinct().ToList();
+        var carModels = _configuration.EntryList.Cars.Select(car => car.Model).Distinct().ToList();
         CalculateCarChecksums(carModels, _configuration.Extra.EnableAlternativeCarChecksums);
         Log.Information("Initialized {Count} car checksums", CarChecksums.Select(car => car.Value.Count).Sum());
 

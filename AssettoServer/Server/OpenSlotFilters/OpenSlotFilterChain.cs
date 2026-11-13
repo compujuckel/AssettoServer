@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using AssettoServer.Network.Tcp;
+using AssettoServer.Server.Configuration.Kunos;
 using AssettoServer.Shared.Network.Packets.Incoming;
 using AssettoServer.Shared.Network.Packets.Outgoing.Handshake;
 
@@ -25,9 +26,9 @@ public class OpenSlotFilterChain
         if (_first == null) throw new InvalidOperationException("No open slot filters set");
     }
     
-    public async ValueTask<bool> IsSlotOpen(EntryCar entryCar, ulong guid)
+    public async ValueTask<bool> IsSlotOpenAsync(EntryList.Entry entry, ulong guid)
     {
-        return await _first.IsSlotOpen(entryCar, guid);
+        return await _first.IsSlotOpenAsync(entry, guid);
     }
 
     public Task<AuthFailedResponse?> ShouldAcceptConnectionAsync(ACTcpClient client, HandshakeRequest request)

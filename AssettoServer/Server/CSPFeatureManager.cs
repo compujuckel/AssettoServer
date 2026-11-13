@@ -4,18 +4,16 @@ namespace AssettoServer.Server;
 
 public class CSPFeatureManager
 {
-    public IReadOnlyDictionary<string, CSPFeature> Features => _features;
-    
-    private readonly Dictionary<string, CSPFeature> _features = new();
+    public Dictionary<string, CSPFeature> Features { get; } = new();
 
     public void Add(CSPFeature feature)
     {
-        _features.Add(feature.Name, feature);
+        Features.Add(feature.Name, feature);
     }
 
     public bool ValidateHandshake(List<string> features)
     {
-        foreach (var serverFeature in _features.Values)
+        foreach (var serverFeature in Features.Values)
         {
             if (serverFeature.Mandatory && !features.Contains(serverFeature.Name))
             {

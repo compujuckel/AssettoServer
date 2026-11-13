@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AssettoServer.Server;
-using AssettoServer.Server.Admin;
 using AssettoServer.Server.CMContentProviders;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.GeoParams;
-using AssettoServer.Server.OpenSlotFilters;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Network.Http.Responses;
 using AssettoServer.Shared.Weather;
@@ -26,8 +23,6 @@ public class HttpController : ControllerBase
     private readonly EntryCarManager _entryCarManager;
     private readonly GeoParamsManager _geoParamsManager;
     private readonly CSPFeatureManager _cspFeatureManager;
-    private readonly IAdminService _adminService;
-    private readonly OpenSlotFilterChain _openSlotFilter;
     private readonly HttpInfoCache _cache;
     private readonly ICMContentProvider _contentProvider;
 
@@ -38,8 +33,6 @@ public class HttpController : ControllerBase
         EntryCarManager entryCarManager,
         GeoParamsManager geoParamsManager,
         CSPFeatureManager cspFeatureManager,
-        IAdminService adminService,
-        OpenSlotFilterChain openSlotFilter,
         HttpInfoCache cache,
         ICMContentProvider contentProvider)
     {
@@ -50,8 +43,6 @@ public class HttpController : ControllerBase
         _entryCarManager = entryCarManager;
         _geoParamsManager = geoParamsManager;
         _cspFeatureManager = cspFeatureManager;
-        _adminService = adminService;
-        _openSlotFilter = openSlotFilter;
         _cache = cache;
         _contentProvider = contentProvider;
     }
@@ -60,7 +51,7 @@ public class HttpController : ControllerBase
     [HttpGet("/INFO")]
     public InfoResponse GetInfo()
     {
-        InfoResponse responseObj = new InfoResponse
+        return new InfoResponse
         {
             Cars = _cache.Cars,
             Clients = _entryCarManager.ConnectedCars.Count,
@@ -86,64 +77,29 @@ public class HttpController : ControllerBase
             Track = _cache.Track,
             PoweredBy = _cache.PoweredBy
         };
-
-        return responseObj;
     }
 
     [EnableCors("ServerQueryPolicy")]
     [HttpGet("/JSON{guid}")]
-    public async Task<EntryListResponse> GetEntryList(string guid)
+    public async Task<EntryListResponse> GetJson(string guid)
     {
-        guid = guid.Substring(1);
-        bool guidValid = ulong.TryParse(guid, out ulong ulongGuid);
-        bool isAdmin = guidValid && await _adminService.IsAdminAsync(ulongGuid);
+        _ = ulong.TryParse(guid[1..], out ulong ulongGuid);
 
-        var cars = new List<EntryListResponseCar>(_entryCarManager.EntryCars.Length);
-        foreach (var ec in _entryCarManager.EntryCars)
+        return new EntryListResponse
         {
-            cars.Add(new EntryListResponseCar
-            {
-                Model = ec.Model,
-                Skin = ec.Skin,
-                IsEntryList = isAdmin || await _openSlotFilter.IsSlotOpen(ec, ulongGuid),
-                DriverName = ec.Client?.Name,
-                DriverTeam = ec.Client?.Team,
-                IsConnected = ec.Client != null
-            });
-        }
-        EntryListResponse responseObj = new EntryListResponse
-        {
-            Cars = cars,
+            Cars = await _entryCarManager.GetEntryListAsync(ulongGuid),
             Features = _cspFeatureManager.Features.Keys
         };
-
-        return responseObj;
     }
 
     [EnableCors("ServerQueryPolicy")]
     [HttpGet("/api/details")]
     public async Task<DetailResponse> GetDetails(string? guid)
     {
-        bool guidValid = ulong.TryParse(guid, out ulong ulongGuid);
-        bool isAdmin = guidValid && await _adminService.IsAdminAsync(ulongGuid);
+        _ = ulong.TryParse(guid, out ulong ulongGuid);
+        var cars = await _entryCarManager.GetEntryListAsync(ulongGuid);
         
-        var cars = new List<DetailResponseCar>(_entryCarManager.EntryCars.Length);
-        foreach (var ec in _entryCarManager.EntryCars)
-        {
-            cars.Add(new DetailResponseCar
-            {
-                Model = ec.Model,
-                Skin = ec.Skin,
-                IsEntryList = isAdmin || await _openSlotFilter.IsSlotOpen(ec, ulongGuid),
-                DriverName = ec.Client?.Name,
-                DriverTeam = ec.Client?.Team,
-                DriverNation = ec.Client?.NationCode,
-                IsConnected = ec.Client != null,
-                ID = ec.Client?.HashedGuid
-            });
-        }
-        
-        DetailResponse responseObj = new DetailResponse
+        return new DetailResponse
         {
             Cars = _cache.Cars,
             Clients = _entryCarManager.ConnectedCars.Count,
@@ -191,8 +147,6 @@ public class HttpController : ControllerBase
             PoweredBy = _cache.PoweredBy,
             Extensions = _cache.Extensions
         };
-        
-        return responseObj;
     }
 
     [HttpGet("/api/scripts/{scriptId:int}")]

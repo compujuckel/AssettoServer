@@ -92,7 +92,7 @@ public class ACServer : BackgroundLifecycleService
 
         if (_configuration.Extra.EnableCarReset)
         {
-            if (!_configuration.Extra.EnableClientMessages || _configuration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_8  || aiSpline == null)
+            if (!_configuration.Extra.EnableClientMessages || _configuration.CSPTrackOptions.MinimumCSPVersion < CSPVersion.V0_2_8 || aiSpline == null)
             {
                 throw new ConfigurationException(
                     "Reset car: Minimum required CSP version of 0.2.8 (3424); Requires enabled client messages; Requires working AI spline");

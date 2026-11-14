@@ -34,7 +34,6 @@ public partial class ACServerConfiguration
     [YamlIgnore] public string? CSPExtraOptions { get; }
     [YamlIgnore] public string BaseFolder { get; }
     [YamlIgnore] public bool LoadPluginsFromWorkdir { get; }
-    [YamlIgnore] public bool GeneratePluginConfigs { get; }
     [YamlIgnore] public int RandomSeed { get; } = Random.Shared.Next();
     [YamlIgnore] public string? Preset { get; }
     [YamlIgnore] public DrsZones DrsZones { get; }    
@@ -54,12 +53,11 @@ public partial class ACServerConfiguration
      *
      * When "entryListPath" is set, it takes precedence and entry_list.ini will be loaded from the specified path.
      */
-    public ACServerConfiguration(string? preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir, bool generatePluginConfigs, PortOverrides? portOverrides)
+    public ACServerConfiguration(string? preset, ConfigurationLocations locations, bool loadPluginsFromWorkdir, PortOverrides? portOverrides)
     {
         Preset = preset;
         BaseFolder = locations.BaseFolder;
         LoadPluginsFromWorkdir = loadPluginsFromWorkdir;
-        GeneratePluginConfigs = generatePluginConfigs;
         Server = LoadServerConfiguration(locations.ServerCfgPath, portOverrides);
         EntryList = LoadEntryList(locations.EntryListPath);
         Setups = LoadSetups();

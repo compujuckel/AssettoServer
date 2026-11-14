@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AssettoServer.Server.Configuration;
+using AssettoServer.Server.Plugin;
 using AssettoServer.Utils;
 using Autofac.Extensions.DependencyInjection;
 using DotNext.Collections.Generic;
@@ -38,7 +39,6 @@ public static class Program
         public bool LoadPluginsFromWorkdir { get; set; } = false;
         public bool UseVerboseLogging { get; set; } = false;
         public bool UseRandomPreset { get; set; } = false;
-        public bool GenerateConfigs { get; set; } = false;
     }
 
     private class StartOptions
@@ -53,7 +53,6 @@ public static class Program
     public static ConfigurationLocations? ConfigurationLocations { get; private set; }
     
     private static bool _loadPluginsFromWorkdir;
-    private static bool _generatePluginConfigs;
     private static TaskCompletionSource<StartOptions> _restartTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
     
     internal static async Task<int> Main(string[] args)
@@ -68,36 +67,28 @@ public static class Program
 
     private static RootCommand CreateRootCommand()
     {
-        var presetOption = new Option<string?>("--preset", "-p") { Description = "Configuration preset" };
-        var serverCfgPathOption = new Option<string?>("-c") { Description = "Path to server configuration" };
-        var entryListPathOption = new Option<string?>("-e") { Description = "Path to entry list" };
-        var loadPluginsFromWorkdirOption = new Option<bool>("--plugins-from-workdir") { Description = "Additionally load plugins from working directory" };
+        var configOptions = CreateConfigurationOptions();
         var useVerboseLoggingOption = new Option<bool>("--verbose") { Description = "Change log level to verbose" };
         var useRandomPresetOption = new Option<bool>("--use-random-preset", "-r") { Description = "Use a random available configuration preset" };
-        var generateConfigsOption = new Option<bool>("--generate-config", "-g") { Description = "Generate configuration file for all installed plugins" };
 
         var rootCommand = new RootCommand();
-        rootCommand.Options.Add(presetOption);
-        rootCommand.Options.Add(serverCfgPathOption);
-        rootCommand.Options.Add(entryListPathOption);
-        rootCommand.Options.Add(loadPluginsFromWorkdirOption);
+        AddConfigurationOptions(rootCommand, configOptions);
         rootCommand.Options.Add(useVerboseLoggingOption);
         rootCommand.Options.Add(useRandomPresetOption);
-        rootCommand.Options.Add(generateConfigsOption);
 
         rootCommand.Subcommands.Add(FastLaneCommand.CreateCommand());
+        rootCommand.Subcommands.Add(CreateGenerateConfigCommand());
 
         rootCommand.SetAction(async (parseResult, _) =>
         {
             await RunAsync(new Options
             {
-                Preset = parseResult.GetValue(presetOption) ?? "",
-                ServerCfgPath = parseResult.GetValue(serverCfgPathOption) ?? "",
-                EntryListPath = parseResult.GetValue(entryListPathOption) ?? "",
-                LoadPluginsFromWorkdir = parseResult.GetValue(loadPluginsFromWorkdirOption),
+                Preset = parseResult.GetValue(configOptions.Preset) ?? "",
+                ServerCfgPath = parseResult.GetValue(configOptions.ServerCfgPath) ?? "",
+                EntryListPath = parseResult.GetValue(configOptions.EntryListPath) ?? "",
+                LoadPluginsFromWorkdir = parseResult.GetValue(configOptions.LoadPluginsFromWorkdir),
                 UseVerboseLogging = parseResult.GetValue(useVerboseLoggingOption),
                 UseRandomPreset = parseResult.GetValue(useRandomPresetOption),
-                GenerateConfigs = parseResult.GetValue(generateConfigsOption),
             });
             return 0;
         });
@@ -105,10 +96,67 @@ public static class Program
         return rootCommand;
     }
 
+    private sealed record ConfigurationOptions(
+        Option<string?> Preset,
+        Option<string?> ServerCfgPath,
+        Option<string?> EntryListPath,
+        Option<bool> LoadPluginsFromWorkdir);
+
+    private static ConfigurationOptions CreateConfigurationOptions()
+    {
+        return new ConfigurationOptions(
+            new Option<string?>("--preset", "-p") { Description = "Configuration preset" },
+            new Option<string?>("-c") { Description = "Path to server configuration" },
+            new Option<string?>("-e") { Description = "Path to entry list" },
+            new Option<bool>("--plugins-from-workdir") { Description = "Additionally load plugins from working directory" });
+    }
+
+    private static void AddConfigurationOptions(Command command, ConfigurationOptions options)
+    {
+        command.Options.Add(options.Preset);
+        command.Options.Add(options.ServerCfgPath);
+        command.Options.Add(options.EntryListPath);
+        command.Options.Add(options.LoadPluginsFromWorkdir);
+    }
+
+    private static Command CreateGenerateConfigCommand()
+    {
+        var configOptions = CreateConfigurationOptions();
+
+        var command = new Command("generate-config", "Generate configuration file for all installed plugins");
+        AddConfigurationOptions(command, configOptions);
+
+        command.SetAction((parseResult, _) =>
+        {
+            GenerateConfigs(
+                parseResult.GetValue(configOptions.Preset),
+                parseResult.GetValue(configOptions.ServerCfgPath),
+                parseResult.GetValue(configOptions.EntryListPath),
+                parseResult.GetValue(configOptions.LoadPluginsFromWorkdir));
+            return Task.FromResult(0);
+        });
+
+        return command;
+    }
+
+    private static void GenerateConfigs(string? preset, string? serverCfgPath, string? entryListPath, bool loadPluginsFromWorkdir)
+    {
+        ConfigurationLocations = ConfigurationLocations.FromOptions(preset, serverCfgPath, entryListPath);
+
+        Logging.CreateLogger(IsContentManager, preset, false);
+
+        var config = new ACServerConfiguration(preset, ConfigurationLocations, loadPluginsFromWorkdir, portOverrides: null);
+
+        var loader = new ACPluginLoader(loadPluginsFromWorkdir);
+        loader.LoadPlugins(loader.AvailablePlugins.Select(p => p.Key).ToList());
+        config.LoadPluginConfiguration(loader, null);
+
+        Log.Information("Plugin configuration generated in {Path}", config.BaseFolder);
+    }
+
     private static async Task RunAsync(Options options)
     {
         _loadPluginsFromWorkdir = options.LoadPluginsFromWorkdir;
-        _generatePluginConfigs = options.GenerateConfigs;
         
         if (IsContentManager)
         {
@@ -127,8 +175,7 @@ public static class Program
                 Log.Warning("Presets directory does not exist or contain any preset");
         }
 
-        string logPrefix = string.IsNullOrEmpty(options.Preset) ? "log" : options.Preset;
-        Logging.CreateLogger(logPrefix, IsContentManager, options.Preset, options.UseVerboseLogging);
+        Logging.CreateLogger(IsContentManager, options.Preset, options.UseVerboseLogging);
         
         AppDomain.CurrentDomain.UnhandledException += UnhandledException;
         Log.Information("AssettoServer {Version}", ThisAssembly.AssemblyInformationalVersion);
@@ -190,10 +237,9 @@ public static class Program
         
         try
         {
-            var config = new ACServerConfiguration(preset, ConfigurationLocations, _loadPluginsFromWorkdir, _generatePluginConfigs, portOverrides);
+            var config = new ACServerConfiguration(preset, ConfigurationLocations, _loadPluginsFromWorkdir, portOverrides);
 
-            string logPrefix = string.IsNullOrEmpty(preset) ? "log" : preset;
-            Logging.CreateLogger(logPrefix, IsContentManager, preset, useVerboseLogging, config.Extra.RedactIpAddresses, config.Extra.LokiSettings);
+            Logging.CreateLogger(IsContentManager, preset, useVerboseLogging, config.Extra.RedactIpAddresses, config.Extra.LokiSettings);
 
             if (!string.IsNullOrEmpty(preset))
             {

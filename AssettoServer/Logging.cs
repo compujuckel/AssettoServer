@@ -10,23 +10,23 @@ namespace AssettoServer;
 
 internal static class Logging
 {
-    internal static void CreateLogger(string logPrefix, bool isContentManager, string? preset, bool useVerboseLogging, bool redactIpAddresses = false, LokiSettings? lokiSettings = null)
+    internal static void CreateLogger(bool isContentManager, string? preset, bool useVerboseLogging, bool redactIpAddresses = false, LokiSettings? lokiSettings = null)
     {
         Log.CloseAndFlush();
         
         if (lokiSettings?.IsValid() == true)
         {
-            CreateLokiLogger(logPrefix, isContentManager, preset, lokiSettings, useVerboseLogging, redactIpAddresses);
+            CreateLokiLogger(isContentManager, preset, lokiSettings, useVerboseLogging, redactIpAddresses);
         }
         else
         {
-            Log.Logger = BaseLoggerConfiguration(logPrefix, isContentManager, useVerboseLogging, redactIpAddresses).CreateLogger();
+            Log.Logger = BaseLoggerConfiguration(isContentManager, preset, useVerboseLogging, redactIpAddresses).CreateLogger();
         }
     }
 
-    private static void CreateLokiLogger(string logPrefix, bool isContentManager, string? preset, LokiSettings lokiSettings, bool useVerboseLogging, bool redactIpAddresses)
+    private static void CreateLokiLogger(bool isContentManager, string? preset, LokiSettings lokiSettings, bool useVerboseLogging, bool redactIpAddresses)
     {
-        Log.Logger = BaseLoggerConfiguration(logPrefix, isContentManager, useVerboseLogging, redactIpAddresses)
+        Log.Logger = BaseLoggerConfiguration(isContentManager, preset, useVerboseLogging, redactIpAddresses)
             .Enrich.FromLogContext()
             .Enrich.WithMachineName()
             .Enrich.WithProperty("Preset", preset ?? "")
@@ -41,8 +41,9 @@ internal static class Logging
             .CreateLogger();
     }
 
-    private static LoggerConfiguration BaseLoggerConfiguration(string logPrefix, bool isContentManager, bool useVerboseLogging, bool redactIpAddresses)
+    private static LoggerConfiguration BaseLoggerConfiguration(bool isContentManager, string? preset, bool useVerboseLogging, bool redactIpAddresses)
     {
+        var logPrefix = string.IsNullOrEmpty(preset) ? "log" : preset;
         var loggerConfiguration = new LoggerConfiguration()
             .MinimumLevel.Override("AssettoServer.Network.Http.Authentication.ACClientAuthenticationHandler",
                 LogEventLevel.Warning)

@@ -115,13 +115,6 @@ public class Startup
         builder.RegisterType<DefaultCMContentProvider>().As<ICMContentProvider>().SingleInstance();
         builder.RegisterType<CommandService>().AsSelf().SingleInstance();
 
-        if (_configuration.GeneratePluginConfigs)
-        {
-            var loader = new ACPluginLoader(_configuration.LoadPluginsFromWorkdir);
-            loader.LoadPlugins(loader.AvailablePlugins.Select(p => p.Key).ToList());
-            _configuration.LoadPluginConfiguration(loader, null);
-        }
-
         _configuration.LoadPluginConfiguration(_loader, builder);
         return;
         

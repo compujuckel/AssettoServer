@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using AssettoServer.Commands;
 using AssettoServer.Commands.Contexts;
 using AssettoServer.Commands.TypeParsers;
@@ -26,6 +27,7 @@ using AssettoServer.Server.TrackParams;
 using AssettoServer.Server.UserGroup;
 using AssettoServer.Server.Weather;
 using AssettoServer.Server.Whitelist;
+using AssettoServer.Utils;
 using Autofac;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
@@ -176,6 +178,7 @@ public class Startup
         mvcBuilder.AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, JsonSourceGenerationContext.Default);
+            options.JsonSerializerOptions.Converters.Add(new Vector3JsonConverter());
         });
 
         if (_configuration.Extra.EnablePlugins != null)

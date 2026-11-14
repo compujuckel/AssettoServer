@@ -165,9 +165,9 @@ public static class Program
         
         if (options.UseRandomPreset)
         {
-            var presetsPath = Path.Join(AppContext.BaseDirectory, "presets");
-            var presets = Path.Exists(presetsPath) ? 
-                Directory.EnumerateDirectories("presets").Select(Path.GetFileName).OfType<string>().ToArray() : [];
+            var presets = Path.Exists("presets")
+                ? Directory.EnumerateDirectories("presets").Select(Path.GetFileName).OfType<string>().ToArray()
+                : [];
             
             if (presets.Length > 0)
                 options.Preset = presets[Random.Shared.Next(presets.Length)];

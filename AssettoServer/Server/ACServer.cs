@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using AssettoServer.Server.Configuration;
 using AssettoServer.Server.Ai.Splines;
@@ -24,7 +23,6 @@ public class ACServer : BackgroundLifecycleService
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
     private readonly GeoParamsManager _geoParamsManager;
-    private readonly ChecksumManager _checksumManager;
     private readonly IHostApplicationLifetime _applicationLifetime;
 
     /// <summary>
@@ -39,7 +37,6 @@ public class ACServer : BackgroundLifecycleService
         SessionManager sessionManager,
         EntryCarManager entryCarManager,
         GeoParamsManager geoParamsManager,
-        ChecksumManager checksumManager,
         CSPFeatureManager cspFeatureManager,
         CSPServerScriptProvider cspServerScriptProvider,
         IHostApplicationLifetime applicationLifetime,
@@ -51,7 +48,6 @@ public class ACServer : BackgroundLifecycleService
         _sessionManager = sessionManager;
         _entryCarManager = entryCarManager;
         _geoParamsManager = geoParamsManager;
-        _checksumManager = checksumManager;
         _applicationLifetime = applicationLifetime;
 
         blacklistService.Changed += OnBlacklistChanged;

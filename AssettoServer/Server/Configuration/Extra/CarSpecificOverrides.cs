@@ -15,9 +15,9 @@ public class CarSpecificOverrides
     public int? EngineIdleRpm { get; init; }
     [YamlMember(Description = "AI engine max RPM")]
     public int? EngineMaxRpm { get; init; }
-    [YamlMember(Description = "AI car deceleration for obstacle/collision detection (m/s^2)")]
-    public float? Acceleration { get; init; }
     [YamlMember(Description = "AI car acceleration for obstacle/collision detection (m/s^2)")]
+    public float? Acceleration { get; init; }
+    [YamlMember(Description = "AI car deceleration for obstacle/collision detection (m/s^2)")]
     public float? Deceleration { get; init; }
     [YamlMember(Description = "AI cornering speed factor. Lower = AI cars will drive slower around corners.")]
     public float? CorneringSpeedFactor { get; init; }

@@ -1,4 +1,6 @@
-﻿using FluentValidation;
+﻿using System;
+using System.Net;
+using FluentValidation;
 
 namespace AssettoServer.Server.Configuration;
 
@@ -21,6 +23,9 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
             extra.RuleFor(x => x.WhitelistUserGroup).NotEmpty();
             extra.RuleFor(x => x.AdminUserGroup).NotEmpty();
             extra.RuleFor(x => x.VoteKickMinimumConnectedPlayers).GreaterThanOrEqualTo((ushort)3);
+            extra.RuleFor(x => x.JoinHost)
+                .Must(IsValidJoinHost)
+                .WithMessage("JoinHost must be 'wan', 'lan', a client-reachable IP address or a DNS name; wildcard addresses such as 0.0.0.0 and :: are not valid");
 
             extra.RuleFor(x => x.AiParams).ChildRules(aiParams =>
             {
@@ -87,5 +92,26 @@ public class ACServerConfigurationValidator : AbstractValidator<ACServerConfigur
                 car.RuleFor(c => c.Ballast).GreaterThanOrEqualTo(0);
             });
         });
+    }
+
+    private static bool IsValidJoinHost(string? host)
+    {
+        if (string.IsNullOrWhiteSpace(host))
+        {
+            return false;
+        }
+
+        if (string.Equals(host, "wan", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(host, "lan", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (IPAddress.TryParse(host, out var address))
+        {
+            return !IPAddress.Any.Equals(address) && !IPAddress.IPv6Any.Equals(address);
+        }
+
+        return Uri.CheckHostName(host) == UriHostNameType.Dns;
     }
 }

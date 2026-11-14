@@ -107,6 +107,8 @@ public class ACExtraConfiguration
     public string AdminUserGroup { get; init; } = "default_admins";
     [YamlMember(Description = "List of allowed origins for Cross-Origin Resource Sharing. Use this if you want to query this server from a website", DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)]
     public List<string>? CorsAllowedOrigins { get; init; }
+    [YamlMember(Description = "Address (IP or DNS name) clients should use to reach this server. Use 'wan' for the detected public IP, 'lan' for the primary local IP, or specify an IP address or DNS name. Wildcard bind addresses such as 0.0.0.0 and :: are not valid client destinations.")]
+    public string JoinHost { get; init; } = "wan";
     [YamlMember(Description = "Allow a user group to execute specific admin commands")]
     public List<UserGroupCommandPermissions>? UserGroupCommandPermissions { get; init; }
     

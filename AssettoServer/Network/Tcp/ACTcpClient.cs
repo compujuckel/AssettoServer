@@ -971,7 +971,7 @@ public class ACTcpClient : IClient
 
         if (!endpoint.IpEquals(_tcpEndpoint))
         {
-            Logger.Warning("Rejected UDP association from {UdpEndpoint}, TCP connection is from {TcpEndpoint}", endpoint.ToString(), _tcpEndpoint.ToString());
+            Logger.Warning("Rejected UDP association from {UdpEndpoint}, TCP connection is from {TcpEndpoint}", endpoint.ToIPv4String(), _tcpEndpoint.ToIPv4String());
             return false;
         }
 

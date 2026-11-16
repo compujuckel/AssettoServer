@@ -1,5 +1,7 @@
 ﻿using System.Net;
-using System.Runtime.CompilerServices;
+using System.Buffers.Binary;
+using System.Diagnostics;
+using System.Net.Sockets;
 
 namespace AssettoServer.Shared.Utils;
 
@@ -21,10 +23,14 @@ public static class SocketAddressExtensions
 
         public uint GetIPv4Address()
         {
-            return GetIPv4Address(null, address.Buffer.Span);
+            Debug.Assert(address.Family == AddressFamily.InterNetwork);
+            return BinaryPrimitives.ReadUInt32LittleEndian(address.Buffer.Span.Slice(4, 4));
+        }
+        
+        public string ToIPv4String()
+        {
+            Debug.Assert(address.Family == AddressFamily.InterNetwork);
+            return $"{address[4]}.{address[5]}.{address[6]}.{address[7]}";
         }
     }
-
-    [UnsafeAccessor(UnsafeAccessorKind.StaticMethod)]
-    private static extern uint GetIPv4Address([UnsafeAccessorType("System.Net.SocketAddressPal, System.Net.Primitives")] object? a, ReadOnlySpan<byte> buffer);
 }

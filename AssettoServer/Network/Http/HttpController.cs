@@ -8,6 +8,7 @@ using AssettoServer.Server.GeoParams;
 using AssettoServer.Server.Weather;
 using AssettoServer.Shared.Network.Http.Responses;
 using AssettoServer.Shared.Weather;
+using AssettoServer.Utils;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
@@ -147,6 +148,25 @@ public class HttpController : ControllerBase
             PoweredBy = _cache.PoweredBy,
             Extensions = _cache.Extensions
         };
+    }
+
+    [HttpGet("/join")]
+    public IActionResult Join()
+    {
+        string host = _configuration.Extra.JoinHost.ToLowerInvariant() switch
+        {
+            "wan" => _geoParamsManager.GeoParams.Ip,
+            "lan" => NetworkUtils.GetPrimaryIpAddress().ToString(),
+            _ => _configuration.Extra.JoinHost
+        };
+
+        if (string.IsNullOrWhiteSpace(host))
+        {
+            return StatusCode(503, "The server address could not be determined. Configure JoinHost in extra_cfg.yml.");
+        }
+
+        string target = $"https://acstuff.club/s/q:race/online/join?httpPort={_configuration.Server.HttpPort}&ip={Uri.EscapeDataString(host)}";
+        return Redirect(target);
     }
 
     [HttpGet("/api/scripts/{scriptId:int}")]

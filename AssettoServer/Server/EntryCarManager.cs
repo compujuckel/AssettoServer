@@ -123,9 +123,9 @@ public class EntryCarManager : HostedLifecycleService
 
     internal async Task DisconnectClientAsync(ACTcpClient client)
     {
+        await _connectSemaphore.WaitAsync();
         try
         {
-            await _connectSemaphore.WaitAsync();
             if (client.IsConnected && client.EntryCar.Client == client && ConnectedCars.TryRemove(client.SessionId, out _))
             {
                 client.Logger.Information("{ClientName} has disconnected", client.Name);
@@ -177,11 +177,10 @@ public class EntryCarManager : HostedLifecycleService
 
     internal async Task<bool> TrySecureSlotAsync(ACTcpClient client, HandshakeRequest handshakeRequest)
     {
+        await _connectSemaphore.WaitAsync();
         try
         {
-            await _connectSemaphore.WaitAsync();
-
-            if (ConnectedCars.Count >= _configuration.Server.MaxClients)
+            if (client.IsDisconnectRequested || ConnectedCars.Count >= _configuration.Server.MaxClients)
                 return false;
 
             var isAdmin = await _adminService.IsAdminAsync(handshakeRequest.Guid);

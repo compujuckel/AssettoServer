@@ -36,7 +36,6 @@ namespace AssettoServer.Network.Tcp;
 
 public class ACTcpClient : IClient
 {
-    private ACUdpServer UdpServer { get; }
     public ILogger Logger { get; }
     public byte SessionId { get; set; }
     public string? Name { get; set; }
@@ -47,6 +46,7 @@ public class ACTcpClient : IClient
     public string HashedGuid { get; private set; } = "";
     public ulong? OwnerGuid { get; internal set; }
     public EntryCar EntryCar { get; internal set; } = null!;
+    public CancellationToken DisconnectToken => DisconnectTokenSource.Token;
     public bool IsDisconnectRequested => _disconnectRequested == 1;
     [MemberNotNullWhen(true, nameof(Name), nameof(Team), nameof(NationCode))]
     public bool HasSentFirstUpdate { get; private set; }
@@ -67,16 +67,17 @@ public class ACTcpClient : IClient
     public bool HasUdpEndpoint => UdpEndpoint != null;
     public bool SupportsCSPCustomUpdate { get; private set; }
     public int? CSPVersion { get; private set; }
-    internal string ApiKey { get; }
+    internal string ApiKey { get; } = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
 
     private static ThreadLocal<byte[]> UdpSendBuffer { get; } = new(() => GC.AllocateArray<byte>(1500, true));
-    private byte[] TcpSendBuffer { get; }
-    private Channel<IOutgoingNetworkPacket> OutgoingPacketChannel { get; }
-    private CancellationTokenSource DisconnectTokenSource { get; }
-    private Task SendLoopTask { get; set; } = null!;
+    private byte[] TcpSendBuffer { get; } = GC.AllocateArray<byte>(ushort.MaxValue + 2, true);
+    private Channel<IOutgoingNetworkPacket> OutgoingPacketChannel { get; } = Channel.CreateBounded<IOutgoingNetworkPacket>(256);
+    private CancellationTokenSource DisconnectTokenSource { get; } = new();
+    private Task? SendLoopTask { get; set; }
     private long LastChatTime { get; set; }
     private int _disconnectRequested = 0;
 
+    private readonly ACUdpServer _udpServer;
     private readonly WeatherManager _weatherManager;
     private readonly SessionManager _sessionManager;
     private readonly EntryCarManager _entryCarManager;
@@ -194,8 +195,8 @@ public class ACTcpClient : IClient
     }
 
     public ACTcpClient(
-        ACUdpServer udpServer,
         TcpClient tcpClient,
+        ACUdpServer udpServer,
         SessionManager sessionManager,
         WeatherManager weatherManager,
         ACServerConfiguration configuration,
@@ -208,7 +209,6 @@ public class ACTcpClient : IClient
         CSPClientMessageHandler clientMessageHandler,
         VoteManager voteManager)
     {
-        UdpServer = udpServer;
         Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .Enrich.With(new ACTcpClientLogEventEnricher(this))
@@ -216,6 +216,7 @@ public class ACTcpClient : IClient
             .CreateLogger();
 
         TcpClient = tcpClient;
+        _udpServer = udpServer;
         _sessionManager = sessionManager;
         _weatherManager = weatherManager;
         _configuration = configuration;
@@ -236,11 +237,6 @@ public class ACTcpClient : IClient
         _tcpEndpoint = tcpClient.Client.RemoteEndPoint!.Serialize();
         TcpStream = tcpClient.GetStream();
 
-        TcpSendBuffer = GC.AllocateArray<byte>(ushort.MaxValue + 2, true);
-        OutgoingPacketChannel = Channel.CreateBounded<IOutgoingNetworkPacket>(256);
-        DisconnectTokenSource = new CancellationTokenSource();
-
-        ApiKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
         LuaReady += OnLuaReady;
     }
 
@@ -292,7 +288,7 @@ public class ACTcpClient : IClient
             PacketWriter writer = new PacketWriter(buffer);
             int bytesWritten = writer.WritePacket(in packet);
 
-            UdpServer.Send(UdpEndpoint, buffer, 0, bytesWritten);
+            _udpServer.Send(UdpEndpoint, buffer, 0, bytesWritten);
         }
         catch (Exception ex)
         {
@@ -305,7 +301,7 @@ public class ACTcpClient : IClient
     {
         try
         {
-            await foreach (var packet in OutgoingPacketChannel.Reader.ReadAllAsync(DisconnectTokenSource.Token))
+            await foreach (var packet in OutgoingPacketChannel.Reader.ReadAllAsync(DisconnectToken))
             {
                 if (packet is not SunAngleUpdate)
                 {
@@ -326,17 +322,17 @@ public class ACTcpClient : IClient
                     foreach (var inner in batched.Packets)
                     {
                         var writer = new PacketWriter(tempStream, tempBuffer);
-                        writer.WritePacket(inner);
-                        await writer.SendAsync(DisconnectTokenSource.Token);
+                        writer.WritePacket(in inner);
+                        await writer.SendAsync(DisconnectToken);
                     }
 
-                    await TcpStream.WriteAsync(TcpSendBuffer.AsMemory(streamOffset, (int)tempStream.Position), DisconnectTokenSource.Token);
+                    await TcpStream.WriteAsync(TcpSendBuffer.AsMemory(streamOffset, (int)tempStream.Position), DisconnectToken);
                 }
                 else
                 {
                     var writer = new PacketWriter(TcpStream, TcpSendBuffer);
-                    writer.WritePacket(packet);
-                    await writer.SendAsync(DisconnectTokenSource.Token);
+                    writer.WritePacket(in packet);
+                    await writer.SendAsync(DisconnectToken);
                 }
             }
         }
@@ -346,6 +342,10 @@ public class ACTcpClient : IClient
         catch (Exception ex)
         {
             Logger.Error(ex, "Error sending TCP packet to {ClientName}", Name);
+        }
+        finally
+        {
+            // Do not await here since DisconnectAsync waits for SendLoopTask to finish
             _ = DisconnectAsync();
         }
     }
@@ -357,18 +357,15 @@ public class ACTcpClient : IClient
 
         try
         {
-            while (!DisconnectTokenSource.IsCancellationRequested)
+            while (!DisconnectToken.IsCancellationRequested)
             {
                 PacketReader reader = new PacketReader(stream, buffer);
-                reader.SliceBuffer(await reader.ReadPacketAsync());
+                reader.SliceBuffer(await reader.ReadPacketAsync(DisconnectToken));
 
                 if (reader.Buffer.Length == 0)
                     return;
 
-                ACServerProtocol id = (ACServerProtocol)reader.Read<byte>();
-
-                if (id != ACServerProtocol.ClientEvent)
-                    Logger.Verbose("Received TCP packet with ID {PacketId:X}", id);
+                var id = reader.Read<ACServerProtocol>();
 
                 if (!HasStartedHandshake && id != ACServerProtocol.RequestNewConnection)
                     return;
@@ -422,6 +419,8 @@ public class ACTcpClient : IClient
                         SendPacket(response.Value);
                     else if (!await _entryCarManager.TrySecureSlotAsync(this, handshakeRequest))
                         SendPacket(new NoSlotsAvailableResponse());
+                    else if (IsDisconnectRequested)
+                        return;
                     else
                     {
                         if (EntryCar == null)
@@ -500,14 +499,14 @@ public class ACTcpClient : IClient
                         HasStartedHandshake = true;
                         SendPacket(handshakeResponse);
 
-                        _ = Task.Delay(TimeSpan.FromMinutes(_configuration.Extra.PlayerLoadingTimeoutMinutes)).ContinueWith(async _ =>
+                        _ = Task.Delay(TimeSpan.FromMinutes(_configuration.Extra.PlayerLoadingTimeoutMinutes), DisconnectToken).ContinueWith(async _ =>
                         {
                             if (EntryCar.Client == this && IsConnected && !HasSentFirstUpdate)
                             {
                                 Logger.Information("{ClientName} has taken too long to spawn in and will be disconnected", Name);
                                 await DisconnectAsync();
                             }
-                        });
+                        }, TaskContinuationOptions.OnlyOnRanToCompletion);
                     }
 
                     if (!HasStartedHandshake)
@@ -578,6 +577,7 @@ public class ACTcpClient : IClient
             }
         }
         catch (ObjectDisposedException) { }
+        catch (OperationCanceledException) { }
         catch (IOException) { }
         catch (Exception ex)
         {
@@ -913,15 +913,14 @@ public class ACTcpClient : IClient
 
             if (ChecksumStatus == ChecksumStatus.Pending)
             {
-                _ = Task.Run(async () =>
+                _ = Task.Delay(TimeSpan.FromSeconds(_configuration.Extra.PlayerChecksumTimeoutSeconds), DisconnectToken).ContinueWith(async _ =>
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(_configuration.Extra.PlayerChecksumTimeoutSeconds));
                     if (ChecksumStatus != ChecksumStatus.Succeeded && IsConnected)
                     {
                         Logger.Information("Checksum request for {ClientName} ({SessionId}) timed out. Consider increasing PlayerChecksumTimeoutSeconds", Name, SessionId);
                         await _entryCarManager.KickAsync(this, KickReason.ChecksumFailed, null, null, $"{Name} did not send the requested checksums.");
                     }
-                });
+                }, TaskContinuationOptions.OnlyOnRanToCompletion);
             }
 
             _entryCarManager.BroadcastPacket(CreateLapCompletedPacket(0xFF, 0, 0));
@@ -981,11 +980,11 @@ public class ACTcpClient : IClient
 
     internal async Task DisconnectAsync()
     {
+        if (Interlocked.CompareExchange(ref _disconnectRequested, 1, 0) == 1)
+            return;
+
         try
         {
-            if (Interlocked.CompareExchange(ref _disconnectRequested, 1, 0) == 1)
-                return;
-
             await Task.Yield();
 
             if (!string.IsNullOrEmpty(Name))
@@ -995,23 +994,26 @@ public class ACTcpClient : IClient
             }
 
             OutgoingPacketChannel.Writer.TryComplete();
-            await SendLoopTask.WaitAsync(TimeSpan.FromSeconds(2));
-
-            try
+            if (SendLoopTask is not null)
             {
-                DisconnectTokenSource.Cancel();
-                DisconnectTokenSource.Dispose();
+                try
+                {
+                    await SendLoopTask.WaitAsync(TimeSpan.FromSeconds(2));
+                }
+                catch (TimeoutException) { }
             }
-            catch (ObjectDisposedException) { }
-
-            if (IsConnected)
-                await _entryCarManager.DisconnectClientAsync(this);
-
-            TcpClient.Dispose();
+            
+            await DisconnectTokenSource.CancelAsync();
+            await _entryCarManager.DisconnectClientAsync(this);
         }
         catch (Exception ex)
         {
             Logger.Error(ex, "Error disconnecting {ClientName}", Name);
+        }
+        finally
+        {
+            DisconnectTokenSource.Dispose();
+            TcpClient.Dispose();
         }
     }
 

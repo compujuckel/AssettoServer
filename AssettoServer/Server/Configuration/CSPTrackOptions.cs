@@ -14,7 +14,7 @@ public partial class CSPTrackOptions
 
     private const int FlagsOffset = 65; // 'A'
 
-    public static CSPTrackOptions Parse(string track)
+    public static CSPTrackOptions Parse(string track, uint? minimumCspVersion = null)
     {
         var match = TrackOptionsRegex().Match(track);
         if (match.Success)
@@ -27,7 +27,7 @@ public partial class CSPTrackOptions
             
             return new CSPTrackOptions
             {
-                MinimumCSPVersion = uint.Parse(match.Groups[1].Value),
+                MinimumCSPVersion = Math.Max(uint.Parse(match.Groups[1].Value), minimumCspVersion ?? 0),
                 Track = match.Groups[3].Value,
                 Flags = flags
             };
@@ -35,7 +35,8 @@ public partial class CSPTrackOptions
 
         return new CSPTrackOptions
         {
-            Track = track
+            Track = track,
+            MinimumCSPVersion = minimumCspVersion
         };
     }
 

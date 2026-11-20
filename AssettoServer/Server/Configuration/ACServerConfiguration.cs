@@ -75,22 +75,8 @@ public partial class ACServerConfiguration
             ACExtraConfiguration.ReferenceConfiguration, 
             $"AssettoServer {ThisAssembly.AssemblyInformationalVersion}");
         
-        var parsedTrackOptions = CSPTrackOptions = CSPTrackOptions.Parse(Server.Track);
-        if (Extra.MinimumCSPVersion.HasValue
-            && (!CSPTrackOptions.MinimumCSPVersion.HasValue || Extra.MinimumCSPVersion.Value > CSPTrackOptions.MinimumCSPVersion.Value))
-        {
-            CSPTrackOptions = new CSPTrackOptions
-            {
-                Track = parsedTrackOptions.Track,
-                Flags = parsedTrackOptions.Flags,
-                MinimumCSPVersion = Extra.MinimumCSPVersion
-            };
-            Server.Track = CSPTrackOptions.ToString();
-        }
-        else
-        {
-            CSPTrackOptions = parsedTrackOptions;
-        }
+        CSPTrackOptions = CSPTrackOptions.Parse(Server.Track, Extra.MinimumCSPVersion);
+        Server.Track = CSPTrackOptions.ToString();
 
         if (CSPTrackOptions.MinimumCSPVersion.HasValue)
         {

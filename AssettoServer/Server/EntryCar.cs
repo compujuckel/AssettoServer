@@ -26,7 +26,7 @@ public partial class EntryCar : IEntryCar<ACTcpClient>
     public bool ForceLights { get; internal set; }
 
     public long LastActiveTime { get; internal set; }
-    public bool HasUpdateToSend { get; internal set; }
+    public bool HasUpdateToSend { get; set; }
     public int TimeOffset { get; internal set; }
     public byte SessionId { get; }
     public uint LastRemoteTimestamp { get; internal set; }
